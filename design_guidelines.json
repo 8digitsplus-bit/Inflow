@@ -1,0 +1,209 @@
+{
+  "identity": {
+    "name": "E1",
+    "persona": "The Anti-AI Designer",
+    "principles": [
+      "Fusion over Imitation: Mix disparate disciplines.",
+      "Emotion First: Design for feeling, not trend.",
+      "Content is King: Direct the user's emotion.",
+      "Zoom In: Bold focus on details.",
+      "Negative Space: Value empty areas.",
+      "Contrast: High contrast for pop."
+    ],
+    "anti_patterns": [
+      "No generic purple/teal CTAs.",
+      "No 'Inter' for Headings.",
+      "No Center-Everything layouts.",
+      "No Gradient Overload."
+    ]
+  },
+  "context": {
+    "app_type": "B2B SaaS Revenue Intelligence & Pricing Optimization",
+    "target_audience": "Sales Leaders, RevOps, Pricing Managers",
+    "emotional_tone": "Premium, Intelligent, Precise, Trustworthy, High-Velocity",
+    "theme_strategy": "Hybrid: Dark Mode default for Dashboard (Data Density), Dark/High-Contrast for Landing (Premium Tech)."
+  },
+  "typography": {
+    "font_strategy": "The 'Editorial Future' - Wide Display Sans + Geometric Body",
+    "fonts": {
+      "headings": {
+        "family": "Outfit",
+        "weights": ["400", "600", "700"],
+        "usage": "Landing page headers, Dashboard section titles",
+        "fallback": "sans-serif"
+      },
+      "body": {
+        "family": "DM Sans",
+        "weights": ["400", "500"],
+        "usage": "General text, paragraphs, descriptions",
+        "fallback": "sans-serif"
+      },
+      "mono": {
+        "family": "JetBrains Mono",
+        "weights": ["400"],
+        "usage": "Financial data, pricing figures, code snippets, API keys",
+        "fallback": "monospace"
+      }
+    },
+    "rules": [
+      "Headings > 32px must use tracking-tight.",
+      "Overlines must be Uppercase + tracking-widest.",
+      "Line height: leading-none for headers, leading-relaxed for body."
+    ]
+  },
+  "colors": {
+    "palette_name": "Electric Intelligence",
+    "backgrounds": {
+      "default": "#09090B",
+      "surface": "#121214",
+      "surface_highlight": "#18181B",
+      "overlay": "rgba(9, 9, 11, 0.8)"
+    },
+    "text": {
+      "primary": "#FAFAFA",
+      "secondary": "#A1A1AA",
+      "muted": "#52525B",
+      "inverse": "#09090B"
+    },
+    "brand": {
+      "primary": "#6366F1",
+      "primary_foreground": "#FFFFFF",
+      "secondary": "#10B981",
+      "accent": "#06B6D4"
+    },
+    "semantic": {
+      "success": "#10B981",
+      "warning": "#F59E0B",
+      "error": "#EF4444",
+      "info": "#3B82F6",
+      "ai_insight": "#8B5CF6"
+    },
+    "gradients": {
+      "hero_glow": "radial-gradient(circle at center, rgba(99, 102, 241, 0.15) 0%, transparent 70%)",
+      "card_shimmer": "linear-gradient(110deg, #121214 8%, #1c1c1f 18%, #121214 33%)"
+    }
+  },
+  "layout_strategies": {
+    "dashboard_grid": {
+      "type": "Bento Grid - High Density (Mode B)",
+      "columns": "grid-cols-1 md:grid-cols-3 lg:grid-cols-4",
+      "gap": "gap-4",
+      "rules": [
+        "Use col-span-2 row-span-2 for primary charts.",
+        "Use col-span-1 for summary metrics.",
+        "Every pixel must be utilized. Use h-full on children."
+      ]
+    },
+    "landing_grid": {
+      "type": "Tetris Grid (Mode A)",
+      "columns": "grid-cols-1 md:grid-cols-12",
+      "gap": "gap-8",
+      "rules": [
+        "Asymmetry is key.",
+        "Hero visual: col-span-12 md:col-span-8.",
+        "Leave empty cells for breathing room."
+      ]
+    },
+    "spacing": {
+      "scale": "Generous (2-3x standard)",
+      "container_padding": "p-6 or p-8 for bordered containers"
+    }
+  },
+  "components": {
+    "cards": {
+      "style": "Grid Borders (Technical Look)",
+      "border": "border border-white/10",
+      "background": "bg-zinc-950/50",
+      "hover": "hover:border-indigo-500/30 transition-colors duration-300"
+    },
+    "buttons": {
+      "primary": "bg-indigo-600 hover:bg-indigo-500 text-white rounded-md px-6 py-2.5 font-medium transition-all shadow-[0_0_15px_rgba(99,102,241,0.3)]",
+      "secondary": "bg-zinc-800 hover:bg-zinc-700 text-white rounded-md px-6 py-2.5 font-medium border border-zinc-700",
+      "ghost": "text-zinc-400 hover:text-white hover:bg-white/5"
+    },
+    "inputs": {
+      "style": "bg-zinc-900 border-zinc-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-md text-sm"
+    },
+    "visual_enhancers": {
+      "tracing_beam": "Use for Pricing Tables and Key Feature cards.",
+      "glassmorphism": "Use for Sticky Header (backdrop-blur-xl, bg-black/50, border-b border-white/10).",
+      "noise_texture": "Overlay subtle noise on solid dark backgrounds to prevent banding."
+    }
+  },
+  "visual_assets": {
+    "icons": {
+      "library": "lucide-react",
+      "style": "Stroke width 1.5px (Thin/Elegant)",
+      "color": "text-zinc-400 group-hover:text-indigo-400"
+    },
+    "images": [
+      {
+        "category": "hero_background",
+        "url": "https://images.unsplash.com/photo-1772050138768-2107c6e62a03?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxNzV8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMGRpZ2l0YWwlMjBkYXRhJTIwZmxvdyUyMGRhcmslMjBiYWNrZ3JvdW5kfGVufDB8fHx8MTc3MjExODk1N3ww&ixlib=rb-4.1.0&q=85",
+        "description": "Abstract green light trails, implying high-speed data flow and revenue growth.",
+        "usage": "Hero section background with heavy overlay/gradient fade."
+      },
+      {
+        "category": "feature_abstract",
+        "url": "https://images.unsplash.com/photo-1762279388956-1c098163a2a8?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxNzV8MHwxfHNlYXJjaHwyfHxhYnN0cmFjdCUyMGRpZ2l0YWwlMjBkYXRhJTIwZmxvdyUyMGRhcmslMjBiYWNrZ3JvdW5kfGVufDB8fHx8MTc3MjExODk1N3ww&ixlib=rb-4.1.0&q=85",
+        "description": "Neon lines forming a digital landscape.",
+        "usage": "Background for 'How it Works' or 'Intelligence' section."
+      },
+      {
+        "category": "team_meeting",
+        "url": "https://images.unsplash.com/photo-1758518729685-f88df7890776?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2NDF8MHwxfHNlYXJjaHwzfHxtb2Rlcm4lMjBjb3Jwb3JhdGUlMjB0ZWFtJTIwc3RyYXRlZ3klMjBtZWV0aW5nfGVufDB8fHx8MTc3MjExODk1OHww&ixlib=rb-4.1.0&q=85",
+        "description": "Professional team in a meeting.",
+        "usage": "About Us or Team section."
+      },
+      {
+        "category": "data_visualization_3d",
+        "url": "https://images.unsplash.com/photo-1668854249302-4ab414ca4d57?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMzN8MHwxfHNlYXJjaHwzfHxmdXR1cmlzdGljJTIwZmluYW5jaWFsJTIwZ3Jvd3RoJTIwZ3JhcGglMjAzZHxlbnwwfHx8fDE3NzIxMTg5Njl8MA&ixlib=rb-4.1.0&q=85",
+        "description": "3D diagram abstract.",
+        "usage": "Feature card for 'Revenue Forecasting'."
+      }
+    ],
+    "3d_libraries": {
+      "primary": "Recharts (2D Charts)",
+      "decorative": "Framer Motion (for layout transitions)",
+      "instructions": "Use Recharts for all data. Style them with custom Tooltips (dark bg, border) and Gradients (AreaChart fill). Do not use heavy 3D libraries (Three.js) inside the dashboard to maintain performance."
+    }
+  },
+  "motion": {
+    "philosophy": "Micro-interactions over macro-animations.",
+    "definitions": {
+      "hover_lift": "hover:-translate-y-1 transition-transform duration-200",
+      "fade_in": "opacity-0 animate-in fade-in duration-500",
+      "slide_up": "translate-y-4 animate-in slide-in-from-bottom-4 fade-in duration-500",
+      "chart_grow": "Use Recharts animationDuration={1000}."
+    }
+  },
+  "accessibility": {
+    "contrast": "Ensure text-zinc-400 or lighter is used on dark backgrounds. Avoid text-zinc-600.",
+    "focus": "Visible ring-2 ring-indigo-500 on all interactive elements.",
+    "aria": "Charts must have description labels."
+  },
+  "instructions_to_main_agent": [
+    "Install 'lucide-react' for icons.",
+    "Install 'recharts' for data visualization.",
+    "Install 'framer-motion' for smooth layout transitions.",
+    "Use 'clsx' and 'tailwind-merge' for class handling (standard in shadcn).",
+    "For the Dashboard, use a Sidebar Layout (Left fixed nav, Right scrollable content).",
+    "For the Landing Page, use a Sticky Header + Single Page Scroll layout.",
+    "Implement a 'Pricing Optimizer' view that uses a slider or input to simulate pricing changes and updates charts in real-time.",
+    "Ensure 'Revenue Intelligence' charts use the defined semantic colors (Success for revenue, Accent for projections)."
+  ],
+  "universal_guidelines": [
+    "Avoid 'AI slop' aesthetic (generic centered layouts, uniform styling).",
+    "Do NOT use gradients for dark colors (muddy look).",
+    "Create depth with z-index and layered elements.",
+    "Glassmorphism needs backdrop-blur-xl (12-24px).",
+    "No 'transition: all'. Target specific properties.",
+    "No '.App { text-align: center }'.",
+    "Buttons should be pill-shaped or sharp, not default rounded-md (unless customized).",
+    "NEVER use emojis as icons.",
+    "Use 'sonner' for toasts.",
+    "Export components as named exports.",
+    "Export pages as default exports.",
+    "Use 'data-testid' on all interactive elements."
+  ]
+}
