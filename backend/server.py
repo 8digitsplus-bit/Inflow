@@ -566,7 +566,7 @@ async def create_checkout_session(
         raise HTTPException(status_code=500, detail=str(e))
 
 @api_router.get("/payments/status/{session_id}")
-async def get_payment_status(session_id: str, user: User = Depends(get_current_user)):
+async def get_payment_status(session_id: str, request: Request, user: User = Depends(get_current_user)):
     """Get payment status and update subscription"""
     try:
         from emergentintegrations.payments.stripe.checkout import StripeCheckout
@@ -575,8 +575,8 @@ async def get_payment_status(session_id: str, user: User = Depends(get_current_u
         if not api_key:
             raise HTTPException(status_code=500, detail="Payment service not configured")
         
-        host_url = "https://example.com"
-        stripe_checkout = StripeCheckout(api_key=api_key, webhook_url=f"{host_url}/webhook")
+        host_url = str(request.base_url).rstrip("/")
+        stripe_checkout = StripeCheckout(api_key=api_key, webhook_url=f"{host_url}/api/webhook/stripe")
         
         status = await stripe_checkout.get_checkout_status(session_id)
         
