@@ -666,7 +666,7 @@ async def get_subscription_plans():
 
 @api_router.get("/")
 async def root():
-    return {"message": "PriceIQ API", "version": "1.0.0"}
+    return {"message": "Vector API", "version": "1.0.0"}
 
 @api_router.get("/health")
 async def health_check():

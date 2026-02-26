@@ -58,7 +58,7 @@ const DashboardLayout = ({ children }) => {
                 <Zap className="w-5 h-5 text-white" />
               </div>
               <span className="font-semibold text-lg text-white" style={{ fontFamily: 'Outfit' }}>
-                PriceIQ
+                Vector
               </span>
             </Link>
           </div>
@@ -143,7 +143,7 @@ const DashboardLayout = ({ children }) => {
             <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center">
               <Zap className="w-4 h-4 text-white" />
             </div>
-            <span className="font-semibold text-white" style={{ fontFamily: 'Outfit' }}>PriceIQ</span>
+            <span className="font-semibold text-white" style={{ fontFamily: 'Outfit' }}>Vector</span>
           </div>
         </div>
 

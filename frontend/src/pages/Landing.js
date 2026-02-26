@@ -98,7 +98,7 @@ const Landing = () => {
               <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center">
                 <Zap className="w-5 h-5 text-white" />
               </div>
-              <span className="font-semibold text-lg text-white" style={{ fontFamily: 'Outfit' }}>PriceIQ</span>
+              <span className="font-semibold text-lg text-white" style={{ fontFamily: 'Outfit' }}>Vector</span>
             </div>
             
             <nav className="hidden md:flex items-center gap-8">
@@ -202,7 +202,7 @@ const Landing = () => {
                   ))}
                 </div>
                 <p className="text-sm text-zinc-400">
-                  <span className="text-white font-medium">500+</span> companies trust PriceIQ
+                  <span className="text-white font-medium">500+</span> companies trust Vector
                 </p>
               </div>
             </div>
@@ -387,7 +387,7 @@ const Landing = () => {
                 Ready to optimize your pricing?
               </h2>
               <p className="text-zinc-400 mb-8 max-w-xl mx-auto">
-                Join 500+ revenue teams using PriceIQ to close more deals and grow faster.
+                Join 500+ revenue teams using Vector to close more deals and grow faster.
               </p>
               <Button 
                 size="lg"
@@ -410,7 +410,7 @@ const Landing = () => {
               <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center">
                 <Zap className="w-5 h-5 text-white" />
               </div>
-              <span className="font-semibold text-white" style={{ fontFamily: 'Outfit' }}>PriceIQ</span>
+              <span className="font-semibold text-white" style={{ fontFamily: 'Outfit' }}>Vector</span>
             </div>
             
             <div className="flex items-center gap-8 text-sm text-zinc-400">
@@ -420,7 +420,7 @@ const Landing = () => {
             </div>
 
             <p className="text-sm text-zinc-500">
-              © 2026 PriceIQ. All rights reserved.
+              © 2026 Vector. All rights reserved.
             </p>
           </div>
         </div>
