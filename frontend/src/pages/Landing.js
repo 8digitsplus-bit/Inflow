@@ -9,15 +9,11 @@ import {
   ArrowRight, 
   Check, 
   Sparkles,
-  PieChart,
   DollarSign,
-  Users,
   ChevronRight,
   Menu,
   X,
-  LogIn,
-  Mail,
-  MessageSquare
+  LogIn
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 
@@ -169,9 +165,9 @@ const Landing = () => {
             : 'opacity-0 pointer-events-none'
         }`}
         style={{
-          background: 'rgba(9, 9, 11, 0.85)',
-          backdropFilter: 'blur(24px)',
-          WebkitBackdropFilter: 'blur(24px)'
+          background: 'rgba(9, 9, 11, 0.92)',
+          backdropFilter: 'blur(40px)',
+          WebkitBackdropFilter: 'blur(40px)'
         }}
       >
         {/* Close button */}
@@ -218,32 +214,16 @@ const Landing = () => {
               </span>
             </button>
 
-            <button
-              onClick={() => handleMenuClick('#contact')}
-              className={`group flex items-center gap-4 px-8 py-5 rounded-2xl transition-all duration-300 ${
-                menuOpen ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
-              }`}
-              style={{ transitionDelay: '200ms' }}
-              data-testid="menu-contact"
-            >
-              <div className="w-12 h-12 rounded-xl bg-cyan-500/20 flex items-center justify-center group-hover:bg-cyan-500/30 group-hover:scale-110 transition-all">
-                <Users className="w-6 h-6 text-cyan-400" />
-              </div>
-              <span className="text-2xl font-semibold text-zinc-300 group-hover:text-white transition-colors" style={{ fontFamily: 'Outfit' }}>
-                Contact
-              </span>
-            </button>
-
             <div className={`w-24 h-px bg-gradient-to-r from-transparent via-zinc-700 to-transparent my-4 transition-all duration-300 ${
               menuOpen ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-0'
-            }`} style={{ transitionDelay: '250ms' }} />
+            }`} style={{ transitionDelay: '200ms' }} />
             
             <button
               onClick={() => handleMenuClick('signin')}
               className={`group flex items-center gap-4 px-8 py-5 rounded-2xl transition-all duration-300 ${
                 menuOpen ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
               }`}
-              style={{ transitionDelay: '300ms' }}
+              style={{ transitionDelay: '250ms' }}
               data-testid="menu-signin"
             >
               <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center group-hover:bg-purple-500/30 group-hover:scale-110 transition-all">
@@ -258,7 +238,7 @@ const Landing = () => {
           {/* Get Started Button in Menu */}
           <div className={`mt-10 transition-all duration-300 ${
             menuOpen ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
-          }`} style={{ transitionDelay: '350ms' }}>
+          }`} style={{ transitionDelay: '300ms' }}>
             <Button 
               className="bg-indigo-600 hover:bg-indigo-500 text-white btn-glow px-8 py-6 text-lg"
               onClick={() => { setMenuOpen(false); handleGetStarted(); }}
@@ -580,49 +560,6 @@ const Landing = () => {
                 Start Your Free Trial <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Contact Section */}
-      <section id="contact" className="py-24 px-4 sm:px-6 lg:px-8 bg-zinc-950/50">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-12">
-            <span className="text-cyan-400 text-sm font-medium uppercase tracking-widest">Contact</span>
-            <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>
-              Get in touch
-            </h2>
-            <p className="mt-4 text-zinc-400">Have questions? We'd love to hear from you.</p>
-          </div>
-
-          <div className="grid md:grid-cols-2 gap-6">
-            <a 
-              href="mailto:hello@vector.com"
-              className="group p-8 bg-zinc-900/50 border border-white/10 rounded-xl hover:border-cyan-500/30 transition-all"
-            >
-              <div className="w-12 h-12 rounded-lg bg-cyan-500/10 flex items-center justify-center text-cyan-400 mb-4 group-hover:bg-cyan-500/20 transition-colors">
-                <Mail className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-semibold text-white mb-2" style={{ fontFamily: 'Outfit' }}>
-                Email Us
-              </h3>
-              <p className="text-zinc-400 text-sm">hello@vector.com</p>
-              <p className="text-zinc-500 text-xs mt-2">We'll respond within 24 hours</p>
-            </a>
-
-            <a 
-              href="#"
-              className="group p-8 bg-zinc-900/50 border border-white/10 rounded-xl hover:border-purple-500/30 transition-all"
-            >
-              <div className="w-12 h-12 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-400 mb-4 group-hover:bg-purple-500/20 transition-colors">
-                <MessageSquare className="w-6 h-6" />
-              </div>
-              <h3 className="text-lg font-semibold text-white mb-2" style={{ fontFamily: 'Outfit' }}>
-                Live Chat
-              </h3>
-              <p className="text-zinc-400 text-sm">Chat with our team</p>
-              <p className="text-zinc-500 text-xs mt-2">Available Mon-Fri, 9am-6pm EST</p>
-            </a>
           </div>
         </div>
       </section>
