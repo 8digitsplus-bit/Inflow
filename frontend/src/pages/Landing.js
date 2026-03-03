@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { 
@@ -14,20 +14,42 @@ import {
   Users,
   ChevronRight,
   Menu,
-  X
+  X,
+  LogIn
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 
 const Landing = () => {
   const navigate = useNavigate();
   const { login, isAuthenticated } = useAuth();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef(null);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const handleGetStarted = () => {
     if (isAuthenticated) {
       navigate('/dashboard');
     } else {
       login();
+    }
+  };
+
+  const handleMenuClick = (action) => {
+    setMenuOpen(false);
+    if (action === 'signin') {
+      handleGetStarted();
+    } else {
+      document.querySelector(action)?.scrollIntoView({ behavior: 'smooth' });
     }
   };
 
@@ -145,57 +167,77 @@ const Landing = () => {
               </div>
               <span className="font-semibold text-lg text-white" style={{ fontFamily: 'Outfit' }}>Vector</span>
             </div>
-            
-            <nav className="hidden md:flex items-center gap-8">
-              <a href="#features" className="text-zinc-400 hover:text-white transition-colors text-sm">Features</a>
-              <a href="#pricing" className="text-zinc-400 hover:text-white transition-colors text-sm">Pricing</a>
-              <a href="#testimonials" className="text-zinc-400 hover:text-white transition-colors text-sm">Testimonials</a>
-            </nav>
 
-            <div className="hidden md:flex items-center gap-4">
-              <Button 
-                variant="ghost" 
-                className="text-zinc-400 hover:text-white"
-                onClick={handleGetStarted}
-                data-testid="header-login-btn"
+            {/* Hamburger Menu */}
+            <div className="relative" ref={menuRef}>
+              <button 
+                className="flex items-center gap-2 px-3 py-2 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 transition-all"
+                onClick={() => setMenuOpen(!menuOpen)}
+                data-testid="hamburger-menu-btn"
               >
-                {isAuthenticated ? 'Dashboard' : 'Sign In'}
-              </Button>
-              <Button 
-                className="bg-indigo-600 hover:bg-indigo-500 text-white btn-glow"
-                onClick={handleGetStarted}
-                data-testid="header-cta-btn"
+                {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+                <span className="text-sm font-medium hidden sm:inline">Menu</span>
+              </button>
+
+              {/* Glassmorphism Dropdown */}
+              <div 
+                className={`absolute right-0 top-full mt-2 w-56 transition-all duration-300 ease-out transform origin-top-right ${
+                  menuOpen 
+                    ? 'opacity-100 scale-100 translate-y-0' 
+                    : 'opacity-0 scale-95 -translate-y-2 pointer-events-none'
+                }`}
               >
-                Get Started
-              </Button>
+                <div className="rounded-xl border border-white/10 overflow-hidden shadow-2xl"
+                  style={{
+                    background: 'rgba(15, 15, 18, 0.85)',
+                    backdropFilter: 'blur(20px)',
+                    WebkitBackdropFilter: 'blur(20px)'
+                  }}
+                >
+                  <div className="p-2">
+                    <button
+                      onClick={() => handleMenuClick('#features')}
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-zinc-300 hover:text-white hover:bg-white/10 transition-all group"
+                      data-testid="menu-features"
+                    >
+                      <Sparkles className="w-4 h-4 text-indigo-400 group-hover:text-indigo-300" />
+                      <span className="text-sm font-medium">Features</span>
+                    </button>
+                    
+                    <button
+                      onClick={() => handleMenuClick('#pricing')}
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-zinc-300 hover:text-white hover:bg-white/10 transition-all group"
+                      data-testid="menu-pricing"
+                    >
+                      <DollarSign className="w-4 h-4 text-emerald-400 group-hover:text-emerald-300" />
+                      <span className="text-sm font-medium">Pricing</span>
+                    </button>
+
+                    <div className="my-2 border-t border-white/10" />
+                    
+                    <button
+                      onClick={() => handleMenuClick('signin')}
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-zinc-300 hover:text-white hover:bg-indigo-500/20 transition-all group"
+                      data-testid="menu-signin"
+                    >
+                      <LogIn className="w-4 h-4 text-indigo-400 group-hover:text-indigo-300" />
+                      <span className="text-sm font-medium">{isAuthenticated ? 'Dashboard' : 'Sign In'}</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <button 
-              className="md:hidden text-zinc-400"
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              data-testid="mobile-menu-btn"
+            {/* Get Started Button (always visible) */}
+            <Button 
+              className="bg-indigo-600 hover:bg-indigo-500 text-white btn-glow hidden sm:flex"
+              onClick={handleGetStarted}
+              data-testid="header-cta-btn"
             >
-              {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
+              Get Started
+            </Button>
           </div>
         </div>
-
-        {/* Mobile menu */}
-        {mobileMenuOpen && (
-          <div className="md:hidden border-t border-white/10 bg-[#09090B]">
-            <div className="px-4 py-4 space-y-4">
-              <a href="#features" className="block text-zinc-400 hover:text-white">Features</a>
-              <a href="#pricing" className="block text-zinc-400 hover:text-white">Pricing</a>
-              <Button 
-                className="w-full bg-indigo-600 hover:bg-indigo-500"
-                onClick={handleGetStarted}
-                data-testid="mobile-cta-btn"
-              >
-                Get Started
-              </Button>
-            </div>
-          </div>
-        )}
       </header>
 
       {/* Hero Section */}
