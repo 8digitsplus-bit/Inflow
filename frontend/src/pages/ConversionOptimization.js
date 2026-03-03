@@ -62,7 +62,7 @@ const ConversionOptimization = () => {
   };
 
   const getAIRecommendations = async () => {
-    if (!['pro_monthly', 'pro_yearly', 'priority_monthly', 'priority_yearly'].includes(user?.subscription_tier)) {
+    if (!['pro_monthly', 'pro_yearly', 'enterprise_monthly', 'enterprise_yearly'].includes(user?.subscription_tier)) {
       toast.error('Upgrade to Pro for AI CRO recommendations');
       return;
     }
@@ -359,7 +359,7 @@ const ConversionOptimization = () => {
               <Sparkles className="w-5 h-5 text-purple-400" />
               AI Optimization Recommendations
             </CardTitle>
-            {['pro_monthly', 'pro_yearly', 'priority_monthly', 'priority_yearly'].includes(user?.subscription_tier) && (
+            {['pro_monthly', 'pro_yearly', 'enterprise_monthly', 'enterprise_yearly'].includes(user?.subscription_tier) && (
               <Button
                 onClick={getAIRecommendations}
                 disabled={loadingAI}
@@ -375,7 +375,7 @@ const ConversionOptimization = () => {
             )}
           </CardHeader>
           <CardContent>
-            {!['pro_monthly', 'pro_yearly', 'priority_monthly', 'priority_yearly'].includes(user?.subscription_tier) ? (
+            {!['pro_monthly', 'pro_yearly', 'enterprise_monthly', 'enterprise_yearly'].includes(user?.subscription_tier) ? (
               <div className="text-center py-8">
                 <Sparkles className="w-10 h-10 text-purple-400/50 mx-auto mb-3" />
                 <p className="text-zinc-400 text-sm mb-4">

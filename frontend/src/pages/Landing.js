@@ -67,7 +67,7 @@ const Landing = () => {
     monthly: [
       {
         name: 'Basic',
-        price: '$49',
+        price: '49',
         period: '/month',
         deals: '1,000 deals',
         features: ['1,000 deals/month', 'Basic analytics', 'Email support', 'Pipeline view', 'Churn alerts'],
@@ -77,7 +77,7 @@ const Landing = () => {
       },
       {
         name: 'Pro',
-        price: '$99',
+        price: '99',
         period: '/month',
         deals: '5,000 deals',
         features: ['5,000 deals/month', 'AI pricing insights', 'Priority support', 'Advanced analytics', 'Revenue forecasting', 'Churn prediction', 'CRO tools'],
@@ -86,49 +86,49 @@ const Landing = () => {
         planId: 'pro_monthly'
       },
       {
-        name: 'Priority',
-        price: '$179',
+        name: 'Enterprise',
+        price: '179',
         period: '/month',
         deals: '12,000 deals',
         features: ['12,000 deals/month', 'Everything in Pro', 'Dedicated account manager', 'Custom integrations', 'SLA guarantee', 'API access'],
         cta: 'Contact Sales',
         featured: false,
-        planId: 'priority_monthly'
+        planId: 'enterprise_monthly'
       }
     ],
     yearly: [
       {
         name: 'Basic',
-        price: '$490',
+        price: '490',
         period: '/year',
         deals: '2,500 deals',
-        features: ['2,500 deals/year', 'Basic analytics', 'Email support', 'Pipeline view', 'Churn alerts', '2 months free'],
+        features: ['2,500 deals/year', 'Basic analytics', 'Email support', 'Pipeline view', 'Churn alerts', '17% off first year'],
         cta: 'Get Started',
         featured: false,
         planId: 'basic_yearly',
-        savings: 'Save $98'
+        savings: 'Save $98 first year'
       },
       {
         name: 'Pro',
-        price: '$990',
+        price: '990',
         period: '/year',
         deals: '12,000 deals',
-        features: ['12,000 deals/year', 'AI pricing insights', 'Priority support', 'Advanced analytics', 'Revenue forecasting', 'Churn prediction', 'CRO tools', '2 months free'],
+        features: ['12,000 deals/year', 'AI pricing insights', 'Priority support', 'Advanced analytics', 'Revenue forecasting', 'Churn prediction', 'CRO tools', '17% off first year'],
         cta: 'Start Free Trial',
         featured: true,
         planId: 'pro_yearly',
-        savings: 'Save $198'
+        savings: 'Save $198 first year'
       },
       {
-        name: 'Priority',
-        price: '$1,799',
+        name: 'Enterprise',
+        price: '1,799',
         period: '/year',
         deals: '30,000 deals',
-        features: ['30,000 deals/year', 'Everything in Pro', 'Dedicated account manager', 'Custom integrations', 'SLA guarantee', 'API access', '2 months free'],
+        features: ['30,000 deals/year', 'Everything in Pro', 'Dedicated account manager', 'Custom integrations', 'SLA guarantee', 'API access', '17% off first year'],
         cta: 'Contact Sales',
         featured: false,
-        planId: 'priority_yearly',
-        savings: 'Save $349'
+        planId: 'enterprise_yearly',
+        savings: 'Save $349 first year'
       }
     ]
   };
@@ -402,9 +402,10 @@ const Landing = () => {
                 }`}
                 data-testid="billing-yearly-btn"
               >
-                Yearly <span className="text-emerald-400 ml-1">Save 17%</span>
+                Yearly <span className="text-emerald-400 ml-1">17% off*</span>
               </button>
             </div>
+            <p className="mt-2 text-xs text-zinc-500">*First year only, then regular price</p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
@@ -427,7 +428,7 @@ const Landing = () => {
                 )}
                 <h3 className="text-xl font-semibold text-white" style={{ fontFamily: 'Outfit' }}>{plan.name}</h3>
                 <div className="mt-4 flex items-baseline gap-1">
-                  <span className="text-4xl font-bold font-mono text-white">{plan.price}</span>
+                  <span className="text-4xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>${plan.price}</span>
                   <span className="text-zinc-400">{plan.period}</span>
                 </div>
                 <p className="mt-2 text-sm text-indigo-400">{plan.deals}</p>

@@ -56,7 +56,7 @@ const ChurnRetention = () => {
   };
 
   const getAIPrediction = async (deal) => {
-    if (!['pro_monthly', 'pro_yearly', 'priority_monthly', 'priority_yearly'].includes(user?.subscription_tier)) {
+    if (!['pro_monthly', 'pro_yearly', 'enterprise_monthly', 'enterprise_yearly'].includes(user?.subscription_tier)) {
       toast.error('Upgrade to Pro for AI churn predictions');
       return;
     }
@@ -318,7 +318,7 @@ const ChurnRetention = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              {!['pro_monthly', 'pro_yearly', 'priority_monthly', 'priority_yearly'].includes(user?.subscription_tier) ? (
+              {!['pro_monthly', 'pro_yearly', 'enterprise_monthly', 'enterprise_yearly'].includes(user?.subscription_tier) ? (
                 <div className="text-center py-8">
                   <Sparkles className="w-10 h-10 text-purple-400/50 mx-auto mb-3" />
                   <p className="text-zinc-400 text-sm mb-4">

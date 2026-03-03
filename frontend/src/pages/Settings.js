@@ -134,16 +134,24 @@ const Settings = () => {
     return parts[0].charAt(0).toUpperCase() + parts[0].slice(1) + (parts[1] ? ` (${parts[1]})` : '');
   };
 
+  const getTierColor = (tier) => {
+    if (!tier) return 'bg-zinc-700 text-zinc-300';
+    if (tier.includes('enterprise')) return 'bg-purple-500/20 text-purple-400';
+    if (tier.includes('pro')) return 'bg-indigo-500/20 text-indigo-400';
+    if (tier.includes('basic')) return 'bg-cyan-500/20 text-cyan-400';
+    return 'bg-zinc-700 text-zinc-300';
+  };
+
   const planConfig = {
     monthly: [
       { key: 'basic_monthly', name: 'Basic', price: 49, deals: '1,000' },
       { key: 'pro_monthly', name: 'Pro', price: 99, deals: '5,000', featured: true },
-      { key: 'priority_monthly', name: 'Priority', price: 179, deals: '12,000' }
+      { key: 'enterprise_monthly', name: 'Enterprise', price: 179, deals: '12,000' }
     ],
     yearly: [
       { key: 'basic_yearly', name: 'Basic', price: 490, deals: '2,500', savings: 98 },
       { key: 'pro_yearly', name: 'Pro', price: 990, deals: '12,000', featured: true, savings: 198 },
-      { key: 'priority_yearly', name: 'Priority', price: 1799, deals: '30,000', savings: 349 }
+      { key: 'enterprise_yearly', name: 'Enterprise', price: 1799, deals: '30,000', savings: 349 }
     ]
   };
 
@@ -186,12 +194,7 @@ const Settings = () => {
                 <h3 className="text-lg font-semibold text-white">{user?.name}</h3>
                 <p className="text-zinc-400">{user?.email}</p>
                 <div className="mt-2">
-                  <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${
-                    user?.subscription_tier?.includes('priority') ? 'bg-purple-500/20 text-purple-400' :
-                    user?.subscription_tier?.includes('pro') ? 'bg-indigo-500/20 text-indigo-400' :
-                    user?.subscription_tier?.includes('basic') ? 'bg-cyan-500/20 text-cyan-400' :
-                    'bg-zinc-700 text-zinc-300'
-                  }`}>
+                  <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${getTierColor(user?.subscription_tier)}`}>
                     <Sparkles className="w-3 h-3" />
                     {getTierDisplayName(user?.subscription_tier)} Plan
                   </span>
@@ -243,9 +246,10 @@ const Settings = () => {
                       : 'text-zinc-400 hover:text-white'
                   }`}
                 >
-                  Yearly <span className="text-emerald-400 ml-1">Save 17%</span>
+                  Yearly <span className="text-emerald-400 ml-1">17% off*</span>
                 </button>
               </div>
+              <p className="text-xs text-zinc-500 mt-2">*First year only, then regular price</p>
             </div>
 
             <div className="grid md:grid-cols-3 gap-4">
@@ -286,8 +290,8 @@ const Settings = () => {
                     </h3>
                     
                     <div className="mt-2 flex items-baseline gap-1">
-                      <span className="text-2xl font-bold font-mono text-white">
-                        ${plan.price}
+                      <span className="text-2xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>
+                        ${plan.price.toLocaleString()}
                       </span>
                       <span className="text-zinc-400 text-sm">
                         /{billingPeriod === 'monthly' ? 'mo' : 'yr'}
@@ -295,7 +299,7 @@ const Settings = () => {
                     </div>
 
                     {plan.savings && (
-                      <p className="text-emerald-400 text-xs mt-1">Save ${plan.savings}/year</p>
+                      <p className="text-emerald-400 text-xs mt-1">Save ${plan.savings} first year*</p>
                     )}
                     
                     <p className="text-indigo-400 text-sm mt-2">{plan.deals} deals</p>

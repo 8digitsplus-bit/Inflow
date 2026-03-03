@@ -500,7 +500,7 @@ SUBSCRIPTION_PLANS = {
         "name": "Basic",
         "period": "yearly",
         "deal_limit": 2500,
-        "features": ["2,500 deals/year", "Basic analytics", "Email support", "Pipeline view", "Churn alerts", "2 months free"]
+        "features": ["2,500 deals/year", "Basic analytics", "Email support", "Pipeline view", "Churn alerts", "17% off first year"]
     },
     "pro_monthly": {
         "price": 99.0,
@@ -514,21 +514,21 @@ SUBSCRIPTION_PLANS = {
         "name": "Pro",
         "period": "yearly",
         "deal_limit": 12000,
-        "features": ["12,000 deals/year", "AI pricing insights", "Priority support", "Advanced analytics", "Revenue forecasting", "Churn prediction", "CRO tools", "2 months free"]
+        "features": ["12,000 deals/year", "AI pricing insights", "Priority support", "Advanced analytics", "Revenue forecasting", "Churn prediction", "CRO tools", "17% off first year"]
     },
-    "priority_monthly": {
+    "enterprise_monthly": {
         "price": 179.0,
-        "name": "Priority",
+        "name": "Enterprise",
         "period": "monthly",
         "deal_limit": 12000,
         "features": ["12,000 deals/month", "Everything in Pro", "Dedicated account manager", "Custom integrations", "SLA guarantee", "API access", "Advanced churn analytics"]
     },
-    "priority_yearly": {
+    "enterprise_yearly": {
         "price": 1799.0,
-        "name": "Priority",
+        "name": "Enterprise",
         "period": "yearly",
         "deal_limit": 30000,
-        "features": ["30,000 deals/year", "Everything in Pro", "Dedicated account manager", "Custom integrations", "SLA guarantee", "API access", "Advanced churn analytics", "2 months free"]
+        "features": ["30,000 deals/year", "Everything in Pro", "Dedicated account manager", "Custom integrations", "SLA guarantee", "API access", "Advanced churn analytics", "17% off first year"]
     }
 }
 
@@ -539,8 +539,8 @@ def get_user_deal_limit(subscription_tier: str) -> int:
         "basic_yearly": 2500,
         "pro_monthly": 5000,
         "pro_yearly": 12000,
-        "priority_monthly": 12000,
-        "priority_yearly": 30000,
+        "enterprise_monthly": 12000,
+        "enterprise_yearly": 30000,
         "free": 50  # Legacy free tier limit
     }
     return limits.get(subscription_tier, 50)
