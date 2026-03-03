@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { 
@@ -15,7 +15,9 @@ import {
   ChevronRight,
   Menu,
   X,
-  LogIn
+  LogIn,
+  Mail,
+  MessageSquare
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 
@@ -23,18 +25,18 @@ const Landing = () => {
   const navigate = useNavigate();
   const { login, isAuthenticated } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef(null);
 
-  // Close menu when clicking outside
+  // Prevent body scroll when menu is open
   useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setMenuOpen(false);
-      }
+    if (menuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+    return () => {
+      document.body.style.overflow = 'unset';
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [menuOpen]);
 
   const handleGetStarted = () => {
     if (isAuthenticated) {
@@ -49,7 +51,9 @@ const Landing = () => {
     if (action === 'signin') {
       handleGetStarted();
     } else {
-      document.querySelector(action)?.scrollIntoView({ behavior: 'smooth' });
+      setTimeout(() => {
+        document.querySelector(action)?.scrollIntoView({ behavior: 'smooth' });
+      }, 300);
     }
   };
 
@@ -157,6 +161,114 @@ const Landing = () => {
 
   return (
     <div className="min-h-screen bg-[#09090B]">
+      {/* Full Screen Menu Overlay */}
+      <div 
+        className={`fixed inset-0 z-[60] transition-all duration-500 ease-out ${
+          menuOpen 
+            ? 'opacity-100 pointer-events-auto' 
+            : 'opacity-0 pointer-events-none'
+        }`}
+        style={{
+          background: 'rgba(9, 9, 11, 0.85)',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)'
+        }}
+      >
+        {/* Close button */}
+        <button 
+          className="absolute top-5 right-6 p-2 rounded-full text-zinc-400 hover:text-white hover:bg-white/10 transition-all"
+          onClick={() => setMenuOpen(false)}
+          data-testid="menu-close-btn"
+        >
+          <X className="w-6 h-6" />
+        </button>
+
+        {/* Menu Content */}
+        <div className="h-full flex flex-col items-center justify-center">
+          <nav className="flex flex-col items-center gap-2">
+            <button
+              onClick={() => handleMenuClick('#features')}
+              className={`group flex items-center gap-4 px-8 py-5 rounded-2xl transition-all duration-300 ${
+                menuOpen ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
+              }`}
+              style={{ transitionDelay: '100ms' }}
+              data-testid="menu-features"
+            >
+              <div className="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center group-hover:bg-indigo-500/30 group-hover:scale-110 transition-all">
+                <Sparkles className="w-6 h-6 text-indigo-400" />
+              </div>
+              <span className="text-2xl font-semibold text-zinc-300 group-hover:text-white transition-colors" style={{ fontFamily: 'Outfit' }}>
+                Features
+              </span>
+            </button>
+            
+            <button
+              onClick={() => handleMenuClick('#pricing')}
+              className={`group flex items-center gap-4 px-8 py-5 rounded-2xl transition-all duration-300 ${
+                menuOpen ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
+              }`}
+              style={{ transitionDelay: '150ms' }}
+              data-testid="menu-pricing"
+            >
+              <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center group-hover:bg-emerald-500/30 group-hover:scale-110 transition-all">
+                <DollarSign className="w-6 h-6 text-emerald-400" />
+              </div>
+              <span className="text-2xl font-semibold text-zinc-300 group-hover:text-white transition-colors" style={{ fontFamily: 'Outfit' }}>
+                Pricing
+              </span>
+            </button>
+
+            <button
+              onClick={() => handleMenuClick('#contact')}
+              className={`group flex items-center gap-4 px-8 py-5 rounded-2xl transition-all duration-300 ${
+                menuOpen ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
+              }`}
+              style={{ transitionDelay: '200ms' }}
+              data-testid="menu-contact"
+            >
+              <div className="w-12 h-12 rounded-xl bg-cyan-500/20 flex items-center justify-center group-hover:bg-cyan-500/30 group-hover:scale-110 transition-all">
+                <Users className="w-6 h-6 text-cyan-400" />
+              </div>
+              <span className="text-2xl font-semibold text-zinc-300 group-hover:text-white transition-colors" style={{ fontFamily: 'Outfit' }}>
+                Contact
+              </span>
+            </button>
+
+            <div className={`w-24 h-px bg-gradient-to-r from-transparent via-zinc-700 to-transparent my-4 transition-all duration-300 ${
+              menuOpen ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-0'
+            }`} style={{ transitionDelay: '250ms' }} />
+            
+            <button
+              onClick={() => handleMenuClick('signin')}
+              className={`group flex items-center gap-4 px-8 py-5 rounded-2xl transition-all duration-300 ${
+                menuOpen ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
+              }`}
+              style={{ transitionDelay: '300ms' }}
+              data-testid="menu-signin"
+            >
+              <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center group-hover:bg-purple-500/30 group-hover:scale-110 transition-all">
+                <LogIn className="w-6 h-6 text-purple-400" />
+              </div>
+              <span className="text-2xl font-semibold text-zinc-300 group-hover:text-white transition-colors" style={{ fontFamily: 'Outfit' }}>
+                {isAuthenticated ? 'Dashboard' : 'Sign In'}
+              </span>
+            </button>
+          </nav>
+
+          {/* Get Started Button in Menu */}
+          <div className={`mt-10 transition-all duration-300 ${
+            menuOpen ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
+          }`} style={{ transitionDelay: '350ms' }}>
+            <Button 
+              className="bg-indigo-600 hover:bg-indigo-500 text-white btn-glow px-8 py-6 text-lg"
+              onClick={() => { setMenuOpen(false); handleGetStarted(); }}
+            >
+              Get Started <ArrowRight className="w-5 h-5 ml-2" />
+            </Button>
+          </div>
+        </div>
+      </div>
+
       {/* Header */}
       <header className="fixed top-0 left-0 right-0 z-50 glass border-b border-white/10">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -168,65 +280,15 @@ const Landing = () => {
               <span className="font-semibold text-lg text-white" style={{ fontFamily: 'Outfit' }}>Vector</span>
             </div>
 
-            {/* Hamburger Menu */}
-            <div className="relative" ref={menuRef}>
-              <button 
-                className="flex items-center gap-2 px-3 py-2 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 transition-all"
-                onClick={() => setMenuOpen(!menuOpen)}
-                data-testid="hamburger-menu-btn"
-              >
-                {menuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-                <span className="text-sm font-medium hidden sm:inline">Menu</span>
-              </button>
-
-              {/* Glassmorphism Dropdown */}
-              <div 
-                className={`absolute right-0 top-full mt-2 w-56 transition-all duration-300 ease-out transform origin-top-right ${
-                  menuOpen 
-                    ? 'opacity-100 scale-100 translate-y-0' 
-                    : 'opacity-0 scale-95 -translate-y-2 pointer-events-none'
-                }`}
-              >
-                <div className="rounded-xl border border-white/10 overflow-hidden shadow-2xl"
-                  style={{
-                    background: 'rgba(15, 15, 18, 0.85)',
-                    backdropFilter: 'blur(20px)',
-                    WebkitBackdropFilter: 'blur(20px)'
-                  }}
-                >
-                  <div className="p-2">
-                    <button
-                      onClick={() => handleMenuClick('#features')}
-                      className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-zinc-300 hover:text-white hover:bg-white/10 transition-all group"
-                      data-testid="menu-features"
-                    >
-                      <Sparkles className="w-4 h-4 text-indigo-400 group-hover:text-indigo-300" />
-                      <span className="text-sm font-medium">Features</span>
-                    </button>
-                    
-                    <button
-                      onClick={() => handleMenuClick('#pricing')}
-                      className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-zinc-300 hover:text-white hover:bg-white/10 transition-all group"
-                      data-testid="menu-pricing"
-                    >
-                      <DollarSign className="w-4 h-4 text-emerald-400 group-hover:text-emerald-300" />
-                      <span className="text-sm font-medium">Pricing</span>
-                    </button>
-
-                    <div className="my-2 border-t border-white/10" />
-                    
-                    <button
-                      onClick={() => handleMenuClick('signin')}
-                      className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-zinc-300 hover:text-white hover:bg-indigo-500/20 transition-all group"
-                      data-testid="menu-signin"
-                    >
-                      <LogIn className="w-4 h-4 text-indigo-400 group-hover:text-indigo-300" />
-                      <span className="text-sm font-medium">{isAuthenticated ? 'Dashboard' : 'Sign In'}</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
+            {/* Hamburger Menu Button */}
+            <button 
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 transition-all"
+              onClick={() => setMenuOpen(!menuOpen)}
+              data-testid="hamburger-menu-btn"
+            >
+              <Menu className="w-5 h-5" />
+              <span className="text-sm font-medium hidden sm:inline">Menu</span>
+            </button>
 
             {/* Get Started Button (always visible) */}
             <Button 
@@ -518,6 +580,49 @@ const Landing = () => {
                 Start Your Free Trial <ArrowRight className="ml-2 w-5 h-5" />
               </Button>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Contact Section */}
+      <section id="contact" className="py-24 px-4 sm:px-6 lg:px-8 bg-zinc-950/50">
+        <div className="max-w-4xl mx-auto">
+          <div className="text-center mb-12">
+            <span className="text-cyan-400 text-sm font-medium uppercase tracking-widest">Contact</span>
+            <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>
+              Get in touch
+            </h2>
+            <p className="mt-4 text-zinc-400">Have questions? We'd love to hear from you.</p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6">
+            <a 
+              href="mailto:hello@vector.com"
+              className="group p-8 bg-zinc-900/50 border border-white/10 rounded-xl hover:border-cyan-500/30 transition-all"
+            >
+              <div className="w-12 h-12 rounded-lg bg-cyan-500/10 flex items-center justify-center text-cyan-400 mb-4 group-hover:bg-cyan-500/20 transition-colors">
+                <Mail className="w-6 h-6" />
+              </div>
+              <h3 className="text-lg font-semibold text-white mb-2" style={{ fontFamily: 'Outfit' }}>
+                Email Us
+              </h3>
+              <p className="text-zinc-400 text-sm">hello@vector.com</p>
+              <p className="text-zinc-500 text-xs mt-2">We'll respond within 24 hours</p>
+            </a>
+
+            <a 
+              href="#"
+              className="group p-8 bg-zinc-900/50 border border-white/10 rounded-xl hover:border-purple-500/30 transition-all"
+            >
+              <div className="w-12 h-12 rounded-lg bg-purple-500/10 flex items-center justify-center text-purple-400 mb-4 group-hover:bg-purple-500/20 transition-colors">
+                <MessageSquare className="w-6 h-6" />
+              </div>
+              <h3 className="text-lg font-semibold text-white mb-2" style={{ fontFamily: 'Outfit' }}>
+                Live Chat
+              </h3>
+              <p className="text-zinc-400 text-sm">Chat with our team</p>
+              <p className="text-zinc-500 text-xs mt-2">Available Mon-Fri, 9am-6pm EST</p>
+            </a>
           </div>
         </div>
       </section>
