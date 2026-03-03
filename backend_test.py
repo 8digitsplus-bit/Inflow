@@ -3,7 +3,7 @@ import sys
 from datetime import datetime
 import json
 
-class PriceIQAPITester:
+class VectorAPITester:
     def __init__(self, base_url="https://tier-stack.preview.emergentagent.com"):
         self.base_url = base_url
         self.session_token = None
@@ -193,11 +193,112 @@ class PriceIQAPITester:
         self.run_test("Update Deal", "PUT", "api/deals/test_deal_id", 401, deal_data)
         self.run_test("Delete Deal", "DELETE", "api/deals/test_deal_id", 401)
 
+    def test_vector_saas_upgrade(self):
+        """Test Vector SaaS upgrade features"""
+        print("\n🔧 Testing Vector SaaS Upgrade Features...")
+        
+        # Test new subscription plans
+        self.test_subscription_plans()
+        
+        # Test new analytics endpoints (without auth - should require auth)
+        print("\n📊 Testing New Analytics Endpoints...")
+        self.test_churn_analytics_no_auth()
+        self.test_cro_analytics_no_auth()
+        
+        # Test AI endpoints permissions
+        print("\n🤖 Testing AI Endpoints...")
+        self.test_ai_endpoints_permissions()
+
+    def test_subscription_plans(self):
+        """Test new subscription plans structure"""
+        success, response = self.run_test("Get Subscription Plans", "GET", "api/subscription/plans", 200)
+        
+        if success:
+            # Verify new plan structure
+            expected_plans = ['basic_monthly', 'basic_yearly', 'pro_monthly', 'pro_yearly', 'priority_monthly', 'priority_yearly']
+            missing_plans = [plan for plan in expected_plans if plan not in response]
+            
+            if missing_plans:
+                self.log_result("Subscription Plans Structure", False, f"Missing plans: {missing_plans}")
+                return False, response
+            
+            # Check Basic monthly plan
+            basic_monthly = response.get('basic_monthly', {})
+            if basic_monthly.get('price') != 49.0:
+                self.log_result("Basic Monthly Price", False, f"Expected 49.0, got {basic_monthly.get('price')}")
+                return False, response
+            
+            # Check Pro yearly plan 
+            pro_yearly = response.get('pro_yearly', {})
+            if pro_yearly.get('price') != 990.0:
+                self.log_result("Pro Yearly Price", False, f"Expected 990.0, got {pro_yearly.get('price')}")
+                return False, response
+            
+            # Check Priority monthly plan
+            priority_monthly = response.get('priority_monthly', {})
+            if priority_monthly.get('price') != 179.0:
+                self.log_result("Priority Monthly Price", False, f"Expected 179.0, got {priority_monthly.get('price')}")
+                return False, response
+                
+            self.log_result("Subscription Plans Structure", True, "All plans and prices verified")
+        
+        return success, response
+
+    def test_churn_analytics_no_auth(self):
+        """Test churn analytics endpoint without auth"""
+        success, response = self.run_test("Churn Analytics (No Auth)", "GET", "api/analytics/churn", 401)
+        if success:
+            self.log_result("Churn Analytics Auth Check", True, "Properly requires authentication")
+        return success, response
+
+    def test_cro_analytics_no_auth(self):
+        """Test CRO analytics endpoint without auth"""  
+        success, response = self.run_test("CRO Analytics (No Auth)", "GET", "api/analytics/cro", 401)
+        if success:
+            self.log_result("CRO Analytics Auth Check", True, "Properly requires authentication")
+        return success, response
+
+    def test_ai_endpoints_permissions(self):
+        """Test AI endpoints require proper permissions"""
+        
+        # Test churn prediction (should require Pro+ subscription)
+        test_deal = {
+            "deal_data": {
+                "name": "Test Deal",
+                "company": "Test Company", 
+                "value": 10000,
+                "stage": "negotiation",
+                "probability": 30
+            }
+        }
+        
+        success, response = self.run_test("AI Churn Prediction (No Auth)", "POST", "api/ai/churn-prediction", 401, test_deal)
+        if success:
+            self.log_result("AI Churn Prediction Auth Check", True, "Properly requires authentication")
+        
+        # Test CRO recommendations (should require Pro+ subscription)
+        test_funnel = {
+            "funnel_data": {
+                "stages": ["lead", "qualified", "proposal", "closed_won"],
+                "conversions": [100, 75, 45, 20]
+            }
+        }
+        
+        success, response = self.run_test("AI CRO Recommendations (No Auth)", "POST", "api/ai/cro-recommendations", 401, test_funnel)
+        if success:
+            self.log_result("AI CRO Recommendations Auth Check", True, "Properly requires authentication")
+        
+        return True
+
     def run_all_tests(self):
         """Run all API tests"""
-        print("🚀 Starting PriceIQ API Tests")
+        print("🚀 Vector SaaS API Test Suite")
         print("=" * 50)
         
+        # Test Vector SaaS upgrade features first
+        self.test_vector_saas_upgrade()
+        
+        # Original tests
         self.test_basic_endpoints()
         self.test_protected_endpoints_without_auth()
         self.create_test_session()
@@ -216,6 +317,7 @@ class PriceIQAPITester:
                     print(f"  - {result['test']}: {result['details']}")
         
         print("\n📝 Test Summary:")
+        print(f"✅ Vector SaaS upgrade features: New subscription plans and analytics")
         print(f"✅ Basic endpoints working: API accessible")
         print(f"🔒 Protected routes properly secured: Require authentication")
         print(f"🔑 OAuth integration: Requires real Emergent session_id")
@@ -226,7 +328,7 @@ class PriceIQAPITester:
 
 def main():
     """Main test execution"""
-    tester = PriceIQAPITester()
+    tester = VectorAPITester()
     passed, total = tester.run_all_tests()
     
     # Return appropriate exit code

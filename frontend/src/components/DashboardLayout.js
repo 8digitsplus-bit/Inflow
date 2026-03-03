@@ -11,7 +11,9 @@ import {
   Menu,
   X,
   Zap,
-  ChevronRight
+  ChevronRight,
+  Users,
+  TrendingUp
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
@@ -22,6 +24,8 @@ const navigation = [
   { name: 'Sales Pipeline', href: '/pipeline', icon: Target },
   { name: 'Pricing Optimizer', href: '/pricing', icon: DollarSign },
   { name: 'Revenue Intelligence', href: '/revenue', icon: BarChart3 },
+  { name: 'Churn & Retention', href: '/churn', icon: Users },
+  { name: 'CRO', href: '/cro', icon: TrendingUp },
   { name: 'Settings', href: '/settings', icon: Settings },
 ];
 

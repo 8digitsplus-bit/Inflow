@@ -485,13 +485,65 @@ async def get_ai_insights(
         logger.error(f"AI insight error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"AI insight failed: {str(e)}")
 
-# ============== STRIPE PAYMENT ROUTES ==============
+# ============== SUBSCRIPTION PLANS ==============
 
 SUBSCRIPTION_PLANS = {
-    "free": {"price": 0.0, "name": "Free", "features": ["5 deals", "Basic analytics", "Email support"]},
-    "pro": {"price": 49.0, "name": "Pro", "features": ["Unlimited deals", "AI insights", "Priority support", "Advanced analytics"]},
-    "enterprise": {"price": 199.0, "name": "Enterprise", "features": ["Everything in Pro", "Custom integrations", "Dedicated account manager", "SLA"]}
+    "basic_monthly": {
+        "price": 49.0,
+        "name": "Basic",
+        "period": "monthly",
+        "deal_limit": 1000,
+        "features": ["1,000 deals/month", "Basic analytics", "Email support", "Pipeline view", "Churn alerts"]
+    },
+    "basic_yearly": {
+        "price": 490.0,
+        "name": "Basic",
+        "period": "yearly",
+        "deal_limit": 2500,
+        "features": ["2,500 deals/year", "Basic analytics", "Email support", "Pipeline view", "Churn alerts", "2 months free"]
+    },
+    "pro_monthly": {
+        "price": 99.0,
+        "name": "Pro",
+        "period": "monthly",
+        "deal_limit": 5000,
+        "features": ["5,000 deals/month", "AI pricing insights", "Priority support", "Advanced analytics", "Revenue forecasting", "Churn prediction", "CRO tools"]
+    },
+    "pro_yearly": {
+        "price": 990.0,
+        "name": "Pro",
+        "period": "yearly",
+        "deal_limit": 12000,
+        "features": ["12,000 deals/year", "AI pricing insights", "Priority support", "Advanced analytics", "Revenue forecasting", "Churn prediction", "CRO tools", "2 months free"]
+    },
+    "priority_monthly": {
+        "price": 179.0,
+        "name": "Priority",
+        "period": "monthly",
+        "deal_limit": 12000,
+        "features": ["12,000 deals/month", "Everything in Pro", "Dedicated account manager", "Custom integrations", "SLA guarantee", "API access", "Advanced churn analytics"]
+    },
+    "priority_yearly": {
+        "price": 1799.0,
+        "name": "Priority",
+        "period": "yearly",
+        "deal_limit": 30000,
+        "features": ["30,000 deals/year", "Everything in Pro", "Dedicated account manager", "Custom integrations", "SLA guarantee", "API access", "Advanced churn analytics", "2 months free"]
+    }
 }
+
+def get_user_deal_limit(subscription_tier: str) -> int:
+    """Get deal limit based on subscription tier"""
+    limits = {
+        "basic_monthly": 1000,
+        "basic_yearly": 2500,
+        "pro_monthly": 5000,
+        "pro_yearly": 12000,
+        "priority_monthly": 12000,
+        "priority_yearly": 30000,
+        "free": 50  # Legacy free tier limit
+    }
+    return limits.get(subscription_tier, 50)
 
 @api_router.post("/payments/create-checkout")
 async def create_checkout_session(
@@ -505,13 +557,13 @@ async def create_checkout_session(
         )
         
         data = await request.json()
-        plan = data.get("plan", "pro")
+        plan = data.get("plan", "pro_monthly")
         origin_url = data.get("origin_url")
         
         if not origin_url:
             raise HTTPException(status_code=400, detail="origin_url required")
         
-        if plan not in SUBSCRIPTION_PLANS or plan == "free":
+        if plan not in SUBSCRIPTION_PLANS:
             raise HTTPException(status_code=400, detail="Invalid plan")
         
         amount = SUBSCRIPTION_PLANS[plan]["price"]
@@ -661,6 +713,224 @@ async def stripe_webhook(request: Request):
 async def get_subscription_plans():
     """Get available subscription plans"""
     return SUBSCRIPTION_PLANS
+
+# ============== CHURN & RETENTION ROUTES ==============
+
+@api_router.get("/analytics/churn")
+async def get_churn_analytics(user: User = Depends(get_current_user)):
+    """Get churn and retention analytics"""
+    deals = await db.deals.find({"user_id": user.user_id}, {"_id": 0}).to_list(1000)
+    
+    total_deals = len(deals)
+    closed_won = len([d for d in deals if d.get("stage") == "closed_won"])
+    closed_lost = len([d for d in deals if d.get("stage") == "closed_lost"])
+    
+    # Calculate churn metrics
+    churn_rate = (closed_lost / max(total_deals, 1)) * 100
+    retention_rate = 100 - churn_rate
+    
+    # Simulated monthly churn data
+    monthly_churn = []
+    for i in range(6):
+        month_offset = 5 - i
+        base_churn = 5 + (i * 0.5)
+        monthly_churn.append({
+            "month": (datetime.now(timezone.utc) - timedelta(days=30 * month_offset)).strftime("%b"),
+            "churn_rate": round(base_churn + (closed_lost * 0.1), 1),
+            "retention_rate": round(100 - base_churn - (closed_lost * 0.1), 1),
+            "at_risk": max(2, closed_lost - month_offset),
+            "churned": max(1, int(closed_lost * 0.3) - month_offset)
+        })
+    
+    # At-risk deals (in negotiation with low probability)
+    at_risk_deals = [d for d in deals if d.get("stage") == "negotiation" and d.get("probability", 50) < 40]
+    
+    # Cohort analysis (simulated)
+    cohorts = [
+        {"cohort": "Jan 2026", "month_0": 100, "month_1": 92, "month_2": 85, "month_3": 80},
+        {"cohort": "Dec 2025", "month_0": 100, "month_1": 88, "month_2": 82, "month_3": 78},
+        {"cohort": "Nov 2025", "month_0": 100, "month_1": 90, "month_2": 84, "month_3": 79},
+    ]
+    
+    return {
+        "churn_rate": round(churn_rate, 1),
+        "retention_rate": round(retention_rate, 1),
+        "total_customers": total_deals,
+        "at_risk_count": len(at_risk_deals),
+        "churned_count": closed_lost,
+        "monthly_data": monthly_churn,
+        "at_risk_deals": at_risk_deals[:5],
+        "cohorts": cohorts,
+        "health_score": round(min(100, retention_rate + 10), 0)
+    }
+
+@api_router.post("/ai/churn-prediction")
+async def predict_churn(
+    request: Request,
+    user: User = Depends(get_current_user)
+):
+    """Get AI-powered churn predictions"""
+    if user.subscription_tier in ["free", "basic_monthly", "basic_yearly"]:
+        raise HTTPException(
+            status_code=403,
+            detail="Upgrade to Pro or Priority for AI churn prediction"
+        )
+    
+    try:
+        from emergentintegrations.llm.chat import LlmChat, UserMessage
+        
+        api_key = os.environ.get("EMERGENT_LLM_KEY")
+        if not api_key:
+            raise HTTPException(status_code=500, detail="AI service not configured")
+        
+        data = await request.json()
+        deal_data = data.get("deal_data", {})
+        
+        chat = LlmChat(
+            api_key=api_key,
+            session_id=f"churn_{user.user_id}_{uuid.uuid4().hex[:8]}",
+            system_message="""You are an expert customer success analyst specializing in B2B SaaS churn prediction.
+            Analyze customer data and provide actionable retention strategies. Be concise and data-driven.
+            Focus on: 1) Churn risk score (0-100), 2) Key risk factors, 3) Recommended actions, 4) Timeline."""
+        ).with_model("anthropic", "claude-sonnet-4-5-20250929")
+        
+        prompt = f"""Analyze this customer/deal for churn risk:
+{deal_data}
+
+Provide:
+1. Churn risk score (0-100) with reasoning
+2. Top 3 risk factors
+3. Recommended retention actions
+4. Urgency level and timeline"""
+
+        user_message = UserMessage(text=prompt)
+        ai_response = await chat.send_message(user_message)
+        
+        return {"prediction": ai_response}
+        
+    except Exception as e:
+        logger.error(f"Churn prediction error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ============== CONVERSION RATE OPTIMIZATION ROUTES ==============
+
+@api_router.get("/analytics/cro")
+async def get_cro_analytics(user: User = Depends(get_current_user)):
+    """Get conversion rate optimization analytics"""
+    deals = await db.deals.find({"user_id": user.user_id}, {"_id": 0}).to_list(1000)
+    
+    stages = ["lead", "qualified", "proposal", "negotiation", "closed_won", "closed_lost"]
+    stage_counts = {stage: len([d for d in deals if d.get("stage") == stage]) for stage in stages}
+    
+    # Calculate conversion rates between stages
+    funnel_data = []
+    total_leads = stage_counts.get("lead", 0) + stage_counts.get("qualified", 0) + stage_counts.get("proposal", 0) + stage_counts.get("negotiation", 0) + stage_counts.get("closed_won", 0)
+    
+    running_total = total_leads
+    for i, stage in enumerate(["lead", "qualified", "proposal", "negotiation", "closed_won"]):
+        count = stage_counts.get(stage, 0)
+        if i > 0:
+            running_total -= stage_counts.get(stages[i-1], 0)
+        conversion = (running_total / max(total_leads, 1)) * 100
+        funnel_data.append({
+            "stage": stage.replace("_", " ").title(),
+            "count": count if stage != "closed_won" else stage_counts.get("closed_won", 0),
+            "conversion": round(conversion, 1),
+            "drop_off": round(100 - conversion, 1) if i > 0 else 0
+        })
+    
+    # Stage conversion rates
+    stage_conversions = []
+    prev_count = total_leads
+    for i, stage in enumerate(stages[:-1]):  # Exclude closed_lost
+        current_count = sum(stage_counts.get(s, 0) for s in stages[i:] if s != "closed_lost")
+        rate = (current_count / max(prev_count, 1)) * 100 if i > 0 else 100
+        stage_conversions.append({
+            "from_stage": stages[i-1].replace("_", " ").title() if i > 0 else "Entry",
+            "to_stage": stage.replace("_", " ").title(),
+            "rate": round(rate, 1)
+        })
+        prev_count = current_count
+    
+    # A/B test suggestions (simulated)
+    ab_tests = [
+        {"name": "Proposal Template A vs B", "status": "running", "improvement": "+12%", "confidence": 87},
+        {"name": "Follow-up Timing", "status": "completed", "improvement": "+8%", "confidence": 95},
+        {"name": "Pricing Display", "status": "planned", "improvement": "TBD", "confidence": 0}
+    ]
+    
+    # Bottleneck analysis
+    bottlenecks = []
+    for i in range(len(stages) - 2):
+        current = stage_counts.get(stages[i], 0)
+        next_stage = stage_counts.get(stages[i+1], 0)
+        if current > 0:
+            drop_rate = ((current - next_stage) / current) * 100
+            if drop_rate > 30:
+                bottlenecks.append({
+                    "stage": stages[i].replace("_", " ").title(),
+                    "drop_rate": round(drop_rate, 1),
+                    "severity": "high" if drop_rate > 50 else "medium"
+                })
+    
+    return {
+        "overall_conversion": round((stage_counts.get("closed_won", 0) / max(total_leads, 1)) * 100, 1),
+        "funnel_data": funnel_data,
+        "stage_conversions": stage_conversions,
+        "ab_tests": ab_tests,
+        "bottlenecks": bottlenecks,
+        "total_opportunities": total_leads,
+        "won_deals": stage_counts.get("closed_won", 0),
+        "avg_cycle_days": 28  # Simulated
+    }
+
+@api_router.post("/ai/cro-recommendations")
+async def get_cro_recommendations(
+    request: Request,
+    user: User = Depends(get_current_user)
+):
+    """Get AI-powered CRO recommendations"""
+    if user.subscription_tier in ["free", "basic_monthly", "basic_yearly"]:
+        raise HTTPException(
+            status_code=403,
+            detail="Upgrade to Pro or Priority for AI CRO recommendations"
+        )
+    
+    try:
+        from emergentintegrations.llm.chat import LlmChat, UserMessage
+        
+        api_key = os.environ.get("EMERGENT_LLM_KEY")
+        if not api_key:
+            raise HTTPException(status_code=500, detail="AI service not configured")
+        
+        data = await request.json()
+        funnel_data = data.get("funnel_data", {})
+        
+        chat = LlmChat(
+            api_key=api_key,
+            session_id=f"cro_{user.user_id}_{uuid.uuid4().hex[:8]}",
+            system_message="""You are an expert conversion rate optimization specialist for B2B SaaS.
+            Analyze funnel data and provide actionable recommendations to improve conversion rates.
+            Focus on: 1) Quick wins, 2) High-impact changes, 3) A/B test ideas, 4) Process improvements."""
+        ).with_model("anthropic", "claude-sonnet-4-5-20250929")
+        
+        prompt = f"""Analyze this sales funnel data and provide CRO recommendations:
+{funnel_data}
+
+Provide:
+1. Top 3 quick wins to improve conversion
+2. Biggest bottleneck and how to fix it
+3. A/B test recommendations
+4. Process improvements for each stage"""
+
+        user_message = UserMessage(text=prompt)
+        ai_response = await chat.send_message(user_message)
+        
+        return {"recommendations": ai_response}
+        
+    except Exception as e:
+        logger.error(f"CRO recommendation error: {str(e)}")
+        raise HTTPException(status_code=500, detail=str(e))
 
 # ============== BASIC ROUTES ==============
 

@@ -5,6 +5,8 @@ import Dashboard from './pages/Dashboard';
 import Pipeline from './pages/Pipeline';
 import PricingOptimizer from './pages/PricingOptimizer';
 import RevenueIntelligence from './pages/RevenueIntelligence';
+import ChurnRetention from './pages/ChurnRetention';
+import ConversionOptimization from './pages/ConversionOptimization';
 import Settings from './pages/Settings';
 import AuthCallback from './pages/AuthCallback';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -52,6 +54,22 @@ const AppRouter = () => {
         element={
           <ProtectedRoute>
             <RevenueIntelligence />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/churn" 
+        element={
+          <ProtectedRoute>
+            <ChurnRetention />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/cro" 
+        element={
+          <ProtectedRoute>
+            <ConversionOptimization />
           </ProtectedRoute>
         } 
       />

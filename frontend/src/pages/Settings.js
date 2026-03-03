@@ -25,6 +25,7 @@ const Settings = () => {
   const [plans, setPlans] = useState({});
   const [processingPayment, setProcessingPayment] = useState(false);
   const [checkingStatus, setCheckingStatus] = useState(false);
+  const [billingPeriod, setBillingPeriod] = useState('monthly');
 
   useEffect(() => {
     fetchPlans();
@@ -92,8 +93,8 @@ const Settings = () => {
     }
   };
 
-  const handleUpgrade = async (plan) => {
-    if (plan === 'free' || plan === user?.subscription_tier) return;
+  const handleUpgrade = async (planId) => {
+    if (planId === user?.subscription_tier) return;
     
     setProcessingPayment(true);
     try {
@@ -102,7 +103,7 @@ const Settings = () => {
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
-          plan,
+          plan: planId,
           origin_url: window.location.origin
         })
       });
@@ -127,7 +128,24 @@ const Settings = () => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
-  const planOrder = ['free', 'pro', 'enterprise'];
+  const getTierDisplayName = (tier) => {
+    if (!tier) return 'Free';
+    const parts = tier.split('_');
+    return parts[0].charAt(0).toUpperCase() + parts[0].slice(1) + (parts[1] ? ` (${parts[1]})` : '');
+  };
+
+  const planConfig = {
+    monthly: [
+      { key: 'basic_monthly', name: 'Basic', price: 49, deals: '1,000' },
+      { key: 'pro_monthly', name: 'Pro', price: 99, deals: '5,000', featured: true },
+      { key: 'priority_monthly', name: 'Priority', price: 179, deals: '12,000' }
+    ],
+    yearly: [
+      { key: 'basic_yearly', name: 'Basic', price: 490, deals: '2,500', savings: 98 },
+      { key: 'pro_yearly', name: 'Pro', price: 990, deals: '12,000', featured: true, savings: 198 },
+      { key: 'priority_yearly', name: 'Priority', price: 1799, deals: '30,000', savings: 349 }
+    ]
+  };
 
   return (
     <DashboardLayout>
@@ -169,12 +187,13 @@ const Settings = () => {
                 <p className="text-zinc-400">{user?.email}</p>
                 <div className="mt-2">
                   <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${
-                    user?.subscription_tier === 'enterprise' ? 'bg-purple-500/20 text-purple-400' :
-                    user?.subscription_tier === 'pro' ? 'bg-indigo-500/20 text-indigo-400' :
+                    user?.subscription_tier?.includes('priority') ? 'bg-purple-500/20 text-purple-400' :
+                    user?.subscription_tier?.includes('pro') ? 'bg-indigo-500/20 text-indigo-400' :
+                    user?.subscription_tier?.includes('basic') ? 'bg-cyan-500/20 text-cyan-400' :
                     'bg-zinc-700 text-zinc-300'
                   }`}>
                     <Sparkles className="w-3 h-3" />
-                    {user?.subscription_tier?.charAt(0).toUpperCase() + user?.subscription_tier?.slice(1)} Plan
+                    {getTierDisplayName(user?.subscription_tier)} Plan
                   </span>
                 </div>
               </div>
@@ -203,27 +222,50 @@ const Settings = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
+            {/* Billing Toggle */}
+            <div className="mb-6 flex justify-center">
+              <div className="inline-flex items-center p-1 bg-zinc-900 rounded-lg border border-zinc-800">
+                <button
+                  onClick={() => setBillingPeriod('monthly')}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                    billingPeriod === 'monthly' 
+                      ? 'bg-indigo-600 text-white' 
+                      : 'text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  Monthly
+                </button>
+                <button
+                  onClick={() => setBillingPeriod('yearly')}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                    billingPeriod === 'yearly' 
+                      ? 'bg-indigo-600 text-white' 
+                      : 'text-zinc-400 hover:text-white'
+                  }`}
+                >
+                  Yearly <span className="text-emerald-400 ml-1">Save 17%</span>
+                </button>
+              </div>
+            </div>
+
             <div className="grid md:grid-cols-3 gap-4">
-              {planOrder.map((planKey) => {
-                const plan = plans[planKey];
-                if (!plan) return null;
-                
-                const isCurrentPlan = user?.subscription_tier === planKey;
-                const isPro = planKey === 'pro';
+              {planConfig[billingPeriod].map((plan) => {
+                const planData = plans[plan.key];
+                const isCurrentPlan = user?.subscription_tier === plan.key;
                 
                 return (
                   <div 
-                    key={planKey}
+                    key={plan.key}
                     className={`relative p-5 rounded-xl border transition-all ${
                       isCurrentPlan 
                         ? 'bg-indigo-500/10 border-indigo-500/30' 
-                        : isPro
+                        : plan.featured
                           ? 'bg-zinc-900/50 border-indigo-500/20 hover:border-indigo-500/40'
                           : 'bg-zinc-900/50 border-zinc-800 hover:border-zinc-700'
                     }`}
-                    data-testid={`plan-${planKey}`}
+                    data-testid={`plan-${plan.key}`}
                   >
-                    {isPro && !isCurrentPlan && (
+                    {plan.featured && !isCurrentPlan && (
                       <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-600 text-white text-xs rounded-full">
                           <Sparkles className="w-3 h-3" /> Recommended
@@ -247,13 +289,19 @@ const Settings = () => {
                       <span className="text-2xl font-bold font-mono text-white">
                         ${plan.price}
                       </span>
-                      {plan.price > 0 && (
-                        <span className="text-zinc-400 text-sm">/month</span>
-                      )}
+                      <span className="text-zinc-400 text-sm">
+                        /{billingPeriod === 'monthly' ? 'mo' : 'yr'}
+                      </span>
                     </div>
+
+                    {plan.savings && (
+                      <p className="text-emerald-400 text-xs mt-1">Save ${plan.savings}/year</p>
+                    )}
+                    
+                    <p className="text-indigo-400 text-sm mt-2">{plan.deals} deals</p>
                     
                     <ul className="mt-4 space-y-2">
-                      {plan.features.map((feature, i) => (
+                      {planData?.features?.slice(0, 4).map((feature, i) => (
                         <li key={i} className="flex items-center gap-2 text-sm text-zinc-300">
                           <Check className="w-4 h-4 text-emerald-400 flex-shrink-0" />
                           {feature}
@@ -265,20 +313,16 @@ const Settings = () => {
                       className={`w-full mt-4 ${
                         isCurrentPlan
                           ? 'bg-zinc-800 text-zinc-400 cursor-not-allowed'
-                          : planKey === 'free'
-                            ? 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300'
-                            : 'bg-indigo-600 hover:bg-indigo-500 btn-glow'
+                          : 'bg-indigo-600 hover:bg-indigo-500 btn-glow'
                       }`}
-                      disabled={isCurrentPlan || processingPayment || planKey === 'free'}
-                      onClick={() => handleUpgrade(planKey)}
-                      data-testid={`upgrade-${planKey}-btn`}
+                      disabled={isCurrentPlan || processingPayment}
+                      onClick={() => handleUpgrade(plan.key)}
+                      data-testid={`upgrade-${plan.key}-btn`}
                     >
                       {processingPayment ? (
                         <Loader2 className="w-4 h-4 animate-spin" />
                       ) : isCurrentPlan ? (
                         'Current Plan'
-                      ) : planKey === 'free' ? (
-                        'Free Forever'
                       ) : (
                         <>
                           Upgrade <ChevronRight className="w-4 h-4 ml-1" />
@@ -295,7 +339,7 @@ const Settings = () => {
                 <AlertCircle className="w-5 h-5 text-zinc-400 flex-shrink-0 mt-0.5" />
                 <div className="text-sm text-zinc-400">
                   <p>Payments are processed securely through Stripe. You can cancel anytime.</p>
-                  <p className="mt-1">Enterprise plans include dedicated support and custom features.</p>
+                  <p className="mt-1">Priority plans include dedicated support and custom features.</p>
                 </div>
               </div>
             </div>
