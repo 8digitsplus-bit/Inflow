@@ -500,7 +500,7 @@ SUBSCRIPTION_PLANS = {
         "name": "Basic",
         "period": "yearly",
         "deal_limit": 2500,
-        "features": ["2,500 deals/year", "Basic analytics", "Email support", "Pipeline view", "Churn alerts", "17% off first year"]
+        "features": ["2,500 deals/year", "Basic analytics", "Email support", "Pipeline view", "Churn alerts"]
     },
     "pro_monthly": {
         "price": 99.0,
@@ -514,21 +514,21 @@ SUBSCRIPTION_PLANS = {
         "name": "Pro",
         "period": "yearly",
         "deal_limit": 12000,
-        "features": ["12,000 deals/year", "AI pricing insights", "Priority support", "Advanced analytics", "Revenue forecasting", "Churn prediction", "CRO tools", "17% off first year"]
+        "features": ["12,000 deals/year", "AI pricing insights", "Priority support", "Advanced analytics", "Revenue forecasting", "Churn prediction", "CRO tools"]
     },
     "enterprise_monthly": {
         "price": 179.0,
         "name": "Enterprise",
         "period": "monthly",
         "deal_limit": 12000,
-        "features": ["12,000 deals/month", "Everything in Pro", "Dedicated account manager", "Custom integrations", "SLA guarantee", "API access", "Advanced churn analytics"]
+        "features": ["12,000 deals/month", "Everything in Pro", "Custom integrations", "API access", "Advanced churn analytics", "RFQ for large orders"]
     },
     "enterprise_yearly": {
         "price": 1799.0,
         "name": "Enterprise",
         "period": "yearly",
         "deal_limit": 30000,
-        "features": ["30,000 deals/year", "Everything in Pro", "Dedicated account manager", "Custom integrations", "SLA guarantee", "API access", "Advanced churn analytics", "17% off first year"]
+        "features": ["30,000 deals/year", "Everything in Pro", "Custom integrations", "API access", "Advanced churn analytics", "RFQ for large orders"]
     }
 }
 

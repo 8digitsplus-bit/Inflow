@@ -90,7 +90,7 @@ const Landing = () => {
         price: '179',
         period: '/month',
         deals: '12,000 deals',
-        features: ['12,000 deals/month', 'Everything in Pro', 'Dedicated account manager', 'Custom integrations', 'SLA guarantee', 'API access'],
+        features: ['12,000 deals/month', 'Everything in Pro', 'Custom integrations', 'API access', 'Advanced churn analytics', 'RFQ for large orders'],
         cta: 'Contact Sales',
         featured: false,
         planId: 'enterprise_monthly'
@@ -102,7 +102,7 @@ const Landing = () => {
         price: '490',
         period: '/year',
         deals: '2,500 deals',
-        features: ['2,500 deals/year', 'Basic analytics', 'Email support', 'Pipeline view', 'Churn alerts', '17% off first year'],
+        features: ['2,500 deals/year', 'Basic analytics', 'Email support', 'Pipeline view', 'Churn alerts'],
         cta: 'Get Started',
         featured: false,
         planId: 'basic_yearly',
@@ -113,7 +113,7 @@ const Landing = () => {
         price: '990',
         period: '/year',
         deals: '12,000 deals',
-        features: ['12,000 deals/year', 'AI pricing insights', 'Priority support', 'Advanced analytics', 'Revenue forecasting', 'Churn prediction', 'CRO tools', '17% off first year'],
+        features: ['12,000 deals/year', 'AI pricing insights', 'Priority support', 'Advanced analytics', 'Revenue forecasting', 'Churn prediction', 'CRO tools'],
         cta: 'Start Free Trial',
         featured: true,
         planId: 'pro_yearly',
@@ -124,7 +124,7 @@ const Landing = () => {
         price: '1,799',
         period: '/year',
         deals: '30,000 deals',
-        features: ['30,000 deals/year', 'Everything in Pro', 'Dedicated account manager', 'Custom integrations', 'SLA guarantee', 'API access', '17% off first year'],
+        features: ['30,000 deals/year', 'Everything in Pro', 'Custom integrations', 'API access', 'Advanced churn analytics', 'RFQ for large orders'],
         cta: 'Contact Sales',
         featured: false,
         planId: 'enterprise_yearly',
@@ -376,7 +376,7 @@ const Landing = () => {
           <div className="text-center mb-12">
             <span className="text-indigo-400 text-sm font-medium uppercase tracking-widest">Pricing</span>
             <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>
-              Simple, transparent pricing
+              Unlock full access
             </h2>
             <p className="mt-4 text-zinc-400">Start growing. Scale as you need.</p>
             
