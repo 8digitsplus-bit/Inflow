@@ -90,7 +90,7 @@ const Landing = () => {
         price: '179',
         period: '/month',
         deals: '12,000 deals',
-        features: ['12,000 deals/month', 'Everything in Pro', 'Custom integrations', 'API access', 'Advanced churn analytics', 'RFQ for large orders'],
+        features: ['12,000 deals/month', 'Everything in Pro', 'Custom integrations', 'API access', 'Advanced churn analytics', 'Request for Quote'],
         cta: 'Contact Sales',
         featured: false,
         planId: 'enterprise_monthly'
@@ -124,7 +124,7 @@ const Landing = () => {
         price: '1,799',
         period: '/year',
         deals: '30,000 deals',
-        features: ['30,000 deals/year', 'Everything in Pro', 'Custom integrations', 'API access', 'Advanced churn analytics', 'RFQ for large orders'],
+        features: ['30,000 deals/year', 'Everything in Pro', 'Custom integrations', 'API access', 'Advanced churn analytics', 'Request for Quote'],
         cta: 'Contact Sales',
         featured: false,
         planId: 'enterprise_yearly',

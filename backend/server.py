@@ -521,14 +521,14 @@ SUBSCRIPTION_PLANS = {
         "name": "Enterprise",
         "period": "monthly",
         "deal_limit": 12000,
-        "features": ["12,000 deals/month", "Everything in Pro", "Custom integrations", "API access", "Advanced churn analytics", "RFQ for large orders"]
+        "features": ["12,000 deals/month", "Everything in Pro", "Custom integrations", "API access", "Advanced churn analytics", "Request for Quote"]
     },
     "enterprise_yearly": {
         "price": 1799.0,
         "name": "Enterprise",
         "period": "yearly",
         "deal_limit": 30000,
-        "features": ["30,000 deals/year", "Everything in Pro", "Custom integrations", "API access", "Advanced churn analytics", "RFQ for large orders"]
+        "features": ["30,000 deals/year", "Everything in Pro", "Custom integrations", "API access", "Advanced churn analytics", "Request for Quote"]
     }
 }
 
