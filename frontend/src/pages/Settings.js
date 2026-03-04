@@ -138,18 +138,18 @@ const Settings = () => {
     if (!tier) return 'bg-zinc-700 text-zinc-300';
     if (tier.includes('enterprise')) return 'bg-purple-500/20 text-purple-400';
     if (tier.includes('pro')) return 'bg-indigo-500/20 text-indigo-400';
-    if (tier.includes('basic')) return 'bg-cyan-500/20 text-cyan-400';
+    if (tier.includes('essential')) return 'bg-cyan-500/20 text-cyan-400';
     return 'bg-zinc-700 text-zinc-300';
   };
 
   const planConfig = {
     monthly: [
-      { key: 'basic_monthly', name: 'Basic', price: 49, deals: '1,000' },
+      { key: 'essential_monthly', name: 'Essential', price: 49, deals: '1,000' },
       { key: 'pro_monthly', name: 'Pro', price: 99, deals: '5,000', featured: true },
       { key: 'enterprise_monthly', name: 'Enterprise', price: 179, deals: '12,000' }
     ],
     yearly: [
-      { key: 'basic_yearly', name: 'Basic', price: 490, deals: '2,500', savings: 98 },
+      { key: 'essential_yearly', name: 'Essential', price: 490, deals: '2,500', savings: 98 },
       { key: 'pro_yearly', name: 'Pro', price: 990, deals: '12,000', featured: true, savings: 198 },
       { key: 'enterprise_yearly', name: 'Enterprise', price: 1799, deals: '30,000', savings: 349 }
     ]

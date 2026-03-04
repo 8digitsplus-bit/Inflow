@@ -38,8 +38,6 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    // CRITICAL: If returning from OAuth callback, skip the /me check.
-    // AuthCallback will exchange the session_id and establish the session first.
     if (window.location.hash?.includes('session_id=')) {
       setLoading(false);
       return;
@@ -47,10 +45,60 @@ export const AuthProvider = ({ children }) => {
     checkAuth();
   }, [checkAuth]);
 
-  const login = () => {
-    // REMINDER: DO NOT HARDCODE THE URL, OR ADD ANY FALLBACKS OR REDIRECT URLS, THIS BREAKS THE AUTH
+  const loginWithGoogle = () => {
     const redirectUrl = window.location.origin + '/dashboard';
     window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
+  };
+
+  const loginWithEmail = async (email, password) => {
+    const response = await fetch(`${API_URL}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ email, password }),
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.detail || 'Login failed');
+    }
+
+    const userData = await response.json();
+    setUser(userData);
+    return userData;
+  };
+
+  const registerWithEmail = async (name, email, password) => {
+    const response = await fetch(`${API_URL}/api/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ name, email, password }),
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.detail || 'Registration failed');
+    }
+
+    const userData = await response.json();
+    setUser(userData);
+    return userData;
+  };
+
+  const loginWithMicrosoft = async () => {
+    try {
+      const response = await fetch(`${API_URL}/api/auth/microsoft?origin=${window.location.origin}`);
+      if (response.ok) {
+        const data = await response.json();
+        window.location.href = data.url;
+      } else {
+        const err = await response.json();
+        throw new Error(err.detail || 'Microsoft auth not available');
+      }
+    } catch (err) {
+      throw err;
+    }
   };
 
   const logout = async () => {
@@ -70,9 +118,7 @@ export const AuthProvider = ({ children }) => {
     try {
       const response = await fetch(`${API_URL}/api/auth/session`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({ session_id: sessionId }),
       });
@@ -94,11 +140,18 @@ export const AuthProvider = ({ children }) => {
     await checkAuth();
   };
 
+  // Backwards-compatible login (defaults to Google)
+  const login = loginWithGoogle;
+
   const value = {
     user,
     loading,
     error,
     login,
+    loginWithGoogle,
+    loginWithEmail,
+    registerWithEmail,
+    loginWithMicrosoft,
     logout,
     exchangeSession,
     refreshUser,

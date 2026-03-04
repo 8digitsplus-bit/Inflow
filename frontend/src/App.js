@@ -9,6 +9,7 @@ import ChurnRetention from './pages/ChurnRetention';
 import ConversionOptimization from './pages/ConversionOptimization';
 import Settings from './pages/Settings';
 import Integrations from './pages/Integrations';
+import AuthPage from './pages/AuthPage';
 import AuthCallback from './pages/AuthCallback';
 import ProtectedRoute from './components/ProtectedRoute';
 import './App.css';
@@ -26,6 +27,7 @@ const AppRouter = () => {
   return (
     <Routes>
       <Route path="/" element={<Landing />} />
+      <Route path="/auth" element={<AuthPage />} />
       <Route 
         path="/dashboard" 
         element={

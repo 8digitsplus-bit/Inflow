@@ -11,6 +11,7 @@ from typing import List, Optional, Dict, Any
 import uuid
 from datetime import datetime, timezone, timedelta
 import httpx
+import bcrypt
 
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / '.env')
@@ -256,6 +257,202 @@ async def logout(request: Request, response: Response):
     
     response.delete_cookie(key="session_token", path="/", samesite="none", secure=True)
     return {"message": "Logged out successfully"}
+
+# ============== EMAIL/PASSWORD AUTH ==============
+
+class RegisterRequest(BaseModel):
+    email: str
+    password: str
+    name: str
+
+class LoginRequest(BaseModel):
+    email: str
+    password: str
+
+@api_router.post("/auth/register")
+async def register_with_email(req: RegisterRequest, response: Response):
+    """Register with email and password"""
+    existing = await db.users.find_one({"email": req.email}, {"_id": 0})
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already registered")
+
+    hashed = bcrypt.hashpw(req.password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+    user_id = f"user_{uuid.uuid4().hex[:12]}"
+
+    await db.users.insert_one({
+        "user_id": user_id,
+        "email": req.email,
+        "name": req.name,
+        "picture": None,
+        "password_hash": hashed,
+        "auth_provider": "email",
+        "subscription_tier": "free",
+        "subscription_status": "active",
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+
+    session_token = f"session_{uuid.uuid4().hex}"
+    expires_at = datetime.now(timezone.utc) + timedelta(days=7)
+
+    await db.user_sessions.insert_one({
+        "user_id": user_id,
+        "session_token": session_token,
+        "expires_at": expires_at.isoformat(),
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+
+    response.set_cookie(
+        key="session_token",
+        value=session_token,
+        httponly=True,
+        secure=True,
+        samesite="none",
+        path="/",
+        max_age=7 * 24 * 60 * 60
+    )
+
+    user_doc = await db.users.find_one({"user_id": user_id}, {"_id": 0, "password_hash": 0})
+    return user_doc
+
+@api_router.post("/auth/login")
+async def login_with_email(req: LoginRequest, response: Response):
+    """Login with email and password"""
+    user_doc = await db.users.find_one({"email": req.email}, {"_id": 0})
+    if not user_doc:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    stored_hash = user_doc.get("password_hash")
+    if not stored_hash:
+        raise HTTPException(status_code=401, detail="This account uses social login. Please sign in with Google or Microsoft.")
+
+    if not bcrypt.checkpw(req.password.encode("utf-8"), stored_hash.encode("utf-8")):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    session_token = f"session_{uuid.uuid4().hex}"
+    expires_at = datetime.now(timezone.utc) + timedelta(days=7)
+
+    await db.user_sessions.insert_one({
+        "user_id": user_doc["user_id"],
+        "session_token": session_token,
+        "expires_at": expires_at.isoformat(),
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+
+    response.set_cookie(
+        key="session_token",
+        value=session_token,
+        httponly=True,
+        secure=True,
+        samesite="none",
+        path="/",
+        max_age=7 * 24 * 60 * 60
+    )
+
+    safe_user = {k: v for k, v in user_doc.items() if k != "password_hash"}
+    return safe_user
+
+# ============== MICROSOFT AUTH ==============
+
+MICROSOFT_CLIENT_ID = os.environ.get("MICROSOFT_CLIENT_ID", "")
+MICROSOFT_CLIENT_SECRET = os.environ.get("MICROSOFT_CLIENT_SECRET", "")
+MICROSOFT_TENANT = os.environ.get("MICROSOFT_TENANT", "common")
+
+@api_router.get("/auth/microsoft")
+async def microsoft_auth(request: Request):
+    """Redirect to Microsoft OAuth"""
+    if not MICROSOFT_CLIENT_ID:
+        raise HTTPException(status_code=501, detail="Microsoft authentication is not configured yet")
+    origin = request.query_params.get("origin", "")
+    redirect_uri = f"{origin}/api/auth/microsoft/callback"
+    url = (
+        f"https://login.microsoftonline.com/{MICROSOFT_TENANT}/oauth2/v2.0/authorize?"
+        f"client_id={MICROSOFT_CLIENT_ID}&response_type=code&redirect_uri={redirect_uri}"
+        f"&scope=openid+profile+email+User.Read&response_mode=query"
+    )
+    return {"url": url}
+
+@api_router.get("/auth/microsoft/callback")
+async def microsoft_callback(code: str, response: Response):
+    """Microsoft OAuth callback"""
+    if not MICROSOFT_CLIENT_ID or not MICROSOFT_CLIENT_SECRET:
+        raise HTTPException(status_code=501, detail="Microsoft authentication is not configured")
+
+    origin = str(response.headers.get("referer", "")).rstrip("/")
+    redirect_uri = f"{origin}/api/auth/microsoft/callback"
+
+    async with httpx.AsyncClient() as client_http:
+        token_resp = await client_http.post(
+            f"https://login.microsoftonline.com/{MICROSOFT_TENANT}/oauth2/v2.0/token",
+            data={
+                "client_id": MICROSOFT_CLIENT_ID,
+                "client_secret": MICROSOFT_CLIENT_SECRET,
+                "code": code,
+                "redirect_uri": redirect_uri,
+                "grant_type": "authorization_code",
+                "scope": "openid profile email User.Read"
+            },
+            headers={"Content-Type": "application/x-www-form-urlencoded"}
+        )
+        token_data = token_resp.json()
+        access_token = token_data.get("access_token")
+        if not access_token:
+            raise HTTPException(status_code=401, detail="Failed to get Microsoft access token")
+
+        user_resp = await client_http.get(
+            "https://graph.microsoft.com/v1.0/me",
+            headers={"Authorization": f"Bearer {access_token}"}
+        )
+        ms_user = user_resp.json()
+
+    email = ms_user.get("mail") or ms_user.get("userPrincipalName")
+    name = ms_user.get("displayName", email)
+    user_id = f"user_{uuid.uuid4().hex[:12]}"
+    existing = await db.users.find_one({"email": email}, {"_id": 0})
+
+    if existing:
+        user_id = existing["user_id"]
+        await db.users.update_one(
+            {"user_id": user_id},
+            {"$set": {
+                "name": name,
+                "auth_provider": "microsoft",
+                "updated_at": datetime.now(timezone.utc).isoformat()
+            }}
+        )
+    else:
+        await db.users.insert_one({
+            "user_id": user_id,
+            "email": email,
+            "name": name,
+            "picture": None,
+            "auth_provider": "microsoft",
+            "subscription_tier": "free",
+            "subscription_status": "active",
+            "created_at": datetime.now(timezone.utc).isoformat()
+        })
+
+    session_token = f"session_{uuid.uuid4().hex}"
+    expires_at = datetime.now(timezone.utc) + timedelta(days=7)
+
+    await db.user_sessions.insert_one({
+        "user_id": user_id,
+        "session_token": session_token,
+        "expires_at": expires_at.isoformat(),
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+
+    response.set_cookie(
+        key="session_token",
+        value=session_token,
+        httponly=True,
+        secure=True,
+        samesite="none",
+        path="/",
+        max_age=7 * 24 * 60 * 60
+    )
+
+    user_doc = await db.users.find_one({"user_id": user_id}, {"_id": 0, "password_hash": 0})
+    return user_doc
 
 # ============== DEALS ROUTES ==============
 
@@ -594,19 +791,19 @@ async def get_ai_insights(
 # ============== SUBSCRIPTION PLANS ==============
 
 SUBSCRIPTION_PLANS = {
-    "basic_monthly": {
+    "essential_monthly": {
         "price": 49.0,
-        "name": "Basic",
+        "name": "Essential",
         "period": "monthly",
         "deal_limit": 1000,
-        "features": ["1,000 deals/month", "Basic analytics", "Email support", "Pipeline view", "Churn alerts"]
+        "features": ["1,000 deals/month", "Core analytics", "Email support", "Pipeline view", "Churn alerts"]
     },
-    "basic_yearly": {
+    "essential_yearly": {
         "price": 490.0,
-        "name": "Basic",
+        "name": "Essential",
         "period": "yearly",
         "deal_limit": 2500,
-        "features": ["2,500 deals/year", "Basic analytics", "Email support", "Pipeline view", "Churn alerts"]
+        "features": ["2,500 deals/year", "Core analytics", "Email support", "Pipeline view", "Churn alerts"]
     },
     "pro_monthly": {
         "price": 99.0,
@@ -641,8 +838,8 @@ SUBSCRIPTION_PLANS = {
 def get_user_deal_limit(subscription_tier: str) -> int:
     """Get deal limit based on subscription tier"""
     limits = {
-        "basic_monthly": 1000,
-        "basic_yearly": 2500,
+        "essential_monthly": 1000,
+        "essential_yearly": 2500,
         "pro_monthly": 5000,
         "pro_yearly": 12000,
         "enterprise_monthly": 12000,
@@ -876,7 +1073,7 @@ async def predict_churn(
     user: User = Depends(get_current_user)
 ):
     """Get AI-powered churn predictions"""
-    if user.subscription_tier in ["free", "basic_monthly", "basic_yearly"]:
+    if user.subscription_tier in ["free", "essential_monthly", "essential_yearly"]:
         raise HTTPException(
             status_code=403,
             detail="Upgrade to Pro or Priority for AI churn prediction"
@@ -996,7 +1193,7 @@ async def get_cro_recommendations(
     user: User = Depends(get_current_user)
 ):
     """Get AI-powered CRO recommendations"""
-    if user.subscription_tier in ["free", "basic_monthly", "basic_yearly"]:
+    if user.subscription_tier in ["free", "essential_monthly", "essential_yearly"]:
         raise HTTPException(
             status_code=403,
             detail="Upgrade to Pro or Priority for AI CRO recommendations"

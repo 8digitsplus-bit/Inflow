@@ -75,7 +75,7 @@ const Dashboard = () => {
 
   const getAIInsight = async () => {
     const tier = user?.subscription_tier;
-    if (!tier || tier === 'free' || tier.includes('basic')) {
+    if (!tier || tier === 'free' || tier.includes('essential')) {
       return;
     }
     
@@ -150,7 +150,7 @@ const Dashboard = () => {
   ) || [];
 
   const canUseAI = user?.subscription_tier && 
-    !user.subscription_tier.includes('basic') && 
+    !user.subscription_tier.includes('essential') && 
     user.subscription_tier !== 'free';
 
   return (
@@ -168,7 +168,7 @@ const Dashboard = () => {
             <span className={`px-3 py-1.5 rounded-full text-xs font-medium ${
               user?.subscription_tier?.includes('enterprise') ? 'bg-purple-500/20 text-purple-400' :
               user?.subscription_tier?.includes('pro') ? 'bg-indigo-500/20 text-indigo-400' :
-              user?.subscription_tier?.includes('basic') ? 'bg-cyan-500/20 text-cyan-400' :
+              user?.subscription_tier?.includes('essential') ? 'bg-cyan-500/20 text-cyan-400' :
               'bg-zinc-700 text-zinc-300'
             }`}>
               {user?.subscription_tier?.split('_')[0]?.charAt(0).toUpperCase() + user?.subscription_tier?.split('_')[0]?.slice(1) || 'Free'} Plan
