@@ -22,6 +22,7 @@
 - **Integrations Page** — 9 recommended tools with connect/disconnect
 - **Settings** — Profile, subscription management, Stripe checkout
 - **Multi-Provider Auth** — Google, Microsoft, Email/Password with dedicated /auth page
+- **Onboarding Flow** — 3-step wizard for new sign-ups (Company → Team/Industry → Goals)
 
 ## Auth Providers
 | Provider | Status | Notes |
@@ -30,13 +31,21 @@
 | Email/Password | Working | Full register + login with bcrypt |
 | Microsoft | UI Ready | Backend OAuth flow ready, needs Azure AD credentials |
 
+## Onboarding Flow
+- **Step 1:** Company name
+- **Step 2:** Team size (1-5, 6-20, 21-50, 51-200, 200+) + Industry selection
+- **Step 3:** Goals (Pipeline, Pricing, Churn, CRO, Revenue)
+- New email registrations → /onboarding → /dashboard
+- Google auth checks onboarding-status → /onboarding or /dashboard
+- Skip option available on step 1
+
 ## UI/UX Specifications
 - Full-screen glassmorphism hamburger menu (Features, Pricing, Contact, Sign In)
 - Pill-shaped buttons globally (rounded-full)
-- **Glow streak effect** — animated light streak across buttons on hover
+- Glow streak effect — animated light streak across buttons on hover
 - Font: Inter (global), Outfit (headings)
 - Dark theme with indigo accent (#6366F1)
-- Hero image: Vector dashboard screenshot (AI-generated)
+- Hero image: Actual Vector dashboard screenshot (from /public/dashboard-preview.png)
 - Hero subtitle: "Streamline workflows with AI-powered pricing optimization & revenue intelligence. Predict growth with data-driven insights."
 
 ## Pricing Tiers
@@ -52,13 +61,15 @@
 - `/api/auth/google`, `/api/auth/callback` — Google auth
 - `/api/auth/register`, `/api/auth/login` — Email/password auth
 - `/api/auth/microsoft`, `/api/auth/microsoft/callback` — Microsoft OAuth
+- `/api/auth/onboarding`, `/api/auth/onboarding-status` — Onboarding flow
 - `/api/deals` — CRUD
 - `/api/analytics/*`, `/api/ai/*`
 - `/api/integrations`, `/api/integrations/{id}/connect|disconnect`
 - `/api/notifications`, `/api/subscription/plans`, `/api/payments/*`
 
 ## DB Collections
-- `users`, `deals`, `notifications`, `integrations`, `user_sessions`, `payment_transactions`
+- `users` (includes onboarded, company_name, team_size, industry, goals)
+- `deals`, `notifications`, `integrations`, `user_sessions`, `payment_transactions`
 
 ## Completed (as of March 4, 2026)
 - Full app scaffolding and core features
@@ -67,14 +78,15 @@
 - Microsoft OAuth backend structure
 - Glassmorphism hamburger menu
 - Renamed Basic → Essential tier
-- Removed "Most Popular" badge
 - Updated CTAs to "Unlock Access"
 - Updated hero subtitle text
-- New AI-generated dashboard hero image
+- Dashboard screenshot as hero image
 - Glow streak animation on button hover
 - All buttons pill-shaped globally
 - Integrations page with 9 tools
-- All tests passing (100% backend, 100% frontend)
+- 3-step onboarding flow for new sign-ups
+- No testimonials on landing page
+- All tests passing
 
 ## Backlog / Future Tasks
 - **P1:** Refactor `backend/server.py` into modular routers

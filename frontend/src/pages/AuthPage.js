@@ -24,8 +24,10 @@ const AuthPage = () => {
   const [loading, setLoading] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({ name: '', email: '', password: '' });
+  const [isRegistering, setIsRegistering] = useState(false);
 
-  if (isAuthenticated) {
+  // Only redirect if already authenticated and NOT in the middle of registering
+  if (isAuthenticated && !isRegistering) {
     navigate('/dashboard');
     return null;
   }
@@ -63,9 +65,11 @@ const AuthPage = () => {
     setLoading('email');
     try {
       if (mode === 'register') {
+        setIsRegistering(true);
         await registerWithEmail(form.name, form.email, form.password);
         toast.success('Account created!');
         navigate('/onboarding');
+        return;
       } else {
         await loginWithEmail(form.email, form.password);
         navigate('/dashboard');
