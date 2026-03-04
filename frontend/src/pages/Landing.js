@@ -9,11 +9,9 @@ import {
   ArrowRight, 
   Check, 
   Sparkles,
-  DollarSign,
   ChevronRight,
   Menu,
-  X,
-  LogIn
+  X
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 
@@ -165,9 +163,9 @@ const Landing = () => {
             : 'opacity-0 pointer-events-none'
         }`}
         style={{
-          background: 'rgba(9, 9, 11, 0.92)',
-          backdropFilter: 'blur(40px)',
-          WebkitBackdropFilter: 'blur(40px)'
+          background: 'rgba(9, 9, 11, 0.60)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)'
         }}
       >
         {/* Close button */}
@@ -184,15 +182,12 @@ const Landing = () => {
           <nav className="flex flex-col items-center gap-2">
             <button
               onClick={() => handleMenuClick('#features')}
-              className={`group flex items-center gap-4 px-8 py-5 rounded-2xl transition-all duration-300 ${
+              className={`group px-8 py-5 rounded-2xl transition-all duration-300 hover:bg-indigo-500/10 hover:shadow-[0_0_30px_rgba(99,102,241,0.3)] ${
                 menuOpen ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
               }`}
               style={{ transitionDelay: '100ms' }}
               data-testid="menu-features"
             >
-              <div className="w-12 h-12 rounded-xl bg-indigo-500/20 flex items-center justify-center group-hover:bg-indigo-500/30 group-hover:scale-110 transition-all">
-                <Sparkles className="w-6 h-6 text-indigo-400" />
-              </div>
               <span className="text-2xl font-semibold text-zinc-300 group-hover:text-white transition-colors" style={{ fontFamily: 'Outfit' }}>
                 Features
               </span>
@@ -200,15 +195,12 @@ const Landing = () => {
             
             <button
               onClick={() => handleMenuClick('#pricing')}
-              className={`group flex items-center gap-4 px-8 py-5 rounded-2xl transition-all duration-300 ${
+              className={`group px-8 py-5 rounded-2xl transition-all duration-300 hover:bg-emerald-500/10 hover:shadow-[0_0_30px_rgba(16,185,129,0.3)] ${
                 menuOpen ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
               }`}
               style={{ transitionDelay: '150ms' }}
               data-testid="menu-pricing"
             >
-              <div className="w-12 h-12 rounded-xl bg-emerald-500/20 flex items-center justify-center group-hover:bg-emerald-500/30 group-hover:scale-110 transition-all">
-                <DollarSign className="w-6 h-6 text-emerald-400" />
-              </div>
               <span className="text-2xl font-semibold text-zinc-300 group-hover:text-white transition-colors" style={{ fontFamily: 'Outfit' }}>
                 Pricing
               </span>
@@ -220,15 +212,12 @@ const Landing = () => {
             
             <button
               onClick={() => handleMenuClick('signin')}
-              className={`group flex items-center gap-4 px-8 py-5 rounded-2xl transition-all duration-300 ${
+              className={`group px-8 py-5 rounded-2xl transition-all duration-300 hover:bg-purple-500/10 hover:shadow-[0_0_30px_rgba(168,85,247,0.3)] ${
                 menuOpen ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
               }`}
               style={{ transitionDelay: '250ms' }}
               data-testid="menu-signin"
             >
-              <div className="w-12 h-12 rounded-xl bg-purple-500/20 flex items-center justify-center group-hover:bg-purple-500/30 group-hover:scale-110 transition-all">
-                <LogIn className="w-6 h-6 text-purple-400" />
-              </div>
               <span className="text-2xl font-semibold text-zinc-300 group-hover:text-white transition-colors" style={{ fontFamily: 'Outfit' }}>
                 {isAuthenticated ? 'Dashboard' : 'Sign In'}
               </span>
