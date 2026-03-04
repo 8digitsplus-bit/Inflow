@@ -84,7 +84,8 @@ async def create_session(request: Request, response: Response):
 @router.get("/auth/me")
 async def get_me(user: User = Depends(get_current_user)):
     """Get current authenticated user"""
-    return user.model_dump()
+    user_doc = await db.users.find_one({"user_id": user.user_id}, {"_id": 0, "password_hash": 0})
+    return user_doc
 
 
 @router.post("/auth/logout")

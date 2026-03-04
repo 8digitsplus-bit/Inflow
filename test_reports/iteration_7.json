@@ -1,0 +1,68 @@
+{
+  "summary": "Tested Dashboard personalization features (tier-based access, goal-based ordering) and Microsoft auth fix. Fixed critical bug in AuthContext.js where Microsoft button was throwing 'body stream already read' error. All 12 backend tests passed. All tier-based UI features verified.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "passed_tests": [
+    "Backend: Microsoft auth returns 501 with 'not configured' message",
+    "Backend: GET /api/auth/me returns full user doc including goals",
+    "Backend: GET /api/auth/me excludes password_hash",
+    "Backend: GET /api/auth/onboarding-status returns onboarded boolean",
+    "Backend: GET /api/health returns healthy",
+    "Backend: GET /api/deals returns user deals",
+    "Backend: GET /api/analytics/revenue returns data",
+    "Backend: GET /api/analytics/churn returns data",
+    "Backend: GET /api/analytics/cro returns data",
+    "Backend: GET /api/integrations returns list",
+    "Backend: GET /api/subscription/plans returns plans",
+    "Frontend: Microsoft button click shows toast 'Microsoft authentication is not configured yet' (FIXED)",
+    "Frontend: Free tier shows 'Free Plan' badge",
+    "Frontend: Free tier shows lock overlays on Churn (Essential+), CRO (Pro+), AI (Pro+)",
+    "Frontend: Free tier hides 'Analyze Pricing' and 'Optimize Conversions' in Quick Actions",
+    "Frontend: Essential tier shows 'Essential Plan' badge",
+    "Frontend: Essential tier unlocks Churn widget, keeps CRO/AI locked",
+    "Frontend: Pro tier shows 'Pro Plan' badge with all widgets unlocked",
+    "Frontend: Pro tier shows 'Analyze Pricing' and 'Optimize Conversions' in Quick Actions",
+    "Frontend: Goal-based subtitle 'Focused on Pipeline, Churn' shown when user has goals",
+    "Frontend: Priority badges shown on goal-matched sections (Pipeline, Customer Health)"
+  ],
+  "test_report_links": [
+    "/app/backend/tests/test_dashboard_features.py",
+    "/app/test_reports/pytest/pytest_dashboard.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "FIXED: AuthContext.js loginWithMicrosoft() was trying to read response body twice (response.json() then response.text()) causing 'body stream already read' error",
+    "Dashboard TIER_ACCESS map correctly defines section visibility per tier",
+    "LockedOverlay component properly shows upgrade CTA with required tier name"
+  ],
+  "updated_files": [
+    "/app/frontend/src/contexts/AuthContext.js",
+    "/app/backend/tests/test_dashboard_features.py"
+  ],
+  "success_rate": {
+    "backend": "100% (12/12 tests passed)",
+    "frontend": "100% (All tier-based features verified)"
+  },
+  "test_credentials": {
+    "test_user": "uitest_1772633591@testexample.com / UITestPass123!",
+    "tier_tested": ["free", "essential_monthly", "pro_monthly"]
+  },
+  "seed_data_creation": "Completed onboarding for test user with goals: [pipeline, churn]",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Microsoft auth fix applied to AuthContext.js. Test user has onboarding data with goals [pipeline, churn]. Dashboard tier-based access working for all tiers. User tier reset to 'free' after testing.",
+  "mocked_api_note": "Microsoft OAuth returns 501 (MOCKED - not configured). Stripe payments are simulated.",
+  "bug_fix_applied": {
+    "file": "/app/frontend/src/contexts/AuthContext.js",
+    "issue": "loginWithMicrosoft() was causing 'body stream already read' error",
+    "root_cause": "Code attempted to read response.text() after checking response.ok (which may have already consumed the body in some cases)",
+    "fix": "Changed to always parse JSON first, then handle error message extraction in catch block"
+  }
+}

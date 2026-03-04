@@ -89,15 +89,19 @@ export const AuthProvider = ({ children }) => {
   const loginWithMicrosoft = async () => {
     try {
       const response = await fetch(`${API_URL}/api/auth/microsoft?origin=${window.location.origin}`);
-      if (response.ok) {
-        const data = await response.json();
+      const data = await response.json();
+      
+      if (response.ok && data.url) {
         window.location.href = data.url;
       } else {
-        const err = await response.json();
-        throw new Error(err.detail || 'Microsoft auth not available');
+        throw new Error(data.detail || 'Microsoft login is not available yet');
       }
     } catch (err) {
-      throw err;
+      // If JSON parsing failed or network error
+      if (err.message.includes('not configured') || err.message.includes('not available')) {
+        throw err;
+      }
+      throw new Error('Microsoft authentication is not configured yet');
     }
   };
 
