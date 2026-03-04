@@ -55,13 +55,6 @@ const Landing = () => {
     { icon: <Sparkles className="w-6 h-6" />, title: 'AI Insights', description: 'Get actionable recommendations powered by Claude Sonnet 4.5 to close deals faster.' }
   ];
 
-  const stats = [
-    { value: '47%', label: 'Revenue Increase' },
-    { value: '3.2x', label: 'Deal Velocity' },
-    { value: '89%', label: 'Win Rate Improvement' },
-    { value: '$2.1M', label: 'Avg. Pipeline Value' }
-  ];
-
   const [billingPeriod, setBillingPeriod] = useState('monthly');
 
   const plans = {
@@ -169,16 +162,6 @@ const Landing = () => {
                   Watch Demo
                 </Button>
               </div>
-              <div className="flex items-center gap-6 pt-4">
-                <div className="flex -space-x-2">
-                  {[1,2,3,4].map((i) => (
-                    <div key={i} className="w-8 h-8 rounded-full bg-zinc-700 border-2 border-[#09090B]" />
-                  ))}
-                </div>
-                <p className="text-sm text-zinc-400">
-                  <span className="text-white font-medium">500+</span> companies trust Vector
-                </p>
-              </div>
             </div>
 
             <div className="lg:col-span-5 animate-slide-up stagger-2">
@@ -191,20 +174,6 @@ const Landing = () => {
                 />
               </div>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Stats Section */}
-      <section className="py-16 px-4 sm:px-6 lg:px-8 border-y border-white/5">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {stats.map((stat, i) => (
-              <div key={i} className="text-center animate-fade-in" style={{ animationDelay: `${i * 0.1}s` }}>
-                <div className="text-3xl sm:text-4xl font-bold font-mono text-white mb-2">{stat.value}</div>
-                <div className="text-sm text-zinc-400">{stat.label}</div>
-              </div>
-            ))}
           </div>
         </div>
       </section>
@@ -352,7 +321,7 @@ const Landing = () => {
                 Ready to optimize your pricing?
               </h2>
               <p className="text-zinc-400 mb-8 max-w-xl mx-auto">
-                Join 500+ revenue teams using Vector to close more deals and grow faster.
+                Start optimizing your pricing and accelerate revenue growth today.
               </p>
               <Button size="lg" className="bg-indigo-600 hover:bg-indigo-500 btn-glow px-8 group" onClick={handleGetStarted} data-testid="cta-final-btn">
                 Start Your Free Trial <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
