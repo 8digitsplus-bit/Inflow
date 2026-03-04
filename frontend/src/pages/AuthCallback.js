@@ -29,7 +29,21 @@ const AuthCallback = () => {
         const user = await exchangeSession(sessionId);
         // Clear the hash from URL
         window.history.replaceState(null, '', window.location.pathname);
-        // Navigate to dashboard with user data
+        
+        // Check onboarding status
+        try {
+          const onboardResp = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/auth/onboarding-status`, {
+            credentials: 'include',
+          });
+          if (onboardResp.ok) {
+            const { onboarded } = await onboardResp.json();
+            if (!onboarded) {
+              navigate('/onboarding', { replace: true });
+              return;
+            }
+          }
+        } catch {}
+        
         navigate('/dashboard', { state: { user }, replace: true });
       } catch (error) {
         console.error('Auth callback failed:', error);

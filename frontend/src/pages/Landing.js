@@ -185,7 +185,7 @@ const Landing = () => {
               <div className="relative">
                 <div className="absolute -inset-4 bg-indigo-500/20 blur-3xl rounded-3xl animate-pulse-glow" />
                 <img 
-                  src="https://static.prod-images.emergentagent.com/jobs/11bea332-2f3e-4e68-9b31-f5af858dcd62/images/7ad4902b510663e03523477a93a15ca7252603f42799bd2108ff1f385f0194cc.png"
+                  src="/dashboard-preview.png"
                   alt="Vector Analytics Dashboard"
                   className="relative rounded-2xl border border-white/10 shadow-2xl shadow-indigo-500/10 hover:scale-[1.02] transition-transform duration-500"
                 />

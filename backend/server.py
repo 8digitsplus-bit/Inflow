@@ -1235,6 +1235,36 @@ Provide:
         logger.error(f"CRO recommendation error: {str(e)}")
         raise HTTPException(status_code=500, detail=str(e))
 
+# ============== ONBOARDING ==============
+
+class OnboardingData(BaseModel):
+    company_name: str
+    team_size: str
+    industry: str
+    goals: List[str]
+
+@api_router.get("/auth/onboarding-status")
+async def get_onboarding_status(current_user: User = Depends(get_current_user)):
+    """Check if user has completed onboarding"""
+    user_doc = await db.users.find_one({"user_id": current_user.user_id}, {"_id": 0})
+    return {"onboarded": user_doc.get("onboarded", False)}
+
+@api_router.post("/auth/onboarding")
+async def complete_onboarding(data: OnboardingData, current_user: User = Depends(get_current_user)):
+    """Save onboarding data and mark user as onboarded"""
+    await db.users.update_one(
+        {"user_id": current_user.user_id},
+        {"$set": {
+            "onboarded": True,
+            "company_name": data.company_name,
+            "team_size": data.team_size,
+            "industry": data.industry,
+            "goals": data.goals,
+            "onboarded_at": datetime.now(timezone.utc).isoformat()
+        }}
+    )
+    return {"status": "completed"}
+
 # ============== INTEGRATIONS ==============
 
 AVAILABLE_INTEGRATIONS = [

@@ -65,10 +65,11 @@ const AuthPage = () => {
       if (mode === 'register') {
         await registerWithEmail(form.name, form.email, form.password);
         toast.success('Account created!');
+        navigate('/onboarding');
       } else {
         await loginWithEmail(form.email, form.password);
+        navigate('/dashboard');
       }
-      navigate('/dashboard');
     } catch (err) {
       toast.error(err.message);
     } finally {
