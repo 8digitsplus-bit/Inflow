@@ -11,7 +11,9 @@ import {
   Sparkles,
   ChevronRight,
   Menu,
-  X
+  X,
+  Mail,
+  MessageSquare
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 
@@ -182,7 +184,7 @@ const Landing = () => {
           <nav className="flex flex-col items-center gap-2">
             <button
               onClick={() => handleMenuClick('#features')}
-              className={`group px-8 py-5 rounded-2xl transition-all duration-300 hover:bg-indigo-500/10 hover:shadow-[0_0_30px_rgba(99,102,241,0.3)] ${
+              className={`group px-8 py-5 rounded-2xl transition-all duration-300 hover:bg-white/5 hover:shadow-[0_0_40px_rgba(255,255,255,0.25)] ${
                 menuOpen ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
               }`}
               style={{ transitionDelay: '100ms' }}
@@ -195,7 +197,7 @@ const Landing = () => {
             
             <button
               onClick={() => handleMenuClick('#pricing')}
-              className={`group px-8 py-5 rounded-2xl transition-all duration-300 hover:bg-emerald-500/10 hover:shadow-[0_0_30px_rgba(16,185,129,0.3)] ${
+              className={`group px-8 py-5 rounded-2xl transition-all duration-300 hover:bg-white/5 hover:shadow-[0_0_40px_rgba(255,255,255,0.25)] ${
                 menuOpen ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
               }`}
               style={{ transitionDelay: '150ms' }}
@@ -206,16 +208,29 @@ const Landing = () => {
               </span>
             </button>
 
+            <button
+              onClick={() => handleMenuClick('#contact')}
+              className={`group px-8 py-5 rounded-2xl transition-all duration-300 hover:bg-white/5 hover:shadow-[0_0_40px_rgba(255,255,255,0.25)] ${
+                menuOpen ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
+              }`}
+              style={{ transitionDelay: '200ms' }}
+              data-testid="menu-contact"
+            >
+              <span className="text-2xl font-semibold text-zinc-300 group-hover:text-white transition-colors" style={{ fontFamily: 'Outfit' }}>
+                Contact
+              </span>
+            </button>
+
             <div className={`w-24 h-px bg-gradient-to-r from-transparent via-zinc-700 to-transparent my-4 transition-all duration-300 ${
               menuOpen ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-0'
-            }`} style={{ transitionDelay: '200ms' }} />
+            }`} style={{ transitionDelay: '250ms' }} />
             
             <button
               onClick={() => handleMenuClick('signin')}
-              className={`group px-8 py-5 rounded-2xl transition-all duration-300 hover:bg-purple-500/10 hover:shadow-[0_0_30px_rgba(168,85,247,0.3)] ${
+              className={`group px-8 py-5 rounded-2xl transition-all duration-300 hover:bg-white/5 hover:shadow-[0_0_40px_rgba(255,255,255,0.25)] ${
                 menuOpen ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
               }`}
-              style={{ transitionDelay: '250ms' }}
+              style={{ transitionDelay: '300ms' }}
               data-testid="menu-signin"
             >
               <span className="text-2xl font-semibold text-zinc-300 group-hover:text-white transition-colors" style={{ fontFamily: 'Outfit' }}>
@@ -227,7 +242,7 @@ const Landing = () => {
           {/* Get Started Button in Menu */}
           <div className={`mt-10 transition-all duration-300 ${
             menuOpen ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'
-          }`} style={{ transitionDelay: '300ms' }}>
+          }`} style={{ transitionDelay: '350ms' }}>
             <Button 
               className="bg-indigo-600 hover:bg-indigo-500 text-white btn-glow px-8 py-6 text-lg"
               onClick={() => { setMenuOpen(false); handleGetStarted(); }}
@@ -489,7 +504,7 @@ const Landing = () => {
                 style={{ animationDelay: `${i * 0.1}s` }}
                 data-testid={`pricing-card-${plan.name.toLowerCase()}`}
               >
-                {plan.featured && (
+                {false && (
                   <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-indigo-500/20 text-indigo-400 text-xs font-medium mb-4">
                     <Sparkles className="w-3 h-3" /> Most Popular
                   </div>
@@ -542,7 +557,7 @@ const Landing = () => {
               </p>
               <Button 
                 size="lg"
-                className="bg-indigo-600 hover:bg-indigo-500 btn-glow px-8"
+                className="bg-indigo-600 hover:bg-indigo-500 btn-glow px-8 rounded-full"
                 onClick={handleGetStarted}
                 data-testid="cta-final-btn"
               >

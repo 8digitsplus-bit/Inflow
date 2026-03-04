@@ -8,6 +8,7 @@ import RevenueIntelligence from './pages/RevenueIntelligence';
 import ChurnRetention from './pages/ChurnRetention';
 import ConversionOptimization from './pages/ConversionOptimization';
 import Settings from './pages/Settings';
+import Integrations from './pages/Integrations';
 import AuthCallback from './pages/AuthCallback';
 import ProtectedRoute from './components/ProtectedRoute';
 import './App.css';
@@ -78,6 +79,14 @@ const AppRouter = () => {
         element={
           <ProtectedRoute>
             <Settings />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/integrations" 
+        element={
+          <ProtectedRoute>
+            <Integrations />
           </ProtectedRoute>
         } 
       />

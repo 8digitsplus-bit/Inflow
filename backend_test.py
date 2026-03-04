@@ -4,7 +4,7 @@ from datetime import datetime
 import json
 
 class VectorAPITester:
-    def __init__(self, base_url="https://tier-stack.preview.emergentagent.com"):
+    def __init__(self, base_url="https://churn-guard-8.preview.emergentagent.com"):
         self.base_url = base_url
         self.session_token = None
         self.tests_run = 0
@@ -167,7 +167,7 @@ class VectorAPITester:
         
         checkout_data = {
             "plan": "pro",
-            "origin_url": "https://tier-stack.preview.emergentagent.com"
+            "origin_url": "https://churn-guard-8.preview.emergentagent.com"
         }
         
         # This will fail without authentication

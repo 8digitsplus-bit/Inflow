@@ -13,7 +13,8 @@ import {
   Zap,
   ChevronRight,
   Users,
-  TrendingUp
+  TrendingUp,
+  Plug
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
@@ -26,6 +27,7 @@ const navigation = [
   { name: 'Revenue Intelligence', href: '/revenue', icon: BarChart3 },
   { name: 'Churn & Retention', href: '/churn', icon: Users },
   { name: 'CRO', href: '/cro', icon: TrendingUp },
+  { name: 'Integrations', href: '/integrations', icon: Plug },
   { name: 'Settings', href: '/settings', icon: Settings },
 ];
 
