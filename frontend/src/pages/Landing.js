@@ -1,19 +1,12 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { 
-  TrendingUp, 
-  Zap, 
-  BarChart3, 
-  Target, 
-  ArrowRight, 
-  Check, 
-  Sparkles,
-  ChevronRight,
-  Menu,
-  X,
-} from 'lucide-react';
-import { Button } from '../components/ui/button';
+import { FullScreenMenu, Header } from '../components/landing/HeaderMenu';
+import { HeroSection } from '../components/landing/HeroSection';
+import { FeaturesSection } from '../components/landing/FeaturesSection';
+import { HowItWorks } from '../components/landing/HowItWorks';
+import { PricingSection } from '../components/landing/PricingSection';
+import { CTASection, Footer } from '../components/landing/CTAFooter';
 
 const Landing = () => {
   const navigate = useNavigate();
@@ -21,20 +14,12 @@ const Landing = () => {
   const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
-    if (menuOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'unset';
-    }
+    document.body.style.overflow = menuOpen ? 'hidden' : 'unset';
     return () => { document.body.style.overflow = 'unset'; };
   }, [menuOpen]);
 
   const handleGetStarted = () => {
-    if (isAuthenticated) {
-      navigate('/dashboard');
-    } else {
-      navigate('/auth');
-    }
+    navigate(isAuthenticated ? '/dashboard' : '/auth');
   };
 
   const handleMenuClick = (action) => {
@@ -48,308 +33,16 @@ const Landing = () => {
     }
   };
 
-  const features = [
-    { icon: <TrendingUp className="w-6 h-6" />, title: 'Revenue Intelligence', description: 'AI-powered insights that analyze your sales data and predict revenue trends with precision.' },
-    { icon: <Target className="w-6 h-6" />, title: 'Pricing Optimization', description: 'Maximize margins with Claude AI recommendations based on market dynamics and competition.' },
-    { icon: <BarChart3 className="w-6 h-6" />, title: 'Sales Pipeline', description: 'Visual pipeline management with drag-and-drop deal tracking and probability scoring.' },
-    { icon: <Sparkles className="w-6 h-6" />, title: 'AI Insights', description: 'Get actionable recommendations powered by Claude Sonnet 4.5 to close deals faster.' }
-  ];
-
-  const [billingPeriod, setBillingPeriod] = useState('monthly');
-
-  const plans = {
-    monthly: [
-      { name: 'Essential', price: '49', period: '/month', deals: '1,000 deals', features: ['1,000 deals/month', 'Core analytics', 'Email support', 'Pipeline view', 'Churn alerts'], cta: 'Unlock Access', featured: false, planId: 'essential_monthly' },
-      { name: 'Pro', price: '99', period: '/month', deals: '5,000 deals', features: ['5,000 deals/month', 'AI pricing insights', 'Priority support', 'Advanced analytics', 'Revenue forecasting', 'Churn prediction', 'CRO tools'], cta: 'Unlock Access', featured: true, planId: 'pro_monthly' },
-      { name: 'Enterprise', price: '179', period: '/month', deals: '12,000 deals', features: ['12,000 deals/month', 'Everything in Pro', 'Custom integrations', 'API access', 'Advanced churn analytics', 'Request for Quote'], cta: 'Contact Sales', featured: false, planId: 'enterprise_monthly' }
-    ],
-    yearly: [
-      { name: 'Essential', price: '490', period: '/year', deals: '2,500 deals', features: ['2,500 deals/year', 'Core analytics', 'Email support', 'Pipeline view', 'Churn alerts'], cta: 'Unlock Access', featured: false, planId: 'essential_yearly', savings: 'Save $98 first year' },
-      { name: 'Pro', price: '990', period: '/year', deals: '12,000 deals', features: ['12,000 deals/year', 'AI pricing insights', 'Priority support', 'Advanced analytics', 'Revenue forecasting', 'Churn prediction', 'CRO tools'], cta: 'Unlock Access', featured: true, planId: 'pro_yearly', savings: 'Save $198 first year' },
-      { name: 'Enterprise', price: '1,799', period: '/year', deals: '30,000 deals', features: ['30,000 deals/year', 'Everything in Pro', 'Custom integrations', 'API access', 'Advanced churn analytics', 'Request for Quote'], cta: 'Contact Sales', featured: false, planId: 'enterprise_yearly', savings: 'Save $349 first year' }
-    ]
-  };
-
   return (
     <div className="min-h-screen bg-[#09090B]">
-      {/* Full Screen Menu Overlay */}
-      <div 
-        className={`fixed inset-0 z-[60] transition-all duration-500 ease-out ${menuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
-        style={{ background: 'rgba(9, 9, 11, 0.60)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}
-      >
-        <button className="absolute top-5 right-6 p-2 rounded-full text-zinc-400 hover:text-white hover:bg-white/10 transition-all" onClick={() => setMenuOpen(false)} data-testid="menu-close-btn">
-          <X className="w-6 h-6" />
-        </button>
-        <div className="h-full flex flex-col items-center justify-center">
-          <nav className="flex flex-col items-center gap-2">
-            {[
-              { label: 'Features', action: '#features', delay: '100ms' },
-              { label: 'Pricing', action: '#pricing', delay: '150ms' },
-              { label: 'Contact', action: '#contact', delay: '200ms' },
-            ].map((item) => (
-              <button key={item.label} onClick={() => handleMenuClick(item.action)}
-                className={`group px-8 py-5 rounded-2xl transition-all duration-300 hover:bg-white/5 hover:shadow-[0_0_40px_rgba(255,255,255,0.25)] ${menuOpen ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}
-                style={{ transitionDelay: item.delay }}
-                data-testid={`menu-${item.label.toLowerCase()}`}
-              >
-                <span className="text-2xl font-semibold text-zinc-300 group-hover:text-white transition-colors" style={{ fontFamily: 'Outfit' }}>{item.label}</span>
-              </button>
-            ))}
-            <div className={`w-24 h-px bg-gradient-to-r from-transparent via-zinc-700 to-transparent my-4 transition-all duration-300 ${menuOpen ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-0'}`} style={{ transitionDelay: '250ms' }} />
-            <button onClick={() => handleMenuClick('signin')}
-              className={`group px-8 py-5 rounded-2xl transition-all duration-300 hover:bg-white/5 hover:shadow-[0_0_40px_rgba(255,255,255,0.25)] ${menuOpen ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}
-              style={{ transitionDelay: '300ms' }}
-              data-testid="menu-signin"
-            >
-              <span className="text-2xl font-semibold text-zinc-300 group-hover:text-white transition-colors" style={{ fontFamily: 'Outfit' }}>
-                {isAuthenticated ? 'Dashboard' : 'Sign In'}
-              </span>
-            </button>
-          </nav>
-          <div className={`mt-10 transition-all duration-300 ${menuOpen ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`} style={{ transitionDelay: '350ms' }}>
-            <Button className="bg-indigo-600 hover:bg-indigo-500 text-white btn-glow px-8 py-6 text-lg" onClick={() => { setMenuOpen(false); handleGetStarted(); }}>
-              Get Started <ArrowRight className="w-5 h-5 ml-2" />
-            </Button>
-          </div>
-        </div>
-      </div>
-
-      {/* Header */}
-      <header className="fixed top-0 left-0 right-0 z-50 glass border-b border-white/10">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center">
-                <Zap className="w-5 h-5 text-white" />
-              </div>
-              <span className="font-semibold text-lg text-white" style={{ fontFamily: 'Outfit' }}>Vector</span>
-            </div>
-            <button className="flex items-center gap-2 px-3 py-2 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 transition-all" onClick={() => setMenuOpen(!menuOpen)} data-testid="hamburger-menu-btn">
-              <Menu className="w-5 h-5" />
-              <span className="text-sm font-medium hidden sm:inline">Menu</span>
-            </button>
-            <Button className="bg-indigo-600 hover:bg-indigo-500 text-white btn-glow hidden sm:flex" onClick={handleGetStarted} data-testid="header-cta-btn">
-              Get Started
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      {/* Hero Section */}
-      <section className="landing-hero relative pt-32 pb-20 px-4 sm:px-6 lg:px-8">
-        <div className="absolute inset-0 hero-glow" />
-        <div className="absolute inset-0 noise-overlay" />
-        <div className="max-w-7xl mx-auto relative z-10">
-          <div className="grid lg:grid-cols-12 gap-12 items-center">
-            <div className="lg:col-span-7 space-y-8 animate-fade-in">
-              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-500/10 border border-indigo-500/20">
-                <Sparkles className="w-4 h-4 text-indigo-400" />
-                <span className="text-sm text-indigo-300">Powered by Claude AI</span>
-              </div>
-              <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight" style={{ fontFamily: 'Outfit' }}>
-                Optimize Pricing.<br />
-                <span className="gradient-text">Accelerate Revenue.</span>
-              </h1>
-              <p className="text-lg text-zinc-400 max-w-xl leading-relaxed">
-                Streamline workflows with AI-powered pricing optimization & revenue intelligence. 
-                Predict growth with data-driven insights.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Button size="lg" className="bg-indigo-600 hover:bg-indigo-500 text-white btn-glow px-8 py-6 text-base group" onClick={handleGetStarted} data-testid="hero-cta-btn">
-                  Start Free Trial <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </Button>
-                <Button size="lg" variant="outline" className="border-zinc-700 text-zinc-300 hover:bg-zinc-800 px-8 py-6 text-base" data-testid="hero-demo-btn">
-                  Watch Demo
-                </Button>
-              </div>
-            </div>
-
-            <div className="lg:col-span-5 animate-slide-up stagger-2">
-              <div className="relative">
-                <div className="absolute -inset-4 bg-indigo-500/20 blur-3xl rounded-3xl animate-pulse-glow" />
-                <img 
-                  src="/dashboard-preview.png"
-                  alt="Vector Analytics Dashboard"
-                  className="relative rounded-2xl border border-white/10 shadow-2xl shadow-indigo-500/10 hover:scale-[1.02] transition-transform duration-500"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section id="features" className="py-24 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-16">
-            <span className="text-indigo-400 text-sm font-medium uppercase tracking-widest">Features</span>
-            <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>
-              Everything you need to optimize revenue
-            </h2>
-            <p className="mt-4 text-zinc-400 max-w-2xl mx-auto">
-              Powerful tools designed for modern revenue teams to maximize deal value and accelerate growth.
-            </p>
-          </div>
-          <div className="grid md:grid-cols-2 gap-6">
-            {features.map((feature, i) => (
-              <div key={i} className="group p-8 bg-zinc-950/50 border border-white/10 rounded-xl card-hover animate-fade-in" style={{ animationDelay: `${i * 0.1}s` }} data-testid={`feature-card-${i}`}>
-                <div className="w-12 h-12 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-400 mb-6 group-hover:bg-indigo-500/20 group-hover:scale-110 transition-all duration-300">
-                  {feature.icon}
-                </div>
-                <h3 className="text-xl font-semibold text-white mb-3" style={{ fontFamily: 'Outfit' }}>{feature.title}</h3>
-                <p className="text-zinc-400 leading-relaxed">{feature.description}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* How it Works */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8 bg-zinc-950/50">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
-            <div>
-              <span className="text-indigo-400 text-sm font-medium uppercase tracking-widest">How It Works</span>
-              <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>
-                AI-powered pricing in three steps
-              </h2>
-              <div className="mt-12 space-y-8">
-                {[
-                  { num: '01', title: 'Connect Your Data', desc: 'Import deals and pricing data from your CRM or enter manually.' },
-                  { num: '02', title: 'Get AI Analysis', desc: 'Claude AI analyzes market trends, competition, and your data.' },
-                  { num: '03', title: 'Optimize & Win', desc: 'Implement recommended pricing and watch revenue grow.' }
-                ].map((step, i) => (
-                  <div key={i} className="flex gap-6 group cursor-default">
-                    <div className="text-4xl font-bold text-zinc-800 group-hover:text-indigo-600 transition-colors duration-300 font-mono">{step.num}</div>
-                    <div>
-                      <h3 className="text-lg font-semibold text-white mb-2 group-hover:text-indigo-300 transition-colors duration-300">{step.title}</h3>
-                      <p className="text-zinc-400">{step.desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className="relative">
-              <div className="absolute -inset-4 bg-cyan-500/10 blur-3xl rounded-3xl" />
-              <div className="relative bg-zinc-900/80 border border-white/10 rounded-2xl p-6 backdrop-blur">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-sm text-zinc-400">Pipeline Health</span>
-                    <span className="text-xs text-emerald-400 flex items-center gap-1"><TrendingUp className="w-3 h-3" /> Healthy</span>
-                  </div>
-                  <div className="grid grid-cols-3 gap-3">
-                    {[
-                      { label: 'Active', value: '24', color: 'text-indigo-400' },
-                      { label: 'Won', value: '18', color: 'text-emerald-400' },
-                      { label: 'At Risk', value: '3', color: 'text-amber-400' },
-                    ].map((m, i) => (
-                      <div key={i} className="bg-zinc-800/50 rounded-lg p-3 text-center">
-                        <div className={`text-2xl font-bold font-mono ${m.color}`}>{m.value}</div>
-                        <div className="text-xs text-zinc-500 mt-1">{m.label}</div>
-                      </div>
-                    ))}
-                  </div>
-                  <div className="h-24 bg-gradient-to-t from-indigo-500/20 to-transparent rounded-lg flex items-end px-2 pt-2">
-                    {[35, 55, 40, 70, 55, 85, 65, 90, 75, 95].map((h, i) => (
-                      <div key={i} className="flex-1 mx-0.5 bg-indigo-500 rounded-t transition-all duration-500 hover:bg-indigo-400" style={{ height: `${h}%` }} />
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Pricing Section */}
-      <section id="pricing" className="py-24 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-12">
-            <span className="text-indigo-400 text-sm font-medium uppercase tracking-widest">Pricing</span>
-            <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>Unlock full access</h2>
-            <p className="mt-4 text-zinc-400">Start growing. Scale as you need.</p>
-            <div className="mt-8 inline-flex items-center p-1 bg-zinc-900 rounded-full border border-zinc-800">
-              <button onClick={() => setBillingPeriod('monthly')}
-                className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${billingPeriod === 'monthly' ? 'bg-indigo-600 text-white' : 'text-zinc-400 hover:text-white'}`}
-                data-testid="billing-monthly-btn">Monthly</button>
-              <button onClick={() => setBillingPeriod('yearly')}
-                className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${billingPeriod === 'yearly' ? 'bg-indigo-600 text-white' : 'text-zinc-400 hover:text-white'}`}
-                data-testid="billing-yearly-btn">Yearly <span className="text-emerald-400 ml-1">17% off*</span></button>
-            </div>
-            <p className="mt-2 text-xs text-zinc-500">*First year only, then regular price</p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {plans[billingPeriod].map((plan, i) => (
-              <div key={i} className={`pricing-card ${plan.featured ? 'featured' : ''} animate-fade-in`} style={{ animationDelay: `${i * 0.1}s` }} data-testid={`pricing-card-${plan.name.toLowerCase()}`}>
-                {plan.savings && (
-                  <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-medium mb-4">
-                    {plan.savings}
-                  </div>
-                )}
-                <h3 className="text-xl font-semibold text-white" style={{ fontFamily: 'Outfit' }}>{plan.name}</h3>
-                <div className="mt-4 flex items-baseline gap-1">
-                  <span className="text-4xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>${plan.price}</span>
-                  <span className="text-zinc-400">{plan.period}</span>
-                </div>
-                <p className="mt-2 text-sm text-indigo-400">{plan.deals}</p>
-                <ul className="mt-8 space-y-4">
-                  {plan.features.map((feature, j) => (
-                    <li key={j} className="flex items-center gap-3 text-zinc-300">
-                      <Check className="w-5 h-5 text-emerald-400 flex-shrink-0" />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-                <Button className={`w-full mt-8 ${plan.featured ? 'bg-indigo-600 hover:bg-indigo-500 btn-glow' : 'bg-zinc-800 hover:bg-zinc-700 border border-zinc-700'}`}
-                  onClick={handleGetStarted} data-testid={`pricing-cta-${plan.name.toLowerCase()}`}>
-                  {plan.cta} <ChevronRight className="w-4 h-4 ml-1" />
-                </Button>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="py-24 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="relative">
-            <div className="absolute inset-0 hero-glow" />
-            <div className="relative bg-zinc-900/50 border border-white/10 rounded-3xl p-12 backdrop-blur">
-              <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4" style={{ fontFamily: 'Outfit' }}>
-                Ready to optimize your pricing?
-              </h2>
-              <p className="text-zinc-400 mb-8 max-w-xl mx-auto">
-                Start optimizing your pricing and accelerate revenue growth today.
-              </p>
-              <Button size="lg" className="bg-indigo-600 hover:bg-indigo-500 btn-glow px-8 group" onClick={handleGetStarted} data-testid="cta-final-btn">
-                Start Your Free Trial <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="border-t border-white/10 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center">
-                <Zap className="w-5 h-5 text-white" />
-              </div>
-              <span className="font-semibold text-white" style={{ fontFamily: 'Outfit' }}>Vector</span>
-            </div>
-            <div className="flex items-center gap-8 text-sm text-zinc-400">
-              <a href="#" className="hover:text-white transition-colors">Privacy</a>
-              <a href="#" className="hover:text-white transition-colors">Terms</a>
-              <a href="#" className="hover:text-white transition-colors">Contact</a>
-            </div>
-            <p className="text-sm text-zinc-500">© 2026 Vector. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
+      <FullScreenMenu menuOpen={menuOpen} setMenuOpen={setMenuOpen} handleMenuClick={handleMenuClick} handleGetStarted={handleGetStarted} isAuthenticated={isAuthenticated} />
+      <Header setMenuOpen={setMenuOpen} menuOpen={menuOpen} handleGetStarted={handleGetStarted} />
+      <HeroSection handleGetStarted={handleGetStarted} />
+      <FeaturesSection />
+      <HowItWorks />
+      <PricingSection handleGetStarted={handleGetStarted} />
+      <CTASection handleGetStarted={handleGetStarted} />
+      <Footer />
     </div>
   );
 };
