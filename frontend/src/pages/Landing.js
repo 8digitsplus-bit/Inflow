@@ -33,11 +33,15 @@ const Landing = () => {
     }
   };
 
+  const handleScrollToPricing = () => {
+    document.querySelector('#pricing')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   return (
     <div className="min-h-screen bg-[#09090B]">
       <FullScreenMenu menuOpen={menuOpen} setMenuOpen={setMenuOpen} handleMenuClick={handleMenuClick} handleGetStarted={handleGetStarted} isAuthenticated={isAuthenticated} />
       <Header setMenuOpen={setMenuOpen} menuOpen={menuOpen} handleGetStarted={handleGetStarted} />
-      <HeroSection handleGetStarted={handleGetStarted} />
+      <HeroSection handleScrollToPricing={handleScrollToPricing} />
       <FeaturesSection />
       <HowItWorks />
       <PricingSection handleGetStarted={handleGetStarted} />

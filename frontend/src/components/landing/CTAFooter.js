@@ -14,7 +14,7 @@ export const CTASection = ({ handleGetStarted }) => (
             Start optimizing your pricing and accelerate revenue growth today.
           </p>
           <Button size="lg" className="bg-indigo-600 hover:bg-indigo-500 btn-glow px-8 group" onClick={handleGetStarted} data-testid="cta-final-btn">
-            Start Your Free Trial <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+            Access Now <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </Button>
         </div>
       </div>
