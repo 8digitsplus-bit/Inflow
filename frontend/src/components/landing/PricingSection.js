@@ -5,13 +5,13 @@ import { Button } from '../ui/button';
 const plans = {
   monthly: [
     { name: 'Essential', price: '49', period: '/month', deals: '1,000 deals', features: ['1,000 deals/month', 'Core analytics', 'Email support', 'Pipeline view', 'Churn alerts'], cta: 'Unlock Access', featured: false, planId: 'essential_monthly' },
-    { name: 'Pro', price: '99', period: '/month', deals: '5,000 deals', features: ['5,000 deals/month', 'AI pricing insights', 'Priority support', 'Advanced analytics', 'Revenue forecasting', 'Churn prediction', 'CRO tools'], cta: 'Unlock Access', featured: true, planId: 'pro_monthly' },
-    { name: 'Enterprise', price: '179', period: '/month', deals: '12,000 deals', features: ['12,000 deals/month', 'Everything in Pro', 'Custom integrations', 'API access', 'Advanced churn analytics', 'Request for Quote'], cta: 'Contact Sales', featured: false, planId: 'enterprise_monthly' }
+    { name: 'Pro', price: '99', period: '/month', deals: '5,000 deals', features: ['5,000 deals/month', 'AI pricing insights', 'Priority support', 'Advanced analytics', 'Revenue forecasting', 'Churn prediction', 'CRO tools'], cta: 'Scale Up', featured: true, planId: 'pro_monthly' },
+    { name: 'Enterprise', price: '179', period: '/month', deals: '12,000 deals', features: ['12,000 deals/month', 'Everything in Pro', 'Custom integrations', 'API access', 'Advanced churn analytics', 'Request for Quote'], cta: 'Maximise', featured: false, planId: 'enterprise_monthly' }
   ],
   yearly: [
     { name: 'Essential', price: '490', period: '/year', deals: '2,500 deals', features: ['2,500 deals/year', 'Core analytics', 'Email support', 'Pipeline view', 'Churn alerts'], cta: 'Unlock Access', featured: false, planId: 'essential_yearly', savings: 'Save $98 first year' },
-    { name: 'Pro', price: '990', period: '/year', deals: '12,000 deals', features: ['12,000 deals/year', 'AI pricing insights', 'Priority support', 'Advanced analytics', 'Revenue forecasting', 'Churn prediction', 'CRO tools'], cta: 'Unlock Access', featured: true, planId: 'pro_yearly', savings: 'Save $198 first year' },
-    { name: 'Enterprise', price: '1,799', period: '/year', deals: '30,000 deals', features: ['30,000 deals/year', 'Everything in Pro', 'Custom integrations', 'API access', 'Advanced churn analytics', 'Request for Quote'], cta: 'Contact Sales', featured: false, planId: 'enterprise_yearly', savings: 'Save $349 first year' }
+    { name: 'Pro', price: '990', period: '/year', deals: '12,000 deals', features: ['12,000 deals/year', 'AI pricing insights', 'Priority support', 'Advanced analytics', 'Revenue forecasting', 'Churn prediction', 'CRO tools'], cta: 'Scale Up', featured: true, planId: 'pro_yearly', savings: 'Save $198 first year' },
+    { name: 'Enterprise', price: '1,799', period: '/year', deals: '30,000 deals', features: ['30,000 deals/year', 'Everything in Pro', 'Custom integrations', 'API access', 'Advanced churn analytics', 'Request for Quote'], cta: 'Maximise', featured: false, planId: 'enterprise_yearly', savings: 'Save $349 first year' }
   ]
 };
 
