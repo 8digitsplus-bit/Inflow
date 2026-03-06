@@ -94,23 +94,17 @@ export const Header = ({ setMenuOpen, menuOpen, handleGetStarted }) => {
             </span>
           </a>
 
-          {/* Desktop Nav Links */}
-          <nav className="hidden md:flex items-center gap-1">
-            {['Features', 'Pricing'].map((item) => (
-              <button
-                key={item}
-                onClick={() => scrollTo(`#${item.toLowerCase()}`)}
-                className="relative px-4 py-2 text-sm font-medium text-zinc-400 hover:text-white transition-colors group"
-                data-testid={`nav-${item.toLowerCase()}`}
-              >
-                {item}
-                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-indigo-500 rounded-full transition-all duration-300 group-hover:w-4/5" />
-              </button>
-            ))}
-          </nav>
+          {/* Center hamburger */}
+          <button
+            className={`absolute left-1/2 -translate-x-1/2 flex items-center justify-center rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-all duration-300 ${scrolled ? 'w-8 h-8' : 'w-9 h-9'}`}
+            onClick={() => setMenuOpen(!menuOpen)}
+            data-testid="hamburger-menu-btn"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
 
-          {/* Right side actions */}
-          <div className="flex items-center gap-3">
+          {/* Right side CTA */}
+          <div className="flex items-center">
             <Button
               className={`bg-indigo-600 hover:bg-indigo-500 text-white btn-glow hidden sm:flex items-center gap-1.5 transition-all duration-500 ${scrolled ? 'h-8 text-xs px-4' : 'h-9 text-sm px-5'}`}
               onClick={handleGetStarted}
@@ -118,14 +112,6 @@ export const Header = ({ setMenuOpen, menuOpen, handleGetStarted }) => {
             >
               Get Started <ChevronRight className="w-3.5 h-3.5" />
             </Button>
-
-            <button
-              className={`flex items-center justify-center rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-all duration-300 ${scrolled ? 'w-8 h-8' : 'w-9 h-9'}`}
-              onClick={() => setMenuOpen(!menuOpen)}
-              data-testid="hamburger-menu-btn"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
           </div>
         </div>
       </div>
