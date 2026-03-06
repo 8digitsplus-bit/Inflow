@@ -62,8 +62,8 @@ const DashboardLayout = ({ children }) => {
           {/* Logo */}
           <div className="h-16 flex items-center px-6 border-b border-white/10">
             <Link to="/dashboard" className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center">
-                <Zap className="w-5 h-5 text-white" />
+              <div className="w-8 h-8 rounded-lg overflow-hidden">
+                <img src="/zelta-logo.png" alt="Zelta" className="w-full h-full object-contain" />
               </div>
               <span className="font-semibold text-lg text-white" style={{ fontFamily: 'Outfit' }}>
                 Zelta
