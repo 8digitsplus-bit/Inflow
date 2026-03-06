@@ -1,4 +1,4 @@
-import { TrendingUp } from 'lucide-react';
+import { TrendingUp, ArrowRight } from 'lucide-react';
 
 export const HowItWorks = () => (
   <section className="py-24 px-4 sm:px-6 lg:px-8 bg-zinc-950/50">
@@ -7,19 +7,42 @@ export const HowItWorks = () => (
         <div>
           <span className="text-indigo-400 text-sm font-medium uppercase tracking-widest">How It Works</span>
           <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>
-            AI-powered pricing in three steps
+            From data to decisions in minutes
           </h2>
-          <div className="mt-12 space-y-8">
+          <p className="mt-4 text-zinc-400 max-w-md">
+            Vector turns your sales data into actionable intelligence — no complex setup required.
+          </p>
+          <div className="mt-12 space-y-10">
             {[
-              { num: '01', title: 'Connect Your Data', desc: 'Import deals and pricing data from your CRM or enter manually.' },
-              { num: '02', title: 'Get AI Analysis', desc: 'Claude AI analyzes market trends, competition, and your data.' },
-              { num: '03', title: 'Optimize & Win', desc: 'Implement recommended pricing and watch revenue grow.' }
+              {
+                num: '01',
+                title: 'Build Your Pipeline',
+                desc: 'Add deals, set stages, and track every opportunity from first touch to close.'
+              },
+              {
+                num: '02',
+                title: 'Analyse Performance',
+                desc: 'Real-time dashboards surface win rates, revenue trends, and conversion bottlenecks automatically.'
+              },
+              {
+                num: '03',
+                title: 'Get AI Recommendations',
+                desc: 'Claude AI reviews your data and delivers pricing strategies, churn alerts, and growth actions.'
+              },
+              {
+                num: '04',
+                title: 'Scale Revenue',
+                desc: 'Act on insights to close faster, retain more, and grow deal value across your entire pipeline.'
+              }
             ].map((step, i) => (
               <div key={i} className="flex gap-6 group cursor-default">
-                <div className="text-4xl font-bold text-zinc-800 group-hover:text-indigo-600 transition-colors duration-300 font-mono">{step.num}</div>
+                <div className="relative flex-shrink-0">
+                  <div className="text-3xl font-bold text-zinc-800 group-hover:text-indigo-500 transition-colors duration-300 font-mono">{step.num}</div>
+                  {i < 3 && <div className="absolute top-10 left-1/2 -translate-x-1/2 w-px h-8 bg-gradient-to-b from-zinc-800 to-transparent group-hover:from-indigo-500/30 transition-colors duration-300" />}
+                </div>
                 <div>
-                  <h3 className="text-lg font-semibold text-white mb-2 group-hover:text-indigo-300 transition-colors duration-300">{step.title}</h3>
-                  <p className="text-zinc-400">{step.desc}</p>
+                  <h3 className="text-lg font-semibold text-white mb-1.5 group-hover:text-indigo-300 transition-colors duration-300" style={{ fontFamily: 'Outfit' }}>{step.title}</h3>
+                  <p className="text-zinc-400 text-sm leading-relaxed">{step.desc}</p>
                 </div>
               </div>
             ))}
