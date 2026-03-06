@@ -56,13 +56,20 @@ export const PricingSection = ({ handleGetStarted, isAuthenticated }) => {
           <span className="text-indigo-400 text-sm font-medium uppercase tracking-widest">Pricing</span>
           <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>Unlock full access</h2>
           <p className="mt-4 text-zinc-400">Start growing. Scale as you need.</p>
-          <div className="mt-8 inline-flex items-center p-1 bg-zinc-900 rounded-full border border-zinc-800">
+          <div className="mt-8 inline-flex items-center p-1 bg-zinc-900 rounded-full border border-zinc-800 relative" data-testid="billing-toggle">
+            <div
+              className="absolute top-1 bottom-1 rounded-full bg-indigo-600 shadow-lg shadow-indigo-500/25 transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)]"
+              style={{
+                width: billingPeriod === 'monthly' ? 'calc(40% - 2px)' : 'calc(60% - 2px)',
+                left: billingPeriod === 'monthly' ? '4px' : 'calc(40% + 2px)',
+              }}
+            />
             <button onClick={() => setBillingPeriod('monthly')}
-              className={`toggle-pill px-5 py-2 rounded-full text-sm font-medium transition-all ${billingPeriod === 'monthly' ? 'bg-indigo-600 text-white' : 'text-zinc-400 hover:text-white'}`}
+              className={`relative z-10 px-6 py-2 rounded-full text-sm font-medium transition-colors duration-300 ${billingPeriod === 'monthly' ? 'text-white' : 'text-zinc-400 hover:text-zinc-200'}`}
               data-testid="billing-monthly-btn">Monthly</button>
             <button onClick={() => setBillingPeriod('yearly')}
-              className={`toggle-pill px-5 py-2 rounded-full text-sm font-medium transition-all ${billingPeriod === 'yearly' ? 'bg-indigo-600 text-white' : 'text-zinc-400 hover:text-white'}`}
-              data-testid="billing-yearly-btn">Yearly <span className="text-emerald-400 ml-1">Save more</span></button>
+              className={`relative z-10 px-6 py-2 rounded-full text-sm font-medium transition-colors duration-300 ${billingPeriod === 'yearly' ? 'text-white' : 'text-zinc-400 hover:text-zinc-200'}`}
+              data-testid="billing-yearly-btn">Yearly <span className={`ml-1 transition-colors duration-300 ${billingPeriod === 'yearly' ? 'text-emerald-300' : 'text-emerald-400'}`}>Save more</span></button>
           </div>
         </div>
 
