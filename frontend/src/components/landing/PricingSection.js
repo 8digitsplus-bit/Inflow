@@ -12,9 +12,9 @@ const plans = {
     { name: 'Enterprise', price: '249', period: '/month', deals: '20,000 usages', features: ['20,000 usages/month', 'Everything in Pro', 'Sales Revenue', 'Revenue Intelligence', 'Custom integrations', 'API access'], cta: 'Maximise', featured: false, planId: 'enterprise_monthly' }
   ],
   yearly: [
-    { name: 'Essential', price: '599', period: '/year', deals: '3,000 usages', features: ['3,000 usages/year', 'Sales Pipeline', 'Core analytics', 'Email support', 'Churn alerts'], cta: 'Unlock Access', featured: false, planId: 'essential_yearly', savings: 'Save $109 first year' },
-    { name: 'Pro', price: '1,490', period: '/year', deals: '15,000 usages', features: ['15,000 usages/year', 'Sales Performance', 'Priority support', 'Advanced analytics', 'Revenue forecasting', 'Churn prediction', 'CRO tools'], cta: 'Scale Up', featured: true, planId: 'pro_yearly', savings: 'Save $298 first year' },
-    { name: 'Enterprise', price: '2,490', period: '/year', deals: '40,000 usages', features: ['40,000 usages/year', 'Everything in Pro', 'Sales Revenue', 'Revenue Intelligence', 'Custom integrations', 'API access'], cta: 'Maximise', featured: false, planId: 'enterprise_yearly', savings: 'Save $498 first year' }
+    { name: 'Essential', price: '496', originalPrice: '708', period: '/year', deals: '3,000 usages', features: ['3,000 usages/year', 'Sales Pipeline', 'Core analytics', 'Email support', 'Churn alerts'], cta: 'Unlock Access', featured: false, planId: 'essential_yearly', savings: '30% off 1st year' },
+    { name: 'Pro', price: '1,252', originalPrice: '1,788', period: '/year', deals: '15,000 usages', features: ['15,000 usages/year', 'Sales Performance', 'Priority support', 'Advanced analytics', 'Revenue forecasting', 'Churn prediction', 'CRO tools'], cta: 'Scale Up', featured: true, planId: 'pro_yearly', savings: '30% off 1st year' },
+    { name: 'Enterprise', price: '2,092', originalPrice: '2,988', period: '/year', deals: '40,000 usages', features: ['40,000 usages/year', 'Everything in Pro', 'Sales Revenue', 'Revenue Intelligence', 'Custom integrations', 'API access'], cta: 'Maximise', featured: false, planId: 'enterprise_yearly', savings: '30% off 1st year' }
   ]
 };
 
@@ -75,8 +75,9 @@ export const PricingSection = ({ handleGetStarted, isAuthenticated }) => {
                 </div>
               )}
               <h3 className="text-xl font-semibold text-white" style={{ fontFamily: 'Outfit' }}>{plan.name}</h3>
-              <div className="mt-4 flex items-baseline gap-1">
+              <div className="mt-4 flex items-baseline gap-2">
                 <span className="text-4xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>${plan.price}</span>
+                {plan.originalPrice && <span className="text-lg text-zinc-500 line-through">${plan.originalPrice}</span>}
                 <span className="text-zinc-400">{plan.period}</span>
               </div>
               <p className="mt-2 text-sm text-indigo-400">{plan.deals}</p>

@@ -20,10 +20,12 @@ SUBSCRIPTION_PLANS = {
         "features": ["1,500 usages/month", "Sales Pipeline", "Core analytics", "Email support", "Churn alerts"]
     },
     "essential_yearly": {
-        "price": 599.0,
+        "price": 496.0,
         "name": "Essential",
         "period": "yearly",
         "deal_limit": 3000,
+        "first_year_discount": True,
+        "original_price": 708.0,
         "features": ["3,000 usages/year", "Sales Pipeline", "Core analytics", "Email support", "Churn alerts"]
     },
     "pro_monthly": {
@@ -34,10 +36,12 @@ SUBSCRIPTION_PLANS = {
         "features": ["7,500 usages/month", "Sales Performance", "Priority support", "Advanced analytics", "Revenue forecasting", "Churn prediction", "CRO tools"]
     },
     "pro_yearly": {
-        "price": 1490.0,
+        "price": 1252.0,
         "name": "Pro",
         "period": "yearly",
         "deal_limit": 15000,
+        "first_year_discount": True,
+        "original_price": 1788.0,
         "features": ["15,000 usages/year", "Sales Performance", "Priority support", "Advanced analytics", "Revenue forecasting", "Churn prediction", "CRO tools"]
     },
     "enterprise_monthly": {
@@ -48,10 +52,12 @@ SUBSCRIPTION_PLANS = {
         "features": ["20,000 usages/month", "Everything in Pro", "Sales Revenue", "Revenue Intelligence", "Custom integrations", "API access"]
     },
     "enterprise_yearly": {
-        "price": 2490.0,
+        "price": 2092.0,
         "name": "Enterprise",
         "period": "yearly",
         "deal_limit": 40000,
+        "first_year_discount": True,
+        "original_price": 2988.0,
         "features": ["40,000 usages/year", "Everything in Pro", "Sales Revenue", "Revenue Intelligence", "Custom integrations", "API access"]
     }
 }

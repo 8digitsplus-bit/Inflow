@@ -149,9 +149,9 @@ const Settings = () => {
       { key: 'enterprise_monthly', name: 'Enterprise', price: 249, deals: '20,000' }
     ],
     yearly: [
-      { key: 'essential_yearly', name: 'Essential', price: 599, deals: '3,000', savings: 109 },
-      { key: 'pro_yearly', name: 'Pro', price: 1490, deals: '15,000', featured: true, savings: 298 },
-      { key: 'enterprise_yearly', name: 'Enterprise', price: 2490, deals: '40,000', savings: 498 }
+      { key: 'essential_yearly', name: 'Essential', price: 496, originalPrice: 708, deals: '3,000', savings: 212 },
+      { key: 'pro_yearly', name: 'Pro', price: 1252, originalPrice: 1788, deals: '15,000', featured: true, savings: 536 },
+      { key: 'enterprise_yearly', name: 'Enterprise', price: 2092, originalPrice: 2988, deals: '40,000', savings: 896 }
     ]
   };
 
@@ -246,10 +246,10 @@ const Settings = () => {
                       : 'text-zinc-400 hover:text-white'
                   }`}
                 >
-                  Yearly <span className="text-emerald-400 ml-1">17% off*</span>
+                  Yearly <span className="text-emerald-400 ml-1">30% off</span>
                 </button>
               </div>
-              <p className="text-xs text-zinc-500 mt-2">*First year only, then regular price</p>
+              <p className="text-xs text-zinc-500 mt-2">*1st year only, renews at full price</p>
             </div>
 
             <div className="grid md:grid-cols-3 gap-4">
@@ -289,17 +289,22 @@ const Settings = () => {
                       {plan.name}
                     </h3>
                     
-                    <div className="mt-2 flex items-baseline gap-1">
+                    <div className="mt-2 flex items-baseline gap-2">
                       <span className="text-2xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>
                         ${plan.price.toLocaleString()}
                       </span>
+                      {plan.originalPrice && (
+                        <span className="text-sm text-zinc-500 line-through">
+                          ${plan.originalPrice.toLocaleString()}
+                        </span>
+                      )}
                       <span className="text-zinc-400 text-sm">
                         /{billingPeriod === 'monthly' ? 'mo' : 'yr'}
                       </span>
                     </div>
 
                     {plan.savings && (
-                      <p className="text-emerald-400 text-xs mt-1">Save ${plan.savings} first year*</p>
+                      <p className="text-emerald-400 text-xs mt-1">30% off 1st year (save ${plan.savings})</p>
                     )}
                     
                     <p className="text-indigo-400 text-sm mt-2">{plan.deals} usages</p>
