@@ -83,6 +83,10 @@ class PricingAnalysisRequest(BaseModel):
     competitor_prices: List[float]
     target_margin: float
     market_segment: str
+    cost_of_goods: Optional[float] = None
+    monthly_volume: Optional[int] = None
+    discount_percentage: Optional[float] = 0
+    price_history: Optional[List[Dict[str, Any]]] = None
 
 
 class AIInsightRequest(BaseModel):

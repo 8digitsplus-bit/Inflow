@@ -36,26 +36,57 @@ async def analyze_pricing(
             session_id=f"pricing_{user.user_id}_{uuid.uuid4().hex[:8]}",
             system_message="""You are an expert pricing strategist and revenue optimization consultant. 
             Analyze pricing data and provide actionable recommendations. Be concise but thorough.
-            Always include: 1) Optimal price recommendation, 2) Key reasoning, 3) Risk factors, 4) Implementation tips."""
+            Structure your response with clear sections using markdown headers.
+            Always include: 1) Optimal price recommendation, 2) Margin analysis, 3) Competitive positioning, 
+            4) Volume impact assessment, 5) Discount strategy, 6) Risk factors, 7) Implementation roadmap."""
         ).with_model("anthropic", "claude-sonnet-4-5-20250929")
 
         avg_competitor = sum(analysis_request.competitor_prices) / max(len(analysis_request.competitor_prices), 1)
 
-        prompt = f"""Analyze this pricing scenario and provide optimization recommendations:
+        cogs_section = ""
+        if analysis_request.cost_of_goods:
+            current_margin = ((analysis_request.current_price - analysis_request.cost_of_goods) / max(analysis_request.current_price, 1)) * 100
+            cogs_section = f"""
+Cost of Goods: ${analysis_request.cost_of_goods}
+Current Gross Margin: {current_margin:.1f}%"""
+
+        volume_section = ""
+        if analysis_request.monthly_volume:
+            monthly_rev = analysis_request.current_price * analysis_request.monthly_volume
+            volume_section = f"""
+Monthly Volume: {analysis_request.monthly_volume} units
+Monthly Revenue: ${monthly_rev:,.2f}"""
+
+        discount_section = ""
+        if analysis_request.discount_percentage and analysis_request.discount_percentage > 0:
+            effective_price = analysis_request.current_price * (1 - analysis_request.discount_percentage / 100)
+            discount_section = f"""
+Current Avg Discount: {analysis_request.discount_percentage}%
+Effective Selling Price: ${effective_price:.2f}"""
+
+        history_section = ""
+        if analysis_request.price_history:
+            history_section = "\nPrice History:"
+            for h in analysis_request.price_history[:5]:
+                history_section += f"\n  - {h.get('date', 'N/A')}: ${h.get('price', 0)} ({h.get('note', '')})"
+
+        prompt = f"""Analyze this pricing scenario and provide comprehensive optimization recommendations:
 
 Product: {analysis_request.product_name}
 Current Price: ${analysis_request.current_price}
 Competitor Prices: {', '.join([f'${p}' for p in analysis_request.competitor_prices])}
 Average Competitor Price: ${avg_competitor:.2f}
 Target Margin: {analysis_request.target_margin}%
-Market Segment: {analysis_request.market_segment}
+Market Segment: {analysis_request.market_segment}{cogs_section}{volume_section}{discount_section}{history_section}
 
-Provide:
-1. Optimal price recommendation with specific number
-2. Pricing strategy (penetration, premium, competitive)
-3. Expected impact on revenue and market share
-4. Key risks and mitigation strategies
-5. A/B testing suggestions"""
+Provide a comprehensive analysis covering:
+1. **Optimal Price** - Specific recommendation with reasoning
+2. **Margin Analysis** - Current vs optimal margins, break-even assessment
+3. **Competitive Positioning** - Where you stand vs competitors, recommended strategy (penetration/premium/competitive)
+4. **Volume Impact** - How the price change might affect volume and total revenue
+5. **Discount Strategy** - Recommended discount tiers and when to apply them
+6. **Risk Assessment** - Key risks of changing price and mitigation strategies
+7. **Implementation Roadmap** - Step-by-step plan to implement the new pricing"""
 
         user_message = UserMessage(text=prompt)
         ai_response = await chat.send_message(user_message)
@@ -63,6 +94,14 @@ Provide:
         price_diff = avg_competitor - analysis_request.current_price
         suggested_adjustment = min(max(price_diff * 0.3, -analysis_request.current_price * 0.15), analysis_request.current_price * 0.25)
         optimal_price = round(analysis_request.current_price + suggested_adjustment, 2)
+
+        cogs = analysis_request.cost_of_goods or (analysis_request.current_price * 0.6)
+        current_margin = round(((analysis_request.current_price - cogs) / max(analysis_request.current_price, 1)) * 100, 1)
+        optimal_margin = round(((optimal_price - cogs) / max(optimal_price, 1)) * 100, 1)
+        volume = analysis_request.monthly_volume or 100
+        current_monthly_rev = analysis_request.current_price * volume
+        optimal_monthly_rev = optimal_price * volume * 0.97
+        revenue_impact = round(optimal_monthly_rev - current_monthly_rev, 2)
 
         analysis = PricingAnalysis(
             user_id=user.user_id,
@@ -77,6 +116,10 @@ Provide:
 
         analysis_dict = analysis.model_dump()
         analysis_dict["created_at"] = analysis_dict["created_at"].isoformat()
+        if analysis_request.cost_of_goods:
+            analysis_dict["cost_of_goods"] = analysis_request.cost_of_goods
+        if analysis_request.monthly_volume:
+            analysis_dict["monthly_volume"] = analysis_request.monthly_volume
         await db.pricing_analyses.insert_one(analysis_dict)
 
         return {
@@ -84,7 +127,16 @@ Provide:
             "optimal_price": optimal_price,
             "recommendation": ai_response,
             "competitor_average": round(avg_competitor, 2),
-            "price_position": "below" if analysis_request.current_price < avg_competitor else "above"
+            "price_position": "below" if analysis_request.current_price < avg_competitor else "above",
+            "current_margin": current_margin,
+            "optimal_margin": optimal_margin,
+            "revenue_impact_monthly": revenue_impact,
+            "price_change_pct": round(((optimal_price - analysis_request.current_price) / max(analysis_request.current_price, 1)) * 100, 1),
+            "competitor_range": {
+                "min": round(min(analysis_request.competitor_prices), 2),
+                "max": round(max(analysis_request.competitor_prices), 2),
+                "avg": round(avg_competitor, 2)
+            }
         }
 
     except ImportError:

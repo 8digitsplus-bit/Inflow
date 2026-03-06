@@ -420,3 +420,101 @@ async def get_revenue_intelligence(user: User = Depends(get_current_user)):
         "stage_health": stage_health,
         "recommendations": recommendations
     }
+
+
+@router.get("/analytics/pricing")
+async def get_pricing_analytics(user: User = Depends(get_current_user)):
+    """Get pricing optimization analytics from past analyses and deals"""
+    analyses = await db.pricing_analyses.find(
+        {"user_id": user.user_id}, {"_id": 0}
+    ).sort("created_at", -1).to_list(50)
+
+    deals = await db.deals.find({"user_id": user.user_id}, {"_id": 0}).to_list(1000)
+    closed_won = [d for d in deals if d.get("stage") == "closed_won"]
+
+    total_revenue = sum(d.get("value", 0) for d in closed_won)
+    avg_deal_value = total_revenue / max(len(closed_won), 1)
+
+    all_competitor_prices = []
+    all_optimal_prices = []
+    all_current_prices = []
+    segments = {}
+
+    for a in analyses:
+        all_competitor_prices.extend(a.get("competitor_prices", []))
+        if a.get("optimal_price"):
+            all_optimal_prices.append(a["optimal_price"])
+        if a.get("current_price"):
+            all_current_prices.append(a["current_price"])
+        seg = a.get("market_segment", "unknown")
+        if seg not in segments:
+            segments[seg] = {"count": 0, "avg_price": 0, "total": 0}
+        segments[seg]["count"] += 1
+        segments[seg]["total"] += a.get("current_price", 0)
+
+    for seg in segments:
+        segments[seg]["avg_price"] = round(segments[seg]["total"] / max(segments[seg]["count"], 1), 2)
+
+    avg_competitor = sum(all_competitor_prices) / max(len(all_competitor_prices), 1)
+    avg_optimal = sum(all_optimal_prices) / max(len(all_optimal_prices), 1)
+    avg_current = sum(all_current_prices) / max(len(all_current_prices), 1)
+
+    margin_data = []
+    for a in analyses[:10]:
+        cp = a.get("current_price", 0)
+        op = a.get("optimal_price", cp)
+        cogs = a.get("cost_of_goods", cp * 0.6)
+        margin_data.append({
+            "product": a.get("product_name", "Unknown")[:20],
+            "current_margin": round(((cp - cogs) / max(cp, 1)) * 100, 1),
+            "optimal_margin": round(((op - cogs) / max(op, 1)) * 100, 1),
+            "target_margin": a.get("target_margin", 30)
+        })
+
+    price_position_data = []
+    for a in analyses[:8]:
+        comp_avg = sum(a.get("competitor_prices", [])) / max(len(a.get("competitor_prices", [])), 1)
+        price_position_data.append({
+            "product": a.get("product_name", "Unknown")[:20],
+            "your_price": a.get("current_price", 0),
+            "competitor_avg": round(comp_avg, 2),
+            "optimal": a.get("optimal_price", 0)
+        })
+
+    elasticity_data = []
+    for i in range(5):
+        pct = -10 + i * 5
+        base_vol = 100
+        volume_change = base_vol * (1 - pct * 0.015)
+        elasticity_data.append({
+            "price_change": f"{pct:+d}%",
+            "estimated_volume": round(volume_change, 0),
+            "estimated_revenue": round(avg_current * (1 + pct / 100) * volume_change, 2)
+        })
+
+    recent_analyses = []
+    for a in analyses[:5]:
+        recent_analyses.append({
+            "analysis_id": a.get("analysis_id", ""),
+            "product_name": a.get("product_name", ""),
+            "current_price": a.get("current_price", 0),
+            "optimal_price": a.get("optimal_price", 0),
+            "market_segment": a.get("market_segment", ""),
+            "target_margin": a.get("target_margin", 0),
+            "created_at": a.get("created_at", "")
+        })
+
+    return {
+        "total_analyses": len(analyses),
+        "avg_competitor_price": round(avg_competitor, 2),
+        "avg_optimal_price": round(avg_optimal, 2),
+        "avg_current_price": round(avg_current, 2),
+        "avg_deal_value": round(avg_deal_value, 2),
+        "price_gap": round(avg_optimal - avg_current, 2),
+        "potential_revenue_uplift": round((avg_optimal - avg_current) * len(closed_won), 2),
+        "margin_data": margin_data,
+        "price_position_data": price_position_data,
+        "elasticity_data": elasticity_data,
+        "segment_breakdown": [{"segment": k.replace("_", " ").title(), **v} for k, v in segments.items()],
+        "recent_analyses": recent_analyses
+    }
