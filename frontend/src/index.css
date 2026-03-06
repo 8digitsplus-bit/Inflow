@@ -94,11 +94,44 @@ h1, h2, h3, h4, h5, h6 {
 @keyframes slideUp {
   from { 
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(30px);
   }
   to { 
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 
@@ -120,12 +153,17 @@ h1, h2, h3, h4, h5, h6 {
   }
 }
 
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
 .animate-fade-in {
-  animation: fadeIn 0.5s ease-out forwards;
+  animation: fadeIn 0.6s ease-out forwards;
 }
 
 .animate-slide-up {
-  animation: slideUp 0.5s ease-out forwards;
+  animation: slideUp 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .animate-pulse-glow {
@@ -137,6 +175,57 @@ h1, h2, h3, h4, h5, h6 {
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
 }
+
+/* Scroll-triggered reveal animations */
+.reveal {
+  opacity: 0;
+  transform: translateY(40px);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.reveal-left {
+  opacity: 0;
+  transform: translateX(-50px);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reveal-left.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.reveal-right {
+  opacity: 0;
+  transform: translateX(50px);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reveal-right.visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.reveal-scale {
+  opacity: 0;
+  transform: scale(0.9);
+  transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.reveal-scale.visible {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Stagger delays for scroll reveals */
+.reveal-delay-1 { transition-delay: 0.1s; }
+.reveal-delay-2 { transition-delay: 0.2s; }
+.reveal-delay-3 { transition-delay: 0.3s; }
+.reveal-delay-4 { transition-delay: 0.4s; }
 
 /* Glassmorphism */
 .glass {
@@ -184,7 +273,7 @@ h1, h2, h3, h4, h5, h6 {
   position: relative;
   overflow: hidden;
   box-shadow: 0 0 12px rgba(99, 102, 241, 0.2);
-  transition: box-shadow 0.3s ease, transform 0.2s ease;
+  transition: box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .btn-glow::before {
@@ -213,7 +302,98 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .btn-glow:hover {
-  box-shadow: 0 0 28px rgba(99, 102, 241, 0.45);
+  box-shadow: 0 0 32px rgba(99, 102, 241, 0.5);
+  transform: translateY(-1px);
+}
+
+.btn-glow:active {
+  transform: translateY(0) scale(0.98);
+  box-shadow: 0 0 16px rgba(99, 102, 241, 0.3);
+}
+
+/* Pricing card hover */
+.pricing-card {
+  position: relative;
+  padding: 2rem;
+  border-radius: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: rgba(24, 24, 27, 0.5);
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.4s ease,
+              box-shadow 0.4s ease;
+}
+
+.pricing-card:hover {
+  transform: translateY(-6px);
+  border-color: rgba(99, 102, 241, 0.25);
+  box-shadow: 0 20px 60px -15px rgba(99, 102, 241, 0.15);
+}
+
+.pricing-card.featured {
+  border-color: rgba(99, 102, 241, 0.3);
+  background: linear-gradient(180deg, rgba(99, 102, 241, 0.08) 0%, rgba(24, 24, 27, 0.5) 100%);
+}
+
+.pricing-card.featured:hover {
+  border-color: rgba(99, 102, 241, 0.5);
+  box-shadow: 0 20px 60px -10px rgba(99, 102, 241, 0.25);
+}
+
+/* Toggle pill animation */
+.toggle-pill {
+  transition: background-color 0.3s cubic-bezier(0.16, 1, 0.3, 1), color 0.3s ease, transform 0.2s ease;
+}
+
+.toggle-pill:hover {
+  transform: scale(1.03);
+}
+
+.toggle-pill:active {
+  transform: scale(0.97);
+}
+
+/* Feature card hover */
+.feature-card {
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
+              border-color 0.3s ease,
+              box-shadow 0.4s ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(99, 102, 241, 0.2);
+  box-shadow: 0 12px 40px -10px rgba(99, 102, 241, 0.1);
+}
+
+/* Step hover in How It Works */
+.step-item {
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.step-item:hover {
+  transform: translateX(6px);
+}
+
+/* CTA card hover */
+.cta-card {
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.4s ease;
+}
+
+.cta-card:hover {
+  transform: scale(1.01);
+  box-shadow: 0 0 80px rgba(99, 102, 241, 0.12);
+}
+
+/* Footer social icon hover */
+.social-icon {
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), 
+              background-color 0.3s ease,
+              border-color 0.3s ease,
+              color 0.3s ease;
+}
+
+.social-icon:hover {
+  transform: translateY(-2px);
 }
 
 /* Pipeline stages */

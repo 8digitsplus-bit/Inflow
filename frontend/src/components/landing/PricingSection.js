@@ -52,23 +52,23 @@ export const PricingSection = ({ handleGetStarted, isAuthenticated }) => {
   return (
     <section id="pricing" className="py-24 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-12">
+        <div className="text-center mb-12 reveal">
           <span className="text-indigo-400 text-sm font-medium uppercase tracking-widest">Pricing</span>
           <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>Unlock full access</h2>
           <p className="mt-4 text-zinc-400">Start growing. Scale as you need.</p>
           <div className="mt-8 inline-flex items-center p-1 bg-zinc-900 rounded-full border border-zinc-800">
             <button onClick={() => setBillingPeriod('monthly')}
-              className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${billingPeriod === 'monthly' ? 'bg-indigo-600 text-white' : 'text-zinc-400 hover:text-white'}`}
+              className={`toggle-pill px-5 py-2 rounded-full text-sm font-medium transition-all ${billingPeriod === 'monthly' ? 'bg-indigo-600 text-white' : 'text-zinc-400 hover:text-white'}`}
               data-testid="billing-monthly-btn">Monthly</button>
             <button onClick={() => setBillingPeriod('yearly')}
-              className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${billingPeriod === 'yearly' ? 'bg-indigo-600 text-white' : 'text-zinc-400 hover:text-white'}`}
+              className={`toggle-pill px-5 py-2 rounded-full text-sm font-medium transition-all ${billingPeriod === 'yearly' ? 'bg-indigo-600 text-white' : 'text-zinc-400 hover:text-white'}`}
               data-testid="billing-yearly-btn">Yearly <span className="text-emerald-400 ml-1">Save more</span></button>
           </div>
         </div>
 
         <div className="grid md:grid-cols-3 gap-8">
           {plans[billingPeriod].map((plan, i) => (
-            <div key={i} className={`pricing-card ${plan.featured ? 'featured' : ''} animate-fade-in`} style={{ animationDelay: `${i * 0.1}s` }} data-testid={`pricing-card-${plan.name.toLowerCase()}`}>
+            <div key={i} className={`pricing-card ${plan.featured ? 'featured' : ''} reveal reveal-delay-${i + 1}`} data-testid={`pricing-card-${plan.name.toLowerCase()}`}>
               {plan.savings && (
                 <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-medium mb-4">
                   {plan.savings}

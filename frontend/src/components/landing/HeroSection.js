@@ -7,7 +7,7 @@ export const HeroSection = ({ handleScrollToPricing }) => (
     <div className="absolute inset-0 noise-overlay" />
     <div className="max-w-7xl mx-auto relative z-10">
       <div className="grid lg:grid-cols-12 gap-12 items-center">
-        <div className="lg:col-span-7 space-y-8 animate-fade-in">
+        <div className="lg:col-span-7 space-y-8 reveal-left">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-500/10 border border-indigo-500/20">
             <Sparkles className="w-4 h-4 text-indigo-400" />
             <span className="text-sm text-indigo-300">Powered by Claude AI</span>
@@ -22,12 +22,12 @@ export const HeroSection = ({ handleScrollToPricing }) => (
           </p>
           <div className="flex flex-col sm:flex-row gap-4">
             <Button size="lg" className="bg-indigo-600 hover:bg-indigo-500 text-white btn-glow px-8 py-6 text-base group" onClick={handleScrollToPricing} data-testid="hero-cta-btn">
-              Access Now <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              Access Now <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
             </Button>
           </div>
         </div>
 
-        <div className="lg:col-span-5 animate-slide-up stagger-2">
+        <div className="lg:col-span-5 reveal-right reveal-delay-2">
           <div className="relative">
             <div className="absolute -inset-4 bg-indigo-500/20 blur-3xl rounded-3xl animate-pulse-glow" />
             <img

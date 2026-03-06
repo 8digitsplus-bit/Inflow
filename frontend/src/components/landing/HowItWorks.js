@@ -1,41 +1,31 @@
-import { TrendingUp, ArrowRight } from 'lucide-react';
+import { TrendingUp } from 'lucide-react';
+
+const steps = [
+  { num: '01', title: 'Build Your Pipeline', desc: 'Add deals, set stages, and track every opportunity from first touch to close.' },
+  { num: '02', title: 'Analyse Performance', desc: 'Real-time dashboards surface win rates, revenue trends, and conversion bottlenecks automatically.' },
+  { num: '03', title: 'Get AI Recommendations', desc: 'Claude AI reviews your data and delivers pricing strategies, churn alerts, and growth actions.' },
+  { num: '04', title: 'Scale Revenue', desc: 'Act on insights to close faster, retain more, and grow deal value across your entire pipeline.' }
+];
+
+const delays = ['reveal-delay-1', 'reveal-delay-2', 'reveal-delay-3', 'reveal-delay-4'];
 
 export const HowItWorks = () => (
   <section className="py-24 px-4 sm:px-6 lg:px-8 bg-zinc-950/50">
     <div className="max-w-7xl mx-auto">
       <div className="grid lg:grid-cols-2 gap-16 items-center">
         <div>
-          <span className="text-indigo-400 text-sm font-medium uppercase tracking-widest">How It Works</span>
-          <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>
-            From data to decisions in minutes
-          </h2>
-          <p className="mt-4 text-zinc-400 max-w-md">
-            Vector turns your sales data into actionable intelligence — no complex setup required.
-          </p>
+          <div className="reveal-left">
+            <span className="text-indigo-400 text-sm font-medium uppercase tracking-widest">How It Works</span>
+            <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>
+              From data to decisions in minutes
+            </h2>
+            <p className="mt-4 text-zinc-400 max-w-md">
+              Vector turns your sales data into actionable intelligence — no complex setup required.
+            </p>
+          </div>
           <div className="mt-12 space-y-10">
-            {[
-              {
-                num: '01',
-                title: 'Build Your Pipeline',
-                desc: 'Add deals, set stages, and track every opportunity from first touch to close.'
-              },
-              {
-                num: '02',
-                title: 'Analyse Performance',
-                desc: 'Real-time dashboards surface win rates, revenue trends, and conversion bottlenecks automatically.'
-              },
-              {
-                num: '03',
-                title: 'Get AI Recommendations',
-                desc: 'Claude AI reviews your data and delivers pricing strategies, churn alerts, and growth actions.'
-              },
-              {
-                num: '04',
-                title: 'Scale Revenue',
-                desc: 'Act on insights to close faster, retain more, and grow deal value across your entire pipeline.'
-              }
-            ].map((step, i) => (
-              <div key={i} className="flex gap-6 group cursor-default">
+            {steps.map((step, i) => (
+              <div key={i} className={`step-item flex gap-6 group cursor-default reveal ${delays[i]}`}>
                 <div className="relative flex-shrink-0">
                   <div className="text-3xl font-bold text-zinc-800 group-hover:text-indigo-500 transition-colors duration-300 font-mono">{step.num}</div>
                   {i < 3 && <div className="absolute top-10 left-1/2 -translate-x-1/2 w-px h-8 bg-gradient-to-b from-zinc-800 to-transparent group-hover:from-indigo-500/30 transition-colors duration-300" />}
@@ -48,7 +38,7 @@ export const HowItWorks = () => (
             ))}
           </div>
         </div>
-        <div className="relative">
+        <div className="relative reveal-right">
           <div className="absolute -inset-4 bg-cyan-500/10 blur-3xl rounded-3xl" />
           <div className="relative bg-zinc-900/80 border border-white/10 rounded-2xl p-6 backdrop-blur">
             <div className="space-y-4">
