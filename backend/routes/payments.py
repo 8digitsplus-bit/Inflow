@@ -82,7 +82,10 @@ async def create_checkout_session(
             StripeCheckout, CheckoutSessionRequest
         )
 
-        data = await request.json()
+        try:
+            data = await request.json()
+        except Exception:
+            raise HTTPException(status_code=400, detail="Invalid request body")
         plan = data.get("plan", "pro_monthly")
         origin_url = data.get("origin_url")
 
