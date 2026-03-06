@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Zap, ArrowLeft, Mail, Loader2, Eye, EyeOff, ShoppingBag } from 'lucide-react';
+import { Zap, ArrowLeft, Mail, Loader2, Eye, EyeOff } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { toast } from 'sonner';
@@ -115,7 +115,9 @@ const AuthPage = () => {
               </Button>
 
               <Button className="w-full bg-[#96BF48] hover:bg-[#7EA63E] text-white font-medium h-11 gap-3" onClick={() => setShowShopifyForm(true)} data-testid="auth-shopify-btn">
-                <ShoppingBag className="w-5 h-5" />
+                <svg className="w-5 h-5" viewBox="0 0 109.5 124.5" fill="currentColor">
+                  <path d="M95.6 28.2c-.1-.6-.6-1-1.1-1-.5 0-10.2-.8-10.2-.8s-6.7-6.7-7.5-7.5c-.8-.8-2.3-.5-2.9-.4-.1 0-1.5.5-4 1.2-2.4-6.8-6.5-13.1-13.8-13.1h-.6c-2.1-2.7-4.7-3.9-6.8-3.9C31.5 2.7 24 22.5 21.7 32.7c-6 1.9-10.3 3.2-10.8 3.3-3.4 1.1-3.5 1.2-3.9 4.3C6.7 42.9 0 96.3 0 96.3l75.6 13.1 40.8-10.2S95.7 28.8 95.6 28.2zM67.2 21.5l-6.4 2c0-2-.3-4.8-.7-7.6 4.2.8 6.3 5.2 7.1 5.6zm-10.9 3.4l-13.7 4.3c1.3-5.1 3.8-10.2 8.7-13.5.8-.5 1.9-1.2 3.2-1.5 1.3 3.1 1.8 7.3 1.8 10.7zm-8.8-18.6c1 0 2 .4 3 1.1-4.8 2.3-10 8-12.2 19.4l-10.8 3.3c2.1-8.6 7.6-23.8 20-23.8z"/>
+                </svg>
                 Continue with Shopify
               </Button>
 

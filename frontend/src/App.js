@@ -15,6 +15,7 @@ import AuthPage from './pages/AuthPage';
 import Onboarding from './pages/Onboarding';
 import AuthCallback from './pages/AuthCallback';
 import ProtectedRoute from './components/ProtectedRoute';
+import TierGate from './components/TierGate';
 import './App.css';
 
 // Router component that handles session_id detection
@@ -48,7 +49,9 @@ const AppRouter = () => {
         path="/pipeline" 
         element={
           <ProtectedRoute>
-            <Pipeline />
+            <TierGate requiredLevel={1}>
+              <Pipeline />
+            </TierGate>
           </ProtectedRoute>
         } 
       />
@@ -56,7 +59,9 @@ const AppRouter = () => {
         path="/sales-performance" 
         element={
           <ProtectedRoute>
-            <SalesPerformance />
+            <TierGate requiredLevel={2}>
+              <SalesPerformance />
+            </TierGate>
           </ProtectedRoute>
         } 
       />
@@ -64,7 +69,9 @@ const AppRouter = () => {
         path="/sales-revenue" 
         element={
           <ProtectedRoute>
-            <SalesRevenue />
+            <TierGate requiredLevel={3}>
+              <SalesRevenue />
+            </TierGate>
           </ProtectedRoute>
         } 
       />
@@ -80,7 +87,9 @@ const AppRouter = () => {
         path="/revenue" 
         element={
           <ProtectedRoute>
-            <RevenueIntelligence />
+            <TierGate requiredLevel={3}>
+              <RevenueIntelligence />
+            </TierGate>
           </ProtectedRoute>
         } 
       />
