@@ -1,4 +1,5 @@
-import { ArrowRight, X, Zap, Menu } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { ArrowRight, X, Zap, Menu, ChevronRight } from 'lucide-react';
 import { Button } from '../ui/button';
 
 export const FullScreenMenu = ({ menuOpen, setMenuOpen, handleMenuClick, handleGetStarted, isAuthenticated }) => (
@@ -44,24 +45,90 @@ export const FullScreenMenu = ({ menuOpen, setMenuOpen, handleMenuClick, handleG
   </div>
 );
 
-export const Header = ({ setMenuOpen, menuOpen, handleGetStarted }) => (
-  <header className="fixed top-0 left-0 right-0 z-50 glass border-b border-white/10">
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      <div className="flex items-center justify-between h-16">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center">
-            <Zap className="w-5 h-5 text-white" />
-          </div>
-          <span className="font-semibold text-lg text-white" style={{ fontFamily: 'Outfit' }}>Vector</span>
-        </div>
-        <button className="flex items-center gap-2 px-3 py-2 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 transition-all" onClick={() => setMenuOpen(!menuOpen)} data-testid="hamburger-menu-btn">
-          <Menu className="w-5 h-5" />
-          <span className="text-sm font-medium hidden sm:inline">Menu</span>
-        </button>
-        <Button className="bg-indigo-600 hover:bg-indigo-500 text-white btn-glow hidden sm:flex" onClick={handleGetStarted} data-testid="header-cta-btn">
-          Get Started
-        </Button>
+export const Header = ({ setMenuOpen, menuOpen, handleGetStarted }) => {
+  const [scrolled, setScrolled] = useState(false);
+  const [visible, setVisible] = useState(true);
+  const [lastScroll, setLastScroll] = useState(0);
+
+  useEffect(() => {
+    const onScroll = () => {
+      const y = window.scrollY;
+      setScrolled(y > 20);
+      setVisible(y < lastScroll || y < 80);
+      setLastScroll(y);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [lastScroll]);
+
+  const scrollTo = (id) => {
+    document.querySelector(id)?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  return (
+    <header
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ease-out ${
+        visible ? 'translate-y-0' : '-translate-y-full'
+      }`}
+      style={{
+        background: scrolled ? 'rgba(9, 9, 11, 0.85)' : 'transparent',
+        backdropFilter: scrolled ? 'blur(20px) saturate(180%)' : 'none',
+        WebkitBackdropFilter: scrolled ? 'blur(20px) saturate(180%)' : 'none',
+      }}
+      data-testid="main-header"
+    >
+      {/* Animated bottom border */}
+      <div className={`absolute bottom-0 left-0 right-0 h-px transition-opacity duration-500 ${scrolled ? 'opacity-100' : 'opacity-0'}`}>
+        <div className="h-full bg-gradient-to-r from-transparent via-indigo-500/40 to-transparent" />
       </div>
-    </div>
-  </header>
-);
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className={`flex items-center justify-between transition-all duration-500 ${scrolled ? 'h-14' : 'h-20'}`}>
+          {/* Logo */}
+          <a href="/" className="flex items-center gap-2.5 group" data-testid="header-logo">
+            <div className={`rounded-xl bg-gradient-to-br from-indigo-600 to-indigo-500 flex items-center justify-center transition-all duration-500 shadow-lg shadow-indigo-500/20 group-hover:shadow-indigo-500/40 group-hover:scale-105 ${scrolled ? 'w-8 h-8' : 'w-9 h-9'}`}>
+              <Zap className={`text-white transition-all duration-500 ${scrolled ? 'w-4 h-4' : 'w-5 h-5'}`} />
+            </div>
+            <span className={`font-bold text-white transition-all duration-500 ${scrolled ? 'text-lg' : 'text-xl'}`} style={{ fontFamily: 'Outfit' }}>
+              Vector
+            </span>
+          </a>
+
+          {/* Desktop Nav Links */}
+          <nav className="hidden md:flex items-center gap-1">
+            {['Features', 'Pricing'].map((item) => (
+              <button
+                key={item}
+                onClick={() => scrollTo(`#${item.toLowerCase()}`)}
+                className="relative px-4 py-2 text-sm font-medium text-zinc-400 hover:text-white transition-colors group"
+                data-testid={`nav-${item.toLowerCase()}`}
+              >
+                {item}
+                <span className="absolute bottom-0 left-1/2 -translate-x-1/2 w-0 h-0.5 bg-indigo-500 rounded-full transition-all duration-300 group-hover:w-4/5" />
+              </button>
+            ))}
+          </nav>
+
+          {/* Right side actions */}
+          <div className="flex items-center gap-3">
+            <Button
+              className={`bg-indigo-600 hover:bg-indigo-500 text-white btn-glow hidden sm:flex items-center gap-1.5 transition-all duration-500 ${scrolled ? 'h-8 text-xs px-4' : 'h-9 text-sm px-5'}`}
+              onClick={handleGetStarted}
+              data-testid="header-cta-btn"
+            >
+              Get Started <ChevronRight className="w-3.5 h-3.5" />
+            </Button>
+
+            <button
+              className={`flex items-center justify-center rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-all duration-300 ${scrolled ? 'w-8 h-8' : 'w-9 h-9'}`}
+              onClick={() => setMenuOpen(!menuOpen)}
+              data-testid="hamburger-menu-btn"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      </div>
+    </header>
+  );
+};
