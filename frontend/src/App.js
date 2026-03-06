@@ -3,6 +3,8 @@ import { AuthProvider } from './contexts/AuthContext';
 import Landing from './pages/Landing';
 import Dashboard from './pages/Dashboard';
 import Pipeline from './pages/Pipeline';
+import SalesPerformance from './pages/SalesPerformance';
+import SalesRevenue from './pages/SalesRevenue';
 import PricingOptimizer from './pages/PricingOptimizer';
 import RevenueIntelligence from './pages/RevenueIntelligence';
 import ChurnRetention from './pages/ChurnRetention';
@@ -47,6 +49,22 @@ const AppRouter = () => {
         element={
           <ProtectedRoute>
             <Pipeline />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/sales-performance" 
+        element={
+          <ProtectedRoute>
+            <SalesPerformance />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/sales-revenue" 
+        element={
+          <ProtectedRoute>
+            <SalesRevenue />
           </ProtectedRoute>
         } 
       />

@@ -7,14 +7,14 @@ const API_URL = process.env.REACT_APP_BACKEND_URL;
 
 const plans = {
   monthly: [
-    { name: 'Essential', price: '49', period: '/month', deals: '1,000 deals', features: ['1,000 deals/month', 'Core analytics', 'Email support', 'Pipeline view', 'Churn alerts'], cta: 'Unlock Access', featured: false, planId: 'essential_monthly' },
-    { name: 'Pro', price: '99', period: '/month', deals: '5,000 deals', features: ['5,000 deals/month', 'AI pricing insights', 'Priority support', 'Advanced analytics', 'Revenue forecasting', 'Churn prediction', 'CRO tools'], cta: 'Scale Up', featured: true, planId: 'pro_monthly' },
-    { name: 'Enterprise', price: '179', period: '/month', deals: '12,000 deals', features: ['12,000 deals/month', 'Everything in Pro', 'Custom integrations', 'API access', 'Advanced churn analytics', 'Request for Quote'], cta: 'Maximise', featured: false, planId: 'enterprise_monthly' }
+    { name: 'Essential', price: '59', period: '/month', deals: '1,500 usages', features: ['1,500 usages/month', 'Sales Pipeline', 'Core analytics', 'Email support', 'Churn alerts'], cta: 'Unlock Access', featured: false, planId: 'essential_monthly' },
+    { name: 'Pro', price: '149', period: '/month', deals: '7,500 usages', features: ['7,500 usages/month', 'Sales Performance', 'Priority support', 'Advanced analytics', 'Revenue forecasting', 'Churn prediction', 'CRO tools'], cta: 'Scale Up', featured: true, planId: 'pro_monthly' },
+    { name: 'Enterprise', price: '249', period: '/month', deals: '20,000 usages', features: ['20,000 usages/month', 'Everything in Pro', 'Sales Revenue', 'Revenue Intelligence', 'Custom integrations', 'API access'], cta: 'Maximise', featured: false, planId: 'enterprise_monthly' }
   ],
   yearly: [
-    { name: 'Essential', price: '490', period: '/year', deals: '2,500 deals', features: ['2,500 deals/year', 'Core analytics', 'Email support', 'Pipeline view', 'Churn alerts'], cta: 'Unlock Access', featured: false, planId: 'essential_yearly', savings: 'Save $98 first year' },
-    { name: 'Pro', price: '990', period: '/year', deals: '12,000 deals', features: ['12,000 deals/year', 'AI pricing insights', 'Priority support', 'Advanced analytics', 'Revenue forecasting', 'Churn prediction', 'CRO tools'], cta: 'Scale Up', featured: true, planId: 'pro_yearly', savings: 'Save $198 first year' },
-    { name: 'Enterprise', price: '1,799', period: '/year', deals: '30,000 deals', features: ['30,000 deals/year', 'Everything in Pro', 'Custom integrations', 'API access', 'Advanced churn analytics', 'Request for Quote'], cta: 'Maximise', featured: false, planId: 'enterprise_yearly', savings: 'Save $349 first year' }
+    { name: 'Essential', price: '599', period: '/year', deals: '3,000 usages', features: ['3,000 usages/year', 'Sales Pipeline', 'Core analytics', 'Email support', 'Churn alerts'], cta: 'Unlock Access', featured: false, planId: 'essential_yearly', savings: 'Save $109 first year' },
+    { name: 'Pro', price: '1,490', period: '/year', deals: '15,000 usages', features: ['15,000 usages/year', 'Sales Performance', 'Priority support', 'Advanced analytics', 'Revenue forecasting', 'Churn prediction', 'CRO tools'], cta: 'Scale Up', featured: true, planId: 'pro_yearly', savings: 'Save $298 first year' },
+    { name: 'Enterprise', price: '2,490', period: '/year', deals: '40,000 usages', features: ['40,000 usages/year', 'Everything in Pro', 'Sales Revenue', 'Revenue Intelligence', 'Custom integrations', 'API access'], cta: 'Maximise', featured: false, planId: 'enterprise_yearly', savings: 'Save $498 first year' }
   ]
 };
 
@@ -62,9 +62,8 @@ export const PricingSection = ({ handleGetStarted, isAuthenticated }) => {
               data-testid="billing-monthly-btn">Monthly</button>
             <button onClick={() => setBillingPeriod('yearly')}
               className={`px-5 py-2 rounded-full text-sm font-medium transition-all ${billingPeriod === 'yearly' ? 'bg-indigo-600 text-white' : 'text-zinc-400 hover:text-white'}`}
-              data-testid="billing-yearly-btn">Yearly <span className="text-emerald-400 ml-1">17% off*</span></button>
+              data-testid="billing-yearly-btn">Yearly <span className="text-emerald-400 ml-1">Save more</span></button>
           </div>
-          <p className="mt-2 text-xs text-zinc-500">*First year only, then regular price</p>
         </div>
 
         <div className="grid md:grid-cols-3 gap-8">

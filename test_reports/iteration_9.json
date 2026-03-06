@@ -1,0 +1,109 @@
+{
+  "summary": "Comprehensive testing of pricing updates and 3 new feature pages. All backend and frontend tests PASSED. Pricing correctly updated to Essential $59/$599, Pro $149/$1490, Enterprise $249/$2490. New pages (Sales Performance, Sales Revenue, Revenue Intelligence) all functional with proper KPIs, charts, and recommendations.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Dashboard charts", "issues": ["Console warning: 'The width(-1) and height(-1) of chart should be greater than 0' - known Recharts issue with responsive containers, non-blocking"]}
+    ]
+  },
+  "passed_tests": [
+    "Backend: /api/subscription/plans returns 6 plans",
+    "Backend: Essential monthly price is $59",
+    "Backend: Pro monthly price is $149",
+    "Backend: Enterprise monthly price is $249",
+    "Backend: Essential yearly price is $599",
+    "Backend: Pro yearly price is $1,490",
+    "Backend: Enterprise yearly price is $2,490",
+    "Backend: Essential monthly has 1500 usages",
+    "Backend: Pro monthly has 7500 usages",
+    "Backend: Enterprise monthly has 20000 usages",
+    "Backend: Essential includes Sales Pipeline feature",
+    "Backend: Pro includes Sales Performance feature",
+    "Backend: Enterprise includes Sales Revenue feature",
+    "Backend: Enterprise includes Revenue Intelligence feature",
+    "Backend: Pro does NOT have AI pricing insights",
+    "Backend: /api/analytics/sales-performance returns valid data with KPIs",
+    "Backend: /api/analytics/sales-revenue returns valid data with MRR/ARR",
+    "Backend: /api/analytics/revenue-intelligence returns valid data with recommendations",
+    "Backend: revenue-intelligence pipeline_health returns valid values (strong/moderate/weak)",
+    "Backend: revenue-intelligence performance_trend returns valid values (improving/stable/declining)",
+    "Backend: All new analytics endpoints require authentication (401)",
+    "Frontend: Landing page pricing shows $59/$149/$249 monthly",
+    "Frontend: Landing page pricing shows $599/$1,490/$2,490 yearly",
+    "Frontend: Essential card shows Sales Pipeline feature",
+    "Frontend: Pro card shows Sales Performance feature",
+    "Frontend: Enterprise card shows Sales Revenue & Revenue Intelligence features",
+    "Frontend: Pro card does NOT show AI pricing insights",
+    "Frontend: Landing pricing uses 'usages' terminology",
+    "Frontend: Sidebar shows Sales Pipeline nav item",
+    "Frontend: Sidebar shows Sales Performance nav item",
+    "Frontend: Sidebar shows Sales Revenue nav item",
+    "Frontend: Sidebar shows Revenue Intelligence nav item",
+    "Frontend: Sales Performance page loads with 4 KPIs (Win Rate, Avg Deal Value, Avg Cycle Days, Deal Velocity)",
+    "Frontend: Sales Performance page shows Performance Trend chart",
+    "Frontend: Sales Performance page shows Win/Loss chart",
+    "Frontend: Sales Performance page shows Stage Velocity section",
+    "Frontend: Sales Performance page shows Top Deals section",
+    "Frontend: Sales Revenue page loads with 4 KPIs (Total Revenue, MRR, Pipeline Value, Avg Deal Size)",
+    "Frontend: Sales Revenue page shows ARR in MRR card",
+    "Frontend: Sales Revenue page shows Revenue vs Target chart",
+    "Frontend: Sales Revenue page shows Revenue by Stage chart",
+    "Frontend: Revenue Intelligence page shows unified overview subtitle",
+    "Frontend: Revenue Intelligence page shows 5 KPIs",
+    "Frontend: Revenue Intelligence page shows Pipeline health badge (strong/moderate/weak)",
+    "Frontend: Revenue Intelligence page shows Performance trend badge (improving/stable/declining)",
+    "Frontend: Revenue Intelligence page shows Pipeline Stage Health section",
+    "Frontend: Revenue Intelligence page shows Recommendations & Actions section",
+    "Frontend: Settings page shows $59/$149/$249 monthly pricing",
+    "Frontend: Settings page shows $599/$1,490/$2,490 yearly pricing",
+    "Frontend: Settings page uses 'usages' terminology"
+  ],
+  "test_report_links": [
+    "/app/backend/tests/test_pricing_new_features.py",
+    "/app/test_reports/pytest/pytest_pricing_features.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "All pricing values correctly updated in both backend SUBSCRIPTION_PLANS and frontend PricingSection, Settings components",
+    "Pro tier correctly excludes 'AI pricing insights' feature",
+    "New analytics endpoints correctly implement authentication and return proper data structures",
+    "Revenue Intelligence page properly shows unified overview with pipeline health, performance trend, and actionable recommendations",
+    "DashboardLayout sidebar correctly updated with all new navigation items"
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_pricing_new_features.py"
+  ],
+  "success_rate": {
+    "backend": "100% (23/23 tests passed)",
+    "frontend": "100% (All UI tests passed)"
+  },
+  "test_credentials": {
+    "test_user": "uitest_1772633591@testexample.com / UITestPass123!"
+  },
+  "seed_data_creation": "Created TEST_ prefixed users for authentication during pytest",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "All pricing updates tested and verified. New pages Sales Performance, Sales Revenue, Revenue Intelligence all working correctly. Landing page and Settings page both show updated pricing with 'usages' terminology. Navigation sidebar includes all new page links. Tier gating not explicitly tested but pages are protected routes.",
+  "features_verified": {
+    "pricing_updates": {
+      "essential_monthly": "$59 / 1500 usages",
+      "essential_yearly": "$599 / 3000 usages",
+      "pro_monthly": "$149 / 7500 usages",
+      "pro_yearly": "$1490 / 15000 usages",
+      "enterprise_monthly": "$249 / 20000 usages",
+      "enterprise_yearly": "$2490 / 40000 usages"
+    },
+    "new_features_by_tier": {
+      "essential": ["Sales Pipeline"],
+      "pro": ["Sales Performance"],
+      "enterprise": ["Sales Revenue", "Revenue Intelligence"]
+    },
+    "pro_removed_feature": "AI pricing insights (verified NOT present)",
+    "new_pages": ["Sales Performance (/sales-performance)", "Sales Revenue (/sales-revenue)", "Revenue Intelligence overhauled (/revenue)"]
+  }
+}

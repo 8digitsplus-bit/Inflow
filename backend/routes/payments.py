@@ -13,46 +13,46 @@ router = APIRouter()
 
 SUBSCRIPTION_PLANS = {
     "essential_monthly": {
-        "price": 49.0,
+        "price": 59.0,
         "name": "Essential",
         "period": "monthly",
-        "deal_limit": 1000,
-        "features": ["1,000 deals/month", "Core analytics", "Email support", "Pipeline view", "Churn alerts"]
+        "deal_limit": 1500,
+        "features": ["1,500 usages/month", "Sales Pipeline", "Core analytics", "Email support", "Churn alerts"]
     },
     "essential_yearly": {
-        "price": 490.0,
+        "price": 599.0,
         "name": "Essential",
         "period": "yearly",
-        "deal_limit": 2500,
-        "features": ["2,500 deals/year", "Core analytics", "Email support", "Pipeline view", "Churn alerts"]
+        "deal_limit": 3000,
+        "features": ["3,000 usages/year", "Sales Pipeline", "Core analytics", "Email support", "Churn alerts"]
     },
     "pro_monthly": {
-        "price": 99.0,
+        "price": 149.0,
         "name": "Pro",
         "period": "monthly",
-        "deal_limit": 5000,
-        "features": ["5,000 deals/month", "AI pricing insights", "Priority support", "Advanced analytics", "Revenue forecasting", "Churn prediction", "CRO tools"]
+        "deal_limit": 7500,
+        "features": ["7,500 usages/month", "Sales Performance", "Priority support", "Advanced analytics", "Revenue forecasting", "Churn prediction", "CRO tools"]
     },
     "pro_yearly": {
-        "price": 990.0,
+        "price": 1490.0,
         "name": "Pro",
         "period": "yearly",
-        "deal_limit": 12000,
-        "features": ["12,000 deals/year", "AI pricing insights", "Priority support", "Advanced analytics", "Revenue forecasting", "Churn prediction", "CRO tools"]
+        "deal_limit": 15000,
+        "features": ["15,000 usages/year", "Sales Performance", "Priority support", "Advanced analytics", "Revenue forecasting", "Churn prediction", "CRO tools"]
     },
     "enterprise_monthly": {
-        "price": 179.0,
+        "price": 249.0,
         "name": "Enterprise",
         "period": "monthly",
-        "deal_limit": 12000,
-        "features": ["12,000 deals/month", "Everything in Pro", "Custom integrations", "API access", "Advanced churn analytics", "Request for Quote"]
+        "deal_limit": 20000,
+        "features": ["20,000 usages/month", "Everything in Pro", "Sales Revenue", "Revenue Intelligence", "Custom integrations", "API access"]
     },
     "enterprise_yearly": {
-        "price": 1799.0,
+        "price": 2490.0,
         "name": "Enterprise",
         "period": "yearly",
-        "deal_limit": 30000,
-        "features": ["30,000 deals/year", "Everything in Pro", "Custom integrations", "API access", "Advanced churn analytics", "Request for Quote"]
+        "deal_limit": 40000,
+        "features": ["40,000 usages/year", "Everything in Pro", "Sales Revenue", "Revenue Intelligence", "Custom integrations", "API access"]
     }
 }
 
@@ -60,12 +60,12 @@ SUBSCRIPTION_PLANS = {
 def get_user_deal_limit(subscription_tier: str) -> int:
     """Get deal limit based on subscription tier"""
     limits = {
-        "essential_monthly": 1000,
-        "essential_yearly": 2500,
-        "pro_monthly": 5000,
-        "pro_yearly": 12000,
-        "enterprise_monthly": 12000,
-        "enterprise_yearly": 30000,
+        "essential_monthly": 1500,
+        "essential_yearly": 3000,
+        "pro_monthly": 7500,
+        "pro_yearly": 15000,
+        "enterprise_monthly": 20000,
+        "enterprise_yearly": 40000,
         "free": 50
     }
     return limits.get(subscription_tier, 50)

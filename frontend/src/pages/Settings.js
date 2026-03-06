@@ -144,14 +144,14 @@ const Settings = () => {
 
   const planConfig = {
     monthly: [
-      { key: 'essential_monthly', name: 'Essential', price: 49, deals: '1,000' },
-      { key: 'pro_monthly', name: 'Pro', price: 99, deals: '5,000', featured: true },
-      { key: 'enterprise_monthly', name: 'Enterprise', price: 179, deals: '12,000' }
+      { key: 'essential_monthly', name: 'Essential', price: 59, deals: '1,500' },
+      { key: 'pro_monthly', name: 'Pro', price: 149, deals: '7,500', featured: true },
+      { key: 'enterprise_monthly', name: 'Enterprise', price: 249, deals: '20,000' }
     ],
     yearly: [
-      { key: 'essential_yearly', name: 'Essential', price: 490, deals: '2,500', savings: 98 },
-      { key: 'pro_yearly', name: 'Pro', price: 990, deals: '12,000', featured: true, savings: 198 },
-      { key: 'enterprise_yearly', name: 'Enterprise', price: 1799, deals: '30,000', savings: 349 }
+      { key: 'essential_yearly', name: 'Essential', price: 599, deals: '3,000', savings: 109 },
+      { key: 'pro_yearly', name: 'Pro', price: 1490, deals: '15,000', featured: true, savings: 298 },
+      { key: 'enterprise_yearly', name: 'Enterprise', price: 2490, deals: '40,000', savings: 498 }
     ]
   };
 
@@ -302,7 +302,7 @@ const Settings = () => {
                       <p className="text-emerald-400 text-xs mt-1">Save ${plan.savings} first year*</p>
                     )}
                     
-                    <p className="text-indigo-400 text-sm mt-2">{plan.deals} deals</p>
+                    <p className="text-indigo-400 text-sm mt-2">{plan.deals} usages</p>
                     
                     <ul className="mt-4 space-y-2">
                       {planData?.features?.slice(0, 4).map((feature, i) => (

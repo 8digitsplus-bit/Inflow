@@ -16,6 +16,7 @@ import {
   TrendingUp,
   Plug
 } from 'lucide-react';
+// Note: Zap used for CRO sidebar icon, TrendingUp for Sales Performance
 import { Button } from './ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Toaster } from './ui/sonner';
@@ -23,10 +24,11 @@ import { Toaster } from './ui/sonner';
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
   { name: 'Sales Pipeline', href: '/pipeline', icon: Target },
-  { name: 'Pricing Optimizer', href: '/pricing', icon: DollarSign },
+  { name: 'Sales Performance', href: '/sales-performance', icon: TrendingUp },
+  { name: 'Sales Revenue', href: '/sales-revenue', icon: DollarSign },
   { name: 'Revenue Intelligence', href: '/revenue', icon: BarChart3 },
   { name: 'Churn & Retention', href: '/churn', icon: Users },
-  { name: 'CRO', href: '/cro', icon: TrendingUp },
+  { name: 'CRO', href: '/cro', icon: Zap },
   { name: 'Integrations', href: '/integrations', icon: Plug },
   { name: 'Settings', href: '/settings', icon: Settings },
 ];
