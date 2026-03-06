@@ -156,7 +156,7 @@ async def login_with_email(req: LoginRequest, response: Response):
 
     stored_hash = user_doc.get("password_hash")
     if not stored_hash:
-        raise HTTPException(status_code=401, detail="This account uses social login. Please sign in with Google or Microsoft.")
+        raise HTTPException(status_code=401, detail="This account uses social login. Please sign in with Google or Shopify.")
 
     if not bcrypt.checkpw(req.password.encode("utf-8"), stored_hash.encode("utf-8")):
         raise HTTPException(status_code=401, detail="Invalid email or password")
@@ -185,63 +185,66 @@ async def login_with_email(req: LoginRequest, response: Response):
     return safe_user
 
 
-# ============== MICROSOFT AUTH ==============
+# ============== SHOPIFY AUTH ==============
 
-MICROSOFT_CLIENT_ID = os.environ.get("MICROSOFT_CLIENT_ID", "")
-MICROSOFT_CLIENT_SECRET = os.environ.get("MICROSOFT_CLIENT_SECRET", "")
-MICROSOFT_TENANT = os.environ.get("MICROSOFT_TENANT", "common")
+SHOPIFY_API_KEY = os.environ.get("SHOPIFY_API_KEY", "")
+SHOPIFY_API_SECRET = os.environ.get("SHOPIFY_API_SECRET", "")
+SHOPIFY_SCOPES = "read_products,read_orders,read_customers"
 
 
-@router.get("/auth/microsoft")
-async def microsoft_auth(request: Request):
-    """Redirect to Microsoft OAuth"""
-    if not MICROSOFT_CLIENT_ID:
-        raise HTTPException(status_code=501, detail="Microsoft authentication is not configured yet")
+@router.get("/auth/shopify")
+async def shopify_auth(request: Request):
+    """Initiate Shopify OAuth"""
+    if not SHOPIFY_API_KEY:
+        raise HTTPException(status_code=501, detail="Shopify authentication is not configured yet. Add SHOPIFY_API_KEY and SHOPIFY_API_SECRET to your environment.")
+    shop = request.query_params.get("shop", "")
+    if not shop:
+        raise HTTPException(status_code=400, detail="Shop domain is required (e.g. mystore.myshopify.com)")
     origin = request.query_params.get("origin", "")
-    redirect_uri = f"{origin}/api/auth/microsoft/callback"
+    redirect_uri = f"{origin}/api/auth/shopify/callback"
+    nonce = uuid.uuid4().hex
     url = (
-        f"https://login.microsoftonline.com/{MICROSOFT_TENANT}/oauth2/v2.0/authorize?"
-        f"client_id={MICROSOFT_CLIENT_ID}&response_type=code&redirect_uri={redirect_uri}"
-        f"&scope=openid+profile+email+User.Read&response_mode=query"
+        f"https://{shop}/admin/oauth/authorize?"
+        f"client_id={SHOPIFY_API_KEY}&scope={SHOPIFY_SCOPES}"
+        f"&redirect_uri={redirect_uri}&state={nonce}"
     )
-    return {"url": url}
+    return {"url": url, "nonce": nonce}
 
 
-@router.get("/auth/microsoft/callback")
-async def microsoft_callback(code: str, response: Response):
-    """Microsoft OAuth callback"""
-    if not MICROSOFT_CLIENT_ID or not MICROSOFT_CLIENT_SECRET:
-        raise HTTPException(status_code=501, detail="Microsoft authentication is not configured")
+@router.get("/auth/shopify/callback")
+async def shopify_callback(request: Request, response: Response):
+    """Shopify OAuth callback"""
+    if not SHOPIFY_API_KEY or not SHOPIFY_API_SECRET:
+        raise HTTPException(status_code=501, detail="Shopify authentication is not configured")
 
-    origin = str(response.headers.get("referer", "")).rstrip("/")
-    redirect_uri = f"{origin}/api/auth/microsoft/callback"
+    code = request.query_params.get("code")
+    shop = request.query_params.get("shop")
+    if not code or not shop:
+        raise HTTPException(status_code=400, detail="Missing code or shop parameter")
 
     async with httpx.AsyncClient() as client_http:
         token_resp = await client_http.post(
-            f"https://login.microsoftonline.com/{MICROSOFT_TENANT}/oauth2/v2.0/token",
-            data={
-                "client_id": MICROSOFT_CLIENT_ID,
-                "client_secret": MICROSOFT_CLIENT_SECRET,
-                "code": code,
-                "redirect_uri": redirect_uri,
-                "grant_type": "authorization_code",
-                "scope": "openid profile email User.Read"
-            },
-            headers={"Content-Type": "application/x-www-form-urlencoded"}
+            f"https://{shop}/admin/oauth/access_token",
+            json={
+                "client_id": SHOPIFY_API_KEY,
+                "client_secret": SHOPIFY_API_SECRET,
+                "code": code
+            }
         )
         token_data = token_resp.json()
         access_token = token_data.get("access_token")
         if not access_token:
-            raise HTTPException(status_code=401, detail="Failed to get Microsoft access token")
+            raise HTTPException(status_code=401, detail="Failed to get Shopify access token")
 
-        user_resp = await client_http.get(
-            "https://graph.microsoft.com/v1.0/me",
-            headers={"Authorization": f"Bearer {access_token}"}
+        shop_resp = await client_http.get(
+            f"https://{shop}/admin/api/2024-01/shop.json",
+            headers={"X-Shopify-Access-Token": access_token}
         )
-        ms_user = user_resp.json()
+        shop_data = shop_resp.json().get("shop", {})
 
-    email = ms_user.get("mail") or ms_user.get("userPrincipalName")
-    name = ms_user.get("displayName", email)
+    email = shop_data.get("email", "")
+    name = shop_data.get("shop_owner", shop_data.get("name", email))
+    shop_domain = shop_data.get("domain", shop)
     user_id = f"user_{uuid.uuid4().hex[:12]}"
     existing = await db.users.find_one({"email": email}, {"_id": 0})
 
@@ -251,7 +254,9 @@ async def microsoft_callback(code: str, response: Response):
             {"user_id": user_id},
             {"$set": {
                 "name": name,
-                "auth_provider": "microsoft",
+                "auth_provider": "shopify",
+                "shopify_shop": shop_domain,
+                "shopify_access_token": access_token,
                 "updated_at": datetime.now(timezone.utc).isoformat()
             }}
         )
@@ -261,7 +266,9 @@ async def microsoft_callback(code: str, response: Response):
             "email": email,
             "name": name,
             "picture": None,
-            "auth_provider": "microsoft",
+            "auth_provider": "shopify",
+            "shopify_shop": shop_domain,
+            "shopify_access_token": access_token,
             "subscription_tier": "free",
             "subscription_status": "active",
             "created_at": datetime.now(timezone.utc).isoformat()
@@ -287,7 +294,7 @@ async def microsoft_callback(code: str, response: Response):
         max_age=7 * 24 * 60 * 60
     )
 
-    user_doc = await db.users.find_one({"user_id": user_id}, {"_id": 0, "password_hash": 0})
+    user_doc = await db.users.find_one({"user_id": user_id}, {"_id": 0, "password_hash": 0, "shopify_access_token": 0})
     return user_doc
 
 

@@ -86,22 +86,15 @@ export const AuthProvider = ({ children }) => {
     return userData;
   };
 
-  const loginWithMicrosoft = async () => {
-    try {
-      const response = await fetch(`${API_URL}/api/auth/microsoft?origin=${window.location.origin}`);
-      const data = await response.json();
-      
-      if (response.ok && data.url) {
-        window.location.href = data.url;
-      } else {
-        throw new Error(data.detail || 'Microsoft login is not available yet');
-      }
-    } catch (err) {
-      // If JSON parsing failed or network error
-      if (err.message.includes('not configured') || err.message.includes('not available')) {
-        throw err;
-      }
-      throw new Error('Microsoft authentication is not configured yet');
+  const loginWithShopify = async (shopDomain) => {
+    const response = await fetch(`${API_URL}/api/auth/shopify?shop=${encodeURIComponent(shopDomain)}&origin=${window.location.origin}`);
+    const text = await response.text();
+    let data;
+    try { data = JSON.parse(text); } catch { throw new Error('Shopify login is not available yet'); }
+    if (response.ok && data.url) {
+      window.location.href = data.url;
+    } else {
+      throw new Error(data.detail || 'Shopify login is not available yet');
     }
   };
 
@@ -155,7 +148,7 @@ export const AuthProvider = ({ children }) => {
     loginWithGoogle,
     loginWithEmail,
     registerWithEmail,
-    loginWithMicrosoft,
+    loginWithShopify,
     logout,
     exchangeSession,
     refreshUser,
