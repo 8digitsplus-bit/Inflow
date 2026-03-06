@@ -22,8 +22,9 @@
 ```
 /app/frontend/src/
 ├── pages/ (Landing, AuthPage, Onboarding, Dashboard, Pipeline, SalesPerformance, SalesRevenue, RevenueIntelligence, Settings, etc.)
+├── components/ (DashboardLayout, NotificationBell, ProtectedRoute, TierGate, ui/)
 ├── components/landing/ (HeaderMenu, HeroSection, FeaturesSection, HowItWorks, PricingSection, CTAFooter)
-└── components/ (DashboardLayout, NotificationBell, ProtectedRoute, ui/)
+└── contexts/ (AuthContext)
 ```
 
 ## Pricing Tiers (Updated March 6, 2026)
@@ -33,16 +34,17 @@
 | Pro | $149/mo | $1,490/yr | 7,500 / 15,000 | Scale Up |
 | Enterprise | $249/mo | $2,490/yr | 20,000 / 40,000 | Maximise |
 
-## Feature Tier Gating
-| Feature | Essential | Pro | Enterprise |
-|---------|-----------|-----|------------|
-| Sales Pipeline | Yes | Yes | Yes |
-| Sales Performance | - | Yes | Yes |
-| Sales Revenue | - | - | Yes |
-| Revenue Intelligence | - | - | Yes |
-| Churn & Retention | Yes | Yes | Yes |
-| CRO Tools | - | Yes | Yes |
-| AI Insights | - | Yes | Yes |
+## Feature Tier Gating (Enforced via TierGate component)
+| Feature Page | Required Tier | Level |
+|-------------|---------------|-------|
+| Dashboard | Free | 0 |
+| Sales Pipeline | Essential+ | 1 |
+| Sales Performance | Pro+ | 2 |
+| Sales Revenue | Enterprise | 3 |
+| Revenue Intelligence | Enterprise | 3 |
+| Churn & Retention | Free | 0 |
+| CRO | Free | 0 |
+| Settings | Free | 0 |
 
 ## Key Features
 - **Sales Pipeline**: Kanban board, deal CRUD, drag-and-drop stages, stage totals
@@ -54,16 +56,16 @@
 
 ## All Completed (as of March 6, 2026)
 - Full app scaffolding, all core features
-- Multi-provider auth (Google, Email/Password, Shopify structure)
+- Multi-provider auth (Google, Email/Password, Shopify w/ real logo)
 - Stripe checkout wired on Landing page + Settings page
 - Claude AI integration for insights
 - Onboarding flow, Integrations page
 - Tier-gated personalized dashboard
-- Pricing updated: $59/$149/$249 monthly, $599/$1490/$2490 yearly
-- Removed AI pricing insights from Pro tier
+- Pricing: $59/$149/$249 monthly, $599/$1490/$2490 yearly
 - 3 new feature pages: Sales Performance, Sales Revenue, Revenue Intelligence overhaul
-- Navigation sidebar updated with all new pages
-- 100% test pass rate (backend + frontend)
+- Tier-gated access controls with upgrade prompts (TierGate component)
+- Real Shopify SVG logo on auth page
+- 100% test pass rate across all iterations
 
 ## Backlog
 - **P1:** Configure Shopify OAuth with credentials when user provides them
