@@ -36,7 +36,7 @@ api_router.include_router(integrations_router)
 # Basic routes
 @api_router.get("/")
 async def root():
-    return {"message": "Vector API", "version": "1.0.0"}
+    return {"message": "Zelta API", "version": "1.0.0"}
 
 
 @api_router.get("/health")

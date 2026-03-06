@@ -32,7 +32,7 @@ export const HeroSection = ({ handleScrollToPricing }) => (
             <div className="absolute -inset-4 bg-indigo-500/20 blur-3xl rounded-3xl animate-pulse-glow" />
             <img
               src="/dashboard-preview.png"
-              alt="Vector Analytics Dashboard"
+              alt="Zelta Analytics Dashboard"
               className="relative rounded-2xl border border-white/10 shadow-2xl shadow-indigo-500/10 hover:scale-[1.02] transition-transform duration-500"
             />
           </div>

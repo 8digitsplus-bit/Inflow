@@ -97,7 +97,7 @@ const Onboarding = () => {
           <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center">
             <Zap className="w-6 h-6 text-white" />
           </div>
-          <span className="text-2xl font-semibold text-white" style={{ fontFamily: 'Outfit' }}>Vector</span>
+          <span className="text-2xl font-semibold text-white" style={{ fontFamily: 'Outfit' }}>Zelta</span>
         </div>
 
         {/* Progress */}

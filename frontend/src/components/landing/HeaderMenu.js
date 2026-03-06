@@ -90,7 +90,7 @@ export const Header = ({ setMenuOpen, menuOpen, handleGetStarted }) => {
               <Zap className={`text-white transition-all duration-500 ${scrolled ? 'w-4 h-4' : 'w-5 h-5'}`} />
             </div>
             <span className={`font-bold text-white transition-all duration-500 ${scrolled ? 'text-lg' : 'text-xl'}`} style={{ fontFamily: 'Outfit' }}>
-              Vector
+              Zelta
             </span>
           </a>
 
