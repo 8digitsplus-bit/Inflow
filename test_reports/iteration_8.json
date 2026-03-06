@@ -1,0 +1,77 @@
+{
+  "summary": "Tested Shopify auth graceful failure and Stripe checkout integration. Fixed a bug in AuthContext.js where loginWithShopify was causing 'body stream already read' error. All critical features working: Shopify auth returns 501 with proper error, Stripe checkout works for authenticated users from both Settings page and Landing page pricing section.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/payments/create-checkout", "issue": "Returns 500 instead of 400 for invalid plan or missing origin_url", "priority": "LOW"}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Dashboard charts", "issues": ["Console warning: 'The width(-1) and height(-1) of chart should be greater than 0' - Recharts rendering issue, non-blocking"]}
+    ]
+  },
+  "passed_tests": [
+    "Backend: GET /api/auth/shopify?shop=test.myshopify.com returns 501 with 'not configured' message",
+    "Backend: GET /api/auth/shopify (no shop param) returns 501 - API key checked first",
+    "Backend: POST /api/payments/create-checkout returns 401 when not authenticated",
+    "Backend: GET /api/payments/status/{session_id} returns 401 when not authenticated",
+    "Backend: GET /api/subscription/plans returns all 6 plans with correct data",
+    "Backend: Essential monthly plan price is $49.00",
+    "Backend: Pro monthly plan price is $99.00",
+    "Backend: Enterprise monthly plan price is $179.00",
+    "Backend: Email registration works and returns user without password_hash",
+    "Backend: Duplicate email registration fails with 400",
+    "Backend: Email login works with valid credentials",
+    "Backend: Email login fails with invalid password (401)",
+    "Backend: Authenticated checkout creates Stripe session and returns URL",
+    "Backend: GET /api/health returns healthy",
+    "Backend: GET /api/auth/me returns 401 when not authenticated",
+    "Frontend: Landing page loads with Vector branding",
+    "Frontend: Pricing section shows all 3 plans (Essential, Pro, Enterprise)",
+    "Frontend: All CTA buttons visible ('Unlock Access', 'Scale Up', 'Maximise')",
+    "Frontend: Clicking pricing CTA when NOT logged in redirects to /auth",
+    "Frontend: Auth page shows Google, Shopify, and Email options",
+    "Frontend: Clicking 'Continue with Shopify' shows domain input form",
+    "Frontend: Shopify auth shows toast 'Shopify login is not available yet' (FIXED from 'body stream already read' error)",
+    "Frontend: Email registration redirects to /onboarding",
+    "Frontend: Settings page shows subscription plans with Monthly/Yearly toggle",
+    "Frontend: Settings page shows all 3 plan cards with upgrade buttons",
+    "Frontend: Clicking Upgrade button redirects to Stripe checkout (US$99 for Pro)",
+    "Frontend: Landing page pricing CTA redirects to Stripe checkout when authenticated (US$49 for Essential)"
+  ],
+  "test_report_links": [
+    "/app/backend/tests/test_shopify_stripe_integration.py",
+    "/app/test_reports/pytest/pytest_shopify_stripe.xml"
+  ],
+  "action_items": [
+    "Optional: Improve error handling in create-checkout endpoint to return 400 for invalid plan/missing origin instead of 500"
+  ],
+  "critical_code_review_comments": [
+    "FIXED: AuthContext.js loginWithShopify() was reading response.text() before JSON.parse which caused 'body stream already read' error - changed to direct response.json()",
+    "Console warning about chart dimensions is a known Recharts issue with responsive containers - non-blocking"
+  ],
+  "updated_files": [
+    "/app/frontend/src/contexts/AuthContext.js",
+    "/app/backend/tests/test_shopify_stripe_integration.py"
+  ],
+  "success_rate": {
+    "backend": "88% (15/17 tests passed - 2 minor edge case failures)",
+    "frontend": "100% (All flows verified)"
+  },
+  "test_credentials": {
+    "test_user": "uitest_1772633591@testexample.com / UITestPass123!"
+  },
+  "seed_data_creation": "Created several TEST_ prefixed users for checkout testing",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Shopify auth gracefully returns 501 when SHOPIFY_API_KEY not set. Stripe checkout is fully functional with test API key. Bug fix applied to AuthContext.js loginWithShopify function. Landing page pricing CTAs redirect to Stripe when authenticated, and to /auth when not authenticated.",
+  "bug_fix_applied": {
+    "file": "/app/frontend/src/contexts/AuthContext.js",
+    "issue": "loginWithShopify() was causing 'body stream already read' error on frontend toast",
+    "root_cause": "Code was calling response.text() then trying to JSON.parse() that text, which can cause issues in some cases",
+    "fix": "Changed to direct response.json() call with try/catch for error handling"
+  }
+}

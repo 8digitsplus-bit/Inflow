@@ -44,7 +44,7 @@ const Landing = () => {
       <HeroSection handleScrollToPricing={handleScrollToPricing} />
       <FeaturesSection />
       <HowItWorks />
-      <PricingSection handleGetStarted={handleGetStarted} />
+      <PricingSection handleGetStarted={handleGetStarted} isAuthenticated={isAuthenticated} />
       <CTASection handleGetStarted={handleGetStarted} />
       <Footer />
     </div>

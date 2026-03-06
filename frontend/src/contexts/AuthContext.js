@@ -88,9 +88,12 @@ export const AuthProvider = ({ children }) => {
 
   const loginWithShopify = async (shopDomain) => {
     const response = await fetch(`${API_URL}/api/auth/shopify?shop=${encodeURIComponent(shopDomain)}&origin=${window.location.origin}`);
-    const text = await response.text();
     let data;
-    try { data = JSON.parse(text); } catch { throw new Error('Shopify login is not available yet'); }
+    try {
+      data = await response.json();
+    } catch {
+      throw new Error('Shopify login is not available yet');
+    }
     if (response.ok && data.url) {
       window.location.href = data.url;
     } else {
