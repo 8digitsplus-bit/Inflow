@@ -13,10 +13,10 @@ export const FeaturesSection = () => (
       <div className="text-center mb-16">
         <span className="text-indigo-400 text-sm font-medium uppercase tracking-widest">Features</span>
         <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>
-          Everything you need to optimize revenue
+          Everything you need to scale
         </h2>
         <p className="mt-4 text-zinc-400 max-w-2xl mx-auto">
-          Powerful tools designed for modern revenue teams to maximize deal value and accelerate growth.
+          Powerful tools designed to maximise deal value & accelerate growth.
         </p>
       </div>
       <div className="grid md:grid-cols-2 gap-6">
