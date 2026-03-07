@@ -61,13 +61,10 @@ const DashboardLayout = ({ children }) => {
         <div className="flex flex-col h-full">
           {/* Logo */}
           <div className="h-16 flex items-center px-6 border-b border-white/10">
-            <Link to="/dashboard" className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg overflow-hidden">
-                <img src="/zelta-logo.png" alt="Zelta" className="w-full h-full object-contain" />
+            <Link to="/dashboard" className="flex items-center">
+              <div className="h-8 overflow-hidden">
+                <img src="/zelta-logo.png?v=2" alt="Zelta" className="h-full w-auto object-contain" />
               </div>
-              <span className="font-semibold text-lg text-white" style={{ fontFamily: 'Outfit' }}>
-                Zelta
-              </span>
             </Link>
           </div>
 
@@ -147,11 +144,10 @@ const DashboardLayout = ({ children }) => {
           >
             <Menu className="w-6 h-6" />
           </button>
-          <div className="flex items-center gap-2 ml-3">
-            <div className="w-7 h-7 rounded-lg bg-indigo-600 flex items-center justify-center">
-              <Zap className="w-4 h-4 text-white" />
+          <div className="flex items-center ml-3">
+            <div className="h-7 overflow-hidden">
+              <img src="/zelta-logo.png?v=2" alt="Zelta" className="h-full w-auto object-contain" />
             </div>
-            <span className="font-semibold text-white" style={{ fontFamily: 'Outfit' }}>Zelta</span>
           </div>
         </div>
 

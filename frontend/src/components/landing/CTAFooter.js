@@ -33,11 +33,10 @@ export const Footer = () => (
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-10 lg:gap-16 py-16 lg:py-20">
         {/* Brand column */}
         <div className="col-span-2 md:col-span-4 lg:col-span-2">
-          <a href="/" className="inline-flex items-center gap-2.5 group mb-5">
-            <div className="w-9 h-9 rounded-xl overflow-hidden flex items-center justify-center group-hover:scale-105 transition-transform">
-              <img src="/zelta-logo.png" alt="Zelta" className="w-full h-full object-contain" />
+          <a href="/" className="inline-flex items-center group mb-5">
+            <div className="h-10 overflow-hidden flex items-center justify-center group-hover:scale-105 transition-transform">
+              <img src="/zelta-logo.png?v=2" alt="Zelta" className="h-full w-auto object-contain" />
             </div>
-            <span className="text-xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>Zelta</span>
           </a>
           <p className="text-zinc-500 text-sm leading-relaxed max-w-xs mb-6">
             AI-powered revenue intelligence platform for modern B2B teams. Maximise deal value and accelerate growth.

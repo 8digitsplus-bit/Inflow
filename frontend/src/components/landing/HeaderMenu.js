@@ -85,13 +85,10 @@ export const Header = ({ setMenuOpen, menuOpen, handleGetStarted }) => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className={`flex items-center justify-between transition-all duration-500 ${scrolled ? 'h-14' : 'h-20'}`}>
           {/* Logo */}
-          <a href="/" className="flex items-center gap-2.5 group" data-testid="header-logo">
-            <div className={`rounded-xl overflow-hidden flex items-center justify-center transition-all duration-500 group-hover:scale-105 ${scrolled ? 'w-8 h-8' : 'w-9 h-9'}`}>
-              <img src="/zelta-logo.png" alt="Zelta" className="w-full h-full object-contain" />
+          <a href="/" className="flex items-center group" data-testid="header-logo">
+            <div className={`overflow-hidden flex items-center justify-center transition-all duration-500 group-hover:scale-105 ${scrolled ? 'h-8' : 'h-10'}`}>
+              <img src="/zelta-logo.png?v=2" alt="Zelta" className="h-full w-auto object-contain" />
             </div>
-            <span className={`font-bold text-white transition-all duration-500 ${scrolled ? 'text-lg' : 'text-xl'}`} style={{ fontFamily: 'Outfit' }}>
-              Zelta
-            </span>
           </a>
 
           {/* Center hamburger */}
