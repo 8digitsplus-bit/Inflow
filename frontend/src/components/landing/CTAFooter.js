@@ -34,8 +34,8 @@ export const Footer = () => (
         {/* Brand column */}
         <div className="col-span-2 md:col-span-4 lg:col-span-2">
           <a href="/" className="inline-flex items-center group mb-5">
-            <div className="h-10 overflow-hidden flex items-center justify-center group-hover:scale-105 transition-transform">
-              <img src="/inflow-logo.png" alt="InFlow" className="h-full w-auto object-contain" />
+            <div className="h-7 overflow-hidden flex items-center justify-center group-hover:scale-105 transition-transform">
+              <img src="/inflow-logo.png?v=3" alt="InFlow" className="h-full w-auto object-contain" />
             </div>
           </a>
           <p className="text-zinc-500 text-sm leading-relaxed max-w-xs mb-6">

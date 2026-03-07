@@ -62,8 +62,8 @@ const DashboardLayout = ({ children }) => {
           {/* Logo */}
           <div className="h-16 flex items-center px-6 border-b border-white/10">
             <Link to="/dashboard" className="flex items-center">
-              <div className="h-8 overflow-hidden">
-                <img src="/inflow-logo.png" alt="InFlow" className="h-full w-auto object-contain" />
+              <div className="h-6 overflow-hidden">
+                <img src="/inflow-logo.png?v=3" alt="InFlow" className="h-full w-auto object-contain" />
               </div>
             </Link>
           </div>
@@ -145,8 +145,8 @@ const DashboardLayout = ({ children }) => {
             <Menu className="w-6 h-6" />
           </button>
           <div className="flex items-center ml-3">
-            <div className="h-7 overflow-hidden">
-              <img src="/inflow-logo.png" alt="InFlow" className="h-full w-auto object-contain" />
+            <div className="h-5 overflow-hidden">
+              <img src="/inflow-logo.png?v=3" alt="InFlow" className="h-full w-auto object-contain" />
             </div>
           </div>
         </div>
