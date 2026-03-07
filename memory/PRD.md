@@ -1,7 +1,7 @@
-# Vector - Product Requirements Document
+# Zelta - Product Requirements Document
 
 ## Product Overview
-**Vector** is a subscription-based SaaS for pricing optimization, sales pipeline management, and revenue intelligence. Built for B2B SaaS revenue teams.
+**Zelta** is a subscription-based SaaS for pricing optimization, sales pipeline management, and revenue intelligence. Built for B2B SaaS revenue teams.
 
 ## Tech Stack
 - **Frontend:** React, Tailwind CSS, Shadcn/UI, Recharts, Framer Motion
@@ -31,30 +31,30 @@
 | Churn & Retention | Pro+ (AI predictions) |
 
 ## Key Features
+- **Connect Your Business (NEW):** Integration hub to connect external business platforms (Stripe, Shopify, HubSpot, Salesforce, QuickBooks). Syncs business data automatically to power all analytics. Available as optional onboarding step 4 and as sidebar navigation item. Replaces old Integrations page.
 - **Sales Pipeline**: Kanban board, deal CRUD, drag-and-drop stages
 - **Sales Performance**: Win rate, deal velocity, cycle days, stage velocity, top deals
 - **Sales Revenue**: MRR/ARR, revenue vs target, growth rate, top accounts
 - **Revenue Intelligence**: Unified overview of pipeline + performance + revenue with recommendations
-- **Pricing Optimizer** (Upgraded):
-  - **Analyze tab**: Enhanced form with product name, current price, cost of goods, monthly volume, discount %, competitor prices, market segment, target margin → Claude AI returns optimal price, margin analysis, competitive positioning, volume impact, discount strategy, risk assessment, implementation roadmap
-  - **Dashboard tab**: KPIs (total analyses, price gap, competitor avg, revenue uplift), margin analysis chart, competitor positioning chart, price elasticity simulator, segment breakdown, recent analyses history
+- **Pricing Optimizer**: Enhanced form with AI analysis, dashboard with KPIs, margin charts, elasticity simulator
 - **CRO**: Conversion funnel, stage conversions, A/B tests, bottleneck detection
 - **Churn & Retention**: Health scores, retention/churn trends, at-risk deals, cohort analysis
 
-## All Completed (as of March 6, 2026)
+## All Completed (as of March 7, 2026)
 - Full app scaffolding, all core features
 - Multi-provider auth (Google, Email/Password, Shopify w/ real logo)
 - Stripe checkout wired (Landing + Settings)
 - Claude AI integration for insights
-- Onboarding flow, Integrations page
+- Onboarding flow (4 steps including optional Connect Your Business)
 - Tier-gated personalized dashboard + access controls
 - Pricing: $59/$149/$249 monthly, $599/$1490/$2490 yearly
-- 3 new feature pages: Sales Performance, Sales Revenue, Revenue Intelligence overhaul
-- **Pricing Optimizer upgraded** with dashboard metrics + enhanced AI analysis
-- Landing page text updates ("Everything you need to scale")
-- 100% test pass rates across all iterations
+- 3 feature pages: Sales Performance, Sales Revenue, Revenue Intelligence
+- Pricing Optimizer upgraded with dashboard metrics + enhanced AI analysis
+- **Connect Your Business** feature: 5 platforms, auto data sync, sidebar nav, onboarding step 4
+- 100% test pass rates across all iterations (latest: iteration_14)
 
 ## Backlog
-- **P1:** Configure Shopify OAuth credentials
-- **P2:** UI/UX refinements per user feedback
-- **P3:** Admin dashboard, email notifications, team collaboration, deeper integrations
+- **P0 (Blocked):** Configure Shopify OAuth credentials (user waiting for production domain)
+- **P1:** Live data integrations - replace simulated data with real OAuth for each platform
+- **P2:** Team/Collaboration features - multi-user workspace, role-based permissions
+- **P3:** Admin dashboard, email notifications, deeper integrations
