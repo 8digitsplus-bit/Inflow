@@ -29,7 +29,7 @@ const navigation = [
   { name: 'Revenue Intelligence', href: '/revenue', icon: BarChart3 },
   { name: 'Churn & Retention', href: '/churn', icon: Users },
   { name: 'CRO', href: '/cro', icon: Zap },
-  { name: 'Integrations', href: '/integrations', icon: Plug },
+  { name: 'Connect Business', href: '/connect-business', icon: Plug },
   { name: 'Settings', href: '/settings', icon: Settings },
 ];
 

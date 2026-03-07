@@ -11,6 +11,7 @@ import ChurnRetention from './pages/ChurnRetention';
 import ConversionOptimization from './pages/ConversionOptimization';
 import Settings from './pages/Settings';
 import Integrations from './pages/Integrations';
+import ConnectBusiness from './pages/ConnectBusiness';
 import AuthPage from './pages/AuthPage';
 import Onboarding from './pages/Onboarding';
 import AuthCallback from './pages/AuthCallback';
@@ -122,6 +123,14 @@ const AppRouter = () => {
         element={
           <ProtectedRoute>
             <Integrations />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/connect-business" 
+        element={
+          <ProtectedRoute>
+            <ConnectBusiness />
           </ProtectedRoute>
         } 
       />

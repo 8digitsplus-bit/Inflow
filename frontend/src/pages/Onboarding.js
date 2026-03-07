@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Zap, ArrowRight, ArrowLeft, Building2, Users, Target, Check } from 'lucide-react';
+import { Zap, ArrowRight, ArrowLeft, Building2, Users, Target, Check, CreditCard, ShoppingBag, Cloud, Calculator, Loader2 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { toast } from 'sonner';
@@ -29,10 +29,22 @@ const GOALS = [
   { id: 'revenue', label: 'Revenue Intelligence', icon: Building2 },
 ];
 
+const PLATFORMS = [
+  { id: 'stripe', name: 'Stripe', desc: 'Payments & subscriptions', icon: CreditCard, color: '#635BFF' },
+  { id: 'shopify', name: 'Shopify', desc: 'E-commerce data', icon: ShoppingBag, color: '#96BF48' },
+  { id: 'hubspot', name: 'HubSpot', desc: 'CRM & contacts', icon: Users, color: '#FF7A59' },
+  { id: 'salesforce', name: 'Salesforce', desc: 'Pipeline & deals', icon: Cloud, color: '#00A1E0' },
+  { id: 'quickbooks', name: 'QuickBooks', desc: 'Financial data', icon: Calculator, color: '#2CA01C' },
+];
+
+const TOTAL_STEPS = 4;
+
 const Onboarding = () => {
   const navigate = useNavigate();
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [connectingPlatform, setConnectingPlatform] = useState(null);
+  const [connectedPlatforms, setConnectedPlatforms] = useState([]);
   const [form, setForm] = useState({
     company_name: '',
     team_size: '',
@@ -53,10 +65,32 @@ const Onboarding = () => {
     if (step === 1) return form.company_name.trim().length > 0;
     if (step === 2) return form.team_size && form.industry;
     if (step === 3) return form.goals.length > 0;
+    if (step === 4) return true; // Always can proceed — step 4 is optional
     return false;
   };
 
-  const handleSubmit = async () => {
+  const connectPlatform = async (platformId) => {
+    setConnectingPlatform(platformId);
+    try {
+      const res = await fetch(`${API_URL}/api/business/connect/${platformId}`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      if (res.ok) {
+        setConnectedPlatforms((prev) => [...prev, platformId]);
+        toast.success(`Connected ${platformId}`);
+      } else {
+        const data = await res.json();
+        toast.error(data.detail || 'Failed to connect');
+      }
+    } catch {
+      toast.error('Connection failed');
+    } finally {
+      setConnectingPlatform(null);
+    }
+  };
+
+  const handleSubmit = async (goToDashboard = true) => {
     setLoading(true);
     try {
       const response = await fetch(`${API_URL}/api/auth/onboarding`, {
@@ -67,7 +101,11 @@ const Onboarding = () => {
       });
 
       if (response.ok) {
-        navigate('/dashboard');
+        if (goToDashboard) {
+          navigate('/dashboard');
+        } else {
+          setStep(4);
+        }
       } else {
         toast.error('Something went wrong');
       }
@@ -81,8 +119,12 @@ const Onboarding = () => {
   const handleNext = () => {
     if (step < 3) {
       setStep(step + 1);
+    } else if (step === 3) {
+      // Save onboarding first, then go to step 4
+      handleSubmit(false);
     } else {
-      handleSubmit();
+      // Step 4 — go to dashboard
+      navigate('/dashboard');
     }
   };
 
@@ -102,7 +144,7 @@ const Onboarding = () => {
 
         {/* Progress */}
         <div className="flex items-center gap-2 mb-8 px-8">
-          {[1, 2, 3].map((s) => (
+          {[1, 2, 3, 4].map((s) => (
             <div key={s} className="flex-1 flex items-center gap-2">
               <div className={`h-1.5 flex-1 rounded-full transition-all duration-500 ${s <= step ? 'bg-indigo-500' : 'bg-zinc-800'}`} />
             </div>
@@ -235,9 +277,67 @@ const Onboarding = () => {
             </div>
           )}
 
+          {/* Step 4: Connect Your Business (Optional) */}
+          {step === 4 && (
+            <div className="space-y-6">
+              <div className="text-center">
+                <div className="w-14 h-14 mx-auto rounded-xl bg-emerald-500/10 flex items-center justify-center mb-4">
+                  <Zap className="w-7 h-7 text-emerald-400" />
+                </div>
+                <h2 className="text-xl font-semibold text-white" style={{ fontFamily: 'Outfit' }}>
+                  Connect Your Business
+                </h2>
+                <p className="text-zinc-400 text-sm mt-2">
+                  Sync your tools for real-time insights — or skip and do it later
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                {PLATFORMS.map((platform) => {
+                  const Icon = platform.icon;
+                  const isConnected = connectedPlatforms.includes(platform.id);
+                  const isLoading = connectingPlatform === platform.id;
+                  return (
+                    <button
+                      key={platform.id}
+                      onClick={() => !isConnected && !isLoading && connectPlatform(platform.id)}
+                      disabled={isConnected || isLoading}
+                      className={`w-full flex items-center gap-4 p-4 rounded-xl transition-all ${
+                        isConnected
+                          ? 'bg-emerald-600/10 border border-emerald-500/30 text-white'
+                          : 'bg-zinc-800/50 border border-zinc-700/50 text-zinc-300 hover:border-zinc-600'
+                      }`}
+                      data-testid={`onboarding-connect-${platform.id}`}
+                    >
+                      <div
+                        className="w-10 h-10 rounded-lg flex items-center justify-center"
+                        style={{ backgroundColor: `${platform.color}18` }}
+                      >
+                        {isLoading ? (
+                          <Loader2 className="w-5 h-5 animate-spin" style={{ color: platform.color }} />
+                        ) : (
+                          <Icon className="w-5 h-5" style={{ color: platform.color }} />
+                        )}
+                      </div>
+                      <div className="flex-1 text-left">
+                        <span className="text-sm font-medium block">{platform.name}</span>
+                        <span className="text-xs text-zinc-500">{platform.desc}</span>
+                      </div>
+                      {isConnected && (
+                        <div className="w-6 h-6 rounded-full bg-emerald-500 flex items-center justify-center">
+                          <Check className="w-4 h-4 text-white" />
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Navigation */}
           <div className="flex items-center justify-between mt-8">
-            {step > 1 ? (
+            {step > 1 && step <= 3 ? (
               <Button
                 variant="ghost"
                 className="text-zinc-400 hover:text-white"
@@ -245,6 +345,15 @@ const Onboarding = () => {
                 data-testid="onboarding-back-btn"
               >
                 <ArrowLeft className="w-4 h-4 mr-2" /> Back
+              </Button>
+            ) : step === 4 ? (
+              <Button
+                variant="ghost"
+                className="text-zinc-500 hover:text-zinc-300"
+                onClick={() => navigate('/dashboard')}
+                data-testid="onboarding-skip-connect-btn"
+              >
+                Skip for now
               </Button>
             ) : (
               <Button
@@ -263,14 +372,14 @@ const Onboarding = () => {
               disabled={!canProceed() || loading}
               data-testid="onboarding-next-btn"
             >
-              {step === 3 ? 'Get Started' : 'Continue'}
+              {step === 4 ? 'Go to Dashboard' : step === 3 ? 'Continue' : 'Continue'}
               <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
           </div>
         </div>
 
         {/* Step indicator */}
-        <p className="text-center text-xs text-zinc-600 mt-4">Step {step} of 3</p>
+        <p className="text-center text-xs text-zinc-600 mt-4">Step {step} of {TOTAL_STEPS}</p>
       </div>
 
       <Toaster position="top-right" richColors />
