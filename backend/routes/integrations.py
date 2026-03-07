@@ -43,7 +43,7 @@ AVAILABLE_INTEGRATIONS = [
     {
         "integration_id": "zapier",
         "name": "Zapier",
-        "description": "Connect Zelta to 5,000+ apps through Zapier automations",
+        "description": "Connect InFlow to 5,000+ apps through Zapier automations",
         "category": "Automation",
         "icon": "Zap",
         "color": "#FF4A00",

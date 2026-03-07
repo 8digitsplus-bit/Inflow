@@ -89,7 +89,7 @@ const AuthPage = () => {
           <div className="w-10 h-10 rounded-xl bg-indigo-600 flex items-center justify-center">
             <Zap className="w-6 h-6 text-white" />
           </div>
-          <span className="text-2xl font-semibold text-white" style={{ fontFamily: 'Outfit' }}>Zelta</span>
+          <span className="text-2xl font-semibold text-white" style={{ fontFamily: 'Outfit' }}>InFlow</span>
         </div>
 
         <div className="bg-zinc-900/60 border border-white/10 rounded-2xl p-8 backdrop-blur-xl">

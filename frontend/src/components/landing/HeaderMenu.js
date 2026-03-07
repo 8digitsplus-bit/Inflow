@@ -87,7 +87,7 @@ export const Header = ({ setMenuOpen, menuOpen, handleGetStarted }) => {
           {/* Logo */}
           <a href="/" className="flex items-center group" data-testid="header-logo">
             <div className={`overflow-hidden flex items-center justify-center transition-all duration-500 group-hover:scale-105 ${scrolled ? 'h-8' : 'h-10'}`}>
-              <img src="/zelta-logo.png?v=2" alt="Zelta" className="h-full w-auto object-contain" />
+              <img src="/inflow-logo.png" alt="InFlow" className="h-full w-auto object-contain" />
             </div>
           </a>
 

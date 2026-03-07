@@ -63,7 +63,7 @@ const DashboardLayout = ({ children }) => {
           <div className="h-16 flex items-center px-6 border-b border-white/10">
             <Link to="/dashboard" className="flex items-center">
               <div className="h-8 overflow-hidden">
-                <img src="/zelta-logo.png?v=2" alt="Zelta" className="h-full w-auto object-contain" />
+                <img src="/inflow-logo.png" alt="InFlow" className="h-full w-auto object-contain" />
               </div>
             </Link>
           </div>
@@ -146,7 +146,7 @@ const DashboardLayout = ({ children }) => {
           </button>
           <div className="flex items-center ml-3">
             <div className="h-7 overflow-hidden">
-              <img src="/zelta-logo.png?v=2" alt="Zelta" className="h-full w-auto object-contain" />
+              <img src="/inflow-logo.png" alt="InFlow" className="h-full w-auto object-contain" />
             </div>
           </div>
         </div>

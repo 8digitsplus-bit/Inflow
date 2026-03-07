@@ -323,7 +323,7 @@ const ConnectBusiness = () => {
             <div>
               <h4 className="text-sm font-medium text-white mb-1" style={{ fontFamily: 'Outfit' }}>How it works</h4>
               <p className="text-xs text-zinc-400 leading-relaxed">
-                When you connect a platform, Zelta syncs your business data and feeds it directly into your Sales Pipeline, Performance, Revenue, and all other analytics features.
+                When you connect a platform, InFlow syncs your business data and feeds it directly into your Sales Pipeline, Performance, Revenue, and all other analytics features.
                 This eliminates manual data entry and gives you the most accurate, up-to-date insights. Historical data is stored for trend analysis.
               </p>
             </div>

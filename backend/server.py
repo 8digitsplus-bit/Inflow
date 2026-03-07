@@ -38,7 +38,7 @@ api_router.include_router(business_router)
 # Basic routes
 @api_router.get("/")
 async def root():
-    return {"message": "Zelta API", "version": "1.0.0"}
+    return {"message": "InFlow API", "version": "1.0.0"}
 
 
 @api_router.get("/health")

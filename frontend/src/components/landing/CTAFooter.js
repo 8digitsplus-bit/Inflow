@@ -35,7 +35,7 @@ export const Footer = () => (
         <div className="col-span-2 md:col-span-4 lg:col-span-2">
           <a href="/" className="inline-flex items-center group mb-5">
             <div className="h-10 overflow-hidden flex items-center justify-center group-hover:scale-105 transition-transform">
-              <img src="/zelta-logo.png?v=2" alt="Zelta" className="h-full w-auto object-contain" />
+              <img src="/inflow-logo.png" alt="InFlow" className="h-full w-auto object-contain" />
             </div>
           </a>
           <p className="text-zinc-500 text-sm leading-relaxed max-w-xs mb-6">
@@ -84,7 +84,7 @@ export const Footer = () => (
           <ul className="space-y-4">
             <li className="flex items-center gap-2.5 text-sm text-zinc-500">
               <Mail className="w-4 h-4 text-zinc-600 flex-shrink-0" />
-              hello@zelta.io
+              hello@inflow.io
             </li>
             <li className="flex items-center gap-2.5 text-sm text-zinc-500">
               <Phone className="w-4 h-4 text-zinc-600 flex-shrink-0" />
@@ -100,7 +100,7 @@ export const Footer = () => (
 
       {/* Bottom bar */}
       <div className="border-t border-white/[0.06] py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
-        <p className="text-xs text-zinc-600">&copy; 2026 Zelta. All rights reserved.</p>
+        <p className="text-xs text-zinc-600">&copy; 2026 InFlow. All rights reserved.</p>
         <div className="flex items-center gap-6">
           {['Privacy Policy', 'Terms of Service', 'Cookies'].map((item) => (
             <a key={item} href="#" className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors duration-200">{item}</a>

@@ -20,7 +20,7 @@ export const HowItWorks = () => (
               From data to decisions in minutes
             </h2>
             <p className="mt-4 text-zinc-400 max-w-md">
-              Zelta turns your sales data into actionable intelligence — no complex setup required.
+              InFlow turns your sales data into actionable intelligence — no complex setup required.
             </p>
           </div>
           <div className="mt-12 space-y-10">
