@@ -38,7 +38,7 @@ export const FullScreenMenu = ({ menuOpen, setMenuOpen, handleMenuClick, handleG
       </nav>
       <div className={`mt-10 transition-all duration-300 ${menuOpen ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`} style={{ transitionDelay: '350ms' }}>
         <Button className="bg-indigo-600 hover:bg-indigo-500 text-white btn-glow px-8 py-6 text-lg" onClick={() => { setMenuOpen(false); handleGetStarted(); }}>
-          Get Started <ArrowRight className="w-5 h-5 ml-2" />
+          Start Free Trial <ArrowRight className="w-5 h-5 ml-2" />
         </Button>
       </div>
     </div>
@@ -107,7 +107,7 @@ export const Header = ({ setMenuOpen, menuOpen, handleGetStarted }) => {
               onClick={handleGetStarted}
               data-testid="header-cta-btn"
             >
-              Get Started <ChevronRight className="w-3.5 h-3.5" />
+              14-Day Free Trial <ChevronRight className="w-3.5 h-3.5" />
             </Button>
           </div>
         </div>

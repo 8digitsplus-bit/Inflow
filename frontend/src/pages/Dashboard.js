@@ -37,6 +37,8 @@ const API_URL = process.env.REACT_APP_BACKEND_URL;
 
 // Tier access map: which tier can access which sections
 const TIER_ACCESS = {
+  trial: ['metrics', 'revenue_chart', 'pipeline_dist', 'recent_deals', 'quick_actions'],
+  expired: ['metrics'],
   free: ['metrics', 'revenue_chart', 'pipeline_dist', 'recent_deals', 'quick_actions'],
   essential_monthly: ['metrics', 'revenue_chart', 'pipeline_dist', 'churn_widget', 'recent_deals', 'quick_actions'],
   essential_yearly: ['metrics', 'revenue_chart', 'pipeline_dist', 'churn_widget', 'recent_deals', 'quick_actions'],
@@ -65,12 +67,15 @@ const Dashboard = () => {
   const [aiInsight, setAiInsight] = useState(null);
   const [loadingInsight, setLoadingInsight] = useState(false);
 
-  const tier = user?.subscription_tier || 'free';
+  const tier = user?.subscription_tier || 'trial';
   const userGoals = user?.goals || [];
-  const access = TIER_ACCESS[tier] || TIER_ACCESS.free;
+  const access = TIER_ACCESS[tier] || TIER_ACCESS.trial;
+  const trialDaysLeft = user?.trial_days_left ?? 0;
+  const isTrial = tier === 'trial';
+  const isExpired = tier === 'expired';
 
   const hasAccess = (section) => access.includes(section);
-  const tierLabel = tier.split('_')[0];
+  const tierLabel = isTrial ? 'Trial' : isExpired ? 'Expired' : tier.split('_')[0];
   const isEssential = tier.includes('essential');
   const isPro = tier.includes('pro');
   const isEnterprise = tier.includes('enterprise');
@@ -196,9 +201,11 @@ const Dashboard = () => {
               isEnterprise ? 'bg-purple-500/20 text-purple-400' :
               isPro ? 'bg-indigo-500/20 text-indigo-400' :
               isEssential ? 'bg-cyan-500/20 text-cyan-400' :
+              isTrial ? 'bg-amber-500/20 text-amber-400' :
+              isExpired ? 'bg-red-500/20 text-red-400' :
               'bg-zinc-700 text-zinc-300'
             }`} data-testid="tier-badge">
-              {tierLabel.charAt(0).toUpperCase() + tierLabel.slice(1)} Plan
+              {isTrial ? `Trial · ${trialDaysLeft}d left` : isExpired ? 'Trial Expired' : `${tierLabel.charAt(0).toUpperCase() + tierLabel.slice(1)} Plan`}
             </span>
           </div>
         </div>

@@ -22,7 +22,7 @@ export const HeroSection = ({ handleScrollToPricing }) => (
           </p>
           <div className="flex flex-col sm:flex-row gap-4">
             <Button size="lg" className="bg-indigo-600 hover:bg-indigo-500 text-white btn-glow px-8 py-6 text-base group" onClick={handleScrollToPricing} data-testid="hero-cta-btn">
-              Access Now <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
+              Start 14-Day Free Trial <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
             </Button>
           </div>
         </div>

@@ -113,11 +113,16 @@ const DashboardLayout = ({ children }) => {
             
             <div className="flex items-center gap-2">
               <span className={`flex-1 px-2 py-1 rounded text-xs font-medium text-center ${
-                user?.subscription_tier === 'enterprise' ? 'bg-purple-500/20 text-purple-400' :
-                user?.subscription_tier === 'pro' ? 'bg-indigo-500/20 text-indigo-400' :
+                user?.subscription_tier?.includes('enterprise') ? 'bg-purple-500/20 text-purple-400' :
+                user?.subscription_tier?.includes('pro') ? 'bg-indigo-500/20 text-indigo-400' :
+                user?.subscription_tier?.includes('essential') ? 'bg-cyan-500/20 text-cyan-400' :
+                user?.subscription_tier === 'trial' ? 'bg-amber-500/20 text-amber-400' :
+                user?.subscription_tier === 'expired' ? 'bg-red-500/20 text-red-400' :
                 'bg-zinc-700 text-zinc-300'
               }`}>
-                {user?.subscription_tier?.charAt(0).toUpperCase() + user?.subscription_tier?.slice(1) || 'Free'}
+                {user?.subscription_tier === 'trial' ? `Trial · ${user?.trial_days_left ?? 0}d` :
+                 user?.subscription_tier === 'expired' ? 'Expired' :
+                 user?.subscription_tier?.split('_')[0]?.charAt(0).toUpperCase() + user?.subscription_tier?.split('_')[0]?.slice(1) || 'Trial'}
               </span>
               <Button 
                 variant="ghost" 

@@ -52,8 +52,10 @@ async def create_session(request: Request, response: Response):
             "email": auth_data["email"],
             "name": auth_data["name"],
             "picture": auth_data.get("picture"),
-            "subscription_tier": "free",
+            "subscription_tier": "trial",
             "subscription_status": "active",
+            "trial_start": datetime.now(timezone.utc).isoformat(),
+            "trial_end": (datetime.now(timezone.utc) + timedelta(days=14)).isoformat(),
             "created_at": datetime.now(timezone.utc).isoformat()
         })
 
@@ -83,8 +85,25 @@ async def create_session(request: Request, response: Response):
 
 @router.get("/auth/me")
 async def get_me(user: User = Depends(get_current_user)):
-    """Get current authenticated user"""
+    """Get current authenticated user with trial status"""
     user_doc = await db.users.find_one({"user_id": user.user_id}, {"_id": 0, "password_hash": 0})
+
+    # Check trial expiration
+    if user_doc and user_doc.get("subscription_tier") == "trial":
+        trial_end = user_doc.get("trial_end")
+        if trial_end:
+            from datetime import datetime, timezone
+            now = datetime.now(timezone.utc)
+            end = datetime.fromisoformat(trial_end.replace("Z", "+00:00")) if isinstance(trial_end, str) else trial_end
+            days_left = (end - now).days
+            user_doc["trial_days_left"] = max(0, days_left)
+            if days_left <= 0:
+                user_doc["subscription_tier"] = "expired"
+                await db.users.update_one(
+                    {"user_id": user.user_id},
+                    {"$set": {"subscription_tier": "expired"}}
+                )
+
     return user_doc
 
 
@@ -118,8 +137,10 @@ async def register_with_email(req: RegisterRequest, response: Response):
         "picture": None,
         "password_hash": hashed,
         "auth_provider": "email",
-        "subscription_tier": "free",
+        "subscription_tier": "trial",
         "subscription_status": "active",
+        "trial_start": datetime.now(timezone.utc).isoformat(),
+        "trial_end": (datetime.now(timezone.utc) + timedelta(days=14)).isoformat(),
         "created_at": datetime.now(timezone.utc).isoformat()
     })
 

@@ -54,7 +54,7 @@ export const ConnectBusinessSection = () => {
                 onClick={() => navigate('/auth')}
                 data-testid="connect-business-cta"
               >
-                Get Started
+                Start 14-Day Free Trial
                 <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
               </Button>
             </div>
