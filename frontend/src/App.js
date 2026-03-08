@@ -14,6 +14,7 @@ import Integrations from './pages/Integrations';
 import ConnectBusiness from './pages/ConnectBusiness';
 import AuthPage from './pages/AuthPage';
 import Onboarding from './pages/Onboarding';
+import ChoosePlan from './pages/ChoosePlan';
 import AuthCallback from './pages/AuthCallback';
 import ProtectedRoute from './components/ProtectedRoute';
 import TierGate from './components/TierGate';
@@ -36,6 +37,11 @@ const AppRouter = () => {
       <Route path="/onboarding" element={
         <ProtectedRoute>
           <Onboarding />
+        </ProtectedRoute>
+      } />
+      <Route path="/choose-plan" element={
+        <ProtectedRoute>
+          <ChoosePlan />
         </ProtectedRoute>
       } />
       <Route 

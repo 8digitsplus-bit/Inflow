@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Zap, ArrowLeft, Mail, Loader2, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, Mail, Loader2, Eye, EyeOff } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { toast } from 'sonner';
@@ -9,6 +9,8 @@ import { Toaster } from '../components/ui/sonner';
 
 const AuthPage = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isTrial = searchParams.get('trial') === 'true';
   const { loginWithGoogle, loginWithEmail, registerWithEmail, loginWithShopify, isAuthenticated } = useAuth();
   const [mode, setMode] = useState('register');
   const [showEmailForm, setShowEmailForm] = useState(false);
@@ -57,7 +59,7 @@ const AuthPage = () => {
         setIsRegistering(true);
         await registerWithEmail(form.name, form.email, form.password);
         toast.success('Account created!');
-        navigate('/onboarding');
+        navigate(isTrial ? '/onboarding' : '/choose-plan');
         return;
       } else {
         await loginWithEmail(form.email, form.password);

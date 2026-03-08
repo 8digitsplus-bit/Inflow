@@ -41,6 +41,7 @@ const Landing = () => {
   }, []);
 
   const handleGetStarted = () => navigate(isAuthenticated ? '/dashboard' : '/auth');
+  const handleStartTrial = () => navigate(isAuthenticated ? '/dashboard' : '/auth?trial=true');
   const handleScrollToPricing = () => document.querySelector('#pricing')?.scrollIntoView({ behavior: 'smooth' });
   const handleMenuClick = (target) => {
     setMenuOpen(false);
@@ -51,9 +52,9 @@ const Landing = () => {
   return (
     <div ref={mainRef} className="min-h-screen bg-[#09090B] text-white overflow-x-hidden">
       <Toaster position="top-center" />
-      <Header setMenuOpen={setMenuOpen} menuOpen={menuOpen} handleGetStarted={handleGetStarted} />
-      <FullScreenMenu menuOpen={menuOpen} setMenuOpen={setMenuOpen} handleMenuClick={handleMenuClick} handleGetStarted={handleGetStarted} isAuthenticated={isAuthenticated} />
-      <HeroSection handleGetStarted={handleGetStarted} />
+      <Header setMenuOpen={setMenuOpen} menuOpen={menuOpen} handleGetStarted={handleStartTrial} />
+      <FullScreenMenu menuOpen={menuOpen} setMenuOpen={setMenuOpen} handleMenuClick={handleMenuClick} handleGetStarted={handleStartTrial} isAuthenticated={isAuthenticated} />
+      <HeroSection handleGetStarted={handleStartTrial} />
       <FeaturesSection />
       <ConnectBusinessSection />
       <PricingSection handleGetStarted={handleGetStarted} isAuthenticated={isAuthenticated} />
