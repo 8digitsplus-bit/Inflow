@@ -118,10 +118,12 @@ const DashboardLayout = ({ children }) => {
                 user?.subscription_tier?.includes('essential') ? 'bg-cyan-500/20 text-cyan-400' :
                 user?.subscription_tier === 'trial' ? 'bg-amber-500/20 text-amber-400' :
                 user?.subscription_tier === 'expired' ? 'bg-red-500/20 text-red-400' :
+                user?.subscription_tier === 'cancelled' ? 'bg-red-500/20 text-red-400' :
                 'bg-zinc-700 text-zinc-300'
               }`}>
                 {user?.subscription_tier === 'trial' ? `Trial · ${user?.trial_days_left ?? 0}d` :
                  user?.subscription_tier === 'expired' ? 'Expired' :
+                 user?.subscription_tier === 'cancelled' ? 'Cancelled' :
                  user?.subscription_tier?.split('_')[0]?.charAt(0).toUpperCase() + user?.subscription_tier?.split('_')[0]?.slice(1) || 'Trial'}
               </span>
               <Button 

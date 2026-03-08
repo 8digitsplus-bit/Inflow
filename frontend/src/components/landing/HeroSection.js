@@ -1,7 +1,7 @@
 import { ArrowRight, Sparkles } from 'lucide-react';
 import { Button } from '../ui/button';
 
-export const HeroSection = ({ handleScrollToPricing }) => (
+export const HeroSection = ({ handleGetStarted }) => (
   <section className="landing-hero relative pt-32 pb-20 px-4 sm:px-6 lg:px-8">
     <div className="absolute inset-0 hero-glow" />
     <div className="absolute inset-0 noise-overlay" />
@@ -21,7 +21,7 @@ export const HeroSection = ({ handleScrollToPricing }) => (
             Predict growth with data-driven insights.
           </p>
           <div className="flex flex-col sm:flex-row gap-4">
-            <Button size="lg" className="bg-indigo-600 hover:bg-indigo-500 text-white btn-glow px-8 py-6 text-base group" onClick={handleScrollToPricing} data-testid="hero-cta-btn">
+            <Button size="lg" className="bg-indigo-600 hover:bg-indigo-500 text-white btn-glow px-8 py-6 text-base group" onClick={handleGetStarted} data-testid="hero-cta-btn">
               Start 14-Day Free Trial <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform duration-300" />
             </Button>
           </div>

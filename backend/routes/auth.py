@@ -94,7 +94,12 @@ async def get_me(user: User = Depends(get_current_user)):
         if trial_end:
             from datetime import datetime, timezone
             now = datetime.now(timezone.utc)
-            end = datetime.fromisoformat(trial_end.replace("Z", "+00:00")) if isinstance(trial_end, str) else trial_end
+            # Handle both string and datetime objects
+            if isinstance(trial_end, str):
+                end = datetime.fromisoformat(trial_end.replace("Z", "+00:00"))
+            else:
+                # Ensure datetime has timezone info
+                end = trial_end.replace(tzinfo=timezone.utc) if trial_end.tzinfo is None else trial_end
             days_left = (end - now).days
             user_doc["trial_days_left"] = max(0, days_left)
             if days_left <= 0:

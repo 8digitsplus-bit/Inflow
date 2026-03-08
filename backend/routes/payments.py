@@ -251,3 +251,38 @@ async def stripe_webhook(request: Request):
 async def get_subscription_plans():
     """Get available subscription plans"""
     return SUBSCRIPTION_PLANS
+
+
+@router.post("/subscription/cancel")
+async def cancel_subscription(current_user: User = Depends(get_current_user)):
+    """Cancel the current subscription or trial."""
+    user_doc = await db.users.find_one(
+        {"user_id": current_user.user_id},
+        {"_id": 0, "subscription_tier": 1}
+    )
+
+    if not user_doc:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    tier = user_doc.get("subscription_tier", "trial")
+
+    if tier in ("expired", "cancelled"):
+        raise HTTPException(status_code=400, detail="No active subscription to cancel")
+
+    now = datetime.now(timezone.utc).isoformat()
+
+    await db.users.update_one(
+        {"user_id": current_user.user_id},
+        {"$set": {
+            "subscription_tier": "cancelled",
+            "previous_tier": tier,
+            "cancelled_at": now,
+            "subscription_status": "cancelled",
+        }}
+    )
+
+    return {
+        "status": "cancelled",
+        "previous_tier": tier,
+        "message": "Your subscription has been cancelled. You can resubscribe at any time.",
+    }

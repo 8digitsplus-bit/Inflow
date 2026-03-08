@@ -39,6 +39,7 @@ const API_URL = process.env.REACT_APP_BACKEND_URL;
 const TIER_ACCESS = {
   trial: ['metrics', 'revenue_chart', 'pipeline_dist', 'recent_deals', 'quick_actions'],
   expired: ['metrics'],
+  cancelled: ['metrics'],
   free: ['metrics', 'revenue_chart', 'pipeline_dist', 'recent_deals', 'quick_actions'],
   essential_monthly: ['metrics', 'revenue_chart', 'pipeline_dist', 'churn_widget', 'recent_deals', 'quick_actions'],
   essential_yearly: ['metrics', 'revenue_chart', 'pipeline_dist', 'churn_widget', 'recent_deals', 'quick_actions'],
@@ -73,9 +74,10 @@ const Dashboard = () => {
   const trialDaysLeft = user?.trial_days_left ?? 0;
   const isTrial = tier === 'trial';
   const isExpired = tier === 'expired';
+  const isCancelled = tier === 'cancelled';
 
   const hasAccess = (section) => access.includes(section);
-  const tierLabel = isTrial ? 'Trial' : isExpired ? 'Expired' : tier.split('_')[0];
+  const tierLabel = isTrial ? 'Trial' : isExpired ? 'Expired' : isCancelled ? 'Cancelled' : tier.split('_')[0];
   const isEssential = tier.includes('essential');
   const isPro = tier.includes('pro');
   const isEnterprise = tier.includes('enterprise');
@@ -202,10 +204,10 @@ const Dashboard = () => {
               isPro ? 'bg-indigo-500/20 text-indigo-400' :
               isEssential ? 'bg-cyan-500/20 text-cyan-400' :
               isTrial ? 'bg-amber-500/20 text-amber-400' :
-              isExpired ? 'bg-red-500/20 text-red-400' :
+              isExpired || isCancelled ? 'bg-red-500/20 text-red-400' :
               'bg-zinc-700 text-zinc-300'
             }`} data-testid="tier-badge">
-              {isTrial ? `Trial · ${trialDaysLeft}d left` : isExpired ? 'Trial Expired' : `${tierLabel.charAt(0).toUpperCase() + tierLabel.slice(1)} Plan`}
+              {isTrial ? `Trial · ${trialDaysLeft}d left` : isExpired ? 'Trial Expired' : isCancelled ? 'Cancelled' : `${tierLabel.charAt(0).toUpperCase() + tierLabel.slice(1)} Plan`}
             </span>
           </div>
         </div>

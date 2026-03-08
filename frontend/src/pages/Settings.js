@@ -10,7 +10,9 @@ import {
   Loader2,
   ChevronRight,
   LogOut,
-  AlertCircle
+  AlertCircle,
+  XCircle,
+  Clock
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -26,6 +28,8 @@ const Settings = () => {
   const [processingPayment, setProcessingPayment] = useState(false);
   const [checkingStatus, setCheckingStatus] = useState(false);
   const [billingPeriod, setBillingPeriod] = useState('monthly');
+  const [cancellingSubscription, setCancellingSubscription] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
   useEffect(() => {
     fetchPlans();
@@ -123,13 +127,39 @@ const Settings = () => {
     }
   };
 
+  const handleCancelSubscription = async () => {
+    setCancellingSubscription(true);
+    try {
+      const response = await fetch(`${API_URL}/api/subscription/cancel`, {
+        method: 'POST',
+        credentials: 'include',
+      });
+      if (response.ok) {
+        toast.success('Subscription cancelled successfully');
+        setShowCancelConfirm(false);
+        await refreshUser();
+      } else {
+        const data = await response.json();
+        toast.error(data.detail || 'Failed to cancel');
+      }
+    } catch {
+      toast.error('Failed to cancel subscription');
+    } finally {
+      setCancellingSubscription(false);
+    }
+  };
+
+  const canCancel = user?.subscription_tier && !['expired', 'cancelled'].includes(user.subscription_tier);
+
   const getInitials = (name) => {
     if (!name) return 'U';
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
 
   const getTierDisplayName = (tier) => {
-    if (!tier) return 'Free';
+    if (!tier || tier === 'cancelled') return 'Cancelled';
+    if (tier === 'trial') return 'Trial';
+    if (tier === 'expired') return 'Expired';
     const parts = tier.split('_');
     return parts[0].charAt(0).toUpperCase() + parts[0].slice(1) + (parts[1] ? ` (${parts[1]})` : '');
   };
@@ -139,6 +169,8 @@ const Settings = () => {
     if (tier.includes('enterprise')) return 'bg-purple-500/20 text-purple-400';
     if (tier.includes('pro')) return 'bg-indigo-500/20 text-indigo-400';
     if (tier.includes('essential')) return 'bg-cyan-500/20 text-cyan-400';
+    if (tier === 'trial') return 'bg-amber-500/20 text-amber-400';
+    if (tier === 'expired' || tier === 'cancelled') return 'bg-red-500/20 text-red-400';
     return 'bg-zinc-700 text-zinc-300';
   };
 
@@ -202,7 +234,7 @@ const Settings = () => {
               </div>
             </div>
             
-            <div className="mt-6 pt-6 border-t border-zinc-800">
+            <div className="mt-6 pt-6 border-t border-zinc-800 flex items-center gap-3">
               <Button 
                 variant="outline" 
                 className="border-red-500/30 text-red-400 hover:bg-red-500/10"
@@ -212,7 +244,62 @@ const Settings = () => {
                 <LogOut className="w-4 h-4 mr-2" />
                 Sign Out
               </Button>
+              {canCancel && (
+                <Button
+                  variant="outline"
+                  className="border-zinc-700 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
+                  onClick={() => setShowCancelConfirm(true)}
+                  data-testid="cancel-subscription-btn"
+                >
+                  <XCircle className="w-4 h-4 mr-2" />
+                  Cancel {user?.subscription_tier === 'trial' ? 'Trial' : 'Subscription'}
+                </Button>
+              )}
             </div>
+
+            {/* Cancel Confirmation */}
+            {showCancelConfirm && (
+              <div className="mt-4 p-4 bg-red-500/5 border border-red-500/20 rounded-lg" data-testid="cancel-confirm-dialog">
+                <div className="flex items-start gap-3">
+                  <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <h4 className="text-sm font-medium text-white mb-1">
+                      {user?.subscription_tier === 'trial'
+                        ? 'Cancel your free trial?'
+                        : 'Cancel your subscription?'}
+                    </h4>
+                    <p className="text-xs text-zinc-400 mb-3">
+                      {user?.subscription_tier === 'trial'
+                        ? 'You will lose access to your trial immediately. You can resubscribe at any time.'
+                        : 'Your access will be revoked immediately. You can resubscribe to any plan at any time.'}
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        className="bg-red-600 hover:bg-red-500 text-white text-xs h-8"
+                        onClick={handleCancelSubscription}
+                        disabled={cancellingSubscription}
+                        data-testid="confirm-cancel-btn"
+                      >
+                        {cancellingSubscription ? (
+                          <Loader2 className="w-3 h-3 animate-spin mr-1.5" />
+                        ) : null}
+                        Yes, cancel
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-zinc-400 text-xs h-8"
+                        onClick={() => setShowCancelConfirm(false)}
+                        data-testid="keep-subscription-btn"
+                      >
+                        Keep my plan
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </CardContent>
         </Card>
 

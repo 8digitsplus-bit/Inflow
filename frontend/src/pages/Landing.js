@@ -53,7 +53,7 @@ const Landing = () => {
       <Toaster position="top-center" />
       <Header setMenuOpen={setMenuOpen} menuOpen={menuOpen} handleGetStarted={handleGetStarted} />
       <FullScreenMenu menuOpen={menuOpen} setMenuOpen={setMenuOpen} handleMenuClick={handleMenuClick} handleGetStarted={handleGetStarted} isAuthenticated={isAuthenticated} />
-      <HeroSection handleScrollToPricing={handleScrollToPricing} />
+      <HeroSection handleGetStarted={handleGetStarted} />
       <FeaturesSection />
       <ConnectBusinessSection />
       <PricingSection handleGetStarted={handleGetStarted} isAuthenticated={isAuthenticated} />

@@ -7,6 +7,7 @@ import { Button } from './ui/button';
 const TIER_LEVEL = {
   trial: 0,
   expired: -1,
+  cancelled: -1,
   free: 0,
   essential_monthly: 1,
   essential_yearly: 1,
@@ -72,6 +73,7 @@ const TierGate = ({ requiredLevel, children }) => {
 
   const isTrial = tier === 'trial';
   const isExpired = tier === 'expired';
+  const isCancelled = tier === 'cancelled';
   const daysLeft = user?.trial_days_left ?? 0;
 
   return (
@@ -80,17 +82,19 @@ const TierGate = ({ requiredLevel, children }) => {
         {/* Header */}
         <div className="text-center mb-8 max-w-lg">
           <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 flex items-center justify-center mx-auto mb-5">
-            {isExpired ? <Clock className="w-7 h-7 text-amber-400" /> : <Lock className="w-7 h-7 text-indigo-400" />}
+            {isExpired || isCancelled ? <Clock className="w-7 h-7 text-amber-400" /> : <Lock className="w-7 h-7 text-indigo-400" />}
           </div>
           <h2 className="text-2xl font-bold text-white mb-2" style={{ fontFamily: 'Outfit' }}>
-            {isExpired ? 'Your trial has ended' : isTrial ? 'Upgrade to unlock this feature' : 'Upgrade your plan'}
+            {isExpired ? 'Your trial has ended' : isCancelled ? 'Your subscription was cancelled' : isTrial ? 'Upgrade to unlock this feature' : 'Upgrade your plan'}
           </h2>
           <p className="text-zinc-400 text-sm">
             {isExpired
               ? 'Choose a plan below to continue using InFlow and unlock all features.'
-              : isTrial
-                ? `You have ${daysLeft} day${daysLeft !== 1 ? 's' : ''} left on your trial. Upgrade now to access this feature.`
-                : 'Select a plan to unlock premium features and supercharge your revenue intelligence.'}
+              : isCancelled
+                ? 'Resubscribe to a plan below to regain access to all features.'
+                : isTrial
+                  ? `You have ${daysLeft} day${daysLeft !== 1 ? 's' : ''} left on your trial. Upgrade now to access this feature.`
+                  : 'Select a plan to unlock premium features and supercharge your revenue intelligence.'}
           </p>
         </div>
 
