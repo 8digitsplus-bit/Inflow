@@ -1,72 +1,96 @@
-import { TrendingUp } from 'lucide-react';
+import { CreditCard, ShoppingBag, Users, Cloud, Calculator, ArrowRight, Zap, Database, RefreshCw } from 'lucide-react';
+import { Button } from '../../components/ui/button';
+import { useNavigate } from 'react-router-dom';
 
-const steps = [
-  { num: '01', title: 'Build Your Pipeline', desc: 'Add deals, set stages, and track every opportunity from first touch to close.' },
-  { num: '02', title: 'Analyse Performance', desc: 'Real-time dashboards surface win rates, revenue trends, and conversion bottlenecks automatically.' },
-  { num: '03', title: 'Get AI Recommendations', desc: 'Claude AI reviews your data and delivers pricing strategies, churn alerts, and growth actions.' },
-  { num: '04', title: 'Scale Revenue', desc: 'Act on insights to close faster, retain more, and grow deal value across your entire pipeline.' }
+const platforms = [
+  { name: 'Stripe', desc: 'Payments & subscriptions', icon: CreditCard, color: '#635BFF' },
+  { name: 'Shopify', desc: 'E-commerce & orders', icon: ShoppingBag, color: '#96BF48' },
+  { name: 'HubSpot', desc: 'CRM & contacts', icon: Users, color: '#FF7A59' },
+  { name: 'Salesforce', desc: 'Pipeline & deals', icon: Cloud, color: '#00A1E0' },
+  { name: 'QuickBooks', desc: 'Financial data', icon: Calculator, color: '#2CA01C' },
 ];
 
-const delays = ['reveal-delay-1', 'reveal-delay-2', 'reveal-delay-3', 'reveal-delay-4'];
+const benefits = [
+  { icon: Database, title: 'Auto-Sync Data', desc: 'Connect once and your business data flows into every dashboard automatically.' },
+  { icon: RefreshCw, title: 'Always Up To Date', desc: 'Real-time syncing keeps your analytics fresh — no manual imports needed.' },
+  { icon: Zap, title: 'Instant Insights', desc: 'AI-powered analysis turns your live business data into actionable recommendations.' },
+];
 
-export const HowItWorks = () => (
-  <section className="py-24 px-4 sm:px-6 lg:px-8 bg-zinc-950/50">
-    <div className="max-w-7xl mx-auto">
-      <div className="grid lg:grid-cols-2 gap-16 items-center">
-        <div>
-          <div className="reveal-left">
-            <span className="text-indigo-400 text-sm font-medium uppercase tracking-widest">How It Works</span>
-            <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>
-              From data to decisions in minutes
-            </h2>
-            <p className="mt-4 text-zinc-400 max-w-md">
-              InFlow turns your sales data into actionable intelligence — no complex setup required.
-            </p>
-          </div>
-          <div className="mt-12 space-y-10">
-            {steps.map((step, i) => (
-              <div key={i} className={`step-item flex gap-6 group cursor-default reveal ${delays[i]}`}>
-                <div className="relative flex-shrink-0">
-                  <div className="text-3xl font-bold text-zinc-800 group-hover:text-indigo-500 transition-colors duration-300 font-mono">{step.num}</div>
-                  {i < 3 && <div className="absolute top-10 left-1/2 -translate-x-1/2 w-px h-8 bg-gradient-to-b from-zinc-800 to-transparent group-hover:from-indigo-500/30 transition-colors duration-300" />}
+export const ConnectBusinessSection = () => {
+  const navigate = useNavigate();
+
+  return (
+    <section className="py-24 px-4 sm:px-6 lg:px-8 bg-zinc-950/50">
+      <div className="max-w-7xl mx-auto">
+        <div className="grid lg:grid-cols-2 gap-16 items-center">
+          <div>
+            <div className="reveal-left">
+              <span className="text-indigo-400 text-sm font-medium uppercase tracking-widest">Connect Your Business</span>
+              <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>
+                Plug in your tools. Get real insights.
+              </h2>
+              <p className="mt-4 text-zinc-400 max-w-md">
+                Link your existing business platforms and InFlow automatically syncs your data — powering every dashboard, metric, and AI recommendation with your real numbers. No spreadsheets, no manual entry.
+              </p>
+            </div>
+
+            <div className="mt-10 space-y-6">
+              {benefits.map((b, i) => (
+                <div key={i} className={`flex gap-4 group cursor-default reveal reveal-delay-${i + 1}`}>
+                  <div className="w-10 h-10 rounded-lg bg-indigo-500/10 flex items-center justify-center shrink-0 group-hover:bg-indigo-500/20 transition-colors">
+                    <b.icon className="w-5 h-5 text-indigo-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-semibold text-white mb-1 group-hover:text-indigo-300 transition-colors" style={{ fontFamily: 'Outfit' }}>{b.title}</h3>
+                    <p className="text-zinc-400 text-sm leading-relaxed">{b.desc}</p>
+                  </div>
                 </div>
-                <div>
-                  <h3 className="text-lg font-semibold text-white mb-1.5 group-hover:text-indigo-300 transition-colors duration-300" style={{ fontFamily: 'Outfit' }}>{step.title}</h3>
-                  <p className="text-zinc-400 text-sm leading-relaxed">{step.desc}</p>
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
+
+            <div className="mt-8 reveal reveal-delay-4">
+              <Button
+                className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 group"
+                onClick={() => navigate('/auth')}
+                data-testid="connect-business-cta"
+              >
+                Get Started
+                <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+              </Button>
+            </div>
           </div>
-        </div>
-        <div className="relative reveal-right">
-          <div className="absolute -inset-4 bg-cyan-500/10 blur-3xl rounded-3xl" />
-          <div className="relative bg-zinc-900/80 border border-white/10 rounded-2xl p-6 backdrop-blur">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-zinc-400">Pipeline Health</span>
-                <span className="text-xs text-emerald-400 flex items-center gap-1"><TrendingUp className="w-3 h-3" /> Healthy</span>
+
+          <div className="relative reveal-right">
+            <div className="absolute -inset-4 bg-indigo-500/10 blur-3xl rounded-3xl" />
+            <div className="relative bg-zinc-900/80 border border-white/10 rounded-2xl p-6 backdrop-blur">
+              <div className="flex items-center gap-2 mb-5">
+                <Zap className="w-4 h-4 text-indigo-400" />
+                <span className="text-sm font-medium text-white" style={{ fontFamily: 'Outfit' }}>Your Integrations</span>
               </div>
-              <div className="grid grid-cols-3 gap-3">
-                {[
-                  { label: 'Active', value: '24', color: 'text-indigo-400' },
-                  { label: 'Won', value: '18', color: 'text-emerald-400' },
-                  { label: 'At Risk', value: '3', color: 'text-amber-400' },
-                ].map((m, i) => (
-                  <div key={i} className="bg-zinc-800/50 rounded-lg p-3 text-center">
-                    <div className={`text-2xl font-bold font-mono ${m.color}`}>{m.value}</div>
-                    <div className="text-xs text-zinc-500 mt-1">{m.label}</div>
+              <div className="space-y-3">
+                {platforms.map((p, i) => (
+                  <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-zinc-800/50 border border-white/5 hover:border-indigo-500/20 transition-all group">
+                    <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: `${p.color}18` }}>
+                      <p.icon className="w-4 h-4" style={{ color: p.color }} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <span className="text-sm font-medium text-white block">{p.name}</span>
+                      <span className="text-[11px] text-zinc-500">{p.desc}</span>
+                    </div>
+                    <span className="text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 shrink-0">
+                      Connected
+                    </span>
                   </div>
                 ))}
               </div>
-              <div className="h-24 bg-gradient-to-t from-indigo-500/20 to-transparent rounded-lg flex items-end px-2 pt-2">
-                {[35, 55, 40, 70, 55, 85, 65, 90, 75, 95].map((h, i) => (
-                  <div key={i} className="flex-1 mx-0.5 bg-indigo-500 rounded-t transition-all duration-500 hover:bg-indigo-400" style={{ height: `${h}%` }} />
-                ))}
+              <div className="mt-4 pt-4 border-t border-white/5 flex items-center justify-between text-xs text-zinc-500">
+                <span>5 platforms synced</span>
+                <span className="text-emerald-400">All data up to date</span>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
-  </section>
-);
+    </section>
+  );
+};

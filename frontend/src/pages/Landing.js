@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Header, FullScreenMenu } from '../components/landing/HeaderMenu';
 import { HeroSection } from '../components/landing/HeroSection';
 import { FeaturesSection } from '../components/landing/FeaturesSection';
-import { HowItWorks } from '../components/landing/HowItWorks';
+import { ConnectBusinessSection } from '../components/landing/HowItWorks';
 import { PricingSection } from '../components/landing/PricingSection';
 import { CTASection, Footer } from '../components/landing/CTAFooter';
 import { Toaster } from '../components/ui/sonner';
@@ -55,7 +55,7 @@ const Landing = () => {
       <FullScreenMenu menuOpen={menuOpen} setMenuOpen={setMenuOpen} handleMenuClick={handleMenuClick} handleGetStarted={handleGetStarted} isAuthenticated={isAuthenticated} />
       <HeroSection handleScrollToPricing={handleScrollToPricing} />
       <FeaturesSection />
-      <HowItWorks />
+      <ConnectBusinessSection />
       <PricingSection handleGetStarted={handleGetStarted} isAuthenticated={isAuthenticated} />
       <CTASection handleGetStarted={handleGetStarted} />
       <Footer />
