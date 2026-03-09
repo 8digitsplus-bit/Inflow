@@ -52,7 +52,7 @@ export const ConnectBusinessSection = () => {
 
             <div className="mt-8 reveal reveal-delay-4">
               <Button
-                className="bg-indigo-600 hover:bg-indigo-500 text-white px-6 group"
+                className="bg-indigo-600 hover:bg-indigo-500 text-white px-3 group"
                 onClick={() => handleStartTrial()}
                 data-testid="connect-business-cta"
               >
