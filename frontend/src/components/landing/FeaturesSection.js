@@ -18,7 +18,7 @@ export const FeaturesSection = () => (
           Everything you need to scale
         </h2>
         <p className="mt-4 text-zinc-400 max-w-2xl mx-auto">
-          Powerful tools designed to maximise deal value & accelerate growth.
+          Powerful tools designed to maximise value & accelerate growth.
         </p>
       </div>
 
