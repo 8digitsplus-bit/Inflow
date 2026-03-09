@@ -336,36 +336,6 @@ const Pipeline = () => {
           </Card>
         </div>
 
-        {/* Stage Progress Bar */}
-        <div className="bg-zinc-950/50 border border-white/10 rounded-xl p-4" data-testid="stage-progress">
-          <div className="flex items-center gap-1 h-3 rounded-full overflow-hidden bg-zinc-800/50">
-            {STAGES.map((stage) => {
-              const count = getDealsByStage(stage.id).length;
-              const pct = stats.totalDeals ? (count / stats.totalDeals) * 100 : 0;
-              if (pct === 0) return null;
-              return (
-                <div
-                  key={stage.id}
-                  className="h-full transition-all duration-500 first:rounded-l-full last:rounded-r-full"
-                  style={{ width: `${pct}%`, backgroundColor: stage.color }}
-                  title={`${stage.label}: ${count} deals`}
-                />
-              );
-            })}
-          </div>
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3">
-            {STAGES.map((stage) => {
-              const count = getDealsByStage(stage.id).length;
-              return (
-                <div key={stage.id} className="flex items-center gap-1.5 text-[11px] text-zinc-400">
-                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: stage.color }} />
-                  {stage.label} <span className="text-zinc-600">({count})</span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
         {/* Kanban Board */}
         {loading ? (
           <div className="flex items-center justify-center py-20">

@@ -166,14 +166,16 @@ const SalesRevenue = () => {
                       outerRadius={100}
                       paddingAngle={3}
                       dataKey="value"
+                      nameKey="stage"
                       label={({ stage, percent }) => `${stage} ${(percent * 100).toFixed(0)}%`}
-                      labelLine={false}
+                      labelLine={{ stroke: '#52525B', strokeWidth: 1 }}
                     >
                       {(data?.revenue_by_stage || []).filter(s => s.value > 0).map((_, i) => (
                         <Cell key={i} fill={COLORS[i % COLORS.length]} />
                       ))}
                     </Pie>
                     <Tooltip formatter={(value) => fmt(value)} contentStyle={{ backgroundColor: '#18181B', border: '1px solid #27272A', borderRadius: '8px' }} />
+                    <Legend formatter={(value) => <span style={{ color: '#A1A1AA', fontSize: '12px' }}>{value}</span>} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
