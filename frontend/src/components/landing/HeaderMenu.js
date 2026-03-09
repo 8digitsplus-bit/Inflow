@@ -37,7 +37,7 @@ export const FullScreenMenu = ({ menuOpen, setMenuOpen, handleMenuClick, handleG
         </button>
       </nav>
       <div className={`mt-10 transition-all duration-300 ${menuOpen ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`} style={{ transitionDelay: '350ms' }}>
-        <Button className="bg-indigo-600 hover:bg-indigo-500 text-white btn-glow px-5 py-2.5 text-sm" onClick={() => { setMenuOpen(false); handleGetStarted(); }}>
+        <Button className="bg-indigo-600 hover:bg-indigo-500 text-white btn-glow px-3 py-2.5 text-sm" onClick={() => { setMenuOpen(false); handleGetStarted(); }}>
           Start Free Trial <ArrowRight className="w-5 h-5 ml-2" />
         </Button>
       </div>
