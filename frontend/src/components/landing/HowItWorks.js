@@ -32,7 +32,7 @@ export const ConnectBusinessSection = () => {
                 Plug in your tools. Get real insights.
               </h2>
               <p className="mt-4 text-zinc-400 max-w-md">
-                Link your existing business platforms and InFlow automatically syncs your data — powering every dashboard, metric, and AI recommendation with your real numbers.
+                Integrate your business tools. Sync real-time data. Access in-depth analytic & AI features.
               </p>
             </div>
 
