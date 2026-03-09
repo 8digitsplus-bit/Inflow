@@ -243,7 +243,7 @@ const Pipeline = () => {
           <Card className="bg-zinc-950/50 border-white/10" data-testid="kpi-won-value">
             <CardContent className="p-5">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-zinc-400 text-sm">Won Revenue</span>
+                <span className="text-zinc-400 text-sm">Win Revenue</span>
                 <div className="p-1.5 rounded bg-emerald-500/10"><TrendingUp className="w-4 h-4 text-emerald-400" /></div>
               </div>
               <div className="text-2xl font-bold font-mono text-white">{fmt(stats.wonValue)}</div>
