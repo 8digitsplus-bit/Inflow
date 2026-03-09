@@ -32,7 +32,7 @@ export const ConnectBusinessSection = () => {
                 Plug in your tools. Get real insights.
               </h2>
               <p className="mt-4 text-zinc-400 max-w-md">
-                Integrate your business tools. Sync real-time data. Access in-depth analytic & AI features.
+                Integrate your business tools. Sync real-time data. Access in-depth analytics & AI insights.
               </p>
             </div>
 
