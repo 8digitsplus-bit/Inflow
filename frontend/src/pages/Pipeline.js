@@ -60,7 +60,7 @@ const STAGES = [
   { id: 'qualified', label: 'Qualified', color: '#8B5CF6', bg: 'bg-violet-500' },
   { id: 'proposal', label: 'Proposal', color: '#06B6D4', bg: 'bg-cyan-500' },
   { id: 'negotiation', label: 'Negotiation', color: '#F59E0B', bg: 'bg-amber-500' },
-  { id: 'closed_won', label: 'Closed Won', color: '#10B981', bg: 'bg-emerald-500' },
+  { id: 'closed_won', label: 'Closed Win', color: '#10B981', bg: 'bg-emerald-500' },
   { id: 'closed_lost', label: 'Closed Lost', color: '#EF4444', bg: 'bg-red-500' },
 ];
 
@@ -287,7 +287,7 @@ const Pipeline = () => {
                     <CartesianGrid strokeDasharray="3 3" stroke="#27272A" horizontal={false} />
                     <XAxis type="number" stroke="#71717A" fontSize={12} tickFormatter={(v) => `$${v >= 1000 ? `${(v/1000).toFixed(0)}k` : v}`} />
                     <YAxis type="category" dataKey="name" stroke="#71717A" fontSize={12} width={90} />
-                    <Tooltip content={<CustomTooltip />} />
+                    <Tooltip content={<CustomTooltip />} wrapperStyle={{ outline: 'none' }} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
                     <Bar dataKey="value" name="Value" radius={[0, 6, 6, 0]} barSize={28}>
                       {funnelData.map((entry, i) => (
                         <Cell key={i} fill={entry.color} fillOpacity={0.85} />
