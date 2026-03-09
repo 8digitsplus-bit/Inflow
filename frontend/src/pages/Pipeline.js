@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import DashboardLayout from '../components/DashboardLayout';
 import { 
@@ -8,7 +8,15 @@ import {
   Calendar,
   Trash2,
   Edit2,
-  X
+  Target,
+  TrendingUp,
+  ArrowUpRight,
+  Layers,
+  Briefcase,
+  GripVertical,
+  Loader2,
+  Filter,
+  ChevronRight,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -33,18 +41,44 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../components/ui/select';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  Cell,
+} from 'recharts';
 import { toast } from 'sonner';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
 const STAGES = [
-  { id: 'lead', label: 'Lead', color: '#6366F1' },
-  { id: 'qualified', label: 'Qualified', color: '#8B5CF6' },
-  { id: 'proposal', label: 'Proposal', color: '#06B6D4' },
-  { id: 'negotiation', label: 'Negotiation', color: '#F59E0B' },
-  { id: 'closed_won', label: 'Closed Won', color: '#10B981' },
-  { id: 'closed_lost', label: 'Closed Lost', color: '#EF4444' }
+  { id: 'lead', label: 'Lead', color: '#6366F1', bg: 'bg-indigo-500' },
+  { id: 'qualified', label: 'Qualified', color: '#8B5CF6', bg: 'bg-violet-500' },
+  { id: 'proposal', label: 'Proposal', color: '#06B6D4', bg: 'bg-cyan-500' },
+  { id: 'negotiation', label: 'Negotiation', color: '#F59E0B', bg: 'bg-amber-500' },
+  { id: 'closed_won', label: 'Closed Won', color: '#10B981', bg: 'bg-emerald-500' },
+  { id: 'closed_lost', label: 'Closed Lost', color: '#EF4444', bg: 'bg-red-500' },
 ];
+
+const fmt = (v) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(v);
+
+const CustomTooltip = ({ active, payload, label }) => {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-3 shadow-xl">
+      <p className="text-zinc-400 text-sm mb-1">{label}</p>
+      {payload.map((e, i) => (
+        <p key={i} className="text-sm font-medium" style={{ color: e.color || e.fill }}>
+          {e.name}: {fmt(e.value)}
+        </p>
+      ))}
+    </div>
+  );
+};
 
 const Pipeline = () => {
   const { user } = useAuth();
@@ -53,30 +87,19 @@ const Pipeline = () => {
   const [showDealModal, setShowDealModal] = useState(false);
   const [editingDeal, setEditingDeal] = useState(null);
   const [draggedDeal, setDraggedDeal] = useState(null);
+  const [dragOverStage, setDragOverStage] = useState(null);
   
   const [dealForm, setDealForm] = useState({
-    name: '',
-    company: '',
-    value: '',
-    stage: 'lead',
-    probability: 20,
-    expected_close_date: '',
-    notes: ''
+    name: '', company: '', value: '', stage: 'lead',
+    probability: 20, expected_close_date: '', notes: '',
   });
 
-  useEffect(() => {
-    fetchDeals();
-  }, []);
+  useEffect(() => { fetchDeals(); }, []);
 
   const fetchDeals = async () => {
     try {
-      const response = await fetch(`${API_URL}/api/deals`, {
-        credentials: 'include'
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setDeals(data);
-      }
+      const response = await fetch(`${API_URL}/api/deals`, { credentials: 'include' });
+      if (response.ok) setDeals(await response.json());
     } catch (error) {
       console.error('Failed to fetch deals:', error);
     } finally {
@@ -86,12 +109,10 @@ const Pipeline = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
     try {
       const url = editingDeal 
         ? `${API_URL}/api/deals/${editingDeal.deal_id}`
         : `${API_URL}/api/deals`;
-      
       const response = await fetch(url, {
         method: editingDeal ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -99,10 +120,9 @@ const Pipeline = () => {
         body: JSON.stringify({
           ...dealForm,
           value: parseFloat(dealForm.value) || 0,
-          probability: parseInt(dealForm.probability) || 20
-        })
+          probability: parseInt(dealForm.probability) || 20,
+        }),
       });
-
       if (response.ok) {
         toast.success(editingDeal ? 'Deal updated' : 'Deal created');
         fetchDeals();
@@ -110,8 +130,7 @@ const Pipeline = () => {
       } else {
         toast.error('Failed to save deal');
       }
-    } catch (error) {
-      console.error('Failed to save deal:', error);
+    } catch {
       toast.error('Failed to save deal');
     }
   };
@@ -119,63 +138,40 @@ const Pipeline = () => {
   const handleDelete = async (dealId) => {
     try {
       const response = await fetch(`${API_URL}/api/deals/${dealId}`, {
-        method: 'DELETE',
-        credentials: 'include'
+        method: 'DELETE', credentials: 'include',
       });
-
-      if (response.ok) {
-        toast.success('Deal deleted');
-        fetchDeals();
-      }
-    } catch (error) {
-      console.error('Failed to delete deal:', error);
-      toast.error('Failed to delete deal');
-    }
+      if (response.ok) { toast.success('Deal deleted'); fetchDeals(); }
+    } catch { toast.error('Failed to delete deal'); }
   };
 
-  const handleDragStart = (deal) => {
-    setDraggedDeal(deal);
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-  };
+  const handleDragStart = (deal) => setDraggedDeal(deal);
+  const handleDragOver = (e, stageId) => { e.preventDefault(); setDragOverStage(stageId); };
+  const handleDragLeave = () => setDragOverStage(null);
 
   const handleDrop = async (stageId) => {
-    if (!draggedDeal || draggedDeal.stage === stageId) {
-      setDraggedDeal(null);
-      return;
-    }
-
+    setDragOverStage(null);
+    if (!draggedDeal || draggedDeal.stage === stageId) { setDraggedDeal(null); return; }
     try {
       const response = await fetch(`${API_URL}/api/deals/${draggedDeal.deal_id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ stage: stageId })
+        body: JSON.stringify({ stage: stageId }),
       });
-
       if (response.ok) {
         toast.success(`Moved to ${STAGES.find(s => s.id === stageId)?.label}`);
         fetchDeals();
       }
-    } catch (error) {
-      console.error('Failed to update deal:', error);
-    }
-    
+    } catch { /* silent */ }
     setDraggedDeal(null);
   };
 
   const openEditModal = (deal) => {
     setEditingDeal(deal);
     setDealForm({
-      name: deal.name,
-      company: deal.company,
-      value: deal.value.toString(),
-      stage: deal.stage,
-      probability: deal.probability,
-      expected_close_date: deal.expected_close_date || '',
-      notes: deal.notes || ''
+      name: deal.name, company: deal.company, value: deal.value.toString(),
+      stage: deal.stage, probability: deal.probability,
+      expected_close_date: deal.expected_close_date || '', notes: deal.notes || '',
     });
     setShowDealModal(true);
   };
@@ -183,151 +179,302 @@ const Pipeline = () => {
   const closeModal = () => {
     setShowDealModal(false);
     setEditingDeal(null);
-    setDealForm({
-      name: '',
-      company: '',
-      value: '',
-      stage: 'lead',
-      probability: 20,
-      expected_close_date: '',
-      notes: ''
-    });
+    setDealForm({ name: '', company: '', value: '', stage: 'lead', probability: 20, expected_close_date: '', notes: '' });
   };
 
-  const formatCurrency = (value) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0
-    }).format(value);
-  };
+  const getDealsByStage = (stageId) => deals.filter(d => d.stage === stageId);
+  const getStageTotal = (stageId) => getDealsByStage(stageId).reduce((s, d) => s + d.value, 0);
 
-  const getDealsByStage = (stageId) => {
-    return deals.filter(deal => deal.stage === stageId);
-  };
+  const stats = useMemo(() => {
+    const total = deals.reduce((s, d) => s + d.value, 0);
+    const won = deals.filter(d => d.stage === 'closed_won');
+    const wonValue = won.reduce((s, d) => s + d.value, 0);
+    const active = deals.filter(d => !['closed_won', 'closed_lost'].includes(d.stage));
+    const activeValue = active.reduce((s, d) => s + d.value, 0);
+    const avgDeal = deals.length ? total / deals.length : 0;
+    const winRate = deals.length ? ((won.length / deals.length) * 100).toFixed(1) : 0;
+    const weighted = active.reduce((s, d) => s + (d.value * (d.probability / 100)), 0);
+    return { total, wonValue, activeCount: active.length, activeValue, avgDeal, winRate, totalDeals: deals.length, weighted };
+  }, [deals]);
 
-  const getStageTotal = (stageId) => {
-    return getDealsByStage(stageId).reduce((sum, deal) => sum + deal.value, 0);
-  };
+  const funnelData = useMemo(() => {
+    return STAGES.filter(s => s.id !== 'closed_lost').map(stage => ({
+      name: stage.label,
+      value: getStageTotal(stage.id),
+      count: getDealsByStage(stage.id).length,
+      color: stage.color,
+    }));
+  }, [deals]);
 
   return (
     <DashboardLayout>
       <div className="space-y-6" data-testid="pipeline-page">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>
               Sales Pipeline
             </h1>
-            <p className="text-zinc-400 mt-1">Manage and track your deals</p>
+            <p className="text-zinc-400 mt-1 text-sm">Manage, track, and close your deals</p>
           </div>
-          <Button 
-            className="bg-indigo-600 hover:bg-indigo-500 btn-glow"
+          <Button
+            className="bg-indigo-600 hover:bg-indigo-500 text-sm h-9 px-4"
             onClick={() => setShowDealModal(true)}
             data-testid="add-deal-btn"
           >
-            <Plus className="w-4 h-4 mr-2" /> Add Deal
+            <Plus className="w-4 h-4 mr-1.5" /> Add Deal
           </Button>
         </div>
 
-        {/* Kanban Board */}
-        <div className="kanban-board">
-          {STAGES.map((stage) => (
-            <div 
-              key={stage.id}
-              className="kanban-column"
-              onDragOver={handleDragOver}
-              onDrop={() => handleDrop(stage.id)}
-              data-testid={`stage-${stage.id}`}
-            >
-              <div 
-                className="kanban-column-header flex items-center justify-between"
-                style={{ borderLeftWidth: '3px', borderLeftColor: stage.color }}
-              >
-                <div className="flex items-center gap-2">
-                  <span className="text-white font-medium">{stage.label}</span>
-                  <span className="text-xs bg-zinc-800 px-2 py-0.5 rounded-full text-zinc-400">
-                    {getDealsByStage(stage.id).length}
-                  </span>
-                </div>
-                <span className="text-sm font-mono text-zinc-400">
-                  {formatCurrency(getStageTotal(stage.id))}
-                </span>
+        {/* KPI Cards */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="bg-zinc-950/50 border-white/10" data-testid="kpi-pipeline-value">
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-zinc-400 text-sm">Pipeline Value</span>
+                <div className="p-1.5 rounded bg-indigo-500/10"><DollarSign className="w-4 h-4 text-indigo-400" /></div>
               </div>
-              
-              <div className="kanban-column-content">
-                {getDealsByStage(stage.id).map((deal) => (
-                  <div
-                    key={deal.deal_id}
-                    className={`deal-card ${draggedDeal?.deal_id === deal.deal_id ? 'dragging' : ''}`}
-                    draggable
-                    onDragStart={() => handleDragStart(deal)}
-                    data-testid={`deal-card-${deal.deal_id}`}
-                  >
-                    <div className="flex items-start justify-between mb-2">
-                      <h4 className="text-white font-medium text-sm">{deal.name}</h4>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button className="text-zinc-500 hover:text-zinc-300" data-testid={`deal-menu-${deal.deal_id}`}>
-                            <MoreVertical className="w-4 h-4" />
-                          </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-800">
-                          <DropdownMenuItem 
-                            onClick={() => openEditModal(deal)}
-                            className="text-zinc-300 hover:text-white focus:text-white"
-                          >
-                            <Edit2 className="w-4 h-4 mr-2" /> Edit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            onClick={() => handleDelete(deal.deal_id)}
-                            className="text-red-400 hover:text-red-300 focus:text-red-300"
-                          >
-                            <Trash2 className="w-4 h-4 mr-2" /> Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                    
-                    <p className="text-zinc-400 text-xs mb-3">{deal.company}</p>
-                    
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1 text-emerald-400">
-                        <DollarSign className="w-3 h-3" />
-                        <span className="text-sm font-mono">{formatCurrency(deal.value)}</span>
-                      </div>
-                      {deal.expected_close_date && (
-                        <div className="flex items-center gap-1 text-zinc-500 text-xs">
-                          <Calendar className="w-3 h-3" />
-                          {deal.expected_close_date}
+              <div className="text-2xl font-bold font-mono text-white">{fmt(stats.total)}</div>
+              <div className="flex items-center gap-1 mt-2 text-zinc-400 text-xs">
+                <span>{stats.totalDeals} total deals</span>
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="bg-zinc-950/50 border-white/10" data-testid="kpi-won-value">
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-zinc-400 text-sm">Won Revenue</span>
+                <div className="p-1.5 rounded bg-emerald-500/10"><TrendingUp className="w-4 h-4 text-emerald-400" /></div>
+              </div>
+              <div className="text-2xl font-bold font-mono text-white">{fmt(stats.wonValue)}</div>
+              <div className="flex items-center gap-1 mt-2 text-emerald-400 text-xs"><ArrowUpRight className="w-3 h-3" /><span>{stats.winRate}% win rate</span></div>
+            </CardContent>
+          </Card>
+          <Card className="bg-zinc-950/50 border-white/10" data-testid="kpi-active-deals">
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-zinc-400 text-sm">Active Deals</span>
+                <div className="p-1.5 rounded bg-cyan-500/10"><Layers className="w-4 h-4 text-cyan-400" /></div>
+              </div>
+              <div className="text-2xl font-bold font-mono text-white">{stats.activeCount}</div>
+              <div className="flex items-center gap-1 mt-2 text-zinc-400 text-xs"><span>across {STAGES.length - 2} stages</span></div>
+            </CardContent>
+          </Card>
+          <Card className="bg-zinc-950/50 border-white/10" data-testid="kpi-avg-deal">
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-zinc-400 text-sm">Avg Deal Size</span>
+                <div className="p-1.5 rounded bg-amber-500/10"><Target className="w-4 h-4 text-amber-400" /></div>
+              </div>
+              <div className="text-2xl font-bold font-mono text-white">{fmt(stats.avgDeal)}</div>
+              <div className="flex items-center gap-1 mt-2 text-zinc-400 text-xs"><Briefcase className="w-3 h-3" /><span>per deal average</span></div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Pipeline Funnel Chart + Weighted Value */}
+        <div className="grid lg:grid-cols-3 gap-6">
+          <Card className="bg-zinc-950/50 border-white/10 lg:col-span-2" data-testid="pipeline-funnel-chart">
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
+                <Filter className="w-5 h-5 text-indigo-400" /> Pipeline by Stage
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[220px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={funnelData} layout="vertical" barCategoryGap="20%">
+                    <CartesianGrid strokeDasharray="3 3" stroke="#27272A" horizontal={false} />
+                    <XAxis type="number" stroke="#71717A" fontSize={12} tickFormatter={(v) => `$${v >= 1000 ? `${(v/1000).toFixed(0)}k` : v}`} />
+                    <YAxis type="category" dataKey="name" stroke="#71717A" fontSize={12} width={90} />
+                    <Tooltip content={<CustomTooltip />} />
+                    <Bar dataKey="value" name="Value" radius={[0, 6, 6, 0]} barSize={28}>
+                      {funnelData.map((entry, i) => (
+                        <Cell key={i} fill={entry.color} fillOpacity={0.85} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-zinc-950/50 border-white/10" data-testid="weighted-pipeline">
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
+                <Target className="w-5 h-5 text-emerald-400" /> Weighted Pipeline
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold font-mono text-white mb-1">{fmt(stats.weighted)}</div>
+              <p className="text-zinc-500 text-xs mb-5">Probability-adjusted value</p>
+              <div className="space-y-3">
+                {STAGES.filter(s => !['closed_won', 'closed_lost'].includes(s.id)).map((stage) => {
+                  const stageDeals = getDealsByStage(stage.id);
+                  const stageWeighted = stageDeals.reduce((s, d) => s + (d.value * (d.probability / 100)), 0);
+                  const pct = stats.weighted > 0 ? (stageWeighted / stats.weighted) * 100 : 0;
+                  return (
+                    <div key={stage.id}>
+                      <div className="flex items-center justify-between text-sm mb-1.5">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: stage.color }} />
+                          <span className="text-zinc-300 text-xs">{stage.label}</span>
                         </div>
-                      )}
-                    </div>
-                    
-                    <div className="mt-3 pt-3 border-t border-zinc-800">
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="text-zinc-500">Probability</span>
-                        <span className="text-zinc-300">{deal.probability}%</span>
+                        <span className="text-zinc-400 font-mono text-xs">{fmt(stageWeighted)}</span>
                       </div>
-                      <div className="mt-1 h-1 bg-zinc-800 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-indigo-500 rounded-full transition-all"
-                          style={{ width: `${deal.probability}%` }}
+                      <div className="h-1.5 bg-zinc-800/50 rounded-full overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-700"
+                          style={{ width: `${Math.max(pct, 0)}%`, backgroundColor: stage.color }}
                         />
                       </div>
                     </div>
-                  </div>
-                ))}
-
-                {getDealsByStage(stage.id).length === 0 && (
-                  <div className="text-center py-8 text-zinc-500 text-sm">
-                    No deals in this stage
-                  </div>
-                )}
+                  );
+                })}
               </div>
-            </div>
-          ))}
+            </CardContent>
+          </Card>
         </div>
+
+        {/* Stage Progress Bar */}
+        <div className="bg-zinc-950/50 border border-white/10 rounded-xl p-4" data-testid="stage-progress">
+          <div className="flex items-center gap-1 h-3 rounded-full overflow-hidden bg-zinc-800/50">
+            {STAGES.map((stage) => {
+              const count = getDealsByStage(stage.id).length;
+              const pct = stats.totalDeals ? (count / stats.totalDeals) * 100 : 0;
+              if (pct === 0) return null;
+              return (
+                <div
+                  key={stage.id}
+                  className="h-full transition-all duration-500 first:rounded-l-full last:rounded-r-full"
+                  style={{ width: `${pct}%`, backgroundColor: stage.color }}
+                  title={`${stage.label}: ${count} deals`}
+                />
+              );
+            })}
+          </div>
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-3">
+            {STAGES.map((stage) => {
+              const count = getDealsByStage(stage.id).length;
+              return (
+                <div key={stage.id} className="flex items-center gap-1.5 text-[11px] text-zinc-400">
+                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: stage.color }} />
+                  {stage.label} <span className="text-zinc-600">({count})</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Kanban Board */}
+        {loading ? (
+          <div className="flex items-center justify-center py-20">
+            <Loader2 className="w-8 h-8 animate-spin text-indigo-400" />
+          </div>
+        ) : (
+          <div className="flex gap-3 overflow-x-auto pb-4 -mx-2 px-2" data-testid="kanban-board">
+            {STAGES.map((stage) => {
+              const stageDeals = getDealsByStage(stage.id);
+              const isDragOver = dragOverStage === stage.id;
+              return (
+                <div
+                  key={stage.id}
+                  className={`flex-shrink-0 w-[280px] rounded-xl transition-all duration-200 ${
+                    isDragOver ? 'bg-white/[0.04] ring-1 ring-indigo-500/30' : 'bg-zinc-950/30'
+                  }`}
+                  onDragOver={(e) => handleDragOver(e, stage.id)}
+                  onDragLeave={handleDragLeave}
+                  onDrop={() => handleDrop(stage.id)}
+                  data-testid={`stage-${stage.id}`}
+                >
+                  {/* Column Header */}
+                  <div className="p-3 border-b border-white/5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-1.5 h-5 rounded-full" style={{ backgroundColor: stage.color }} />
+                        <span className="text-sm font-semibold text-white" style={{ fontFamily: 'Outfit' }}>{stage.label}</span>
+                        <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-zinc-800 text-zinc-400">{stageDeals.length}</span>
+                      </div>
+                      <span className="text-xs font-mono text-zinc-500">{fmt(getStageTotal(stage.id))}</span>
+                    </div>
+                  </div>
+
+                  {/* Cards */}
+                  <div className="p-2 space-y-2 min-h-[120px] max-h-[480px] overflow-y-auto">
+                    {stageDeals.map((deal) => (
+                      <div
+                        key={deal.deal_id}
+                        className={`group relative bg-zinc-900/70 border border-white/[0.06] rounded-lg p-3 cursor-grab active:cursor-grabbing transition-all duration-200 hover:border-white/15 hover:bg-zinc-900/90 ${
+                          draggedDeal?.deal_id === deal.deal_id ? 'opacity-40 scale-95' : ''
+                        }`}
+                        draggable
+                        onDragStart={() => handleDragStart(deal)}
+                        data-testid={`deal-card-${deal.deal_id}`}
+                      >
+                        {/* Drag handle */}
+                        <div className="absolute top-2.5 left-1 opacity-0 group-hover:opacity-40 transition-opacity">
+                          <GripVertical className="w-3 h-3 text-zinc-500" />
+                        </div>
+
+                        <div className="flex items-start justify-between mb-1.5 pl-2">
+                          <h4 className="text-white font-medium text-[13px] leading-tight pr-4 line-clamp-2">{deal.name}</h4>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <button className="opacity-0 group-hover:opacity-100 text-zinc-500 hover:text-zinc-300 transition-opacity" data-testid={`deal-menu-${deal.deal_id}`}>
+                                <MoreVertical className="w-3.5 h-3.5" />
+                              </button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="bg-zinc-900 border-zinc-800">
+                              <DropdownMenuItem onClick={() => openEditModal(deal)} className="text-zinc-300 hover:text-white focus:text-white">
+                                <Edit2 className="w-3.5 h-3.5 mr-2" /> Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleDelete(deal.deal_id)} className="text-red-400 hover:text-red-300 focus:text-red-300">
+                                <Trash2 className="w-3.5 h-3.5 mr-2" /> Delete
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+
+                        <p className="text-zinc-500 text-[11px] pl-2 mb-2.5">{deal.company}</p>
+
+                        <div className="flex items-center justify-between pl-2">
+                          <span className="text-emerald-400 text-sm font-mono font-medium">{fmt(deal.value)}</span>
+                          {deal.expected_close_date && (
+                            <span className="flex items-center gap-1 text-zinc-600 text-[10px]">
+                              <Calendar className="w-2.5 h-2.5" />
+                              {deal.expected_close_date}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Probability bar */}
+                        <div className="mt-2.5 pl-2">
+                          <div className="flex items-center justify-between text-[10px] mb-1">
+                            <span className="text-zinc-600">Probability</span>
+                            <span className="text-zinc-400 font-medium">{deal.probability}%</span>
+                          </div>
+                          <div className="h-1 bg-zinc-800 rounded-full overflow-hidden">
+                            <div
+                              className="h-full rounded-full transition-all duration-500"
+                              style={{ width: `${deal.probability}%`, backgroundColor: stage.color }}
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+
+                    {stageDeals.length === 0 && (
+                      <div className="flex flex-col items-center justify-center py-8 text-zinc-600">
+                        <Layers className="w-5 h-5 mb-2 opacity-40" />
+                        <span className="text-xs">No deals</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
 
         {/* Deal Modal */}
         <Dialog open={showDealModal} onOpenChange={setShowDealModal}>
@@ -337,119 +484,47 @@ const Pipeline = () => {
                 {editingDeal ? 'Edit Deal' : 'Add New Deal'}
               </DialogTitle>
             </DialogHeader>
-            
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="text-sm text-zinc-400 mb-1.5 block">Deal Name</label>
-                <Input
-                  value={dealForm.name}
-                  onChange={(e) => setDealForm({ ...dealForm, name: e.target.value })}
-                  placeholder="e.g., Enterprise Contract"
-                  className="bg-zinc-800 border-zinc-700 text-white"
-                  required
-                  data-testid="deal-name-input"
-                />
+                <Input value={dealForm.name} onChange={(e) => setDealForm({ ...dealForm, name: e.target.value })} placeholder="e.g., Enterprise Contract" className="bg-zinc-800 border-zinc-700 text-white" required data-testid="deal-name-input" />
               </div>
-              
               <div>
                 <label className="text-sm text-zinc-400 mb-1.5 block">Company</label>
-                <Input
-                  value={dealForm.company}
-                  onChange={(e) => setDealForm({ ...dealForm, company: e.target.value })}
-                  placeholder="e.g., Acme Corp"
-                  className="bg-zinc-800 border-zinc-700 text-white"
-                  required
-                  data-testid="deal-company-input"
-                />
+                <Input value={dealForm.company} onChange={(e) => setDealForm({ ...dealForm, company: e.target.value })} placeholder="e.g., Acme Corp" className="bg-zinc-800 border-zinc-700 text-white" required data-testid="deal-company-input" />
               </div>
-              
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm text-zinc-400 mb-1.5 block">Value ($)</label>
-                  <Input
-                    type="number"
-                    value={dealForm.value}
-                    onChange={(e) => setDealForm({ ...dealForm, value: e.target.value })}
-                    placeholder="50000"
-                    className="bg-zinc-800 border-zinc-700 text-white"
-                    required
-                    data-testid="deal-value-input"
-                  />
+                  <Input type="number" value={dealForm.value} onChange={(e) => setDealForm({ ...dealForm, value: e.target.value })} placeholder="50000" className="bg-zinc-800 border-zinc-700 text-white" required data-testid="deal-value-input" />
                 </div>
-                
                 <div>
                   <label className="text-sm text-zinc-400 mb-1.5 block">Stage</label>
-                  <Select 
-                    value={dealForm.stage} 
-                    onValueChange={(val) => setDealForm({ ...dealForm, stage: val })}
-                  >
-                    <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white" data-testid="deal-stage-select">
-                      <SelectValue />
-                    </SelectTrigger>
+                  <Select value={dealForm.stage} onValueChange={(val) => setDealForm({ ...dealForm, stage: val })}>
+                    <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white" data-testid="deal-stage-select"><SelectValue /></SelectTrigger>
                     <SelectContent className="bg-zinc-900 border-zinc-800">
-                      {STAGES.map((stage) => (
-                        <SelectItem key={stage.id} value={stage.id} className="text-zinc-300">
-                          {stage.label}
-                        </SelectItem>
-                      ))}
+                      {STAGES.map((s) => (<SelectItem key={s.id} value={s.id} className="text-zinc-300">{s.label}</SelectItem>))}
                     </SelectContent>
                   </Select>
                 </div>
               </div>
-              
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm text-zinc-400 mb-1.5 block">Probability (%)</label>
-                  <Input
-                    type="number"
-                    min="0"
-                    max="100"
-                    value={dealForm.probability}
-                    onChange={(e) => setDealForm({ ...dealForm, probability: e.target.value })}
-                    className="bg-zinc-800 border-zinc-700 text-white"
-                    data-testid="deal-probability-input"
-                  />
+                  <Input type="number" min="0" max="100" value={dealForm.probability} onChange={(e) => setDealForm({ ...dealForm, probability: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white" data-testid="deal-probability-input" />
                 </div>
-                
                 <div>
                   <label className="text-sm text-zinc-400 mb-1.5 block">Expected Close</label>
-                  <Input
-                    type="date"
-                    value={dealForm.expected_close_date}
-                    onChange={(e) => setDealForm({ ...dealForm, expected_close_date: e.target.value })}
-                    className="bg-zinc-800 border-zinc-700 text-white"
-                    data-testid="deal-date-input"
-                  />
+                  <Input type="date" value={dealForm.expected_close_date} onChange={(e) => setDealForm({ ...dealForm, expected_close_date: e.target.value })} className="bg-zinc-800 border-zinc-700 text-white" data-testid="deal-date-input" />
                 </div>
               </div>
-              
               <div>
                 <label className="text-sm text-zinc-400 mb-1.5 block">Notes</label>
-                <textarea
-                  value={dealForm.notes}
-                  onChange={(e) => setDealForm({ ...dealForm, notes: e.target.value })}
-                  placeholder="Add any notes about this deal..."
-                  className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-md p-3 text-sm resize-none h-20"
-                  data-testid="deal-notes-input"
-                />
+                <textarea value={dealForm.notes} onChange={(e) => setDealForm({ ...dealForm, notes: e.target.value })} placeholder="Add any notes about this deal..." className="w-full bg-zinc-800 border border-zinc-700 text-white rounded-md p-3 text-sm resize-none h-20" data-testid="deal-notes-input" />
               </div>
-              
               <DialogFooter>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={closeModal}
-                  className="border-zinc-700 text-zinc-300 hover:bg-zinc-800"
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  type="submit" 
-                  className="bg-indigo-600 hover:bg-indigo-500"
-                  data-testid="deal-submit-btn"
-                >
-                  {editingDeal ? 'Update Deal' : 'Create Deal'}
-                </Button>
+                <Button type="button" variant="outline" onClick={closeModal} className="border-zinc-700 text-zinc-300 hover:bg-zinc-800">Cancel</Button>
+                <Button type="submit" className="bg-indigo-600 hover:bg-indigo-500" data-testid="deal-submit-btn">{editingDeal ? 'Update Deal' : 'Create Deal'}</Button>
               </DialogFooter>
             </form>
           </DialogContent>
