@@ -38,13 +38,15 @@
 - Landing page: "Start 14-Day Free Trial" CTAs, Connect Your Business section
 - Cancel subscription/trial from Settings
 - All CTAs navigate to auth signup page
-- **Sales Pipeline page redesigned** — Pipeline by Stage bar chart, Weighted Pipeline card, enhanced Kanban layout
-- **Full responsive optimization** — All pages optimized for mobile (375px), tablet (768px), desktop (1440px+). Responsive grids, chart heights, padding, overflow handling. 100% pass rate across all 9 pages at all 3 viewports (iteration_18)
+- Sales Pipeline page redesigned — Pipeline by Stage bar chart, Weighted Pipeline card, enhanced Kanban layout
+- Full responsive optimization — All pages for mobile (375px), tablet (768px), desktop (1440px+)
 - "Closed Won" → "Closed Win" across Pipeline page, "Won Deals" → "Win Deals" in CRO
-- Sales Revenue pie chart: added labeled slices + legend
+- Sales Revenue pie chart: labeled slices + legend
+- Settings billing toggle: pill-shaped buttons matching landing page, removed "Recommended" badge
+- **AI Priority Support** — Live conversational AI chat (Claude) with InFlow knowledge base + user account context, multi-turn conversations, ticket system (open/in-progress/resolved), Priority badge for Pro/Enterprise, sidebar integration. 100% pass (iteration_19)
 
 ## Backlog
 - **P0 (Blocked):** Shopify OAuth credentials
-- **P1:** Real OAuth for Connect Your Business platforms
-- **P2:** Team/Collaboration features, AI Insights for Sales features
-- **P3:** Admin dashboard, email notifications
+- **P1:** Real OAuth for Connect Your Business platforms, API Access feature for Enterprise tier
+- **P2:** Team/Collaboration features, AI Insights for Sales features, Revenue Forecasting page
+- **P3:** Admin dashboard, email notifications for support tickets
