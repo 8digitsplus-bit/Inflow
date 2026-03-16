@@ -14,7 +14,8 @@ import {
   ChevronRight,
   Users,
   TrendingUp,
-  Plug
+  Plug,
+  Headphones
 } from 'lucide-react';
 // Note: Zap used for CRO sidebar icon, TrendingUp for Sales Performance
 import { Button } from './ui/button';
@@ -30,6 +31,7 @@ const navigation = [
   { name: 'Churn & Retention', href: '/churn', icon: Users },
   { name: 'CRO', href: '/cro', icon: Zap },
   { name: 'Connect Business', href: '/connect-business', icon: Plug },
+  { name: 'Priority Support', href: '/support', icon: Headphones },
   { name: 'Settings', href: '/settings', icon: Settings },
 ];
 

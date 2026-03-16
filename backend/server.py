@@ -11,6 +11,7 @@ from routes.ai import router as ai_router
 from routes.payments import router as payments_router
 from routes.integrations import router as integrations_router
 from routes.business import router as business_router
+from routes.support import router as support_router
 
 # Configure logging
 logging.basicConfig(
@@ -33,6 +34,7 @@ api_router.include_router(ai_router)
 api_router.include_router(payments_router)
 api_router.include_router(integrations_router)
 api_router.include_router(business_router)
+api_router.include_router(support_router)
 
 
 # Basic routes
