@@ -30,7 +30,7 @@
 - **TierGate upgrade page** — shows 3 plan cards when users access restricted features
 - **Cancel subscription/trial** — Settings page with confirmation dialog
 
-## Completed (as of March 9, 2026)
+## Completed (as of March 16, 2026)
 - Full app: auth, payments, AI, onboarding, dashboard, analytics
 - InFlow branding with wordmark logo
 - 14-Day Free Trial with countdown badge
@@ -38,8 +38,10 @@
 - Landing page: "Start 14-Day Free Trial" CTAs, Connect Your Business section
 - Cancel subscription/trial from Settings
 - All CTAs navigate to auth signup page
-- **Sales Pipeline page redesigned** — Added Pipeline by Stage bar chart, Weighted Pipeline card with probability-adjusted breakdown, enhanced layout matching SalesPerformance/SalesRevenue design language
-- 100% test pass rates (iterations 14-17)
+- **Sales Pipeline page redesigned** — Pipeline by Stage bar chart, Weighted Pipeline card, enhanced Kanban layout
+- **Full responsive optimization** — All pages optimized for mobile (375px), tablet (768px), desktop (1440px+). Responsive grids, chart heights, padding, overflow handling. 100% pass rate across all 9 pages at all 3 viewports (iteration_18)
+- "Closed Won" → "Closed Win" across Pipeline page, "Won Deals" → "Win Deals" in CRO
+- Sales Revenue pie chart: added labeled slices + legend
 
 ## Backlog
 - **P0 (Blocked):** Shopify OAuth credentials
