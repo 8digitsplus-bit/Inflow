@@ -101,7 +101,7 @@ const ChurnRetention = () => {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>Churn & Retention</h1>
-            <p className="text-zinc-400 mt-1">Monitor customer health, predict churn, and protect revenue</p>
+            <p className="text-zinc-400 mt-1 text-sm">Monitor customer health, predict churn, and protect revenue</p>
           </div>
           <Button variant="outline" className="border-zinc-700" onClick={fetchChurnData} data-testid="refresh-churn-btn">
             <RefreshCw className="w-4 h-4 mr-2" /> Refresh
@@ -109,7 +109,7 @@ const ChurnRetention = () => {
         </div>
 
         {/* Primary KPIs */}
-        <div className="grid grid-cols-2 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
           <Card className="bg-zinc-950/50 border-white/10" data-testid="health-score-card">
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-2">
@@ -181,7 +181,7 @@ const ChurnRetention = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-[300px]">
+              <div className="h-[220px] sm:h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <ComposedChart data={data?.monthly_data || []}>
                     <defs>
@@ -211,7 +211,7 @@ const ChurnRetention = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-[300px]">
+              <div className="h-[220px] sm:h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -308,7 +308,7 @@ const ChurnRetention = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               {(data?.risk_by_segment || []).map((seg, i) => {
                 const riskPct = seg.total > 0 ? Math.round((seg.at_risk / seg.total) * 100) : 0;
                 return (

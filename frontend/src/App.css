@@ -34,6 +34,7 @@
   padding: 24px;
   background: #09090B;
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 @media (max-width: 1024px) {
@@ -48,6 +49,12 @@
   
   .dashboard-content {
     margin-left: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .dashboard-content {
+    padding: 16px;
   }
 }
 

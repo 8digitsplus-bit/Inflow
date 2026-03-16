@@ -218,7 +218,7 @@ const Pipeline = () => {
             <p className="text-zinc-400 mt-1 text-sm">Manage, track, and close your deals</p>
           </div>
           <Button
-            className="bg-indigo-600 hover:bg-indigo-500 text-sm h-9 px-4"
+            className="bg-indigo-600 hover:bg-indigo-500 text-sm h-9 px-4 w-auto self-start sm:self-auto"
             onClick={() => setShowDealModal(true)}
             data-testid="add-deal-btn"
           >
@@ -286,7 +286,7 @@ const Pipeline = () => {
                   <BarChart data={funnelData} layout="vertical" barCategoryGap="20%">
                     <CartesianGrid strokeDasharray="3 3" stroke="#27272A" horizontal={false} />
                     <XAxis type="number" stroke="#71717A" fontSize={12} tickFormatter={(v) => `$${v >= 1000 ? `${(v/1000).toFixed(0)}k` : v}`} />
-                    <YAxis type="category" dataKey="name" stroke="#71717A" fontSize={12} width={90} />
+                    <YAxis type="category" dataKey="name" stroke="#71717A" fontSize={11} width={75} tick={{ fontSize: 11 }} />
                     <Tooltip content={<CustomTooltip />} wrapperStyle={{ outline: 'none' }} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
                     <Bar dataKey="value" name="Value" radius={[0, 6, 6, 0]} barSize={28}>
                       {funnelData.map((entry, i) => (
@@ -342,14 +342,14 @@ const Pipeline = () => {
             <Loader2 className="w-8 h-8 animate-spin text-indigo-400" />
           </div>
         ) : (
-          <div className="flex gap-3 overflow-x-auto pb-4 -mx-2 px-2" data-testid="kanban-board">
+          <div className="flex gap-3 overflow-x-auto pb-4 -mx-2 px-2 snap-x" data-testid="kanban-board">
             {STAGES.map((stage) => {
               const stageDeals = getDealsByStage(stage.id);
               const isDragOver = dragOverStage === stage.id;
               return (
                 <div
                   key={stage.id}
-                  className={`flex-shrink-0 w-[280px] rounded-xl transition-all duration-200 ${
+                  className={`flex-shrink-0 w-[240px] sm:w-[280px] rounded-xl transition-all duration-200 snap-start ${
                     isDragOver ? 'bg-white/[0.04] ring-1 ring-indigo-500/30' : 'bg-zinc-950/30'
                   }`}
                   onDragOver={(e) => handleDragOver(e, stage.id)}

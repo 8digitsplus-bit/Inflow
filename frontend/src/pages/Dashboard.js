@@ -213,7 +213,7 @@ const Dashboard = () => {
         </div>
 
         {/* Key Metrics - Available to all */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <Card className="bg-zinc-950/50 border-white/10 hover:border-indigo-500/30 transition-colors" data-testid="metric-pipeline">
             <CardContent className="p-5">
               <div className="flex items-center justify-between mb-3">
@@ -269,7 +269,7 @@ const Dashboard = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="h-[280px]">
+              <div className="h-[200px] sm:h-[280px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={analytics?.monthly_data || []}>
                     <defs>

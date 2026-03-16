@@ -125,7 +125,7 @@ const ConversionOptimization = () => {
             <h1 className="text-2xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>
               Conversion Rate Optimization
             </h1>
-            <p className="text-zinc-400 mt-1">Optimize your sales funnel and increase conversions</p>
+            <p className="text-zinc-400 mt-1 text-sm">Optimize your sales funnel and increase conversions</p>
           </div>
           <Button 
             variant="outline" 
@@ -168,7 +168,7 @@ const ConversionOptimization = () => {
           <Card className="bg-zinc-950/50 border-white/10" data-testid="won-deals-card">
             <CardContent className="p-5">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-zinc-400 text-sm">Won Deals</span>
+                <span className="text-zinc-400 text-sm">Win Deals</span>
                 <Zap className="w-5 h-5 text-amber-400" />
               </div>
               <div className="text-3xl font-bold font-mono text-amber-400">
@@ -203,12 +203,12 @@ const ConversionOptimization = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-[300px]">
+              <div className="h-[220px] sm:h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={data?.funnel_data || []} layout="vertical">
                     <CartesianGrid strokeDasharray="3 3" stroke="#27272A" horizontal={false} />
                     <XAxis type="number" stroke="#71717A" fontSize={12} />
-                    <YAxis type="category" dataKey="stage" stroke="#71717A" fontSize={12} width={100} />
+                    <YAxis type="category" dataKey="stage" stroke="#71717A" fontSize={11} width={80} />
                     <Tooltip content={<CustomTooltip />} />
                     <Bar dataKey="conversion" name="Conversion Rate" radius={[0, 4, 4, 0]}>
                       {data?.funnel_data?.map((entry, index) => (

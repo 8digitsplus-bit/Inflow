@@ -116,7 +116,7 @@ const RevenueIntelligence = () => {
         </div>
 
         {/* Top-Level KPIs from all 3 features */}
-        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
           <Card className="bg-zinc-950/50 border-white/10" data-testid="ri-revenue">
             <CardContent className="p-4">
               <span className="text-zinc-400 text-xs">Total Revenue</span>
@@ -153,7 +153,7 @@ const RevenueIntelligence = () => {
         </div>
 
         {/* Deal Snapshot */}
-        <div className="grid grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
           <Card className="bg-zinc-950/50 border-white/10">
             <CardContent className="p-4 text-center">
               <div className="text-2xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>{data?.total_deals || 0}</div>
@@ -189,7 +189,7 @@ const RevenueIntelligence = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-[300px]">
+              <div className="h-[220px] sm:h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={data?.monthly_overview || []}>
                     <defs>
@@ -222,7 +222,7 @@ const RevenueIntelligence = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-[300px]">
+              <div className="h-[220px] sm:h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={data?.monthly_overview || []}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#27272A" vertical={false} />

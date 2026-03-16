@@ -157,7 +157,7 @@ const ConnectBusiness = () => {
 
         {/* Summary Cards — only when something is connected */}
         {summary && summary.connected_count > 0 && (
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4" data-testid="business-summary-cards">
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4" data-testid="business-summary-cards">
             <SummaryCard icon={Database} label="Platforms Connected" value={summary.connected_count} color="text-indigo-400" />
             <SummaryCard icon={TrendingUp} label="Records Synced" value={summary.total_records.toLocaleString()} color="text-emerald-400" />
             <SummaryCard icon={CreditCard} label="Total Pipeline Value" value={`$${(summary.total_synced_value || 0).toLocaleString()}`} color="text-amber-400" />

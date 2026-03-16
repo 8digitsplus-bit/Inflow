@@ -70,7 +70,7 @@ const SalesRevenue = () => {
         </div>
 
         {/* KPI Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <Card className="bg-zinc-950/50 border-white/10" data-testid="kpi-total-revenue">
             <CardContent className="p-5">
               <div className="flex items-center justify-between mb-2">
@@ -122,7 +122,7 @@ const SalesRevenue = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-[300px]">
+              <div className="h-[220px] sm:h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={data?.monthly_revenue || []}>
                     <defs>
@@ -155,7 +155,7 @@ const SalesRevenue = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-[300px]">
+              <div className="h-[220px] sm:h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie

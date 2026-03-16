@@ -70,7 +70,7 @@ const SalesPerformance = () => {
         </div>
 
         {/* KPI Cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
           <Card className="bg-zinc-950/50 border-white/10" data-testid="kpi-win-rate">
             <CardContent className="p-5">
               <div className="flex items-center justify-between mb-2">
@@ -122,7 +122,7 @@ const SalesPerformance = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-[300px]">
+              <div className="h-[220px] sm:h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <AreaChart data={data?.monthly_performance || []}>
                     <defs>
@@ -149,7 +149,7 @@ const SalesPerformance = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-[300px]">
+              <div className="h-[220px] sm:h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={data?.monthly_performance || []}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#27272A" vertical={false} />
@@ -174,7 +174,7 @@ const SalesPerformance = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
               {(data?.stage_velocity || []).map((stage, i) => (
                 <div key={i} className="p-4 bg-zinc-900/50 rounded-lg border border-zinc-800">
                   <div className="flex items-center gap-2 mb-3">

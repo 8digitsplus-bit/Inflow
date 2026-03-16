@@ -234,7 +234,7 @@ const Settings = () => {
               </div>
             </div>
             
-            <div className="mt-6 pt-6 border-t border-zinc-800 flex items-center gap-3">
+            <div className="mt-6 pt-6 border-t border-zinc-800 flex flex-wrap items-center gap-3">
               <Button 
                 variant="outline" 
                 className="border-red-500/30 text-red-400 hover:bg-red-500/10"
@@ -313,7 +313,7 @@ const Settings = () => {
           </CardHeader>
           <CardContent>
             {/* Billing Toggle */}
-            <div className="mb-6 flex justify-center">
+            <div className="mb-6 flex flex-col items-center">
               <div className="inline-flex items-center p-1 bg-zinc-900 rounded-lg border border-zinc-800">
                 <button
                   onClick={() => setBillingPeriod('monthly')}
