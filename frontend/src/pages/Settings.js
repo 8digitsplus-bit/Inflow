@@ -314,26 +314,29 @@ const Settings = () => {
           <CardContent>
             {/* Billing Toggle */}
             <div className="mb-6 flex flex-col items-center">
-              <div className="inline-flex items-center p-1 bg-zinc-900 rounded-lg border border-zinc-800">
+              <div className="inline-flex items-center p-1 bg-zinc-900 rounded-full border border-zinc-800 relative">
+                <div
+                  className="absolute top-1 bottom-1 rounded-full bg-indigo-600 shadow-lg shadow-indigo-500/25 transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                  style={{
+                    width: billingPeriod === 'monthly' ? 'calc(40% - 2px)' : 'calc(60% - 2px)',
+                    left: billingPeriod === 'monthly' ? '4px' : 'calc(40% + 2px)',
+                  }}
+                />
                 <button
                   onClick={() => setBillingPeriod('monthly')}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
-                    billingPeriod === 'monthly' 
-                      ? 'bg-indigo-600 text-white' 
-                      : 'text-zinc-400 hover:text-white'
+                  className={`relative z-10 px-6 py-2 rounded-full text-sm font-medium transition-colors duration-300 ${
+                    billingPeriod === 'monthly' ? 'text-white' : 'text-zinc-400 hover:text-zinc-200'
                   }`}
                 >
                   Monthly
                 </button>
                 <button
                   onClick={() => setBillingPeriod('yearly')}
-                  className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
-                    billingPeriod === 'yearly' 
-                      ? 'bg-indigo-600 text-white' 
-                      : 'text-zinc-400 hover:text-white'
+                  className={`relative z-10 px-6 py-2 rounded-full text-sm font-medium transition-colors duration-300 ${
+                    billingPeriod === 'yearly' ? 'text-white' : 'text-zinc-400 hover:text-zinc-200'
                   }`}
                 >
-                  Yearly <span className="text-emerald-400 ml-1">30% off</span>
+                  Yearly <span className={`ml-1 transition-colors duration-300 ${billingPeriod === 'yearly' ? 'text-emerald-300' : 'text-emerald-400'}`}>Save more</span>
                 </button>
               </div>
               <p className="text-xs text-zinc-500 mt-2">*1st year only, renews at full price</p>
@@ -356,14 +359,6 @@ const Settings = () => {
                     }`}
                     data-testid={`plan-${plan.key}`}
                   >
-                    {plan.featured && !isCurrentPlan && (
-                      <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-600 text-white text-xs rounded-full">
-                          <Sparkles className="w-3 h-3" /> Recommended
-                        </span>
-                      </div>
-                    )}
-                    
                     {isCurrentPlan && (
                       <div className="absolute -top-3 left-1/2 -translate-x-1/2">
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-600 text-white text-xs rounded-full">
