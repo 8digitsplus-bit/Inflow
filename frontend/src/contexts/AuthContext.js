@@ -86,21 +86,6 @@ export const AuthProvider = ({ children }) => {
     return userData;
   };
 
-  const loginWithShopify = async (shopDomain) => {
-    const response = await fetch(`${API_URL}/api/auth/shopify?shop=${encodeURIComponent(shopDomain)}&origin=${window.location.origin}`);
-    let data;
-    try {
-      data = await response.json();
-    } catch {
-      throw new Error('Shopify login is not available yet');
-    }
-    if (response.ok && data.url) {
-      window.location.href = data.url;
-    } else {
-      throw new Error(data.detail || 'Shopify login is not available yet');
-    }
-  };
-
   const logout = async () => {
     try {
       await fetch(`${API_URL}/api/auth/logout`, {
@@ -151,7 +136,6 @@ export const AuthProvider = ({ children }) => {
     loginWithGoogle,
     loginWithEmail,
     registerWithEmail,
-    loginWithShopify,
     logout,
     exchangeSession,
     refreshUser,
