@@ -213,23 +213,26 @@ const Checkout = () => {
                 </div>
 
                 {/* Payment Method */}
-                <div className="bg-zinc-900/50 border border-white/[0.06] rounded-xl p-5 space-y-4">
+                <div className="bg-zinc-900/50 border border-white/[0.06] rounded-xl p-5 space-y-3">
                   <h3 className="text-sm font-semibold text-zinc-300 flex items-center gap-2">
                     <div className="w-5 h-5 rounded-full bg-indigo-600 flex items-center justify-center text-[10px] font-bold text-white">2</div>
                     Payment Method
                   </h3>
-                  <div className="flex items-center gap-3 p-3 bg-zinc-800/30 border border-zinc-700/30 rounded-lg">
-                    <CreditCard className="w-5 h-5 text-zinc-400" />
-                    <div className="flex-1">
-                      <p className="text-sm text-zinc-300">Credit or Debit Card</p>
-                      <p className="text-[11px] text-zinc-600">Powered by Stripe — your card details are never stored on our servers</p>
+                  <div className="p-3 bg-zinc-800/30 border border-zinc-700/30 rounded-lg space-y-3">
+                    <div className="flex items-center gap-3">
+                      <CreditCard className="w-5 h-5 text-zinc-400 flex-shrink-0" />
+                      <div className="flex-1">
+                        <p className="text-sm text-zinc-300">Credit or Debit Card</p>
+                        <p className="text-[11px] text-zinc-600">Powered by Stripe — your card details are never stored on our servers</p>
+                      </div>
                     </div>
-                    <div className="flex gap-1">
-                      {['Visa', 'MC', 'Amex'].map(c => (
-                        <span key={c} className="px-1.5 py-0.5 bg-zinc-700/50 rounded text-[9px] font-medium text-zinc-400">{c}</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {['Visa', 'Mastercard', 'Amex', 'Discover', 'JCB', 'Diners', 'UnionPay', 'Apple Pay', 'Google Pay'].map(c => (
+                        <span key={c} className="px-2 py-0.5 bg-zinc-700/40 rounded text-[10px] font-medium text-zinc-400">{c}</span>
                       ))}
                     </div>
                   </div>
+                  <p className="text-[10px] text-zinc-600 px-1">Additional payment methods like bank transfers and buy-now-pay-later may be available at checkout depending on your region.</p>
                 </div>
 
                 {/* Pay Button */}
