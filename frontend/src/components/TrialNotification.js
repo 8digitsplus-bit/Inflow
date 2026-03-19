@@ -11,7 +11,7 @@ import { Clock, AlertTriangle, XCircle, Zap } from 'lucide-react';
 const MILESTONES = [7, 3, 1, 0];
 
 const TrialNotification = () => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
   const [showPopup, setShowPopup] = useState(false);
   const [daysLeft, setDaysLeft] = useState(null);
@@ -131,9 +131,8 @@ const TrialNotification = () => {
 
           {isExpired && (
             <Button
-              variant="ghost"
-              className="w-full text-zinc-500 hover:text-zinc-300 h-9 text-sm"
-              onClick={() => { window.location.href = '/'; }}
+              className="w-full bg-zinc-700 hover:bg-zinc-600 h-11 font-medium text-white"
+              onClick={async () => { await logout(); window.location.href = '/'; }}
               data-testid="trial-return-home-btn"
             >
               Return to homepage
