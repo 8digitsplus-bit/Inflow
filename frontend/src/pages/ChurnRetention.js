@@ -216,10 +216,14 @@ const ChurnRetention = () => {
                   <PieChart>
                     <Pie
                       data={(data?.health_distribution || []).filter(h => h.count > 0)}
-                      cx="50%" cy="50%" innerRadius={55} outerRadius={85}
-                      paddingAngle={4} dataKey="count"
-                      label={({ status, percent }) => `${status} ${(percent * 100).toFixed(0)}%`}
-                      labelLine={false}
+                      cx="50%" cy="50%" innerRadius={45} outerRadius={75}
+                      paddingAngle={4} dataKey="count" nameKey="status"
+                      label={({ status, percent }) => {
+                        const short = status.length > 8 ? status.slice(0, 7) + '..' : status;
+                        return `${short} ${(percent * 100).toFixed(0)}%`;
+                      }}
+                      labelLine={{ stroke: '#52525B', strokeWidth: 1 }}
+                      style={{ fontSize: '11px' }}
                     >
                       {(data?.health_distribution || []).filter(h => h.count > 0).map((entry, i) => (
                         <Cell key={i} fill={entry.color} />
@@ -233,12 +237,13 @@ const ChurnRetention = () => {
                         const pct = total > 0 ? ((d.count / total) * 100).toFixed(0) : 0;
                         return (
                           <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-3 shadow-xl">
-                            <p className="text-sm font-medium" style={{ color: d.color }}>{d.status}</p>
-                            <p className="text-zinc-300 text-sm">{d.count} customers ({pct}%)</p>
+                            <p className="text-sm font-medium text-white">{d.status}</p>
+                            <p className="text-purple-400 text-sm font-mono">{d.count} customers ({pct}%)</p>
                           </div>
                         );
                       }} 
                     />
+                    <Legend formatter={(value) => <span style={{ color: '#A1A1AA', fontSize: '11px' }}>{value}</span>} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
