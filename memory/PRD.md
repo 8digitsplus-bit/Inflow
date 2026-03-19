@@ -45,8 +45,9 @@
 - **Shopify OAuth removed** — Auth page now only Google + Email
 - Settings: pill-shaped billing toggle, no "Recommended" badge
 - "Closed Won" → "Closed Win", "Won Deals" → "Win Deals"
-- **Collapsible sidebar** — Desktop hamburger toggle to collapse/expand sidebar for better viewing experience
-- **Button hover consistency** — All outline buttons now use indigo hover theme
+- **Collapsible sidebar** — Desktop toggle to collapse/expand sidebar, state persists via localStorage across navigation
+- **Button hover consistency** — All outline/ghost buttons use neutral hover (fixed accent color from cyan to neutral)
+- **Trial tier gating** — Trial users can only access Dashboard + Sales Pipeline + Smart Assist + Settings. All other pages gated with TierGate upgrade prompt. Locked sidebar items shown dimmed with lock icon.
 
 ## Backlog
 - **P1:** Real OAuth for Connect Your Business platforms (start with Stripe)
