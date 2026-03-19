@@ -17,6 +17,7 @@ import Onboarding from './pages/Onboarding';
 import ChoosePlan from './pages/ChoosePlan';
 import Support from './pages/Support';
 import AuthCallback from './pages/AuthCallback';
+import TrialNotification from './components/TrialNotification';
 import ProtectedRoute from './components/ProtectedRoute';
 import TierGate from './components/TierGate';
 import './App.css';
@@ -158,6 +159,7 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <AppRouter />
+        <TrialNotification />
       </AuthProvider>
     </BrowserRouter>
   );

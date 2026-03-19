@@ -80,6 +80,22 @@ async def create_session(request: Request, response: Response):
     )
 
     user_doc = await db.users.find_one({"user_id": user_id}, {"_id": 0})
+    
+    # Compute trial days left for trial users
+    if user_doc and user_doc.get("subscription_tier") == "trial":
+        trial_end = user_doc.get("trial_end")
+        if trial_end:
+            now = datetime.now(timezone.utc)
+            if isinstance(trial_end, str):
+                end = datetime.fromisoformat(trial_end.replace("Z", "+00:00"))
+            else:
+                end = trial_end.replace(tzinfo=timezone.utc) if trial_end.tzinfo is None else trial_end
+            days_left = (end - now).days
+            user_doc["trial_days_left"] = max(0, days_left)
+            if days_left <= 0:
+                user_doc["subscription_tier"] = "expired"
+                await db.users.update_one({"user_id": user_id}, {"$set": {"subscription_tier": "expired"}})
+    
     return user_doc
 
 
@@ -170,9 +186,8 @@ async def register_with_email(req: RegisterRequest, response: Response):
     )
 
     user_doc = await db.users.find_one({"user_id": user_id}, {"_id": 0, "password_hash": 0})
+    user_doc["trial_days_left"] = 14
     return user_doc
-
-
 @router.post("/auth/login")
 async def login_with_email(req: LoginRequest, response: Response):
     """Login with email and password"""
@@ -208,10 +223,24 @@ async def login_with_email(req: LoginRequest, response: Response):
     )
 
     safe_user = {k: v for k, v in user_doc.items() if k != "password_hash"}
+
+    # Compute trial days left for trial users
+    if safe_user.get("subscription_tier") == "trial":
+        trial_end = safe_user.get("trial_end")
+        if trial_end:
+            now = datetime.now(timezone.utc)
+            if isinstance(trial_end, str):
+                end = datetime.fromisoformat(trial_end.replace("Z", "+00:00"))
+            else:
+                end = trial_end.replace(tzinfo=timezone.utc) if trial_end.tzinfo is None else trial_end
+            days_left = (end - now).days
+            safe_user["trial_days_left"] = max(0, days_left)
+            if days_left <= 0:
+                safe_user["subscription_tier"] = "expired"
+                await db.users.update_one({"user_id": user_doc["user_id"]}, {"$set": {"subscription_tier": "expired"}})
+
     return safe_user
 
-
-# ============== SHOPIFY AUTH ==============
 
 # ============== ONBOARDING ==============
 
