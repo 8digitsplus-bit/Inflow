@@ -49,7 +49,7 @@ INFLOW FEATURES (only reference these):
 - Churn & Retention: Customer health scores, churn prediction, retention trends, risk alerts
 - CRO (Conversion Rate Optimization): Funnel analysis, A/B test tracking, bottleneck detection
 - Pricing Optimizer: AI-powered pricing analysis with competitor comparison and optimal price recommendations
-- Connect Business: Integrate Stripe, Shopify, HubSpot, Salesforce, QuickBooks to sync data
+- Live Integration: Integrate Stripe, Shopify, HubSpot, Salesforce, QuickBooks to sync data
 - Smart Assist: AI chat (this) + ticket system
 
 PRICING (exact values, do not modify):

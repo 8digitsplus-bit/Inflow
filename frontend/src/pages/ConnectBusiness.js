@@ -137,7 +137,7 @@ const ConnectBusiness = () => {
               style={{ fontFamily: 'Outfit' }}
               data-testid="connect-business-title"
             >
-              Connect Your Business
+              Live Integration
             </h1>
             <p className="text-zinc-400 mt-1 text-sm max-w-xl">
               Integrate your existing tools to automatically sync data and power all your analytics with real business insights.

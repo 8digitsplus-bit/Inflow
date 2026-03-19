@@ -17,7 +17,7 @@ const PLANS = [
       'Sales Pipeline Management',
       'Basic Analytics Dashboard',
       'Churn Monitoring',
-      'Connect Your Business',
+      'Live Integration',
       '1,500 monthly actions',
     ],
   },

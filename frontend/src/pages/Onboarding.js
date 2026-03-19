@@ -60,7 +60,7 @@ const Onboarding = () => {
               <Zap className="w-7 h-7 text-emerald-400" />
             </div>
             <h2 className="text-xl font-semibold text-white" style={{ fontFamily: 'Outfit' }}>
-              Connect Your Business
+              Live Integration
             </h2>
             <p className="text-zinc-400 text-sm mt-2">
               Sync your tools for real-time insights — or skip and do it later

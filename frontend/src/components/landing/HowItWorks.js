@@ -27,7 +27,7 @@ export const ConnectBusinessSection = () => {
         <div className="grid lg:grid-cols-2 gap-16 items-center">
           <div>
             <div className="reveal-left">
-              <span className="text-indigo-400 text-sm font-medium uppercase tracking-widest">Connect Your Business</span>
+              <span className="text-indigo-400 text-sm font-medium uppercase tracking-widest">Live Integration</span>
               <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>
                 Plug in your tools. Get real insights.
               </h2>

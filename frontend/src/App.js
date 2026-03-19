@@ -86,7 +86,9 @@ const AppRouter = () => {
         path="/pricing" 
         element={
           <ProtectedRoute>
-            <PricingOptimizer />
+            <TierGate requiredLevel={2}>
+              <PricingOptimizer />
+            </TierGate>
           </ProtectedRoute>
         } 
       />
@@ -94,9 +96,7 @@ const AppRouter = () => {
         path="/revenue" 
         element={
           <ProtectedRoute>
-            <TierGate requiredLevel={3}>
-              <RevenueIntelligence />
-            </TierGate>
+            <RevenueIntelligence />
           </ProtectedRoute>
         } 
       />
@@ -114,9 +114,7 @@ const AppRouter = () => {
         path="/cro" 
         element={
           <ProtectedRoute>
-            <TierGate requiredLevel={1}>
-              <ConversionOptimization />
-            </TierGate>
+            <ConversionOptimization />
           </ProtectedRoute>
         } 
       />
@@ -140,9 +138,7 @@ const AppRouter = () => {
         path="/connect-business" 
         element={
           <ProtectedRoute>
-            <TierGate requiredLevel={1}>
-              <ConnectBusiness />
-            </TierGate>
+            <ConnectBusiness />
           </ProtectedRoute>
         } 
       />

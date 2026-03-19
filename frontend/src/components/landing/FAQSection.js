@@ -12,7 +12,7 @@ const faqs = [
   },
   {
     q: 'What data sources can I connect?',
-    a: 'InFlow integrates with Stripe, Shopify, HubSpot, Salesforce, and QuickBooks. Connect your existing business tools from the "Connect Business" page and InFlow will automatically sync your revenue, pipeline, customer, and financial data.',
+    a: 'InFlow integrates with Stripe, Shopify, HubSpot, Salesforce, and QuickBooks. Connect your existing business tools from the "Live Integration" page and InFlow will automatically sync your revenue, pipeline, customer, and financial data.',
   },
   {
     q: 'How does AI-powered pricing optimization work?',

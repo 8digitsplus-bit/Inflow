@@ -149,7 +149,7 @@ const TierGate = ({ requiredLevel, children }) => {
 
         {isTrial && (
           <p className="text-[11px] text-zinc-600 mt-5">
-            Trial includes: Dashboard access, Connect Your Business, and basic metrics.
+            Trial includes: Dashboard access, Live Integration, and basic metrics.
           </p>
         )}
       </div>

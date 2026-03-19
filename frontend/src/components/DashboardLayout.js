@@ -9,7 +9,6 @@ import {
   Settings, 
   LogOut,
   Menu,
-  X,
   Zap,
   ChevronRight,
   Users,
@@ -17,8 +16,7 @@ import {
   Plug,
   Headphones,
   Lock,
-  PanelLeftClose,
-  PanelLeftOpen,
+  Tag,
 } from 'lucide-react';
 import { Button } from './ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
@@ -36,10 +34,11 @@ const navigation = [
   { name: 'Sales Pipeline', href: '/pipeline', icon: Target, minTier: 0 },
   { name: 'Sales Performance', href: '/sales-performance', icon: TrendingUp, minTier: 2 },
   { name: 'Sales Revenue', href: '/sales-revenue', icon: DollarSign, minTier: 3 },
-  { name: 'Revenue Intelligence', href: '/revenue', icon: BarChart3, minTier: 3 },
+  { name: 'Revenue Intelligence', href: '/revenue', icon: BarChart3, minTier: 0 },
   { name: 'Churn & Retention', href: '/churn', icon: Users, minTier: 1 },
-  { name: 'CRO', href: '/cro', icon: Zap, minTier: 1 },
-  { name: 'Connect Business', href: '/connect-business', icon: Plug, minTier: 1 },
+  { name: 'CRO', href: '/cro', icon: Zap, minTier: 0 },
+  { name: 'Pricing Optimizer', href: '/pricing', icon: Tag, minTier: 2 },
+  { name: 'Live Integration', href: '/connect-business', icon: Plug, minTier: 0 },
   { name: 'Smart Assist', href: '/support', icon: Headphones, minTier: 0 },
   { name: 'Settings', href: '/settings', icon: Settings, minTier: 0 },
 ];
@@ -84,27 +83,26 @@ const DashboardLayout = ({ children }) => {
       >
         <div className="flex flex-col h-full overflow-hidden">
           {/* Logo + Toggle */}
-          <div className="h-16 flex items-center justify-between px-4 border-b border-white/10 flex-shrink-0">
-            <Link 
-              to="/dashboard" 
-              className={`flex items-center overflow-hidden transition-opacity duration-200 ${collapsed ? 'w-0 opacity-0' : 'opacity-100'}`}
-            >
-              <div className="h-6 overflow-hidden flex-shrink-0">
-                <img src="/inflow-logo.png?v=3" alt="InFlow" className="h-full w-auto object-contain" />
-              </div>
-            </Link>
+          <div className={`h-14 flex items-center border-b border-white/10 flex-shrink-0 ${collapsed ? 'justify-center px-2' : 'justify-between px-4'}`}>
+            {!collapsed && (
+              <Link to="/dashboard" className="flex items-center">
+                <div className="h-6 overflow-hidden flex-shrink-0">
+                  <img src="/inflow-logo.png?v=3" alt="InFlow" className="h-full w-auto object-contain" />
+                </div>
+              </Link>
+            )}
             <button
               onClick={() => setCollapsed(c => !c)}
               className="hidden lg:flex items-center justify-center w-8 h-8 rounded-lg text-zinc-400 hover:text-white hover:bg-white/5 transition-colors flex-shrink-0"
               data-testid="sidebar-toggle-btn"
               title={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
             >
-              {collapsed ? <PanelLeftOpen className="w-[18px] h-[18px]" /> : <PanelLeftClose className="w-[18px] h-[18px]" />}
+              <Menu className="w-5 h-5" />
             </button>
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 px-2 py-3 space-y-0.5 overflow-y-auto overflow-x-hidden">
+          <nav className={`flex-1 py-3 space-y-0.5 overflow-y-auto overflow-x-hidden ${collapsed ? 'px-1.5' : 'px-2'}`}>
             {navigation.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.href);
@@ -117,8 +115,8 @@ const DashboardLayout = ({ children }) => {
                     to={item.href}
                     onClick={() => setSidebarOpen(false)}
                     title={collapsed ? `${item.name} (Locked)` : undefined}
-                    className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors opacity-40 cursor-pointer ${
-                      collapsed ? 'justify-center px-2' : ''
+                    className={`flex items-center gap-3 py-2 rounded-lg transition-colors opacity-35 cursor-pointer whitespace-nowrap ${
+                      collapsed ? 'justify-center px-0' : 'px-3'
                     }`}
                     data-testid={`nav-${item.name.toLowerCase().replace(/\s+/g, '-')}`}
                   >
@@ -139,8 +137,8 @@ const DashboardLayout = ({ children }) => {
                   to={item.href}
                   onClick={() => setSidebarOpen(false)}
                   title={collapsed ? item.name : undefined}
-                  className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors group ${
-                    collapsed ? 'justify-center px-2' : ''
+                  className={`flex items-center gap-3 py-2 rounded-lg transition-colors group whitespace-nowrap ${
+                    collapsed ? 'justify-center px-0' : 'px-3'
                   } ${
                     active 
                       ? 'bg-indigo-500/10 text-white' 
@@ -161,7 +159,7 @@ const DashboardLayout = ({ children }) => {
           </nav>
 
           {/* User Section */}
-          <div className="p-3 border-t border-white/10 flex-shrink-0">
+          <div className={`border-t border-white/10 flex-shrink-0 ${collapsed ? 'p-2' : 'p-3'}`}>
             {collapsed ? (
               <div className="flex flex-col items-center gap-2">
                 <Avatar className="w-8 h-8">
