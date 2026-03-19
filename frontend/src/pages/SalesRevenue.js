@@ -138,7 +138,7 @@ const SalesRevenue = () => {
                     <CartesianGrid strokeDasharray="3 3" stroke="#27272A" />
                     <XAxis dataKey="month" stroke="#71717A" fontSize={12} />
                     <YAxis stroke="#71717A" fontSize={12} tickFormatter={(v) => `$${v/1000}k`} />
-                    <Tooltip content={<CustomTooltip />} />
+                    <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#27272A' }} />
                     <Legend />
                     <Area type="monotone" dataKey="revenue" stroke="#10B981" fill="url(#revGrad)" strokeWidth={2} name="Revenue" />
                     <Area type="monotone" dataKey="target" stroke="#6366F1" fill="url(#tgtGrad)" strokeWidth={2} strokeDasharray="5 5" name="Target" />
@@ -162,20 +162,24 @@ const SalesRevenue = () => {
                       data={(data?.revenue_by_stage || []).filter(s => s.value > 0)}
                       cx="50%"
                       cy="50%"
-                      innerRadius={60}
-                      outerRadius={100}
+                      innerRadius={50}
+                      outerRadius={80}
                       paddingAngle={3}
                       dataKey="value"
                       nameKey="stage"
-                      label={({ stage, percent }) => `${stage} ${(percent * 100).toFixed(0)}%`}
+                      label={({ stage, percent }) => {
+                        const short = stage.length > 10 ? stage.slice(0, 8) + '..' : stage;
+                        return `${short} ${(percent * 100).toFixed(0)}%`;
+                      }}
                       labelLine={{ stroke: '#52525B', strokeWidth: 1 }}
+                      style={{ fontSize: '11px' }}
                     >
                       {(data?.revenue_by_stage || []).filter(s => s.value > 0).map((_, i) => (
                         <Cell key={i} fill={COLORS[i % COLORS.length]} />
                       ))}
                     </Pie>
                     <Tooltip formatter={(value) => fmt(value)} contentStyle={{ backgroundColor: '#18181B', border: '1px solid #27272A', borderRadius: '8px' }} />
-                    <Legend formatter={(value) => <span style={{ color: '#A1A1AA', fontSize: '12px' }}>{value}</span>} />
+                    <Legend formatter={(value) => <span style={{ color: '#A1A1AA', fontSize: '11px' }}>{value}</span>} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
@@ -197,7 +201,7 @@ const SalesRevenue = () => {
                   <CartesianGrid strokeDasharray="3 3" stroke="#27272A" vertical={false} />
                   <XAxis dataKey="month" stroke="#71717A" fontSize={12} />
                   <YAxis stroke="#71717A" fontSize={12} tickFormatter={(v) => `${v}%`} />
-                  <Tooltip content={<CustomTooltip />} />
+                  <Tooltip content={<CustomTooltip />} cursor={{ fill: 'transparent' }} />
                   <Bar dataKey="growth_rate" name="Growth Rate" radius={[4, 4, 0, 0]}>
                     {(data?.monthly_revenue || []).map((_, i) => (
                       <Cell key={i} fill={COLORS[i % COLORS.length]} />

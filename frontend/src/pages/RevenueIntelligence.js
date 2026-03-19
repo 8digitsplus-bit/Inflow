@@ -29,9 +29,10 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
-  BarChart,
+  ComposedChart,
   Bar,
-  Legend
+  Legend,
+  Line
 } from 'recharts';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
@@ -205,7 +206,7 @@ const RevenueIntelligence = () => {
                     <CartesianGrid strokeDasharray="3 3" stroke="#27272A" />
                     <XAxis dataKey="month" stroke="#71717A" fontSize={12} />
                     <YAxis stroke="#71717A" fontSize={12} tickFormatter={(v) => `$${v/1000}k`} />
-                    <Tooltip content={<CustomTooltip />} />
+                    <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#27272A' }} />
                     <Legend />
                     <Area type="monotone" dataKey="revenue" stroke="#10B981" fill="url(#riRev)" strokeWidth={2} name="Revenue" />
                     <Area type="monotone" dataKey="pipeline_added" stroke="#6366F1" fill="url(#riPipe)" strokeWidth={2} name="Pipeline Added" />
@@ -224,17 +225,17 @@ const RevenueIntelligence = () => {
             <CardContent>
               <div className="h-[220px] sm:h-[300px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={data?.monthly_overview || []}>
+                  <ComposedChart data={data?.monthly_overview || []}>
                     <CartesianGrid strokeDasharray="3 3" stroke="#27272A" vertical={false} />
                     <XAxis dataKey="month" stroke="#71717A" fontSize={12} />
                     <YAxis yAxisId="left" stroke="#71717A" fontSize={12} />
                     <YAxis yAxisId="right" orientation="right" stroke="#71717A" fontSize={12} tickFormatter={(v) => `${v}%`} />
-                    <Tooltip content={<CustomTooltip />} />
+                    <Tooltip content={<CustomTooltip />} cursor={{ fill: 'transparent' }} />
                     <Legend />
                     <Bar yAxisId="left" dataKey="deals_won" name="Won" fill="#10B981" radius={[4, 4, 0, 0]} />
                     <Bar yAxisId="left" dataKey="deals_lost" name="Lost" fill="#EF4444" radius={[4, 4, 0, 0]} />
-                    <Area yAxisId="right" type="monotone" dataKey="win_rate" stroke="#F59E0B" fill="none" strokeWidth={2} name="Win Rate" />
-                  </BarChart>
+                    <Line yAxisId="right" type="monotone" dataKey="win_rate" stroke="#F59E0B" strokeWidth={2} name="Win Rate" dot={{ fill: '#F59E0B', r: 3 }} />
+                  </ComposedChart>
                 </ResponsiveContainer>
               </div>
             </CardContent>
