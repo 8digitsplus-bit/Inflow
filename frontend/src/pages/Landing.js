@@ -6,6 +6,7 @@ import { HeroSection } from '../components/landing/HeroSection';
 import { FeaturesSection } from '../components/landing/FeaturesSection';
 import { ConnectBusinessSection } from '../components/landing/HowItWorks';
 import { PricingSection } from '../components/landing/PricingSection';
+import { FAQSection } from '../components/landing/FAQSection';
 import { CTASection, Footer } from '../components/landing/CTAFooter';
 import { Toaster } from '../components/ui/sonner';
 
@@ -58,6 +59,7 @@ const Landing = () => {
       <FeaturesSection />
       <ConnectBusinessSection />
       <PricingSection handleGetStarted={handleGetStarted} isAuthenticated={isAuthenticated} />
+      <FAQSection />
       <CTASection handleGetStarted={handleGetStarted} />
       <Footer />
     </div>
