@@ -24,7 +24,7 @@
 - **Cancel:** Users can cancel trial/subscription from Settings with confirmation dialog
 
 ## Key Features
-- **Connect Your Business → Live Integration:** 5 platforms (Stripe, Shopify, HubSpot, Salesforce, QuickBooks), auto data sync, onboarding step 4 + sidebar nav, landing page section
+- **Connect Your Business → Live Integration:** 5 platforms (Stripe LIVE, Shopify/HubSpot/Salesforce/QuickBooks MOCKED), Stripe uses real API key to fetch live customers/charges/subscriptions, modal with API key input, Live/Demo badges, sync/disconnect/re-sync, summary cards
 - **Sales Pipeline, Performance, Revenue, Intelligence** — all tier-gated
 - **Pricing Optimizer, CRO, Churn & Retention** — all tier-gated with AI insights
 - **TierGate upgrade page** — shows 3 plan cards when users access restricted features
