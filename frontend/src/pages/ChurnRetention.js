@@ -193,7 +193,7 @@ const ChurnRetention = () => {
                     <CartesianGrid strokeDasharray="3 3" stroke="#27272A" />
                     <XAxis dataKey="month" stroke="#71717A" fontSize={12} />
                     <YAxis stroke="#71717A" fontSize={12} tickFormatter={(v) => `${v}%`} />
-                    <Tooltip content={<CustomTooltip />} />
+                    <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#27272A' }} />
                     <Legend />
                     <Area type="monotone" dataKey="retention_rate" stroke="#10B981" fill="url(#retGrad)" strokeWidth={2} name="Retention" />
                     <Line type="monotone" dataKey="churn_rate" stroke="#EF4444" strokeWidth={2} dot={{ fill: '#EF4444', r: 3 }} name="Churn" />
@@ -225,7 +225,20 @@ const ChurnRetention = () => {
                         <Cell key={i} fill={entry.color} />
                       ))}
                     </Pie>
-                    <Tooltip contentStyle={{ backgroundColor: '#18181B', border: '1px solid #27272A', borderRadius: '8px' }} />
+                    <Tooltip 
+                      content={({ active, payload }) => {
+                        if (!active || !payload?.length) return null;
+                        const d = payload[0].payload;
+                        const total = (data?.health_distribution || []).reduce((s, h) => s + h.count, 0);
+                        const pct = total > 0 ? ((d.count / total) * 100).toFixed(0) : 0;
+                        return (
+                          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-3 shadow-xl">
+                            <p className="text-sm font-medium" style={{ color: d.color }}>{d.status}</p>
+                            <p className="text-zinc-300 text-sm">{d.count} customers ({pct}%)</p>
+                          </div>
+                        );
+                      }} 
+                    />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
@@ -262,7 +275,7 @@ const ChurnRetention = () => {
                     <CartesianGrid strokeDasharray="3 3" stroke="#27272A" />
                     <XAxis dataKey="month" stroke="#71717A" fontSize={12} />
                     <YAxis stroke="#71717A" fontSize={12} tickFormatter={(v) => `$${(v/1000).toFixed(0)}k`} />
-                    <Tooltip content={<CustomTooltip />} />
+                    <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#27272A' }} />
                     <Area type="monotone" dataKey="revenue_lost" stroke="#EF4444" fill="url(#lostGrad)" strokeWidth={2} name="Revenue Lost" />
                   </AreaChart>
                 </ResponsiveContainer>

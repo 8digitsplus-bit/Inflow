@@ -134,7 +134,7 @@ const SalesPerformance = () => {
                     <CartesianGrid strokeDasharray="3 3" stroke="#27272A" />
                     <XAxis dataKey="month" stroke="#71717A" fontSize={12} />
                     <YAxis stroke="#71717A" fontSize={12} tickFormatter={(v) => `$${v/1000}k`} />
-                    <Tooltip content={<CustomTooltip />} />
+                    <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#27272A' }} />
                     <Area type="monotone" dataKey="revenue" stroke="#6366F1" fill="url(#perfRev)" strokeWidth={2} name="Revenue" />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -155,7 +155,7 @@ const SalesPerformance = () => {
                     <CartesianGrid strokeDasharray="3 3" stroke="#27272A" vertical={false} />
                     <XAxis dataKey="month" stroke="#71717A" fontSize={12} />
                     <YAxis stroke="#71717A" fontSize={12} />
-                    <Tooltip content={<CustomTooltip />} />
+                    <Tooltip content={<CustomTooltip />} cursor={{ fill: 'transparent' }} />
                     <Legend />
                     <Bar dataKey="deals_won" name="Won" fill="#10B981" radius={[4, 4, 0, 0]} />
                     <Bar dataKey="deals_lost" name="Lost" fill="#EF4444" radius={[4, 4, 0, 0]} />

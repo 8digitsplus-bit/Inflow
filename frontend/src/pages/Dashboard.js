@@ -283,7 +283,7 @@ const Dashboard = () => {
                     <CartesianGrid strokeDasharray="3 3" stroke="#27272A" />
                     <XAxis dataKey="month" stroke="#71717A" fontSize={12} />
                     <YAxis stroke="#71717A" fontSize={12} tickFormatter={(v) => `$${v/1000}k`} />
-                    <Tooltip content={<CustomTooltip />} />
+                    <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#27272A' }} />
                     <Area type="monotone" dataKey="revenue" stroke="#6366F1" fill="url(#colorRevenue)" strokeWidth={2} name="Revenue" />
                     <Area type="monotone" dataKey="forecast" stroke="#10B981" fill="url(#colorForecast)" strokeWidth={2} strokeDasharray="5 5" name="Forecast" />
                   </AreaChart>
@@ -309,7 +309,7 @@ const Dashboard = () => {
                     <Pie data={pieData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={3} dataKey="count">
                       {pieData.map((entry, index) => (<Cell key={`cell-${index}`} fill={stageColors[entry.stage] || '#6366F1'} />))}
                     </Pie>
-                    <Tooltip />
+                    <Tooltip contentStyle={{ backgroundColor: '#18181B', border: '1px solid #27272A', borderRadius: '8px', color: '#fff' }} itemStyle={{ color: '#A1A1AA' }} />
                   </RechartsPie>
                 </ResponsiveContainer>
               </div>

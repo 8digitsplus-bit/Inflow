@@ -178,7 +178,18 @@ const SalesRevenue = () => {
                         <Cell key={i} fill={COLORS[i % COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip formatter={(value) => fmt(value)} contentStyle={{ backgroundColor: '#18181B', border: '1px solid #27272A', borderRadius: '8px' }} />
+                    <Tooltip 
+                      content={({ active, payload }) => {
+                        if (!active || !payload?.length) return null;
+                        const d = payload[0].payload;
+                        return (
+                          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-3 shadow-xl">
+                            <p className="text-sm font-medium text-white">{d.stage}</p>
+                            <p className="text-indigo-400 text-sm font-mono">{fmt(d.value)}</p>
+                          </div>
+                        );
+                      }} 
+                    />
                     <Legend formatter={(value) => <span style={{ color: '#A1A1AA', fontSize: '11px' }}>{value}</span>} />
                   </PieChart>
                 </ResponsiveContainer>

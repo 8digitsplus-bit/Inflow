@@ -209,7 +209,7 @@ const ConversionOptimization = () => {
                     <CartesianGrid strokeDasharray="3 3" stroke="#27272A" horizontal={false} />
                     <XAxis type="number" stroke="#71717A" fontSize={12} />
                     <YAxis type="category" dataKey="stage" stroke="#71717A" fontSize={11} width={80} />
-                    <Tooltip content={<CustomTooltip />} />
+                    <Tooltip content={<CustomTooltip />} cursor={{ fill: 'transparent' }} />
                     <Bar dataKey="conversion" name="Conversion Rate" radius={[0, 4, 4, 0]}>
                       {data?.funnel_data?.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={FUNNEL_COLORS[index % FUNNEL_COLORS.length]} />

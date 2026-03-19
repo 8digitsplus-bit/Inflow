@@ -45,7 +45,8 @@
 - **Shopify OAuth removed** — Auth page now only Google + Email
 - Settings: pill-shaped billing toggle, no "Recommended" badge
 - "Closed Won" → "Closed Win", "Won Deals" → "Win Deals"
-- **Chart fixes:** Revenue by Stage labels truncated to fit, Win/Loss chart uses ComposedChart with Line for Win Rate data, removed white hover cursors from all chart tooltips
+- **Chart fixes:** Revenue by Stage labels truncated to fit, Win/Loss chart uses ComposedChart with Line for Win Rate data, removed white hover cursors from ALL chart tooltips site-wide, improved pie chart tooltip readability, improved churn health tooltip with customer counts and percentages
+- **Minimal sidebar** — Grouped navigation (Sales, Analytics, Tools), compact 200px width with section labels, 48px when collapsed
 - **Collapsible sidebar** — Desktop hamburger toggle to collapse/expand sidebar, state persists via localStorage across navigation
 - **Button hover consistency** — All outline/ghost buttons use neutral hover (fixed accent color from cyan to neutral)
 - **Trial tier gating** — Trial users can access: Dashboard, Sales Pipeline, Revenue Intelligence, CRO, Live Integration, Smart Assist, Settings. Locked: Sales Performance (Pro+), Sales Revenue (Enterprise), Churn & Retention (Essential+), Pricing Optimizer (Pro+). Locked items shown dimmed with lock icon.

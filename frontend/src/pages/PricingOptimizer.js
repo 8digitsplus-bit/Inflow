@@ -418,7 +418,7 @@ const PricingOptimizer = () => {
                           <CartesianGrid strokeDasharray="3 3" stroke="#27272A" horizontal={false} />
                           <XAxis type="number" stroke="#71717A" fontSize={12} tickFormatter={(v) => `${v}%`} />
                           <YAxis type="category" dataKey="product" stroke="#71717A" fontSize={11} width={90} />
-                          <Tooltip content={<CustomTooltip />} />
+                          <Tooltip content={<CustomTooltip />} cursor={{ fill: 'transparent' }} />
                           <Legend />
                           <Bar dataKey="current_margin" name="Current Margin" fill="#6366F1" radius={[0, 4, 4, 0]} />
                           <Bar dataKey="optimal_margin" name="Optimal Margin" fill="#10B981" radius={[0, 4, 4, 0]} />
@@ -447,7 +447,7 @@ const PricingOptimizer = () => {
                           <CartesianGrid strokeDasharray="3 3" stroke="#27272A" vertical={false} />
                           <XAxis dataKey="product" stroke="#71717A" fontSize={11} />
                           <YAxis stroke="#71717A" fontSize={12} tickFormatter={(v) => `$${v}`} />
-                          <Tooltip content={<CustomTooltip />} />
+                          <Tooltip content={<CustomTooltip />} cursor={{ fill: 'transparent' }} />
                           <Legend />
                           <Bar dataKey="your_price" name="Your Price" fill="#6366F1" radius={[4, 4, 0, 0]} />
                           <Bar dataKey="competitor_avg" name="Competitor Avg" fill="#EF4444" radius={[4, 4, 0, 0]} />
@@ -477,7 +477,7 @@ const PricingOptimizer = () => {
                         <CartesianGrid strokeDasharray="3 3" stroke="#27272A" vertical={false} />
                         <XAxis dataKey="price_change" stroke="#71717A" fontSize={12} />
                         <YAxis stroke="#71717A" fontSize={12} tickFormatter={(v) => `$${(v/1000).toFixed(0)}k`} />
-                        <Tooltip content={<CustomTooltip />} />
+                        <Tooltip content={<CustomTooltip />} cursor={{ fill: 'transparent' }} />
                         <Bar dataKey="estimated_revenue" name="Estimated Revenue" radius={[4, 4, 0, 0]}>
                           {dashData.elasticity_data.map((_, i) => (
                             <Cell key={i} fill={COLORS[i % COLORS.length]} />
