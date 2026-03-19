@@ -238,7 +238,7 @@ const ChurnRetention = () => {
                         return (
                           <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-3 shadow-xl">
                             <p className="text-sm font-medium text-white">{d.status}</p>
-                            <p className="text-purple-400 text-sm font-mono">{d.count} customers ({pct}%)</p>
+                            <p className="text-indigo-400 text-sm font-mono">{d.count} customers ({pct}%)</p>
                           </div>
                         );
                       }} 
