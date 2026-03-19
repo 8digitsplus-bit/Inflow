@@ -211,7 +211,7 @@ const Support = () => {
           <div>
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>
-                Priority Support
+                Smart Assist
               </h1>
               {isPriority && (
                 <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-500/15 border border-indigo-500/25 text-indigo-400 text-xs rounded-full" data-testid="priority-badge">
@@ -225,7 +225,7 @@ const Support = () => {
             <Button
               variant={view === 'chat' ? 'default' : 'outline'}
               size="sm"
-              className={view === 'chat' ? 'bg-indigo-600 hover:bg-indigo-500' : 'border-zinc-700 text-zinc-400'}
+              className={view === 'chat' ? 'bg-indigo-600 hover:bg-indigo-500' : 'border-zinc-700 text-zinc-400 hover:bg-indigo-500/10 hover:text-indigo-400 hover:border-indigo-500/30'}
               onClick={() => setView('chat')}
               data-testid="view-chat-btn"
             >
@@ -234,7 +234,7 @@ const Support = () => {
             <Button
               variant={view === 'tickets' ? 'default' : 'outline'}
               size="sm"
-              className={view === 'tickets' ? 'bg-indigo-600 hover:bg-indigo-500' : 'border-zinc-700 text-zinc-400'}
+              className={view === 'tickets' ? 'bg-indigo-600 hover:bg-indigo-500' : 'border-zinc-700 text-zinc-400 hover:bg-indigo-500/10 hover:text-indigo-400 hover:border-indigo-500/30'}
               onClick={() => setView('tickets')}
               data-testid="view-tickets-btn"
             >
@@ -293,7 +293,7 @@ const Support = () => {
                     <Button
                       size="sm"
                       variant="outline"
-                      className="border-zinc-700 text-zinc-400 text-xs h-7"
+                      className="border-zinc-700 text-zinc-400 text-xs h-7 hover:bg-indigo-500/10 hover:text-indigo-400 hover:border-indigo-500/30"
                       onClick={() => setShowTicketModal(true)}
                       data-testid="escalate-btn"
                     >
@@ -485,7 +485,7 @@ const Support = () => {
                 </p>
               )}
               <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setShowTicketModal(false)} className="border-zinc-700 text-zinc-300 hover:bg-zinc-800">Cancel</Button>
+                <Button type="button" variant="outline" onClick={() => setShowTicketModal(false)} className="border-zinc-700 text-zinc-300 hover:bg-indigo-500/10 hover:text-indigo-400 hover:border-indigo-500/30">Cancel</Button>
                 <Button type="submit" className="bg-indigo-600 hover:bg-indigo-500" data-testid="submit-ticket-btn">Submit Ticket</Button>
               </DialogFooter>
             </form>

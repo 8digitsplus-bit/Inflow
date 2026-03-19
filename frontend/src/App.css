@@ -26,6 +26,11 @@
   border-right: 1px solid rgba(255, 255, 255, 0.1);
   background: #09090B;
   z-index: 40;
+  transition: width 0.25s ease;
+}
+
+.dashboard-sidebar.collapsed {
+  width: 68px;
 }
 
 .dashboard-content {
@@ -35,6 +40,11 @@
   background: #09090B;
   min-height: 100vh;
   overflow-x: hidden;
+  transition: margin-left 0.25s ease;
+}
+
+.dashboard-content.sidebar-collapsed {
+  margin-left: 68px;
 }
 
 @media (max-width: 1024px) {

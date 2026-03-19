@@ -32,7 +32,7 @@ const faqs = [
   },
   {
     q: 'What kind of support do you offer?',
-    a: 'All plans include access to our AI-powered Priority Support — a live chat assistant that knows InFlow inside and out and can answer questions about your account instantly. Pro and Enterprise users get priority queuing. You can also create formal support tickets for complex issues.',
+    a: 'All plans include access to our AI-powered Smart Assist — a live chat assistant that knows InFlow inside and out and can answer questions about your account instantly. Pro and Enterprise users get priority queuing. You can also create formal support tickets for complex issues.',
   },
 ];
 

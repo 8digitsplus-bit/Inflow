@@ -40,15 +40,18 @@
 - Cancel subscription/trial from Settings
 - Sales Pipeline redesigned — Pipeline by Stage chart, Weighted Pipeline card, Kanban
 - Full responsive optimization — All pages for mobile/tablet/desktop
-- AI Priority Support — Live Claude chat + ticket system
+- **Smart Assist** (formerly Priority Support) — Live Claude chat + ticket system + actionable AI (upgrade, cancel, connect via chat buttons)
 - Pricing Optimizer — AI-powered pricing analysis + dashboard
 - **Shopify OAuth removed** — Auth page now only Google + Email
 - Settings: pill-shaped billing toggle, no "Recommended" badge
 - "Closed Won" → "Closed Win", "Won Deals" → "Win Deals"
+- **Collapsible sidebar** — Desktop hamburger toggle to collapse/expand sidebar for better viewing experience
+- **Button hover consistency** — All outline buttons now use indigo hover theme
 
 ## Backlog
 - **P1:** Real OAuth for Connect Your Business platforms (start with Stripe)
 - **P1:** API Access feature for Enterprise tier
+- **P1:** Support Operations (human handoff, admin panel, email notifications)
 - **P2:** Team/Collaboration features, Revenue Forecasting page
 - **P2:** AI Insights for Sales Pipeline/Performance/CRO pages
 - **P3:** Admin dashboard, email notifications for support tickets

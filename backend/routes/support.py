@@ -50,7 +50,7 @@ INFLOW FEATURES (only reference these):
 - CRO (Conversion Rate Optimization): Funnel analysis, A/B test tracking, bottleneck detection
 - Pricing Optimizer: AI-powered pricing analysis with competitor comparison and optimal price recommendations
 - Connect Business: Integrate Stripe, Shopify, HubSpot, Salesforce, QuickBooks to sync data
-- Priority Support: AI chat (this) + ticket system
+- Smart Assist: AI chat (this) + ticket system
 
 PRICING (exact values, do not modify):
 - Essential: $59/month or $496/year — Sales Pipeline, Core analytics, Email support, 1,500 usages/month
