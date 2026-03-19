@@ -128,6 +128,17 @@ const TrialNotification = () => {
               Remind me later
             </Button>
           )}
+
+          {isExpired && (
+            <Button
+              variant="ghost"
+              className="w-full text-zinc-500 hover:text-zinc-300 h-9 text-sm"
+              onClick={() => { window.location.href = '/'; }}
+              data-testid="trial-return-home-btn"
+            >
+              Return to homepage
+            </Button>
+          )}
         </div>
       </DialogContent>
     </Dialog>
