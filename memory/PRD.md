@@ -30,23 +30,25 @@
 - **TierGate upgrade page** — shows 3 plan cards when users access restricted features
 - **Cancel subscription/trial** — Settings page with confirmation dialog
 
-## Completed (as of March 16, 2026)
-- Full app: auth, payments, AI, onboarding, dashboard, analytics
+## Completed (as of March 19, 2026)
+- Full app: auth (Google + Email), payments, AI, onboarding, dashboard, analytics
 - InFlow branding with wordmark logo
 - 14-Day Free Trial with countdown badge
-- Connect Your Business: 5 platforms, auto data sync
+- **Trial expiry notifications** — Pop-up modals at 7, 3, 1, 0 days. Expired trial = undismissable lockout forcing upgrade. Progress bar shows days used. "Remind me later" per-milestone dismiss via sessionStorage
+- Connect Your Business: 5 platforms, auto data sync (mock)
 - Landing page: "Start 14-Day Free Trial" CTAs, Connect Your Business section
 - Cancel subscription/trial from Settings
-- All CTAs navigate to auth signup page
-- Sales Pipeline page redesigned — Pipeline by Stage bar chart, Weighted Pipeline card, enhanced Kanban layout
-- Full responsive optimization — All pages for mobile (375px), tablet (768px), desktop (1440px+)
-- "Closed Won" → "Closed Win" across Pipeline page, "Won Deals" → "Win Deals" in CRO
-- Sales Revenue pie chart: labeled slices + legend
-- Settings billing toggle: pill-shaped buttons matching landing page, removed "Recommended" badge
-- **AI Priority Support** — Live conversational AI chat (Claude) with InFlow knowledge base + user account context, multi-turn conversations, ticket system (open/in-progress/resolved), Priority badge for Pro/Enterprise, sidebar integration. 100% pass (iteration_19)
+- Sales Pipeline redesigned — Pipeline by Stage chart, Weighted Pipeline card, Kanban
+- Full responsive optimization — All pages for mobile/tablet/desktop
+- AI Priority Support — Live Claude chat + ticket system
+- Pricing Optimizer — AI-powered pricing analysis + dashboard
+- **Shopify OAuth removed** — Auth page now only Google + Email
+- Settings: pill-shaped billing toggle, no "Recommended" badge
+- "Closed Won" → "Closed Win", "Won Deals" → "Win Deals"
 
 ## Backlog
-- **P0 (Blocked):** Shopify OAuth credentials
-- **P1:** Real OAuth for Connect Your Business platforms, API Access feature for Enterprise tier
-- **P2:** Team/Collaboration features, AI Insights for Sales features, Revenue Forecasting page
+- **P1:** Real OAuth for Connect Your Business platforms (start with Stripe)
+- **P1:** API Access feature for Enterprise tier
+- **P2:** Team/Collaboration features, Revenue Forecasting page
+- **P2:** AI Insights for Sales Pipeline/Performance/CRO pages
 - **P3:** Admin dashboard, email notifications for support tickets
