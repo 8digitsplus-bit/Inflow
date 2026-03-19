@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Check, Loader2, ArrowLeft, Zap, Shield, Clock } from 'lucide-react';
+import { Check, ArrowLeft, Zap, Shield, Clock } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { toast } from 'sonner';
 import { Toaster } from '../components/ui/sonner';
@@ -73,31 +73,9 @@ const ChoosePlan = () => {
   const [billingPeriod, setBillingPeriod] = useState('monthly');
   const [processingPlan, setProcessingPlan] = useState(null);
 
-  const handleSelectPlan = async (plan) => {
+  const handleSelectPlan = (plan) => {
     const tierKey = `${plan.key}_${billingPeriod}`;
-    setProcessingPlan(tierKey);
-    try {
-      const response = await fetch(`${API_URL}/api/payments/create-checkout`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ plan: tierKey, origin_url: window.location.origin }),
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        if (data.url) {
-          window.location.href = data.url;
-        }
-      } else {
-        const data = await response.json();
-        toast.error(data.detail || 'Failed to create checkout');
-      }
-    } catch {
-      toast.error('Something went wrong. Please try again.');
-    } finally {
-      setProcessingPlan(null);
-    }
+    navigate(`/checkout?plan=${tierKey}`);
   };
 
   const isCurrentPlan = (plan) => {

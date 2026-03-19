@@ -15,6 +15,7 @@ import ConnectBusiness from './pages/ConnectBusiness';
 import AuthPage from './pages/AuthPage';
 import Onboarding from './pages/Onboarding';
 import ChoosePlan from './pages/ChoosePlan';
+import Checkout from './pages/Checkout';
 import Support from './pages/Support';
 import AuthCallback from './pages/AuthCallback';
 import TrialNotification from './components/TrialNotification';
@@ -44,6 +45,11 @@ const AppRouter = () => {
       <Route path="/choose-plan" element={
         <ProtectedRoute>
           <ChoosePlan />
+        </ProtectedRoute>
+      } />
+      <Route path="/checkout" element={
+        <ProtectedRoute>
+          <Checkout />
         </ProtectedRoute>
       } />
       <Route 
