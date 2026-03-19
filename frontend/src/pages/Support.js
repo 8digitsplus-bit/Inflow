@@ -15,6 +15,10 @@ import {
   ChevronRight,
   ArrowLeft,
   Zap,
+  ArrowUpRight,
+  CreditCard,
+  Plug,
+  XCircle,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -106,7 +110,12 @@ const Support = () => {
       if (res.ok) {
         const data = await res.json();
         if (!activeConv) setActiveConv(data.conversation_id);
-        setMessages(prev => [...prev, { role: 'assistant', content: data.response, timestamp: new Date().toISOString() }]);
+        setMessages(prev => [...prev, { 
+          role: 'assistant', 
+          content: data.response, 
+          actions: data.actions || [],
+          timestamp: new Date().toISOString() 
+        }]);
         fetchData();
       } else {
         toast.error('Failed to send message');
@@ -118,6 +127,48 @@ const Support = () => {
     } finally {
       setSending(false);
     }
+  };
+
+  const executeAction = async (action) => {
+    const params = {};
+    if (action.type === 'upgrade') params.plan = action.param;
+    if (action.type === 'connect') params.platform = action.param;
+
+    try {
+      const res = await fetch(`${API_URL}/api/support/action`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ action: action.type, params, conversation_id: activeConv }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success) {
+          toast.success(data.message);
+          if (data.redirect) {
+            setTimeout(() => { window.location.href = data.redirect; }, 1000);
+          }
+        } else {
+          toast.error(data.message);
+        }
+      }
+    } catch {
+      toast.error('Failed to execute action');
+    }
+  };
+
+  const getActionButton = (action) => {
+    if (action.type === 'upgrade') {
+      const planLabel = (action.param || '').replace('_monthly', ' Monthly').replace('_yearly', ' Yearly').replace(/^\w/, c => c.toUpperCase());
+      return { label: `Upgrade to ${planLabel}`, icon: CreditCard, color: 'bg-emerald-600 hover:bg-emerald-500' };
+    }
+    if (action.type === 'cancel') {
+      return { label: 'Cancel Subscription', icon: XCircle, color: 'bg-red-600 hover:bg-red-500' };
+    }
+    if (action.type === 'connect') {
+      return { label: `Connect ${(action.param || '').replace(/^\w/, c => c.toUpperCase())}`, icon: Plug, color: 'bg-cyan-600 hover:bg-cyan-500' };
+    }
+    return null;
   };
 
   const createTicket = async (e) => {
@@ -266,7 +317,7 @@ const Support = () => {
                         I know everything about InFlow — ask me about features, billing, your account, or any issue you're facing.
                       </p>
                       <div className="flex flex-wrap gap-2 justify-center max-w-md">
-                        {['How do I connect Stripe?', 'What features are in my plan?', 'How do I manage deals?', 'Help with billing'].map((q) => (
+                        {['Upgrade my plan', 'Connect my Stripe', 'What features are in my plan?', 'Cancel my subscription'].map((q) => (
                           <button
                             key={q}
                             onClick={() => { setInput(q); }}
@@ -290,6 +341,27 @@ const Support = () => {
                         <p className={`text-sm leading-relaxed whitespace-pre-wrap ${
                           msg.role === 'user' ? 'text-white' : 'text-zinc-200'
                         }`}>{msg.content}</p>
+
+                        {msg.actions?.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mt-3 pt-2 border-t border-white/5">
+                            {msg.actions.map((action, j) => {
+                              const btn = getActionButton(action);
+                              if (!btn) return null;
+                              const Icon = btn.icon;
+                              return (
+                                <button
+                                  key={j}
+                                  onClick={() => executeAction(action)}
+                                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-white text-xs font-medium transition-all ${btn.color}`}
+                                  data-testid={`action-btn-${action.type}-${action.param || ''}`}
+                                >
+                                  <Icon className="w-3.5 h-3.5" /> {btn.label}
+                                </button>
+                              );
+                            })}
+                          </div>
+                        )}
+
                         <p className={`text-[10px] mt-1 ${
                           msg.role === 'user' ? 'text-indigo-200' : 'text-zinc-600'
                         }`}>

@@ -1,9 +1,10 @@
 from fastapi import APIRouter, HTTPException, Depends
-from pydantic import BaseModel, Field
-from typing import Optional, List
+from pydantic import BaseModel
+from typing import Optional
 from datetime import datetime, timezone
 import os
 import uuid
+import json
 import logging
 
 from database import db
@@ -25,33 +26,57 @@ class TicketCreate(BaseModel):
     conversation_id: Optional[str] = None
 
 
-INFLOW_KNOWLEDGE = """You are the AI support assistant for InFlow, a B2B SaaS platform for pricing optimization, sales pipeline management, and revenue intelligence.
+class ActionRequest(BaseModel):
+    action: str
+    params: Optional[dict] = None
+    conversation_id: Optional[str] = None
 
-PRODUCT KNOWLEDGE:
-- InFlow helps businesses optimize pricing, manage sales pipelines, track revenue, predict churn, and improve conversion rates.
-- Key features: Sales Pipeline (Kanban board), Sales Performance analytics, Sales Revenue tracking, Revenue Intelligence, Churn & Retention monitoring, CRO (Conversion Rate Optimization), Pricing Optimizer, Connect Your Business (integrations).
-- Integrations: Stripe (payments), Shopify, HubSpot, Salesforce, QuickBooks — connected via the "Connect Business" page.
 
-PRICING TIERS:
-- Essential: $59/mo or $496/yr — Sales Pipeline, Core analytics, Email support, 1,500 usages/month
-- Pro: $149/mo or $1,252/yr — Everything in Essential + Sales Performance, Priority support, Advanced analytics, Revenue forecasting, Churn prediction, CRO tools, 7,500 usages/month
-- Enterprise: $249/mo or $2,092/yr — Everything in Pro + Sales Revenue, Revenue Intelligence, Custom integrations, API access, 20,000 usages/month
-- 14-Day Free Trial available for all new users
+SYSTEM_PROMPT = """You are the AI support assistant for InFlow, a B2B SaaS platform for revenue intelligence.
 
-COMMON SUPPORT TOPICS:
-- Billing: Users can manage subscriptions and cancel from Settings page. Payments processed via Stripe.
-- Features: Each tier unlocks specific features. Upgrade from Settings page.
-- Data: Connect business tools from the "Connect Business" page in the sidebar.
-- Pipeline: Deals are managed via drag-and-drop Kanban board. Create, edit, delete deals.
-- AI Insights: Available on Pro+ tiers. Generates strategic recommendations.
+STRICT RULES:
+1. ONLY answer questions about InFlow, its features, pricing, billing, and account management.
+2. If asked about anything unrelated to InFlow, say: "I can only help with InFlow-related questions. Is there anything about your account or our features I can help with?"
+3. NEVER guess or make up information. If you don't know something, say: "I'm not sure about that. Let me create a support ticket so our team can help you."
+4. NEVER invent features that don't exist. Only reference the features listed below.
+5. Be concise, professional, and helpful. Keep responses under 150 words unless a detailed explanation is needed.
 
-GUIDELINES:
-- Be helpful, concise, and professional.
-- If you can help with the question, provide a clear answer.
-- If the issue requires human intervention (account issues, bugs, refunds, custom requests), suggest creating a support ticket.
-- Always be empathetic and solution-oriented.
-- Reference specific InFlow features and pages when relevant.
-"""
+INFLOW FEATURES (only reference these):
+- Sales Pipeline: Kanban board for managing deals with drag-and-drop, KPIs, pipeline charts
+- Sales Performance: Win rates, deal velocity, stage analytics
+- Sales Revenue: MRR tracking, revenue trends, revenue by stage
+- Revenue Intelligence: Unified overview combining all revenue and pipeline data with AI recommendations
+- Churn & Retention: Customer health scores, churn prediction, retention trends, risk alerts
+- CRO (Conversion Rate Optimization): Funnel analysis, A/B test tracking, bottleneck detection
+- Pricing Optimizer: AI-powered pricing analysis with competitor comparison and optimal price recommendations
+- Connect Business: Integrate Stripe, Shopify, HubSpot, Salesforce, QuickBooks to sync data
+- Priority Support: AI chat (this) + ticket system
+
+PRICING (exact values, do not modify):
+- Essential: $59/month or $496/year — Sales Pipeline, Core analytics, Email support, 1,500 usages/month
+- Pro: $149/month or $1,252/year — Everything in Essential + Sales Performance, Priority support, Advanced analytics, Revenue forecasting, Churn prediction, CRO tools, 7,500 usages/month
+- Enterprise: $249/month or $2,092/year — Everything in Pro + Sales Revenue, Revenue Intelligence, Custom integrations, API access, 20,000 usages/month
+- 14-Day Free Trial: Full access, no credit card required
+
+ACTIONS YOU CAN PERFORM:
+When the user wants to perform one of these actions, include an ACTION block at the END of your response in this exact format:
+
+[ACTION:upgrade:PLAN_ID]
+[ACTION:cancel]
+[ACTION:connect:PLATFORM]
+
+Available actions:
+- Upgrade subscription: [ACTION:upgrade:essential_monthly] or [ACTION:upgrade:pro_monthly] or [ACTION:upgrade:enterprise_monthly] (also _yearly variants)
+- Cancel subscription: [ACTION:cancel]
+- Connect business platform: [ACTION:connect:stripe] or [ACTION:connect:shopify] or [ACTION:connect:hubspot] or [ACTION:connect:salesforce] or [ACTION:connect:quickbooks]
+
+IMPORTANT action rules:
+- Always confirm the action with the user BEFORE including the ACTION block
+- If the user says "upgrade to Pro" — respond with the details and include the action block so they can proceed
+- If the user says "cancel my subscription" — confirm they want to cancel and include the action block
+- If the user says "connect Stripe" — explain what will happen and include the action block
+- Never include an ACTION block unless the user has explicitly expressed intent to perform the action
+- For upgrades, always mention the price before including the action"""
 
 
 def get_priority_level(tier: str) -> str:
@@ -62,11 +87,27 @@ def get_priority_level(tier: str) -> str:
     return "standard"
 
 
+def parse_actions(text: str):
+    """Extract action blocks from AI response text."""
+    actions = []
+    clean_text = text
+    
+    import re
+    pattern = r'\[ACTION:(\w+)(?::([^\]]+))?\]'
+    matches = re.findall(pattern, text)
+    
+    for match in matches:
+        action_type = match[0]
+        action_param = match[1] if match[1] else None
+        actions.append({"type": action_type, "param": action_param})
+    
+    clean_text = re.sub(r'\[ACTION:[^\]]+\]', '', text).strip()
+    
+    return clean_text, actions
+
+
 @router.post("/support/chat")
-async def chat_with_support(
-    msg: ChatMessage,
-    user: User = Depends(get_current_user)
-):
+async def chat_with_support(msg: ChatMessage, user: User = Depends(get_current_user)):
     try:
         from emergentintegrations.llm.chat import LlmChat, UserMessage
 
@@ -77,28 +118,28 @@ async def chat_with_support(
         conv_id = msg.conversation_id or f"conv_{uuid.uuid4().hex[:12]}"
         now = datetime.now(timezone.utc)
 
-        # Get user context
         deals_count = await db.deals.count_documents({"user_id": user.user_id})
-        connections = await db.business_connections.count_documents({"user_id": user.user_id, "status": "active"})
+        connections_cursor = db.business_connections.find(
+            {"user_id": user.user_id, "status": "active"}, {"_id": 0, "platform": 1}
+        )
+        connections = [c["platform"] async for c in connections_cursor]
         tickets_count = await db.support_tickets.count_documents({"user_id": user.user_id})
 
         priority = get_priority_level(user.subscription_tier)
 
         user_context = f"""
-USER CONTEXT (use this to personalize your response):
+USER CONTEXT (use this for personalized, accurate responses):
 - Name: {user.name}
 - Email: {user.email}
-- Subscription: {user.subscription_tier}
+- Current Plan: {user.subscription_tier}
 - Support Level: {priority}
 - Active Deals: {deals_count}
-- Connected Platforms: {connections}
+- Connected Platforms: {', '.join(connections) if connections else 'None connected yet'}
 - Previous Tickets: {tickets_count}
 """
 
-        # Check if conversation exists
         existing = await db.support_conversations.find_one(
-            {"conversation_id": conv_id, "user_id": user.user_id},
-            {"_id": 0}
+            {"conversation_id": conv_id, "user_id": user.user_id}, {"_id": 0}
         )
 
         if not existing:
@@ -111,31 +152,23 @@ USER CONTEXT (use this to personalize your response):
                 "updated_at": now.isoformat(),
             })
 
-        # Store user message
-        user_msg_doc = {
-            "role": "user",
-            "content": msg.message,
-            "timestamp": now.isoformat(),
-        }
+        user_msg_doc = {"role": "user", "content": msg.message, "timestamp": now.isoformat()}
         await db.support_conversations.update_one(
             {"conversation_id": conv_id},
             {"$push": {"messages": user_msg_doc}, "$set": {"updated_at": now.isoformat()}}
         )
 
-        # Get conversation history for context
         conv = await db.support_conversations.find_one(
-            {"conversation_id": conv_id},
-            {"_id": 0, "messages": 1}
+            {"conversation_id": conv_id}, {"_id": 0, "messages": 1}
         )
-        history_msgs = conv.get("messages", [])[-10:]  # last 10 messages for context
+        history_msgs = conv.get("messages", [])[-10:]
 
         chat = LlmChat(
             api_key=api_key,
             session_id=f"support_{conv_id}",
-            system_message=INFLOW_KNOWLEDGE + user_context
+            system_message=SYSTEM_PROMPT + user_context
         ).with_model("anthropic", "claude-sonnet-4-5-20250929")
 
-        # Build conversation context
         context = ""
         for m in history_msgs[:-1]:
             role = "User" if m["role"] == "user" else "Assistant"
@@ -148,10 +181,12 @@ USER CONTEXT (use this to personalize your response):
         user_message = UserMessage(text=prompt)
         ai_response = await chat.send_message(user_message)
 
-        # Store AI response
+        clean_response, actions = parse_actions(ai_response)
+
         ai_msg_doc = {
             "role": "assistant",
-            "content": ai_response,
+            "content": clean_response,
+            "actions": actions,
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }
         await db.support_conversations.update_one(
@@ -161,7 +196,8 @@ USER CONTEXT (use this to personalize your response):
 
         return {
             "conversation_id": conv_id,
-            "response": ai_response,
+            "response": clean_response,
+            "actions": actions,
             "priority": priority,
         }
 
@@ -170,6 +206,45 @@ USER CONTEXT (use this to personalize your response):
     except Exception as e:
         logger.error(f"Support chat error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Support chat failed: {str(e)}")
+
+
+@router.post("/support/action")
+async def execute_action(req: ActionRequest, user: User = Depends(get_current_user)):
+    """Execute an action suggested by the AI."""
+    action = req.action
+    params = req.params or {}
+
+    if action == "cancel":
+        user_doc = await db.users.find_one({"user_id": user.user_id}, {"_id": 0, "subscription_tier": 1})
+        tier = user_doc.get("subscription_tier", "trial") if user_doc else "trial"
+        if tier in ("expired", "cancelled"):
+            return {"success": False, "message": "No active subscription to cancel."}
+        now = datetime.now(timezone.utc).isoformat()
+        await db.users.update_one(
+            {"user_id": user.user_id},
+            {"$set": {"subscription_tier": "cancelled", "previous_tier": tier, "cancelled_at": now, "subscription_status": "cancelled"}}
+        )
+        return {"success": True, "message": f"Your {tier} subscription has been cancelled.", "action": "cancel"}
+
+    elif action == "connect":
+        platform = params.get("platform", "")
+        valid = ["stripe", "shopify", "hubspot", "salesforce", "quickbooks"]
+        if platform not in valid:
+            return {"success": False, "message": f"Unknown platform. Available: {', '.join(valid)}"}
+        existing = await db.business_connections.find_one(
+            {"user_id": user.user_id, "platform": platform}, {"_id": 0}
+        )
+        if existing and existing.get("status") == "active":
+            return {"success": False, "message": f"{platform.title()} is already connected."}
+        return {"success": True, "message": f"Redirecting to connect {platform.title()}...", "action": "connect", "platform": platform, "redirect": f"/connect-business"}
+
+    elif action == "upgrade":
+        plan = params.get("plan", "")
+        if not plan:
+            return {"success": False, "message": "No plan specified."}
+        return {"success": True, "message": f"Redirecting to checkout for {plan}...", "action": "upgrade", "plan": plan, "redirect": "/settings"}
+
+    return {"success": False, "message": "Unknown action."}
 
 
 @router.get("/support/conversations")
@@ -196,8 +271,7 @@ async def list_conversations(user: User = Depends(get_current_user)):
 @router.get("/support/conversations/{conversation_id}")
 async def get_conversation(conversation_id: str, user: User = Depends(get_current_user)):
     conv = await db.support_conversations.find_one(
-        {"conversation_id": conversation_id, "user_id": user.user_id},
-        {"_id": 0}
+        {"conversation_id": conversation_id, "user_id": user.user_id}, {"_id": 0}
     )
     if not conv:
         raise HTTPException(status_code=404, detail="Conversation not found")
@@ -205,14 +279,10 @@ async def get_conversation(conversation_id: str, user: User = Depends(get_curren
 
 
 @router.post("/support/tickets")
-async def create_ticket(
-    ticket: TicketCreate,
-    user: User = Depends(get_current_user)
-):
+async def create_ticket(ticket: TicketCreate, user: User = Depends(get_current_user)):
     priority = get_priority_level(user.subscription_tier)
     now = datetime.now(timezone.utc)
     ticket_id = f"ticket_{uuid.uuid4().hex[:12]}"
-
     doc = {
         "ticket_id": ticket_id,
         "user_id": user.user_id,
@@ -235,8 +305,7 @@ async def create_ticket(
 @router.get("/support/tickets")
 async def list_tickets(user: User = Depends(get_current_user)):
     tickets = await db.support_tickets.find(
-        {"user_id": user.user_id},
-        {"_id": 0}
+        {"user_id": user.user_id}, {"_id": 0}
     ).sort("created_at", -1).to_list(50)
     return tickets
 
@@ -244,8 +313,7 @@ async def list_tickets(user: User = Depends(get_current_user)):
 @router.get("/support/tickets/{ticket_id}")
 async def get_ticket(ticket_id: str, user: User = Depends(get_current_user)):
     ticket = await db.support_tickets.find_one(
-        {"ticket_id": ticket_id, "user_id": user.user_id},
-        {"_id": 0}
+        {"ticket_id": ticket_id, "user_id": user.user_id}, {"_id": 0}
     )
     if not ticket:
         raise HTTPException(status_code=404, detail="Ticket not found")
