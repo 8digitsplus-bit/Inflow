@@ -24,7 +24,7 @@
 - **Cancel:** Users can cancel trial/subscription from Settings with confirmation dialog
 
 ## Key Features
-- **Connect Your Business:** 5 platforms (Stripe, Shopify, HubSpot, Salesforce, QuickBooks), auto data sync, onboarding step 4 + sidebar nav, landing page section
+- **Connect Your Business → Live Integration:** 5 platforms (Stripe, Shopify, HubSpot, Salesforce, QuickBooks), auto data sync, onboarding step 4 + sidebar nav, landing page section
 - **Sales Pipeline, Performance, Revenue, Intelligence** — all tier-gated
 - **Pricing Optimizer, CRO, Churn & Retention** — all tier-gated with AI insights
 - **TierGate upgrade page** — shows 3 plan cards when users access restricted features
@@ -45,9 +45,11 @@
 - **Shopify OAuth removed** — Auth page now only Google + Email
 - Settings: pill-shaped billing toggle, no "Recommended" badge
 - "Closed Won" → "Closed Win", "Won Deals" → "Win Deals"
-- **Collapsible sidebar** — Desktop toggle to collapse/expand sidebar, state persists via localStorage across navigation
+- **Collapsible sidebar** — Desktop hamburger toggle to collapse/expand sidebar, state persists via localStorage across navigation
 - **Button hover consistency** — All outline/ghost buttons use neutral hover (fixed accent color from cyan to neutral)
-- **Trial tier gating** — Trial users can only access Dashboard + Sales Pipeline + Smart Assist + Settings. All other pages gated with TierGate upgrade prompt. Locked sidebar items shown dimmed with lock icon.
+- **Trial tier gating** — Trial users can access: Dashboard, Sales Pipeline, Revenue Intelligence, CRO, Live Integration, Smart Assist, Settings. Locked: Sales Performance (Pro+), Sales Revenue (Enterprise), Churn & Retention (Essential+), Pricing Optimizer (Pro+). Locked items shown dimmed with lock icon.
+- **Renamed "Connect Business" → "Live Integration"** — Updated sidebar, page title, landing page, FAQ, TierGate, backend AI prompt
+- **Pricing Optimizer added to sidebar** — Visible in nav, gated at Pro+ tier
 
 ## Backlog
 - **P1:** Real OAuth for Connect Your Business platforms (start with Stripe)
