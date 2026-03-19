@@ -48,7 +48,7 @@ const TrialNotification = () => {
 
   const handleUpgrade = () => {
     setShowPopup(false);
-    navigate('/settings');
+    navigate('/choose-plan');
   };
 
   if (!user || (user.subscription_tier !== 'trial' && user.subscription_tier !== 'expired') || daysLeft === null) return null;

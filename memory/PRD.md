@@ -51,7 +51,7 @@
 - **Button hover consistency** — All outline/ghost buttons use neutral hover (fixed accent color from cyan to neutral)
 - **Trial tier gating** — Trial users can access: Dashboard, Sales Pipeline, Revenue Intelligence, CRO, Live Integration, Smart Assist, Settings. Locked: Sales Performance (Pro+), Sales Revenue (Enterprise), Churn & Retention (Essential+), Pricing Optimizer (Pro+). Locked items shown dimmed with lock icon.
 - **Renamed "Connect Business" → "Live Integration"** — Updated sidebar, page title, landing page, FAQ, TierGate, backend AI prompt
-- **Pricing Optimizer added to sidebar** — Visible in nav, gated at Pro+ tier
+- **Stripe Payment Checkout:** Dedicated /choose-plan page with all 3 tiers (Essential $59/mo, Pro $149/mo, Enterprise $249/mo), monthly/yearly toggle with 30% savings, Stripe checkout session creation, payment status polling, subscription tier upgrade on success. Accessible from trial notifications and settings.
 
 ## Backlog
 - **P1:** Real OAuth for Connect Your Business platforms (start with Stripe)
