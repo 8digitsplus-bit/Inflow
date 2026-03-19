@@ -58,9 +58,7 @@ const AppRouter = () => {
         path="/pipeline" 
         element={
           <ProtectedRoute>
-            <TierGate requiredLevel={1}>
-              <Pipeline />
-            </TierGate>
+            <Pipeline />
           </ProtectedRoute>
         } 
       />
@@ -106,7 +104,9 @@ const AppRouter = () => {
         path="/churn" 
         element={
           <ProtectedRoute>
-            <ChurnRetention />
+            <TierGate requiredLevel={1}>
+              <ChurnRetention />
+            </TierGate>
           </ProtectedRoute>
         } 
       />
@@ -114,7 +114,9 @@ const AppRouter = () => {
         path="/cro" 
         element={
           <ProtectedRoute>
-            <ConversionOptimization />
+            <TierGate requiredLevel={1}>
+              <ConversionOptimization />
+            </TierGate>
           </ProtectedRoute>
         } 
       />
@@ -138,7 +140,9 @@ const AppRouter = () => {
         path="/connect-business" 
         element={
           <ProtectedRoute>
-            <ConnectBusiness />
+            <TierGate requiredLevel={1}>
+              <ConnectBusiness />
+            </TierGate>
           </ProtectedRoute>
         } 
       />

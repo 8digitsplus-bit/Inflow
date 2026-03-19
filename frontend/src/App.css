@@ -19,45 +19,56 @@
 }
 
 .dashboard-sidebar {
-  width: 260px;
+  width: 240px;
   flex-shrink: 0;
   position: fixed;
   height: 100vh;
   border-right: 1px solid rgba(255, 255, 255, 0.1);
   background: #09090B;
   z-index: 40;
-  transition: width 0.25s ease;
+  transition: width 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: width;
 }
 
 .dashboard-sidebar.collapsed {
-  width: 68px;
+  width: 60px;
 }
 
 .dashboard-content {
   flex: 1;
-  margin-left: 260px;
+  margin-left: 240px;
   padding: 24px;
   background: #09090B;
   min-height: 100vh;
   overflow-x: hidden;
-  transition: margin-left 0.25s ease;
+  transition: margin-left 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: margin-left;
 }
 
 .dashboard-content.sidebar-collapsed {
-  margin-left: 68px;
+  margin-left: 60px;
 }
 
 @media (max-width: 1024px) {
   .dashboard-sidebar {
     transform: translateX(-100%);
-    transition: transform 0.3s ease;
+    transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    width: 240px;
   }
   
   .dashboard-sidebar.open {
     transform: translateX(0);
   }
+
+  .dashboard-sidebar.collapsed {
+    width: 240px;
+  }
   
   .dashboard-content {
+    margin-left: 0;
+  }
+
+  .dashboard-content.sidebar-collapsed {
     margin-left: 0;
   }
 }

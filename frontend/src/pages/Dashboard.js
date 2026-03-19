@@ -265,7 +265,7 @@ const Dashboard = () => {
                   <BarChart3 className="w-5 h-5 text-indigo-400" /> Revenue Trend
                   {isGoalHighlighted('revenue_chart') && <span className="text-[10px] bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded-full">Priority</span>}
                 </CardTitle>
-                <Link to="/revenue"><Button variant="ghost" size="sm" className="text-zinc-400 hover:text-white">View All <ArrowRight className="w-4 h-4 ml-1" /></Button></Link>
+                <Link to="/revenue"><Button variant="ghost" size="sm" className="text-zinc-400 hover:text-indigo-400 hover:bg-indigo-500/10">View All <ArrowRight className="w-4 h-4 ml-1" /></Button></Link>
               </div>
             </CardHeader>
             <CardContent>
@@ -440,7 +440,7 @@ const Dashboard = () => {
                 <CardTitle className="text-lg font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
                   <Clock className="w-5 h-5 text-indigo-400" /> Recent Deals
                 </CardTitle>
-                <Link to="/pipeline"><Button variant="ghost" size="sm" className="text-zinc-400 hover:text-white">View All <ArrowRight className="w-4 h-4 ml-1" /></Button></Link>
+                <Link to="/pipeline"><Button variant="ghost" size="sm" className="text-zinc-400 hover:text-indigo-400 hover:bg-indigo-500/10">View All <ArrowRight className="w-4 h-4 ml-1" /></Button></Link>
               </div>
             </CardHeader>
             <CardContent>
