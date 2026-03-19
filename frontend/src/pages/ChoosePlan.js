@@ -117,13 +117,13 @@ const ChoosePlan = () => {
             <div
               className="absolute top-1 bottom-1 rounded-full bg-indigo-600 shadow-lg shadow-indigo-500/25 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
               style={{
-                width: billingPeriod === 'monthly' ? 'calc(45% - 2px)' : 'calc(55% - 2px)',
-                left: billingPeriod === 'monthly' ? '4px' : 'calc(45% + 2px)',
+                width: 'calc(50% - 4px)',
+                left: billingPeriod === 'monthly' ? '4px' : 'calc(50%)',
               }}
             />
             <button
               onClick={() => setBillingPeriod('monthly')}
-              className={`relative z-10 px-6 py-2 rounded-full text-sm font-medium transition-colors ${
+              className={`relative z-10 w-32 py-2 rounded-full text-sm font-medium transition-colors text-center ${
                 billingPeriod === 'monthly' ? 'text-white' : 'text-zinc-400 hover:text-zinc-200'
               }`}
               data-testid="toggle-monthly"
@@ -132,15 +132,17 @@ const ChoosePlan = () => {
             </button>
             <button
               onClick={() => setBillingPeriod('yearly')}
-              className={`relative z-10 px-6 py-2 rounded-full text-sm font-medium transition-colors ${
+              className={`relative z-10 w-32 py-2 rounded-full text-sm font-medium transition-colors text-center ${
                 billingPeriod === 'yearly' ? 'text-white' : 'text-zinc-400 hover:text-zinc-200'
               }`}
               data-testid="toggle-yearly"
             >
-              Yearly <span className="text-emerald-400 ml-1">Save 30%</span>
+              Yearly
             </button>
           </div>
-          <p className="text-[11px] text-zinc-600 mt-2">*1st year pricing, renews at standard rate</p>
+          {billingPeriod === 'yearly' && (
+            <p className="text-emerald-400 text-xs mt-2 font-medium">Save 30% with yearly billing</p>
+          )}
         </div>
 
         {/* Plans Grid */}
