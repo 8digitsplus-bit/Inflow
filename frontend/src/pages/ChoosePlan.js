@@ -32,7 +32,7 @@ const PLANS = [
     monthlyPrice: 149,
     yearlyPrice: 1252,
     yearlyOriginal: 1788,
-    popular: true,
+    popular: false,
     tagline: 'For growing businesses',
     color: '#6366F1',
     features: [
