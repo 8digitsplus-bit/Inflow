@@ -1,49 +1,46 @@
 import { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
+import CsvImportModal from '../components/CsvImportModal';
+import CustomApiModal from '../components/CustomApiModal';
 import {
-  CreditCard,
-  ShoppingBag,
-  Users,
-  Cloud,
-  Calculator,
-  Check,
-  Loader2,
-  RefreshCw,
-  Unplug,
-  ArrowRight,
-  Zap,
-  Database,
-  TrendingUp,
-  Clock,
-  Key,
-  ExternalLink,
-  Shield,
-  X,
+  CreditCard, ShoppingBag, Users, Cloud, Calculator, Check, Loader2, RefreshCw, Unplug,
+  ArrowRight, Zap, Database, TrendingUp, Clock, Key, ExternalLink, Shield, X,
+  FileSpreadsheet, Globe, Sparkles, Upload,
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { toast } from 'sonner';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
-
 const ICON_MAP = { CreditCard, ShoppingBag, Users, Cloud, Calculator };
 
 const ConnectBusiness = () => {
   const [platforms, setPlatforms] = useState([]);
   const [summary, setSummary] = useState(null);
+  const [customSources, setCustomSources] = useState([]);
+  const [detectedPlatforms, setDetectedPlatforms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
   const [stripeKeyModal, setStripeKeyModal] = useState(false);
   const [stripeKey, setStripeKey] = useState('');
+  const [csvModal, setCsvModal] = useState(false);
+  const [apiModal, setApiModal] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
-      const [platRes, sumRes] = await Promise.all([
+      const [platRes, sumRes, customRes, detectRes] = await Promise.all([
         fetch(`${API_URL}/api/business/platforms`, { credentials: 'include' }),
         fetch(`${API_URL}/api/business/summary`, { credentials: 'include' }),
+        fetch(`${API_URL}/api/business/custom-sources`, { credentials: 'include' }),
+        fetch(`${API_URL}/api/business/detect-platforms`, { credentials: 'include' }),
       ]);
       if (platRes.ok) setPlatforms(await platRes.json());
       if (sumRes.ok) setSummary(await sumRes.json());
+      if (customRes.ok) setCustomSources(await customRes.json());
+      if (detectRes.ok) {
+        const d = await detectRes.json();
+        setDetectedPlatforms(d.detected_platforms || []);
+      }
     } catch (err) {
       console.error('Failed to fetch business data:', err);
     } finally {
@@ -54,107 +51,106 @@ const ConnectBusiness = () => {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const handleConnect = async (platformId) => {
-    if (platformId === 'stripe') {
-      setStripeKeyModal(true);
-      return;
-    }
+    if (platformId === 'stripe') { setStripeKeyModal(true); return; }
     setActionLoading(platformId);
     try {
       const res = await fetch(`${API_URL}/api/business/connect/${platformId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
       });
       const data = await res.json();
-      if (res.ok) {
-        toast.success(data.message);
-        await fetchData();
-      } else {
-        toast.error(data.detail || 'Failed to connect');
-      }
-    } catch {
-      toast.error('Connection failed');
-    } finally {
-      setActionLoading(null);
-    }
+      if (res.ok) { toast.success(data.message); await fetchData(); }
+      else toast.error(data.detail || 'Failed to connect');
+    } catch { toast.error('Connection failed'); }
+    finally { setActionLoading(null); }
   };
 
   const handleStripeConnect = async () => {
-    if (!stripeKey.trim()) {
-      toast.error('Please enter your Stripe API key');
-      return;
-    }
-    if (!stripeKey.startsWith('sk_')) {
-      toast.error('API key must start with sk_test_ or sk_live_');
-      return;
-    }
+    if (!stripeKey.trim()) { toast.error('Please enter your Stripe API key'); return; }
+    if (!stripeKey.startsWith('sk_')) { toast.error('API key must start with sk_test_ or sk_live_'); return; }
     setActionLoading('stripe');
     try {
       const res = await fetch(`${API_URL}/api/business/connect/stripe`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
         body: JSON.stringify({ api_key: stripeKey }),
       });
       const data = await res.json();
-      if (res.ok) {
-        toast.success(data.message);
-        setStripeKeyModal(false);
-        setStripeKey('');
-        await fetchData();
-      } else {
-        toast.error(data.detail || 'Failed to connect Stripe');
-      }
-    } catch {
-      toast.error('Connection failed');
-    } finally {
-      setActionLoading(null);
-    }
+      if (res.ok) { toast.success(data.message); setStripeKeyModal(false); setStripeKey(''); await fetchData(); }
+      else toast.error(data.detail || 'Failed to connect Stripe');
+    } catch { toast.error('Connection failed'); }
+    finally { setActionLoading(null); }
   };
 
   const handleDisconnect = async (platformId) => {
     setActionLoading(`disconnect-${platformId}`);
     try {
       const res = await fetch(`${API_URL}/api/business/disconnect/${platformId}`, {
-        method: 'POST',
-        credentials: 'include',
+        method: 'POST', credentials: 'include',
       });
-      if (res.ok) {
-        toast.success('Platform disconnected');
-        await fetchData();
-      } else {
-        const data = await res.json();
-        toast.error(data.detail || 'Failed to disconnect');
-      }
-    } catch {
-      toast.error('Disconnect failed');
-    } finally {
-      setActionLoading(null);
-    }
+      if (res.ok) { toast.success('Platform disconnected'); await fetchData(); }
+      else { const data = await res.json(); toast.error(data.detail || 'Failed to disconnect'); }
+    } catch { toast.error('Disconnect failed'); }
+    finally { setActionLoading(null); }
   };
 
   const handleSync = async (platformId) => {
     setActionLoading(`sync-${platformId}`);
     try {
       const res = await fetch(`${API_URL}/api/business/sync/${platformId}`, {
-        method: 'POST',
-        credentials: 'include',
+        method: 'POST', credentials: 'include',
       });
       const data = await res.json();
-      if (res.ok) {
-        toast.success(data.message);
-        await fetchData();
-      } else {
-        toast.error(data.detail || 'Sync failed');
-      }
-    } catch {
-      toast.error('Sync failed');
-    } finally {
-      setActionLoading(null);
-    }
+      if (res.ok) { toast.success(data.message); await fetchData(); }
+      else toast.error(data.detail || 'Sync failed');
+    } catch { toast.error('Sync failed'); }
+    finally { setActionLoading(null); }
   };
 
-  const connectedCount = platforms.filter((p) => p.connected).length;
+  const handleCustomSync = async (connectionId) => {
+    setActionLoading(`sync-custom-${connectionId}`);
+    try {
+      const res = await fetch(`${API_URL}/api/business/custom-sources/${connectionId}/sync`, {
+        method: 'POST', credentials: 'include',
+      });
+      const data = await res.json();
+      if (res.ok) { toast.success(data.message); await fetchData(); }
+      else toast.error(data.detail || 'Sync failed');
+    } catch { toast.error('Sync failed'); }
+    finally { setActionLoading(null); }
+  };
+
+  const handleCustomDisconnect = async (connectionId) => {
+    setActionLoading(`disconnect-custom-${connectionId}`);
+    try {
+      const res = await fetch(`${API_URL}/api/business/custom-sources/${connectionId}/disconnect`, {
+        method: 'POST', credentials: 'include',
+      });
+      if (res.ok) { toast.success('Source disconnected'); await fetchData(); }
+      else { const data = await res.json(); toast.error(data.detail || 'Disconnect failed'); }
+    } catch { toast.error('Disconnect failed'); }
+    finally { setActionLoading(null); }
+  };
+
+  const handleCsvSuccess = (result) => {
+    setCsvModal(false);
+    toast.success(result.message);
+    if (result.detected_platforms?.length > 0) {
+      const p = result.detected_platforms[0];
+      toast.info(`We detected ${p.platform_id.charAt(0).toUpperCase() + p.platform_id.slice(1)} patterns in your data. Connect it directly for real-time sync!`, { duration: 8000 });
+    }
+    fetchData();
+  };
+
+  const handleApiSuccess = (result) => {
+    setApiModal(false);
+    toast.success(result.message);
+    if (result.detected_platforms?.length > 0) {
+      const p = result.detected_platforms[0];
+      toast.info(`Detected ${p.platform_id.charAt(0).toUpperCase() + p.platform_id.slice(1)} patterns. Connect directly for real-time sync!`, { duration: 8000 });
+    }
+    fetchData();
+  };
+
+  const connectedCount = platforms.filter(p => p.connected).length + customSources.length;
 
   const formatDate = (iso) => {
     if (!iso) return '--';
@@ -172,7 +168,7 @@ const ConnectBusiness = () => {
               Live Integration
             </h1>
             <p className="text-zinc-400 mt-1 text-sm max-w-xl">
-              Integrate your existing tools to automatically sync data and power all your analytics with real business insights.
+              Connect platforms, import data, or plug in your own API to power all analytics with real business insights.
             </p>
           </div>
           {connectedCount > 0 && (
@@ -185,10 +181,41 @@ const ConnectBusiness = () => {
         {/* Summary Cards */}
         {summary && summary.connected_count > 0 && (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4" data-testid="business-summary-cards">
-            <SummaryCard icon={Database} label="Platforms Connected" value={summary.connected_count} color="text-indigo-400" />
+            <SummaryCard icon={Database} label="Sources Connected" value={connectedCount} color="text-indigo-400" />
             <SummaryCard icon={TrendingUp} label="Records Synced" value={summary.total_records.toLocaleString()} color="text-emerald-400" />
             <SummaryCard icon={CreditCard} label="Total Pipeline Value" value={`$${(summary.total_synced_value || 0).toLocaleString()}`} color="text-amber-400" />
-            <SummaryCard icon={Zap} label="Data Sources Active" value={summary.connected_count} color="text-indigo-400" />
+            <SummaryCard icon={Zap} label="Data Sources Active" value={connectedCount} color="text-indigo-400" />
+          </div>
+        )}
+
+        {/* Platform Detection Banner */}
+        {detectedPlatforms.length > 0 && (
+          <div className="bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-indigo-500/10 border border-indigo-500/20 rounded-xl p-4" data-testid="detection-banner">
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-lg bg-indigo-500/15 flex items-center justify-center shrink-0 mt-0.5">
+                <Sparkles className="w-4 h-4 text-indigo-400" />
+              </div>
+              <div className="flex-1">
+                <h4 className="text-sm font-medium text-white mb-1" style={{ fontFamily: 'Outfit' }}>Platform Detected in Your Data</h4>
+                <p className="text-xs text-zinc-400 mb-3">
+                  We analyzed your imported data and found patterns from known platforms. Connect them directly for real-time sync!
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {detectedPlatforms.map(d => (
+                    <button
+                      key={d.platform_id}
+                      onClick={() => handleConnect(d.platform_id)}
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs hover:bg-indigo-500/20 transition-colors"
+                      data-testid={`detect-connect-${d.platform_id}`}
+                    >
+                      <Zap className="w-3 h-3" />
+                      Connect {d.platform_id.charAt(0).toUpperCase() + d.platform_id.slice(1)}
+                      <span className="text-indigo-500">({Math.round(d.confidence * 100)}% match)</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
           </div>
         )}
 
@@ -198,154 +225,251 @@ const ConnectBusiness = () => {
             <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 flex items-center justify-center mx-auto mb-4">
               <Zap className="w-8 h-8 text-indigo-400" />
             </div>
-            <h3 className="text-lg font-semibold text-white mb-2" style={{ fontFamily: 'Outfit' }}>No platforms connected yet</h3>
+            <h3 className="text-lg font-semibold text-white mb-2" style={{ fontFamily: 'Outfit' }}>No data sources connected yet</h3>
             <p className="text-zinc-400 text-sm max-w-md mx-auto">
-              Connect your business tools below to automatically sync data and unlock powerful insights across all your dashboards.
+              Connect a platform, import a CSV, or plug in your own API to unlock powerful insights across all dashboards.
             </p>
           </div>
         )}
 
-        {/* Platform Grid */}
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <Loader2 className="w-8 h-8 animate-spin text-indigo-400" />
           </div>
         ) : (
-          <div className="space-y-4">
-            <h2 className="text-sm font-medium text-zinc-500 uppercase tracking-wider">Available Platforms</h2>
-            <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
-              {platforms.map((platform) => {
-                const Icon = ICON_MAP[platform.icon] || Database;
-                const isConnecting = actionLoading === platform.platform_id;
-                const isDisconnecting = actionLoading === `disconnect-${platform.platform_id}`;
-                const isSyncing = actionLoading === `sync-${platform.platform_id}`;
-
-                return (
-                  <Card
-                    key={platform.platform_id}
-                    className={`bg-zinc-950/50 border transition-all duration-300 hover:border-zinc-600 ${
-                      platform.connected ? 'border-emerald-500/30' : 'border-white/10'
-                    }`}
-                    data-testid={`platform-card-${platform.platform_id}`}
-                  >
-                    <CardContent className="p-5">
-                      {/* Header */}
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center gap-3">
-                          <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${platform.color}18` }}>
-                            <Icon className="w-5 h-5" style={{ color: platform.color }} />
-                          </div>
-                          <div>
-                            <h3 className="text-white font-semibold text-sm" style={{ fontFamily: 'Outfit' }}>{platform.name}</h3>
-                            <span className="text-[11px] text-zinc-500 font-medium">{platform.category}</span>
-                          </div>
-                        </div>
-                        {platform.connected && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium shrink-0" data-testid={`connected-badge-${platform.platform_id}`}>
-                            {platform.is_live ? (
-                              <span className="bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded-full flex items-center gap-1">
-                                <Zap className="w-3 h-3" /> Live
-                              </span>
-                            ) : (
-                              <span className="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full flex items-center gap-1">
-                                <Check className="w-3 h-3" /> Demo
-                              </span>
-                            )}
-                          </span>
-                        )}
+          <>
+            {/* Import Your Data */}
+            <div className="space-y-4">
+              <h2 className="text-sm font-medium text-zinc-500 uppercase tracking-wider">Import Your Data</h2>
+              <div className="grid md:grid-cols-2 gap-4">
+                {/* CSV Import Card */}
+                <Card className="bg-zinc-950/50 border border-white/10 hover:border-emerald-500/30 transition-all duration-300 cursor-pointer group"
+                  onClick={() => setCsvModal(true)} data-testid="csv-import-card">
+                  <CardContent className="p-5">
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="w-11 h-11 rounded-xl bg-emerald-500/10 flex items-center justify-center shrink-0">
+                        <FileSpreadsheet className="w-5 h-5 text-emerald-400" />
                       </div>
-
-                      {/* Description */}
-                      <p className="text-zinc-400 text-xs leading-relaxed mb-3">{platform.description}</p>
-
-                      {/* Account name for live connections */}
-                      {platform.connected && platform.account_name && (
-                        <div className="flex items-center gap-1.5 mb-3 px-2.5 py-1.5 rounded-lg bg-indigo-500/5 border border-indigo-500/10">
-                          <Shield className="w-3 h-3 text-indigo-400" />
-                          <span className="text-[11px] text-indigo-300">{platform.account_name}</span>
-                        </div>
-                      )}
-
-                      {/* Stats for live Stripe */}
-                      {platform.connected && platform.stats && (
-                        <div className="grid grid-cols-2 gap-2 mb-3">
-                          <div className="bg-zinc-900/60 rounded-lg px-2.5 py-1.5">
-                            <span className="text-[10px] text-zinc-500 block">Customers</span>
-                            <span className="text-sm font-semibold text-white">{platform.stats.customers}</span>
-                          </div>
-                          <div className="bg-zinc-900/60 rounded-lg px-2.5 py-1.5">
-                            <span className="text-[10px] text-zinc-500 block">Revenue</span>
-                            <span className="text-sm font-semibold text-emerald-400">${(platform.stats.revenue || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
-                          </div>
-                          <div className="bg-zinc-900/60 rounded-lg px-2.5 py-1.5">
-                            <span className="text-[10px] text-zinc-500 block">Subscriptions</span>
-                            <span className="text-sm font-semibold text-white">{platform.stats.subscriptions}</span>
-                          </div>
-                          <div className="bg-zinc-900/60 rounded-lg px-2.5 py-1.5">
-                            <span className="text-[10px] text-zinc-500 block">Charges</span>
-                            <span className="text-sm font-semibold text-white">{platform.stats.charges}</span>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Data types */}
-                      <div className="flex flex-wrap gap-1.5 mb-4">
-                        {platform.data_types?.map((dt) => (
-                          <span key={dt} className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-zinc-800 text-zinc-400 capitalize">{dt}</span>
-                        ))}
+                      <div>
+                        <h3 className="text-white font-semibold text-sm" style={{ fontFamily: 'Outfit' }}>Import CSV</h3>
+                        <span className="text-[11px] text-zinc-500 font-medium">Spreadsheet Upload</span>
                       </div>
+                    </div>
+                    <p className="text-zinc-400 text-xs leading-relaxed mb-3">
+                      Upload a CSV file with your business data. Map columns to InFlow fields and import up to 5,000 records at once.
+                    </p>
+                    <div className="flex flex-wrap gap-1.5 mb-4">
+                      {['deals', 'customers', 'revenue', 'pipeline'].map(dt => (
+                        <span key={dt} className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-zinc-800 text-zinc-400 capitalize">{dt}</span>
+                      ))}
+                    </div>
+                    <Button className="w-full bg-emerald-600 hover:bg-emerald-500 text-xs h-9 group-hover:bg-emerald-500 transition-colors"
+                      onClick={(e) => { e.stopPropagation(); setCsvModal(true); }} data-testid="csv-import-btn">
+                      <Upload className="w-3.5 h-3.5 mr-2" /> Upload CSV File
+                    </Button>
+                  </CardContent>
+                </Card>
 
-                      {/* Connected actions */}
-                      {platform.connected ? (
-                        <div className="space-y-3">
-                          <div className="flex items-center gap-4 text-[11px] text-zinc-500">
-                            <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{formatDate(platform.last_synced)}</span>
-                            <span>{platform.records_synced} records</span>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              size="sm" variant="outline"
-                              className="flex-1 border-zinc-700 text-zinc-300 hover:bg-indigo-500/10 hover:text-indigo-400 hover:border-indigo-500/30 text-xs h-8"
-                              onClick={() => handleSync(platform.platform_id)}
-                              disabled={isSyncing}
-                              data-testid={`sync-${platform.platform_id}`}
-                            >
-                              {isSyncing ? <Loader2 className="w-3 h-3 animate-spin mr-1.5" /> : <RefreshCw className="w-3 h-3 mr-1.5" />}
-                              Re-sync
-                            </Button>
-                            <Button
-                              size="sm" variant="ghost"
-                              className="text-zinc-500 hover:text-red-400 hover:bg-red-500/10 text-xs h-8 px-3"
-                              onClick={() => handleDisconnect(platform.platform_id)}
-                              disabled={isDisconnecting}
-                              data-testid={`disconnect-${platform.platform_id}`}
-                            >
-                              {isDisconnecting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Unplug className="w-3 h-3" />}
-                            </Button>
-                          </div>
-                        </div>
-                      ) : (
-                        <Button
-                          className="w-full bg-indigo-600 hover:bg-indigo-500 text-xs h-9"
-                          onClick={() => handleConnect(platform.platform_id)}
-                          disabled={isConnecting}
-                          data-testid={`connect-${platform.platform_id}`}
-                        >
-                          {isConnecting ? (
-                            <><Loader2 className="w-3.5 h-3.5 animate-spin mr-2" />Connecting...</>
-                          ) : platform.requires_key ? (
-                            <><Key className="w-3.5 h-3.5 mr-2" />Connect with API Key</>
-                          ) : (
-                            <><ArrowRight className="w-3.5 h-3.5 mr-2" />Connect</>
-                          )}
-                        </Button>
-                      )}
-                    </CardContent>
-                  </Card>
-                );
-              })}
+                {/* Custom API Card */}
+                <Card className="bg-zinc-950/50 border border-white/10 hover:border-blue-500/30 transition-all duration-300 cursor-pointer group"
+                  onClick={() => setApiModal(true)} data-testid="custom-api-card">
+                  <CardContent className="p-5">
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="w-11 h-11 rounded-xl bg-blue-500/10 flex items-center justify-center shrink-0">
+                        <Globe className="w-5 h-5 text-blue-400" />
+                      </div>
+                      <div>
+                        <h3 className="text-white font-semibold text-sm" style={{ fontFamily: 'Outfit' }}>Custom API</h3>
+                        <span className="text-[11px] text-zinc-500 font-medium">Connect Any API</span>
+                      </div>
+                    </div>
+                    <p className="text-zinc-400 text-xs leading-relaxed mb-3">
+                      Connect any REST API endpoint. Test the connection, map response fields, and sync data automatically.
+                    </p>
+                    <div className="flex flex-wrap gap-1.5 mb-4">
+                      {['REST API', 'JSON', 'real-time', 'auto-sync'].map(dt => (
+                        <span key={dt} className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-zinc-800 text-zinc-400">{dt}</span>
+                      ))}
+                    </div>
+                    <Button className="w-full bg-blue-600 hover:bg-blue-500 text-xs h-9 group-hover:bg-blue-500 transition-colors"
+                      onClick={(e) => { e.stopPropagation(); setApiModal(true); }} data-testid="custom-api-btn">
+                      <Globe className="w-3.5 h-3.5 mr-2" /> Connect API
+                    </Button>
+                  </CardContent>
+                </Card>
+              </div>
             </div>
-          </div>
+
+            {/* Custom Sources (Connected CSV/API imports) */}
+            {customSources.length > 0 && (
+              <div className="space-y-4">
+                <h2 className="text-sm font-medium text-zinc-500 uppercase tracking-wider">Your Data Sources</h2>
+                <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {customSources.map(source => {
+                    const isCsv = source.platform === 'csv_import';
+                    const isSyncing = actionLoading === `sync-custom-${source.connection_id}`;
+                    const isDisconnecting = actionLoading === `disconnect-custom-${source.connection_id}`;
+                    return (
+                      <Card key={source.connection_id}
+                        className="bg-zinc-950/50 border border-emerald-500/30 transition-all duration-300 hover:border-zinc-600"
+                        data-testid={`custom-source-${source.connection_id}`}>
+                        <CardContent className="p-5">
+                          <div className="flex items-start justify-between mb-3">
+                            <div className="flex items-center gap-3">
+                              <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${isCsv ? 'bg-emerald-500/10' : 'bg-blue-500/10'}`}>
+                                {isCsv ? <FileSpreadsheet className="w-5 h-5 text-emerald-400" /> : <Globe className="w-5 h-5 text-blue-400" />}
+                              </div>
+                              <div>
+                                <h3 className="text-white font-semibold text-sm" style={{ fontFamily: 'Outfit' }}>{source.source_name}</h3>
+                                <span className="text-[11px] text-zinc-500 font-medium">{isCsv ? 'CSV Import' : 'Custom API'}</span>
+                              </div>
+                            </div>
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium">
+                              {source.is_live ? (
+                                <span className="bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded-full flex items-center gap-1">
+                                  <Zap className="w-3 h-3" /> Live
+                                </span>
+                              ) : (
+                                <span className="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full flex items-center gap-1">
+                                  <Check className="w-3 h-3" /> Imported
+                                </span>
+                              )}
+                            </span>
+                          </div>
+                          <p className="text-zinc-400 text-xs mb-3">{source.records_synced} records synced</p>
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-4 text-[11px] text-zinc-500">
+                              <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{formatDate(source.last_synced)}</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {source.can_sync && (
+                                <Button size="sm" variant="outline"
+                                  className="flex-1 border-zinc-700 text-zinc-300 hover:bg-indigo-500/10 hover:text-indigo-400 hover:border-indigo-500/30 text-xs h-8"
+                                  onClick={() => handleCustomSync(source.connection_id)} disabled={isSyncing}
+                                  data-testid={`sync-custom-${source.connection_id}`}>
+                                  {isSyncing ? <Loader2 className="w-3 h-3 animate-spin mr-1.5" /> : <RefreshCw className="w-3 h-3 mr-1.5" />} Re-sync
+                                </Button>
+                              )}
+                              <Button size="sm" variant="ghost"
+                                className="text-zinc-500 hover:text-red-400 hover:bg-red-500/10 text-xs h-8 px-3"
+                                onClick={() => handleCustomDisconnect(source.connection_id)} disabled={isDisconnecting}
+                                data-testid={`disconnect-custom-${source.connection_id}`}>
+                                {isDisconnecting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Unplug className="w-3 h-3" />}
+                              </Button>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Platform Grid */}
+            <div className="space-y-4">
+              <h2 className="text-sm font-medium text-zinc-500 uppercase tracking-wider">Available Platforms</h2>
+              <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+                {platforms.map((platform) => {
+                  const Icon = ICON_MAP[platform.icon] || Database;
+                  const isConnecting = actionLoading === platform.platform_id;
+                  const isDisconnecting = actionLoading === `disconnect-${platform.platform_id}`;
+                  const isSyncing = actionLoading === `sync-${platform.platform_id}`;
+                  return (
+                    <Card key={platform.platform_id}
+                      className={`bg-zinc-950/50 border transition-all duration-300 hover:border-zinc-600 ${platform.connected ? 'border-emerald-500/30' : 'border-white/10'}`}
+                      data-testid={`platform-card-${platform.platform_id}`}>
+                      <CardContent className="p-5">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center gap-3">
+                            <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${platform.color}18` }}>
+                              <Icon className="w-5 h-5" style={{ color: platform.color }} />
+                            </div>
+                            <div>
+                              <h3 className="text-white font-semibold text-sm" style={{ fontFamily: 'Outfit' }}>{platform.name}</h3>
+                              <span className="text-[11px] text-zinc-500 font-medium">{platform.category}</span>
+                            </div>
+                          </div>
+                          {platform.connected && (
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium shrink-0" data-testid={`connected-badge-${platform.platform_id}`}>
+                              {platform.is_live ? (
+                                <span className="bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded-full flex items-center gap-1"><Zap className="w-3 h-3" /> Live</span>
+                              ) : (
+                                <span className="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full flex items-center gap-1"><Check className="w-3 h-3" /> Demo</span>
+                              )}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-zinc-400 text-xs leading-relaxed mb-3">{platform.description}</p>
+                        {platform.connected && platform.account_name && (
+                          <div className="flex items-center gap-1.5 mb-3 px-2.5 py-1.5 rounded-lg bg-indigo-500/5 border border-indigo-500/10">
+                            <Shield className="w-3 h-3 text-indigo-400" />
+                            <span className="text-[11px] text-indigo-300">{platform.account_name}</span>
+                          </div>
+                        )}
+                        {platform.connected && platform.stats && (
+                          <div className="grid grid-cols-2 gap-2 mb-3">
+                            <div className="bg-zinc-900/60 rounded-lg px-2.5 py-1.5">
+                              <span className="text-[10px] text-zinc-500 block">Customers</span>
+                              <span className="text-sm font-semibold text-white">{platform.stats.customers}</span>
+                            </div>
+                            <div className="bg-zinc-900/60 rounded-lg px-2.5 py-1.5">
+                              <span className="text-[10px] text-zinc-500 block">Revenue</span>
+                              <span className="text-sm font-semibold text-emerald-400">${(platform.stats.revenue || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
+                            </div>
+                            <div className="bg-zinc-900/60 rounded-lg px-2.5 py-1.5">
+                              <span className="text-[10px] text-zinc-500 block">Subscriptions</span>
+                              <span className="text-sm font-semibold text-white">{platform.stats.subscriptions}</span>
+                            </div>
+                            <div className="bg-zinc-900/60 rounded-lg px-2.5 py-1.5">
+                              <span className="text-[10px] text-zinc-500 block">Charges</span>
+                              <span className="text-sm font-semibold text-white">{platform.stats.charges}</span>
+                            </div>
+                          </div>
+                        )}
+                        <div className="flex flex-wrap gap-1.5 mb-4">
+                          {platform.data_types?.map(dt => (
+                            <span key={dt} className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-zinc-800 text-zinc-400 capitalize">{dt}</span>
+                          ))}
+                        </div>
+                        {platform.connected ? (
+                          <div className="space-y-3">
+                            <div className="flex items-center gap-4 text-[11px] text-zinc-500">
+                              <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{formatDate(platform.last_synced)}</span>
+                              <span>{platform.records_synced} records</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button size="sm" variant="outline"
+                                className="flex-1 border-zinc-700 text-zinc-300 hover:bg-indigo-500/10 hover:text-indigo-400 hover:border-indigo-500/30 text-xs h-8"
+                                onClick={() => handleSync(platform.platform_id)} disabled={isSyncing} data-testid={`sync-${platform.platform_id}`}>
+                                {isSyncing ? <Loader2 className="w-3 h-3 animate-spin mr-1.5" /> : <RefreshCw className="w-3 h-3 mr-1.5" />} Re-sync
+                              </Button>
+                              <Button size="sm" variant="ghost"
+                                className="text-zinc-500 hover:text-red-400 hover:bg-red-500/10 text-xs h-8 px-3"
+                                onClick={() => handleDisconnect(platform.platform_id)} disabled={isDisconnecting} data-testid={`disconnect-${platform.platform_id}`}>
+                                {isDisconnecting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Unplug className="w-3 h-3" />}
+                              </Button>
+                            </div>
+                          </div>
+                        ) : (
+                          <Button className="w-full bg-indigo-600 hover:bg-indigo-500 text-xs h-9"
+                            onClick={() => handleConnect(platform.platform_id)} disabled={isConnecting} data-testid={`connect-${platform.platform_id}`}>
+                            {isConnecting ? (
+                              <><Loader2 className="w-3.5 h-3.5 animate-spin mr-2" />Connecting...</>
+                            ) : platform.requires_key ? (
+                              <><Key className="w-3.5 h-3.5 mr-2" />Connect with API Key</>
+                            ) : (
+                              <><ArrowRight className="w-3.5 h-3.5 mr-2" />Connect</>
+                            )}
+                          </Button>
+                        )}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            </div>
+          </>
         )}
 
         {/* Info section */}
@@ -357,8 +481,9 @@ const ConnectBusiness = () => {
             <div>
               <h4 className="text-sm font-medium text-white mb-1" style={{ fontFamily: 'Outfit' }}>How it works</h4>
               <p className="text-xs text-zinc-400 leading-relaxed">
-                When you connect a platform, InFlow syncs your business data and feeds it directly into your Sales Pipeline, Performance, Revenue, and all other analytics features.
-                Stripe uses your real API key for live data. Other platforms use simulated data for demo purposes.
+                Connect platforms, upload CSVs, or plug in your own API — InFlow syncs your business data and feeds it into your Sales Pipeline, Performance, Revenue, and all other analytics.
+                Stripe uses your real API key for live data. Custom APIs support real-time re-sync. CSV imports are a one-time upload.
+                InFlow automatically detects if your data comes from known platforms and suggests direct integrations.
               </p>
             </div>
           </div>
@@ -373,7 +498,6 @@ const ConnectBusiness = () => {
             <button onClick={() => { setStripeKeyModal(false); setStripeKey(''); }} className="absolute top-4 right-4 text-zinc-500 hover:text-white">
               <X className="w-5 h-5" />
             </button>
-            
             <div className="flex items-center gap-3 mb-5">
               <div className="w-10 h-10 rounded-xl bg-[#635BFF]/15 flex items-center justify-center">
                 <CreditCard className="w-5 h-5 text-[#635BFF]" />
@@ -383,62 +507,42 @@ const ConnectBusiness = () => {
                 <p className="text-xs text-zinc-500">Enter your API key to sync live data</p>
               </div>
             </div>
-
             <div className="space-y-4">
               <div>
                 <label className="text-xs font-medium text-zinc-400 block mb-1.5">Secret API Key</label>
-                <input
-                  type="password"
-                  value={stripeKey}
-                  onChange={(e) => setStripeKey(e.target.value)}
+                <input type="password" value={stripeKey} onChange={(e) => setStripeKey(e.target.value)}
                   placeholder="sk_test_... or sk_live_..."
                   className="w-full px-3 py-2.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm placeholder:text-zinc-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
-                  data-testid="stripe-api-key-input"
-                />
+                  data-testid="stripe-api-key-input" />
               </div>
-
               <div className="flex items-start gap-2 p-3 bg-zinc-800/50 rounded-lg border border-zinc-700/50">
                 <Shield className="w-4 h-4 text-indigo-400 mt-0.5 flex-shrink-0" />
                 <div className="text-[11px] text-zinc-400 leading-relaxed">
                   Your key is stored securely and only used to read your Stripe data. We never modify your Stripe account.
                 </div>
               </div>
-
-              <a
-                href="https://dashboard.stripe.com/apikeys"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
-              >
-                <ExternalLink className="w-3 h-3" />
-                Find your API key on Stripe Dashboard
+              <a href="https://dashboard.stripe.com/apikeys" target="_blank" rel="noopener noreferrer"
+                className="flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
+                <ExternalLink className="w-3 h-3" /> Find your API key on Stripe Dashboard
               </a>
-
               <div className="flex gap-3 pt-2">
-                <Button
-                  variant="outline"
-                  className="flex-1 border-zinc-700 text-zinc-300 hover:bg-indigo-500/10 hover:text-indigo-400 hover:border-indigo-500/30"
-                  onClick={() => { setStripeKeyModal(false); setStripeKey(''); }}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  className="flex-1 bg-[#635BFF] hover:bg-[#5851ea] text-white"
-                  onClick={handleStripeConnect}
-                  disabled={actionLoading === 'stripe' || !stripeKey.trim()}
-                  data-testid="stripe-connect-submit"
-                >
-                  {actionLoading === 'stripe' ? (
-                    <><Loader2 className="w-3.5 h-3.5 animate-spin mr-2" />Connecting...</>
-                  ) : (
-                    <><Zap className="w-3.5 h-3.5 mr-2" />Connect & Sync</>
-                  )}
+                <Button variant="outline" className="flex-1 border-zinc-700 text-zinc-300 hover:bg-indigo-500/10 hover:text-indigo-400 hover:border-indigo-500/30"
+                  onClick={() => { setStripeKeyModal(false); setStripeKey(''); }}>Cancel</Button>
+                <Button className="flex-1 bg-[#635BFF] hover:bg-[#5851ea] text-white"
+                  onClick={handleStripeConnect} disabled={actionLoading === 'stripe' || !stripeKey.trim()} data-testid="stripe-connect-submit">
+                  {actionLoading === 'stripe' ? <><Loader2 className="w-3.5 h-3.5 animate-spin mr-2" />Connecting...</> : <><Zap className="w-3.5 h-3.5 mr-2" />Connect & Sync</>}
                 </Button>
               </div>
             </div>
           </div>
         </div>
       )}
+
+      {/* CSV Import Modal */}
+      {csvModal && <CsvImportModal onClose={() => setCsvModal(false)} onSuccess={handleCsvSuccess} />}
+
+      {/* Custom API Modal */}
+      {apiModal && <CustomApiModal onClose={() => setApiModal(false)} onSuccess={handleApiSuccess} />}
     </DashboardLayout>
   );
 };
