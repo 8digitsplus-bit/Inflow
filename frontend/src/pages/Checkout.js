@@ -227,12 +227,12 @@ const Checkout = () => {
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-1.5">
-                      {['Visa', 'Mastercard', 'Amex', 'Discover', 'JCB', 'Diners', 'UnionPay', 'Apple Pay', 'Google Pay'].map(c => (
+                      {['Visa', 'Mastercard', 'Amex', 'PayPal', 'Apple Pay', 'Google Pay', 'Samsung Pay'].map(c => (
                         <span key={c} className="px-2 py-0.5 bg-zinc-700/40 rounded text-[10px] font-medium text-zinc-400">{c}</span>
                       ))}
                     </div>
                   </div>
-                  <p className="text-[10px] text-zinc-600 px-1">Additional payment methods like bank transfers and buy-now-pay-later may be available at checkout depending on your region.</p>
+                  <p className="text-[10px] text-zinc-600 px-1">All payments are processed securely through Stripe.</p>
                 </div>
 
                 {/* Pay Button */}
