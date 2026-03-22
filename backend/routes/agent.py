@@ -58,6 +58,18 @@ AGENT_TOOLS = {
         "description": "Full-text search across deal names and company names.",
         "params": "query (required)"
     },
+    "remember": {
+        "description": "Save an important fact, preference, or insight about the user for future conversations. Use this when you learn something worth remembering: a goal, a recurring issue, a preference, key context about their business, or a resolved problem.",
+        "params": "fact (required) - the fact/insight to remember"
+    },
+    "recall_memory": {
+        "description": "Retrieve all saved memories/context about this user from previous conversations.",
+        "params": "none"
+    },
+    "escalate_to_ticket": {
+        "description": "Auto-escalate the current issue to a support ticket when you cannot fully resolve it. Include a detailed summary of what was investigated and what remains unresolved. Use this when: the issue requires human intervention, you've exhausted your tools, the user is frustrated, or the problem is outside your capabilities.",
+        "params": "subject (required), summary (required), severity (optional: low/medium/high, default medium)"
+    },
 }
 
 AGENT_SYSTEM_PROMPT = """You are InFlow's Agentic AI Assistant — an advanced AI that can investigate data, analyze patterns, and take actions on behalf of the user.
@@ -76,6 +88,8 @@ Examples:
 <<TOOL:get_analytics_summary|>>
 <<TOOL:search_deals|query=Acme Corp>>
 <<TOOL:update_deal_stage|deal_id=deal_abc123,new_stage=proposal>>
+<<TOOL:remember|fact=User's primary goal is to reduce churn below 5 percent>>
+<<TOOL:escalate_to_ticket|subject=Stripe sync data mismatch,summary=Investigated sync issue. Found 12 deals missing from Stripe. Needs manual reconciliation.,severity=high>>
 
 RULES:
 1. You can call MULTIPLE tools in a single response — put each on its own line.
@@ -87,11 +101,26 @@ RULES:
 7. Keep responses concise but data-rich. Use currency formatting ($X,XXX) for monetary values.
 8. NEVER fabricate data. Only reference data returned by tools.
 
+MEMORY:
+- At the start of each conversation, you receive the user's saved memories. Reference these naturally.
+- Use the `remember` tool to save important facts: business goals, recurring issues, preferences, key decisions, resolved problems.
+- Examples of what to remember: "User focuses on enterprise clients", "Stripe sync was fixed by reconnecting on March 15", "User prefers weekly pipeline reviews".
+- Don't save trivial or temporary information.
+
+AUTO-ESCALATION:
+- If you CANNOT resolve the user's issue after investigation (e.g., a bug, data corruption, billing dispute, platform error), use `escalate_to_ticket` to create a support ticket automatically.
+- Include ALL context: what you investigated, what you found, and what remains unresolved.
+- Tell the user you've escalated and what to expect.
+- Escalate when: the issue requires human/engineering intervention, you've hit the limits of your tools, the user explicitly asks for human help, or you detect the same issue recurring.
+
+{user_memories}
+
 PERSONALITY:
 - You're a sharp revenue operations analyst
 - Lead with insights, not just data dumps
 - Flag risks and opportunities proactively
 - Be direct and actionable
+- Reference past context naturally when relevant
 
 USER CONTEXT:
 - Name: {user_name}
@@ -245,6 +274,53 @@ async def execute_tool(tool_name: str, params: Dict[str, str], user: User) -> Di
         ).to_list(10)
         return {"results": deals, "count": len(deals)}
 
+    elif tool_name == "remember":
+        fact = params.get("fact", "").strip()
+        if not fact:
+            return {"error": "No fact provided to remember"}
+        now = datetime.now(timezone.utc)
+        await db.agent_memory.update_one(
+            {"user_id": user_id},
+            {"$push": {"memories": {"fact": fact, "saved_at": now.isoformat()}},
+             "$set": {"updated_at": now.isoformat()},
+             "$setOnInsert": {"created_at": now.isoformat()}},
+            upsert=True,
+        )
+        # Keep only the latest 50 memories per user
+        await db.agent_memory.update_one(
+            {"user_id": user_id},
+            {"$push": {"memories": {"$each": [], "$slice": -50}}}
+        )
+        return {"saved": True, "fact": fact}
+
+    elif tool_name == "recall_memory":
+        mem_doc = await db.agent_memory.find_one({"user_id": user_id}, {"_id": 0, "memories": 1})
+        memories = mem_doc.get("memories", []) if mem_doc else []
+        return {"memories": memories, "count": len(memories)}
+
+    elif tool_name == "escalate_to_ticket":
+        subject = params.get("subject", "Auto-escalated issue")
+        summary = params.get("summary", "The agent could not resolve this issue.")
+        severity = params.get("severity", "medium")
+        now = datetime.now(timezone.utc)
+        ticket_id = f"ticket_{uuid.uuid4().hex[:12]}"
+        ticket = {
+            "ticket_id": ticket_id,
+            "user_id": user_id,
+            "subject": f"[Auto-Escalated] {subject}",
+            "description": summary,
+            "status": "open",
+            "priority": "priority" if severity == "high" else "normal",
+            "severity": severity,
+            "source": "agent_escalation",
+            "conversation_id": params.get("_conversation_id"),
+            "created_at": now.isoformat(),
+            "updated_at": now.isoformat(),
+        }
+        await db.support_tickets.insert_one(ticket)
+        del ticket["_id"]
+        return {"escalated": True, "ticket_id": ticket_id, "subject": subject, "severity": severity}
+
     return {"error": f"Unknown tool: {tool_name}"}
 
 
@@ -317,12 +393,21 @@ async def agent_chat(msg: AgentMessage, user: User = Depends(get_current_user)):
         )
         history = conv.get("messages", [])[-10:]
 
+        # Load user memories for cross-conversation context
+        mem_doc = await db.agent_memory.find_one({"user_id": user.user_id}, {"_id": 0, "memories": 1})
+        memories = mem_doc.get("memories", []) if mem_doc else []
+        memory_text = ""
+        if memories:
+            memory_lines = [f"- {m['fact']} (saved {m.get('saved_at', 'unknown')})" for m in memories[-20:]]
+            memory_text = "SAVED MEMORIES ABOUT THIS USER:\n" + "\n".join(memory_lines)
+
         # Build system prompt
         tools_desc = build_tools_description()
         system_prompt = AGENT_SYSTEM_PROMPT.format(
             tools_description=tools_desc,
             user_name=user.name,
             user_plan=user.subscription_tier,
+            user_memories=memory_text,
         )
 
         # Build conversation context
@@ -369,6 +454,9 @@ async def agent_chat(msg: AgentMessage, user: User = Depends(get_current_user)):
                 for tc in tool_calls:
                     tool_name = tc["tool"]
                     tool_params = tc["params"]
+                    # Inject conversation_id for escalation tool
+                    if tool_name == "escalate_to_ticket":
+                        tool_params["_conversation_id"] = conv_id
                     if tool_name in AGENT_TOOLS:
                         try:
                             result = await execute_tool(tool_name, tool_params, user)
@@ -390,6 +478,15 @@ async def agent_chat(msg: AgentMessage, user: User = Depends(get_current_user)):
                 if iteration == max_iterations - 1:
                     final_response = clean_tool_calls(ai_response) or "I've gathered the data but couldn't formulate a complete response. Here's what I found in the investigation steps."
 
+        # Check if auto-escalation happened
+        escalated_ticket = None
+        memory_saved = False
+        for s in steps:
+            if s["tool"] == "escalate_to_ticket" and s["result"].get("escalated"):
+                escalated_ticket = s["result"]
+            if s["tool"] == "remember" and s["result"].get("saved"):
+                memory_saved = True
+
         # Also parse any remaining action blocks (upgrade/cancel/connect)
         from routes.support import parse_actions
         clean_response, actions = parse_actions(final_response)
@@ -399,8 +496,10 @@ async def agent_chat(msg: AgentMessage, user: User = Depends(get_current_user)):
             "role": "assistant",
             "content": clean_response,
             "mode": "agent",
-            "steps": [{"tool": s["tool"], "params": s["params"], "summary": _summarize_result(s)} for s in steps],
+            "steps": [{"tool": s["tool"], "params": {k: v for k, v in s["params"].items() if not k.startswith("_")}, "summary": _summarize_result(s)} for s in steps],
             "actions": actions,
+            "escalated": escalated_ticket,
+            "memory_saved": memory_saved,
             "timestamp": datetime.now(timezone.utc).isoformat(),
         }
         await db.support_conversations.update_one(
@@ -411,9 +510,11 @@ async def agent_chat(msg: AgentMessage, user: User = Depends(get_current_user)):
         return {
             "conversation_id": conv_id,
             "response": clean_response,
-            "steps": [{"tool": s["tool"], "params": s["params"], "summary": _summarize_result(s)} for s in steps],
+            "steps": [{"tool": s["tool"], "params": {k: v for k, v in s["params"].items() if not k.startswith("_")}, "summary": _summarize_result(s)} for s in steps],
             "actions": actions,
             "mode": "agent",
+            "escalated": escalated_ticket,
+            "memory_saved": memory_saved,
         }
 
     except ImportError:
@@ -451,4 +552,10 @@ def _summarize_result(step: Dict) -> str:
         return f"Forecasted revenue: ${s.get('expected_total', 0):,.0f} (expected)"
     elif tool == "search_deals":
         return f"Found {result.get('count', 0)} matching deals"
+    elif tool == "remember":
+        return f"Saved: {result.get('fact', '')[:60]}"
+    elif tool == "recall_memory":
+        return f"Loaded {result.get('count', 0)} memories"
+    elif tool == "escalate_to_ticket":
+        return f"Escalated: {result.get('subject', 'Issue')} ({result.get('severity', 'medium')})" if result.get("escalated") else result.get("error", "Failed")
     return "Completed"

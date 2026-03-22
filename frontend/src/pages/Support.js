@@ -49,6 +49,9 @@ const TOOL_ICONS = {
   update_deal_stage: ArrowRightLeft,
   get_forecast: TrendingUp,
   search_deals: Search,
+  remember: Database,
+  recall_memory: Database,
+  escalate_to_ticket: AlertCircle,
 };
 
 const TOOL_LABELS = {
@@ -61,6 +64,9 @@ const TOOL_LABELS = {
   update_deal_stage: 'Updating deal',
   get_forecast: 'Running forecast',
   search_deals: 'Searching deals',
+  remember: 'Saving to memory',
+  recall_memory: 'Loading memories',
+  escalate_to_ticket: 'Escalating to ticket',
 };
 
 const Support = () => {
@@ -149,8 +155,13 @@ const Support = () => {
           actions: data.actions || [],
           steps: data.steps || [],
           mode: data.mode || (agentMode ? 'agent' : 'chat'),
+          escalated: data.escalated || null,
+          memory_saved: data.memory_saved || false,
           timestamp: new Date().toISOString(),
         }]);
+        if (data.escalated) {
+          toast.success(`Issue auto-escalated to support ticket`);
+        }
         fetchData();
       } else {
         toast.error('Failed to send message');
@@ -462,6 +473,28 @@ const Support = () => {
                                 </button>
                               );
                             })}
+                          </div>
+                        )}
+
+                        {/* Auto-Escalation Card */}
+                        {msg.escalated && (
+                          <div className="mt-3 p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg" data-testid="escalation-card">
+                            <div className="flex items-center gap-2 mb-1.5">
+                              <AlertCircle className="w-4 h-4 text-amber-400" />
+                              <span className="text-amber-400 text-xs font-semibold uppercase tracking-wider">Auto-Escalated</span>
+                            </div>
+                            <p className="text-zinc-300 text-xs">
+                              Ticket <span className="text-white font-mono">{msg.escalated.ticket_id}</span> created with {msg.escalated.severity || 'medium'} severity.
+                              Our team will review and follow up.
+                            </p>
+                          </div>
+                        )}
+
+                        {/* Memory Saved Indicator */}
+                        {msg.memory_saved && (
+                          <div className="mt-2 flex items-center gap-1.5 text-[10px] text-violet-400/70" data-testid="memory-saved-indicator">
+                            <Database className="w-3 h-3" />
+                            <span>Context saved to memory</span>
                           </div>
                         )}
 
