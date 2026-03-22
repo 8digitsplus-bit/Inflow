@@ -5,7 +5,7 @@ import CustomApiModal from '../components/CustomApiModal';
 import {
   CreditCard, ShoppingBag, Users, Cloud, Calculator, Check, Loader2, RefreshCw, Unplug,
   ArrowRight, Zap, Database, TrendingUp, Clock, Key, ExternalLink, Shield, X,
-  FileSpreadsheet, Globe, Sparkles, Upload,
+  FileSpreadsheet, Globe, Sparkles, Upload, AlertTriangle,
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -21,8 +21,8 @@ const ConnectBusiness = () => {
   const [detectedPlatforms, setDetectedPlatforms] = useState([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
-  const [stripeKeyModal, setStripeKeyModal] = useState(false);
-  const [stripeKey, setStripeKey] = useState('');
+  const [connectModal, setConnectModal] = useState(null); // platform object or null
+  const [connectFields, setConnectFields] = useState({});
   const [csvModal, setCsvModal] = useState(false);
   const [apiModal, setApiModal] = useState(false);
 
@@ -50,34 +50,47 @@ const ConnectBusiness = () => {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  const handleConnect = async (platformId) => {
-    if (platformId === 'stripe') { setStripeKeyModal(true); return; }
-    setActionLoading(platformId);
-    try {
-      const res = await fetch(`${API_URL}/api/business/connect/${platformId}`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-      });
-      const data = await res.json();
-      if (res.ok) { toast.success(data.message); await fetchData(); }
-      else toast.error(data.detail || 'Failed to connect');
-    } catch { toast.error('Connection failed'); }
-    finally { setActionLoading(null); }
+  const openConnectModal = (platform) => {
+    setConnectModal(platform);
+    const initial = {};
+    (platform.key_fields || []).forEach(f => { initial[f.name] = ''; });
+    setConnectFields(initial);
   };
 
-  const handleStripeConnect = async () => {
-    if (!stripeKey.trim()) { toast.error('Please enter your Stripe API key'); return; }
-    if (!stripeKey.startsWith('sk_')) { toast.error('API key must start with sk_test_ or sk_live_'); return; }
-    setActionLoading('stripe');
+  const handleConnect = async () => {
+    if (!connectModal) return;
+    const platform = connectModal;
+
+    // Validate required fields
+    for (const field of (platform.key_fields || [])) {
+      if (!connectFields[field.name]?.trim()) {
+        toast.error(`${field.label} is required`);
+        return;
+      }
+    }
+
+    setActionLoading(platform.platform_id);
     try {
-      const res = await fetch(`${API_URL}/api/business/connect/stripe`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include',
-        body: JSON.stringify({ api_key: stripeKey }),
+      const res = await fetch(`${API_URL}/api/business/connect/${platform.platform_id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(connectFields),
       });
       const data = await res.json();
-      if (res.ok) { toast.success(data.message); setStripeKeyModal(false); setStripeKey(''); await fetchData(); }
-      else toast.error(data.detail || 'Failed to connect Stripe');
-    } catch { toast.error('Connection failed'); }
-    finally { setActionLoading(null); }
+      if (res.ok) {
+        toast.success(data.message);
+        setConnectModal(null);
+        setConnectFields({});
+        await fetchData();
+      } else {
+        toast.error(data.detail || 'Failed to connect');
+      }
+    } catch {
+      toast.error('Connection failed');
+    } finally {
+      setActionLoading(null);
+    }
   };
 
   const handleDisconnect = async (platformId) => {
@@ -197,22 +210,21 @@ const ConnectBusiness = () => {
               </div>
               <div className="flex-1">
                 <h4 className="text-sm font-medium text-white mb-1" style={{ fontFamily: 'Outfit' }}>Platform Detected in Your Data</h4>
-                <p className="text-xs text-zinc-400 mb-3">
-                  We analyzed your imported data and found patterns from known platforms. Connect them directly for real-time sync!
-                </p>
+                <p className="text-xs text-zinc-400 mb-3">We analyzed your imported data and found patterns from known platforms. Connect them directly for real-time sync!</p>
                 <div className="flex flex-wrap gap-2">
-                  {detectedPlatforms.map(d => (
-                    <button
-                      key={d.platform_id}
-                      onClick={() => handleConnect(d.platform_id)}
-                      className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs hover:bg-indigo-500/20 transition-colors"
-                      data-testid={`detect-connect-${d.platform_id}`}
-                    >
-                      <Zap className="w-3 h-3" />
-                      Connect {d.platform_id.charAt(0).toUpperCase() + d.platform_id.slice(1)}
-                      <span className="text-indigo-500">({Math.round(d.confidence * 100)}% match)</span>
-                    </button>
-                  ))}
+                  {detectedPlatforms.map(d => {
+                    const plat = platforms.find(p => p.platform_id === d.platform_id);
+                    return (
+                      <button key={d.platform_id}
+                        onClick={() => plat && openConnectModal(plat)}
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs hover:bg-indigo-500/20 transition-colors"
+                        data-testid={`detect-connect-${d.platform_id}`}>
+                        <Zap className="w-3 h-3" />
+                        Connect {d.platform_id.charAt(0).toUpperCase() + d.platform_id.slice(1)}
+                        <span className="text-indigo-500">({Math.round(d.confidence * 100)}% match)</span>
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -227,7 +239,7 @@ const ConnectBusiness = () => {
             </div>
             <h3 className="text-lg font-semibold text-white mb-2" style={{ fontFamily: 'Outfit' }}>No data sources connected yet</h3>
             <p className="text-zinc-400 text-sm max-w-md mx-auto">
-              Connect a platform, import a CSV, or plug in your own API to unlock powerful insights across all dashboards.
+              Connect a platform, upload a CSV, or plug in your own API to unlock powerful insights across all dashboards.
             </p>
           </div>
         )}
@@ -242,7 +254,6 @@ const ConnectBusiness = () => {
             <div className="space-y-4">
               <h2 className="text-sm font-medium text-zinc-500 uppercase tracking-wider">Import Your Data</h2>
               <div className="grid md:grid-cols-2 gap-4">
-                {/* CSV Import Card */}
                 <Card className="bg-zinc-950/50 border border-white/10 hover:border-emerald-500/30 transition-all duration-300 cursor-pointer group"
                   onClick={() => setCsvModal(true)} data-testid="csv-import-card">
                   <CardContent className="p-5">
@@ -255,9 +266,7 @@ const ConnectBusiness = () => {
                         <span className="text-[11px] text-zinc-500 font-medium">Spreadsheet Upload</span>
                       </div>
                     </div>
-                    <p className="text-zinc-400 text-xs leading-relaxed mb-3">
-                      Upload a CSV file with your business data. Map columns to InFlow fields and import up to 5,000 records at once.
-                    </p>
+                    <p className="text-zinc-400 text-xs leading-relaxed mb-3">Upload a CSV file with your business data. Map columns to InFlow fields and import up to 5,000 records at once.</p>
                     <div className="flex flex-wrap gap-1.5 mb-4">
                       {['deals', 'customers', 'revenue', 'pipeline'].map(dt => (
                         <span key={dt} className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-zinc-800 text-zinc-400 capitalize">{dt}</span>
@@ -270,7 +279,6 @@ const ConnectBusiness = () => {
                   </CardContent>
                 </Card>
 
-                {/* Custom API Card */}
                 <Card className="bg-zinc-950/50 border border-white/10 hover:border-blue-500/30 transition-all duration-300 cursor-pointer group"
                   onClick={() => setApiModal(true)} data-testid="custom-api-card">
                   <CardContent className="p-5">
@@ -283,9 +291,7 @@ const ConnectBusiness = () => {
                         <span className="text-[11px] text-zinc-500 font-medium">Connect Any API</span>
                       </div>
                     </div>
-                    <p className="text-zinc-400 text-xs leading-relaxed mb-3">
-                      Connect any REST API endpoint. Test the connection, map response fields, and sync data automatically.
-                    </p>
+                    <p className="text-zinc-400 text-xs leading-relaxed mb-3">Connect any REST API endpoint. Test the connection, map response fields, and sync data automatically.</p>
                     <div className="flex flex-wrap gap-1.5 mb-4">
                       {['REST API', 'JSON', 'real-time', 'auto-sync'].map(dt => (
                         <span key={dt} className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-zinc-800 text-zinc-400">{dt}</span>
@@ -300,7 +306,7 @@ const ConnectBusiness = () => {
               </div>
             </div>
 
-            {/* Custom Sources (Connected CSV/API imports) */}
+            {/* Custom Sources */}
             {customSources.length > 0 && (
               <div className="space-y-4">
                 <h2 className="text-sm font-medium text-zinc-500 uppercase tracking-wider">Your Data Sources</h2>
@@ -324,16 +330,8 @@ const ConnectBusiness = () => {
                                 <span className="text-[11px] text-zinc-500 font-medium">{isCsv ? 'CSV Import' : 'Custom API'}</span>
                               </div>
                             </div>
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium">
-                              {source.is_live ? (
-                                <span className="bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded-full flex items-center gap-1">
-                                  <Zap className="w-3 h-3" /> Live
-                                </span>
-                              ) : (
-                                <span className="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full flex items-center gap-1">
-                                  <Check className="w-3 h-3" /> Imported
-                                </span>
-                              )}
+                            <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium flex items-center gap-1 ${source.is_live ? 'bg-indigo-500/20 text-indigo-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
+                              {source.is_live ? <><Zap className="w-3 h-3" /> Live</> : <><Check className="w-3 h-3" /> Imported</>}
                             </span>
                           </div>
                           <p className="text-zinc-400 text-xs mb-3">{source.records_synced} records synced</p>
@@ -391,12 +389,9 @@ const ConnectBusiness = () => {
                             </div>
                           </div>
                           {platform.connected && (
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium shrink-0" data-testid={`connected-badge-${platform.platform_id}`}>
-                              {platform.is_live ? (
-                                <span className="bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded-full flex items-center gap-1"><Zap className="w-3 h-3" /> Live</span>
-                              ) : (
-                                <span className="bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full flex items-center gap-1"><Check className="w-3 h-3" /> Demo</span>
-                              )}
+                            <span className="bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded-full text-[11px] font-medium flex items-center gap-1 shrink-0"
+                              data-testid={`connected-badge-${platform.platform_id}`}>
+                              <Zap className="w-3 h-3" /> Live
                             </span>
                           )}
                         </div>
@@ -409,22 +404,14 @@ const ConnectBusiness = () => {
                         )}
                         {platform.connected && platform.stats && (
                           <div className="grid grid-cols-2 gap-2 mb-3">
-                            <div className="bg-zinc-900/60 rounded-lg px-2.5 py-1.5">
-                              <span className="text-[10px] text-zinc-500 block">Customers</span>
-                              <span className="text-sm font-semibold text-white">{platform.stats.customers}</span>
-                            </div>
-                            <div className="bg-zinc-900/60 rounded-lg px-2.5 py-1.5">
-                              <span className="text-[10px] text-zinc-500 block">Revenue</span>
-                              <span className="text-sm font-semibold text-emerald-400">${(platform.stats.revenue || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}</span>
-                            </div>
-                            <div className="bg-zinc-900/60 rounded-lg px-2.5 py-1.5">
-                              <span className="text-[10px] text-zinc-500 block">Subscriptions</span>
-                              <span className="text-sm font-semibold text-white">{platform.stats.subscriptions}</span>
-                            </div>
-                            <div className="bg-zinc-900/60 rounded-lg px-2.5 py-1.5">
-                              <span className="text-[10px] text-zinc-500 block">Charges</span>
-                              <span className="text-sm font-semibold text-white">{platform.stats.charges}</span>
-                            </div>
+                            {Object.entries(platform.stats).slice(0, 4).map(([key, val]) => (
+                              <div key={key} className="bg-zinc-900/60 rounded-lg px-2.5 py-1.5">
+                                <span className="text-[10px] text-zinc-500 block capitalize">{key.replace(/_/g, ' ')}</span>
+                                <span className="text-sm font-semibold text-white">
+                                  {key === 'revenue' ? `$${(val || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}` : val}
+                                </span>
+                              </div>
+                            ))}
                           </div>
                         )}
                         <div className="flex flex-wrap gap-1.5 mb-4">
@@ -441,25 +428,26 @@ const ConnectBusiness = () => {
                             <div className="flex items-center gap-2">
                               <Button size="sm" variant="outline"
                                 className="flex-1 border-zinc-700 text-zinc-300 hover:bg-indigo-500/10 hover:text-indigo-400 hover:border-indigo-500/30 text-xs h-8"
-                                onClick={() => handleSync(platform.platform_id)} disabled={isSyncing} data-testid={`sync-${platform.platform_id}`}>
+                                onClick={() => handleSync(platform.platform_id)} disabled={isSyncing}
+                                data-testid={`sync-${platform.platform_id}`}>
                                 {isSyncing ? <Loader2 className="w-3 h-3 animate-spin mr-1.5" /> : <RefreshCw className="w-3 h-3 mr-1.5" />} Re-sync
                               </Button>
                               <Button size="sm" variant="ghost"
                                 className="text-zinc-500 hover:text-red-400 hover:bg-red-500/10 text-xs h-8 px-3"
-                                onClick={() => handleDisconnect(platform.platform_id)} disabled={isDisconnecting} data-testid={`disconnect-${platform.platform_id}`}>
+                                onClick={() => handleDisconnect(platform.platform_id)} disabled={isDisconnecting}
+                                data-testid={`disconnect-${platform.platform_id}`}>
                                 {isDisconnecting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Unplug className="w-3 h-3" />}
                               </Button>
                             </div>
                           </div>
                         ) : (
                           <Button className="w-full bg-indigo-600 hover:bg-indigo-500 text-xs h-9"
-                            onClick={() => handleConnect(platform.platform_id)} disabled={isConnecting} data-testid={`connect-${platform.platform_id}`}>
+                            onClick={() => openConnectModal(platform)} disabled={isConnecting}
+                            data-testid={`connect-${platform.platform_id}`}>
                             {isConnecting ? (
                               <><Loader2 className="w-3.5 h-3.5 animate-spin mr-2" />Connecting...</>
-                            ) : platform.requires_key ? (
-                              <><Key className="w-3.5 h-3.5 mr-2" />Connect with API Key</>
                             ) : (
-                              <><ArrowRight className="w-3.5 h-3.5 mr-2" />Connect</>
+                              <><Key className="w-3.5 h-3.5 mr-2" />Connect with API Key</>
                             )}
                           </Button>
                         )}
@@ -481,56 +469,83 @@ const ConnectBusiness = () => {
             <div>
               <h4 className="text-sm font-medium text-white mb-1" style={{ fontFamily: 'Outfit' }}>How it works</h4>
               <p className="text-xs text-zinc-400 leading-relaxed">
-                Connect platforms, upload CSVs, or plug in your own API — InFlow syncs your business data and feeds it into your Sales Pipeline, Performance, Revenue, and all other analytics.
-                Stripe uses your real API key for live data. Custom APIs support real-time re-sync. CSV imports are a one-time upload.
-                InFlow automatically detects if your data comes from known platforms and suggests direct integrations.
+                All 5 platforms use your real API credentials to fetch live data from your business accounts.
+                Stripe, Shopify, and HubSpot tokens don't expire. Salesforce and QuickBooks tokens are temporary and may need refreshing.
+                You can also upload CSVs or connect any custom API. InFlow detects known platforms in your data and suggests direct integrations.
               </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Stripe API Key Modal */}
-      {stripeKeyModal && (
+      {/* Generic Platform Connect Modal */}
+      {connectModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => { setStripeKeyModal(false); setStripeKey(''); }} />
-          <div className="relative bg-zinc-900 border border-zinc-800 rounded-2xl p-6 w-full max-w-md shadow-2xl" data-testid="stripe-key-modal">
-            <button onClick={() => { setStripeKeyModal(false); setStripeKey(''); }} className="absolute top-4 right-4 text-zinc-500 hover:text-white">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => { setConnectModal(null); setConnectFields({}); }} />
+          <div className="relative bg-zinc-900 border border-zinc-800 rounded-2xl p-6 w-full max-w-md shadow-2xl" data-testid="platform-connect-modal">
+            <button onClick={() => { setConnectModal(null); setConnectFields({}); }} className="absolute top-4 right-4 text-zinc-500 hover:text-white" data-testid="platform-modal-close">
               <X className="w-5 h-5" />
             </button>
             <div className="flex items-center gap-3 mb-5">
-              <div className="w-10 h-10 rounded-xl bg-[#635BFF]/15 flex items-center justify-center">
-                <CreditCard className="w-5 h-5 text-[#635BFF]" />
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${connectModal.color}20` }}>
+                {(() => { const Icon = ICON_MAP[connectModal.icon] || Database; return <Icon className="w-5 h-5" style={{ color: connectModal.color }} />; })()}
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-white" style={{ fontFamily: 'Outfit' }}>Connect Stripe</h3>
-                <p className="text-xs text-zinc-500">Enter your API key to sync live data</p>
+                <h3 className="text-lg font-semibold text-white" style={{ fontFamily: 'Outfit' }}>Connect {connectModal.name}</h3>
+                <p className="text-xs text-zinc-500">Enter your credentials to sync live data</p>
               </div>
             </div>
             <div className="space-y-4">
-              <div>
-                <label className="text-xs font-medium text-zinc-400 block mb-1.5">Secret API Key</label>
-                <input type="password" value={stripeKey} onChange={(e) => setStripeKey(e.target.value)}
-                  placeholder="sk_test_... or sk_live_..."
-                  className="w-full px-3 py-2.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm placeholder:text-zinc-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
-                  data-testid="stripe-api-key-input" />
-              </div>
+              {(connectModal.key_fields || []).map(field => (
+                <div key={field.name}>
+                  <label className="text-xs font-medium text-zinc-400 block mb-1.5">{field.label}</label>
+                  <input
+                    type={field.type || 'text'}
+                    value={connectFields[field.name] || ''}
+                    onChange={(e) => setConnectFields(f => ({ ...f, [field.name]: e.target.value }))}
+                    placeholder={field.placeholder}
+                    className="w-full px-3 py-2.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm placeholder:text-zinc-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
+                    data-testid={`connect-field-${field.name}`}
+                  />
+                </div>
+              ))}
+
+              {connectModal.token_expires && (
+                <div className="flex items-start gap-2 p-3 bg-amber-500/5 rounded-lg border border-amber-500/20">
+                  <AlertTriangle className="w-4 h-4 text-amber-400 mt-0.5 flex-shrink-0" />
+                  <div className="text-[11px] text-amber-300/80 leading-relaxed">
+                    This platform's access tokens are temporary. You may need to reconnect periodically when the token expires.
+                  </div>
+                </div>
+              )}
+
               <div className="flex items-start gap-2 p-3 bg-zinc-800/50 rounded-lg border border-zinc-700/50">
                 <Shield className="w-4 h-4 text-indigo-400 mt-0.5 flex-shrink-0" />
                 <div className="text-[11px] text-zinc-400 leading-relaxed">
-                  Your key is stored securely and only used to read your Stripe data. We never modify your Stripe account.
+                  Your credentials are stored securely and only used to read your {connectModal.name} data. We never modify your account.
                 </div>
               </div>
-              <a href="https://dashboard.stripe.com/apikeys" target="_blank" rel="noopener noreferrer"
-                className="flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
-                <ExternalLink className="w-3 h-3" /> Find your API key on Stripe Dashboard
-              </a>
+
+              {connectModal.key_help_url && (
+                <a href={connectModal.key_help_url} target="_blank" rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
+                  <ExternalLink className="w-3 h-3" /> {connectModal.key_help_text || `Get your ${connectModal.name} credentials`}
+                </a>
+              )}
+
               <div className="flex gap-3 pt-2">
                 <Button variant="outline" className="flex-1 border-zinc-700 text-zinc-300 hover:bg-indigo-500/10 hover:text-indigo-400 hover:border-indigo-500/30"
-                  onClick={() => { setStripeKeyModal(false); setStripeKey(''); }}>Cancel</Button>
-                <Button className="flex-1 bg-[#635BFF] hover:bg-[#5851ea] text-white"
-                  onClick={handleStripeConnect} disabled={actionLoading === 'stripe' || !stripeKey.trim()} data-testid="stripe-connect-submit">
-                  {actionLoading === 'stripe' ? <><Loader2 className="w-3.5 h-3.5 animate-spin mr-2" />Connecting...</> : <><Zap className="w-3.5 h-3.5 mr-2" />Connect & Sync</>}
+                  onClick={() => { setConnectModal(null); setConnectFields({}); }}>Cancel</Button>
+                <Button className="flex-1 text-white"
+                  style={{ backgroundColor: connectModal.color }}
+                  onClick={handleConnect}
+                  disabled={actionLoading === connectModal.platform_id}
+                  data-testid="platform-connect-submit">
+                  {actionLoading === connectModal.platform_id ? (
+                    <><Loader2 className="w-3.5 h-3.5 animate-spin mr-2" />Connecting...</>
+                  ) : (
+                    <><Zap className="w-3.5 h-3.5 mr-2" />Connect & Sync</>
+                  )}
                 </Button>
               </div>
             </div>

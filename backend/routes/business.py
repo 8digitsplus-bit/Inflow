@@ -1,14 +1,17 @@
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from typing import Optional
 import uuid
-import random
 
 from database import db
 from models import User
 from dependencies import get_current_user
 from routes.stripe_integration import validate_stripe_key, fetch_stripe_data
+from routes.shopify_integration import validate_shopify_key, fetch_shopify_data
+from routes.hubspot_integration import validate_hubspot_key, fetch_hubspot_data
+from routes.salesforce_integration import validate_salesforce_key, fetch_salesforce_data
+from routes.quickbooks_integration import validate_quickbooks_key, fetch_quickbooks_data
 
 router = APIRouter()
 
@@ -22,8 +25,11 @@ PLATFORMS = {
         "category": "Payments",
         "data_types": ["revenue", "subscriptions", "customers", "invoices"],
         "requires_key": True,
-        "key_placeholder": "sk_live_... or sk_test_...",
-        "key_help": "Find your API key at dashboard.stripe.com/apikeys",
+        "key_fields": [
+            {"name": "api_key", "label": "Secret API Key", "placeholder": "sk_test_... or sk_live_...", "type": "password"},
+        ],
+        "key_help_url": "https://dashboard.stripe.com/apikeys",
+        "key_help_text": "Find your API key on the Stripe Dashboard under Developers > API Keys.",
     },
     "shopify": {
         "platform_id": "shopify",
@@ -33,7 +39,13 @@ PLATFORMS = {
         "color": "#96BF48",
         "category": "E-Commerce",
         "data_types": ["orders", "customers", "products", "revenue"],
-        "requires_key": False,
+        "requires_key": True,
+        "key_fields": [
+            {"name": "store_url", "label": "Store URL", "placeholder": "mystore.myshopify.com", "type": "text"},
+            {"name": "api_key", "label": "Admin API Access Token", "placeholder": "shpat_...", "type": "password"},
+        ],
+        "key_help_url": "https://admin.shopify.com/store/YOUR_STORE/settings/apps/development",
+        "key_help_text": "Go to Shopify Admin > Settings > Apps > Develop apps > Create app > Configure Admin API scopes (read_orders, read_customers) > Install > Get Access Token.",
     },
     "hubspot": {
         "platform_id": "hubspot",
@@ -43,7 +55,12 @@ PLATFORMS = {
         "color": "#FF7A59",
         "category": "CRM",
         "data_types": ["deals", "contacts", "pipeline", "activities"],
-        "requires_key": False,
+        "requires_key": True,
+        "key_fields": [
+            {"name": "api_key", "label": "Private App Access Token", "placeholder": "pat-na1-...", "type": "password"},
+        ],
+        "key_help_url": "https://app.hubspot.com/private-apps/",
+        "key_help_text": "Go to HubSpot > Settings > Integrations > Private Apps > Create > Grant CRM scopes (crm.objects.deals.read, crm.objects.contacts.read) > Create app > Copy access token.",
     },
     "salesforce": {
         "platform_id": "salesforce",
@@ -53,7 +70,14 @@ PLATFORMS = {
         "color": "#00A1E0",
         "category": "CRM",
         "data_types": ["opportunities", "accounts", "contacts", "pipeline"],
-        "requires_key": False,
+        "requires_key": True,
+        "key_fields": [
+            {"name": "instance_url", "label": "Instance URL", "placeholder": "mycompany.my.salesforce.com", "type": "text"},
+            {"name": "api_key", "label": "Access Token", "placeholder": "Your Salesforce access token", "type": "password"},
+        ],
+        "key_help_url": "https://help.salesforce.com/s/articleView?id=sf.connected_app_create_api_integration.htm",
+        "key_help_text": "Use a Connected App or the Salesforce CLI to get an access token. Note: tokens expire after ~2 hours.",
+        "token_expires": True,
     },
     "quickbooks": {
         "platform_id": "quickbooks",
@@ -63,62 +87,144 @@ PLATFORMS = {
         "color": "#2CA01C",
         "category": "Finance",
         "data_types": ["invoices", "expenses", "revenue", "accounts"],
-        "requires_key": False,
+        "requires_key": True,
+        "key_fields": [
+            {"name": "company_id", "label": "Company ID (Realm ID)", "placeholder": "1234567890", "type": "text"},
+            {"name": "api_key", "label": "Access Token", "placeholder": "Your QuickBooks access token", "type": "password"},
+        ],
+        "key_help_url": "https://developer.intuit.com/app/developer/playground",
+        "key_help_text": "Use the Intuit Developer OAuth Playground to get an access token and Company ID. Note: tokens expire after ~1 hour.",
+        "token_expires": True,
     },
 }
-
-COMPANY_NAMES = [
-    "TechVision Labs", "Meridian Corp", "Apex Solutions", "NovaByte Inc",
-    "CrestLine Digital", "Pinnacle SaaS", "Orbit Analytics", "Zenith Group",
-    "BlueShift AI", "Catalyst Partners", "Evergreen Media", "FusionPoint",
-    "Momentum Dynamics", "Prism Ventures", "Quantum Reach", "SilverArc",
-    "TrueNorth Software", "Vertex Cloud", "Wavelength IO", "Atlas Enterprise",
-]
-
-DEAL_NAMES = [
-    "Annual Platform License", "Enterprise Upgrade", "Custom Integration",
-    "Premium Support Package", "Data Analytics Suite", "API Access Plan",
-    "Multi-seat Expansion", "Strategic Partnership", "Pilot Program",
-    "Cloud Migration", "Security Audit Package", "Training & Onboarding",
-    "White-label Solution", "Consulting Engagement", "Renewal - Q2",
-    "Upsell - Premium Tier", "New Business - Inbound", "Referral Deal",
-    "Expansion Revenue", "Cross-sell Bundle",
-]
-
-STAGES = ["lead", "qualified", "proposal", "negotiation", "closed_won", "closed_lost"]
 
 
 class ConnectRequest(BaseModel):
     api_key: Optional[str] = None
+    store_url: Optional[str] = None
+    instance_url: Optional[str] = None
+    company_id: Optional[str] = None
+    sandbox: Optional[bool] = False
 
 
-def _generate_synced_deals(user_id: str, platform: str, count: int = 15):
-    """Generate mock business data for non-Stripe platforms."""
-    deals = []
-    now = datetime.now(timezone.utc)
+async def _connect_stripe(body: ConnectRequest, user_id: str, now: str):
+    if not body.api_key:
+        raise HTTPException(status_code=400, detail="Stripe API key is required")
+    validation = await validate_stripe_key(body.api_key)
+    if not validation["valid"]:
+        raise HTTPException(status_code=400, detail=validation.get("error", "Invalid Stripe API key"))
+    data = await fetch_stripe_data(body.api_key, user_id)
+    connection = {
+        "connection_id": f"conn_{uuid.uuid4().hex[:12]}",
+        "user_id": user_id, "platform": "stripe",
+        "connected_at": now, "last_synced": now,
+        "records_synced": data["total_records"], "sync_status": "synced",
+        "account_name": validation.get("account_name", "Stripe Account"),
+        "account_id": validation.get("account_id", ""),
+        "api_key_last4": body.api_key[-4:],
+        "api_key_encrypted": body.api_key,
+        "stats": data["stats"], "is_live": True,
+    }
+    return data, connection, validation.get("account_name")
 
-    for i in range(count):
-        stage = random.choices(STAGES, weights=[20, 20, 20, 15, 15, 10], k=1)[0]
-        prob_map = {
-            "lead": random.randint(10, 25), "qualified": random.randint(25, 45),
-            "proposal": random.randint(45, 65), "negotiation": random.randint(65, 85),
-            "closed_won": 100, "closed_lost": 0,
-        }
-        value = round(random.uniform(2000, 85000), 2)
-        days_ago = random.randint(1, 120)
-        created = now - timedelta(days=days_ago)
 
-        deals.append({
-            "deal_id": f"deal_{uuid.uuid4().hex[:12]}",
-            "user_id": user_id,
-            "name": random.choice(DEAL_NAMES) + f" ({platform.title()})",
-            "company": random.choice(COMPANY_NAMES),
-            "value": value, "stage": stage, "probability": prob_map[stage],
-            "expected_close_date": (now + timedelta(days=random.randint(10, 90))).strftime("%Y-%m-%d") if stage not in ["closed_won", "closed_lost"] else None,
-            "notes": f"Synced from {platform.title()}", "source": platform,
-            "synced": True, "created_at": created.isoformat(), "updated_at": now.isoformat(),
-        })
-    return deals
+async def _connect_shopify(body: ConnectRequest, user_id: str, now: str):
+    if not body.api_key:
+        raise HTTPException(status_code=400, detail="Shopify access token is required")
+    if not body.store_url:
+        raise HTTPException(status_code=400, detail="Store URL is required")
+    validation = await validate_shopify_key(body.api_key, body.store_url)
+    if not validation["valid"]:
+        raise HTTPException(status_code=400, detail=validation.get("error", "Invalid Shopify credentials"))
+    data = await fetch_shopify_data(body.api_key, validation["store_url"], user_id)
+    connection = {
+        "connection_id": f"conn_{uuid.uuid4().hex[:12]}",
+        "user_id": user_id, "platform": "shopify",
+        "connected_at": now, "last_synced": now,
+        "records_synced": data["total_records"], "sync_status": "synced",
+        "account_name": validation.get("account_name", "Shopify Store"),
+        "api_key_last4": body.api_key[-4:],
+        "api_key_encrypted": body.api_key,
+        "store_url": validation["store_url"],
+        "stats": data["stats"], "is_live": True,
+    }
+    return data, connection, validation.get("account_name")
+
+
+async def _connect_hubspot(body: ConnectRequest, user_id: str, now: str):
+    if not body.api_key:
+        raise HTTPException(status_code=400, detail="HubSpot access token is required")
+    validation = await validate_hubspot_key(body.api_key)
+    if not validation["valid"]:
+        raise HTTPException(status_code=400, detail=validation.get("error", "Invalid HubSpot credentials"))
+    data = await fetch_hubspot_data(body.api_key, user_id)
+    connection = {
+        "connection_id": f"conn_{uuid.uuid4().hex[:12]}",
+        "user_id": user_id, "platform": "hubspot",
+        "connected_at": now, "last_synced": now,
+        "records_synced": data["total_records"], "sync_status": "synced",
+        "account_name": validation.get("account_name", "HubSpot Account"),
+        "api_key_last4": body.api_key[-4:],
+        "api_key_encrypted": body.api_key,
+        "stats": data["stats"], "is_live": True,
+    }
+    return data, connection, validation.get("account_name")
+
+
+async def _connect_salesforce(body: ConnectRequest, user_id: str, now: str):
+    if not body.api_key:
+        raise HTTPException(status_code=400, detail="Salesforce access token is required")
+    if not body.instance_url:
+        raise HTTPException(status_code=400, detail="Instance URL is required")
+    validation = await validate_salesforce_key(body.api_key, body.instance_url)
+    if not validation["valid"]:
+        raise HTTPException(status_code=400, detail=validation.get("error", "Invalid Salesforce credentials"))
+    data = await fetch_salesforce_data(body.api_key, validation["instance_url"], user_id)
+    connection = {
+        "connection_id": f"conn_{uuid.uuid4().hex[:12]}",
+        "user_id": user_id, "platform": "salesforce",
+        "connected_at": now, "last_synced": now,
+        "records_synced": data["total_records"], "sync_status": "synced",
+        "account_name": validation.get("account_name", "Salesforce Org"),
+        "api_key_last4": body.api_key[-4:],
+        "api_key_encrypted": body.api_key,
+        "instance_url": validation["instance_url"],
+        "stats": data["stats"], "is_live": True,
+    }
+    return data, connection, validation.get("account_name")
+
+
+async def _connect_quickbooks(body: ConnectRequest, user_id: str, now: str):
+    if not body.api_key:
+        raise HTTPException(status_code=400, detail="QuickBooks access token is required")
+    if not body.company_id:
+        raise HTTPException(status_code=400, detail="Company ID is required")
+    validation = await validate_quickbooks_key(body.api_key, body.company_id, body.sandbox or False)
+    if not validation["valid"]:
+        raise HTTPException(status_code=400, detail=validation.get("error", "Invalid QuickBooks credentials"))
+    data = await fetch_quickbooks_data(body.api_key, body.company_id, user_id, body.sandbox or False)
+    connection = {
+        "connection_id": f"conn_{uuid.uuid4().hex[:12]}",
+        "user_id": user_id, "platform": "quickbooks",
+        "connected_at": now, "last_synced": now,
+        "records_synced": data["total_records"], "sync_status": "synced",
+        "account_name": validation.get("account_name", "QuickBooks Company"),
+        "api_key_last4": body.api_key[-4:],
+        "api_key_encrypted": body.api_key,
+        "company_id": body.company_id,
+        "sandbox": body.sandbox or False,
+        "stats": data["stats"], "is_live": True,
+    }
+    return data, connection, validation.get("account_name")
+
+
+CONNECT_HANDLERS = {
+    "stripe": _connect_stripe,
+    "shopify": _connect_shopify,
+    "hubspot": _connect_hubspot,
+    "salesforce": _connect_salesforce,
+    "quickbooks": _connect_quickbooks,
+}
 
 
 @router.get("/business/platforms")
@@ -138,7 +244,7 @@ async def get_platforms(current_user: User = Depends(get_current_user)):
             "last_synced": conn.get("last_synced") if conn else None,
             "records_synced": conn.get("records_synced", 0) if conn else 0,
             "sync_status": conn.get("sync_status", "idle") if conn else "idle",
-            "is_live": pid == "stripe" and conn is not None,
+            "is_live": conn.get("is_live", False) if conn else False,
         }
         if conn and conn.get("account_name"):
             platform_data["account_name"] = conn["account_name"]
@@ -160,83 +266,30 @@ async def connect_platform(platform: str, body: ConnectRequest = ConnectRequest(
         raise HTTPException(status_code=400, detail="Platform already connected")
 
     now = datetime.now(timezone.utc).isoformat()
+    handler = CONNECT_HANDLERS.get(platform)
+    if not handler:
+        raise HTTPException(status_code=400, detail="Integration not available")
 
-    if platform == "stripe":
-        # Real Stripe integration
-        if not body.api_key:
-            raise HTTPException(status_code=400, detail="Stripe API key is required")
+    data, connection, account_name = await handler(body, current_user.user_id, now)
 
-        # Validate key
-        validation = await validate_stripe_key(body.api_key)
-        if not validation["valid"]:
-            raise HTTPException(status_code=400, detail=validation.get("error", "Invalid Stripe API key"))
+    if data["deals"]:
+        await db.deals.insert_many(data["deals"])
 
-        # Fetch real data
-        stripe_data = await fetch_stripe_data(body.api_key, current_user.user_id)
+    await db.business_connections.insert_one(connection)
+    await db.users.update_one(
+        {"user_id": current_user.user_id},
+        {"$set": {"has_business_connected": True}}
+    )
 
-        if stripe_data["deals"]:
-            await db.deals.insert_many(stripe_data["deals"])
-
-        connection = {
-            "connection_id": f"conn_{uuid.uuid4().hex[:12]}",
-            "user_id": current_user.user_id,
-            "platform": "stripe",
-            "connected_at": now,
-            "last_synced": now,
-            "records_synced": stripe_data["total_records"],
-            "sync_status": "synced",
-            "account_name": validation.get("account_name", "Stripe Account"),
-            "account_id": validation.get("account_id", ""),
-            "api_key_last4": body.api_key[-4:],
-            "api_key_encrypted": body.api_key,  # In production, encrypt this
-            "stats": stripe_data["stats"],
-            "is_live": True,
-        }
-        await db.business_connections.insert_one(connection)
-        await db.users.update_one(
-            {"user_id": current_user.user_id},
-            {"$set": {"has_business_connected": True}}
-        )
-
-        return {
-            "status": "connected",
-            "platform": "stripe",
-            "is_live": True,
-            "account_name": validation.get("account_name"),
-            "records_synced": stripe_data["total_records"],
-            "stats": stripe_data["stats"],
-            "message": f"Connected to {validation.get('account_name', 'Stripe')}. {stripe_data['total_records']} records synced from live data.",
-        }
-    else:
-        # Mock integration for other platforms
-        deal_count = random.randint(12, 20)
-        deals = _generate_synced_deals(current_user.user_id, platform, deal_count)
-        if deals:
-            await db.deals.insert_many(deals)
-
-        connection = {
-            "connection_id": f"conn_{uuid.uuid4().hex[:12]}",
-            "user_id": current_user.user_id,
-            "platform": platform,
-            "connected_at": now,
-            "last_synced": now,
-            "records_synced": len(deals),
-            "sync_status": "synced",
-            "is_live": False,
-        }
-        await db.business_connections.insert_one(connection)
-        await db.users.update_one(
-            {"user_id": current_user.user_id},
-            {"$set": {"has_business_connected": True}}
-        )
-
-        return {
-            "status": "connected",
-            "platform": platform,
-            "is_live": False,
-            "records_synced": len(deals),
-            "message": f"Connected {PLATFORMS[platform]['name']}. {len(deals)} records synced.",
-        }
+    return {
+        "status": "connected",
+        "platform": platform,
+        "is_live": True,
+        "account_name": account_name,
+        "records_synced": data["total_records"],
+        "stats": data.get("stats"),
+        "message": f"Connected to {account_name or PLATFORMS[platform]['name']}. {data['total_records']} records synced from live data.",
+    }
 
 
 @router.post("/business/disconnect/{platform}")
@@ -275,48 +328,48 @@ async def sync_platform(platform: str, current_user: User = Depends(get_current_
     if not connection:
         raise HTTPException(status_code=404, detail="Platform not connected")
 
+    api_key = connection.get("api_key_encrypted")
+    if not api_key:
+        raise HTTPException(status_code=400, detail="No API key found. Please reconnect.")
+
     # Remove old synced deals
     await db.deals.delete_many({"user_id": current_user.user_id, "source": platform, "synced": True})
-
     now = datetime.now(timezone.utc).isoformat()
 
-    if platform == "stripe" and connection.get("api_key_encrypted"):
-        # Real Stripe re-sync
-        stripe_data = await fetch_stripe_data(connection["api_key_encrypted"], current_user.user_id)
-        if stripe_data["deals"]:
-            await db.deals.insert_many(stripe_data["deals"])
+    try:
+        if platform == "stripe":
+            data = await fetch_stripe_data(api_key, current_user.user_id)
+        elif platform == "shopify":
+            data = await fetch_shopify_data(api_key, connection.get("store_url", ""), current_user.user_id)
+        elif platform == "hubspot":
+            data = await fetch_hubspot_data(api_key, current_user.user_id)
+        elif platform == "salesforce":
+            data = await fetch_salesforce_data(api_key, connection.get("instance_url", ""), current_user.user_id)
+        elif platform == "quickbooks":
+            data = await fetch_quickbooks_data(api_key, connection.get("company_id", ""), current_user.user_id, connection.get("sandbox", False))
+        else:
+            raise HTTPException(status_code=400, detail="Sync not supported for this platform")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Sync failed: {str(e)}")
 
-        await db.business_connections.update_one(
-            {"user_id": current_user.user_id, "platform": "stripe"},
-            {"$set": {
-                "last_synced": now,
-                "records_synced": stripe_data["total_records"],
-                "sync_status": "synced",
-                "stats": stripe_data["stats"],
-            }}
-        )
-        return {
-            "status": "synced", "platform": "stripe", "is_live": True,
-            "records_synced": stripe_data["total_records"],
-            "stats": stripe_data["stats"],
-            "message": f"Synced {stripe_data['total_records']} live records from Stripe.",
-        }
-    else:
-        # Mock re-sync
-        deal_count = random.randint(12, 20)
-        deals = _generate_synced_deals(current_user.user_id, platform, deal_count)
-        if deals:
-            await db.deals.insert_many(deals)
+    if data["deals"]:
+        await db.deals.insert_many(data["deals"])
 
-        await db.business_connections.update_one(
-            {"user_id": current_user.user_id, "platform": platform},
-            {"$set": {"last_synced": now, "records_synced": len(deals), "sync_status": "synced"}}
-        )
-        return {
-            "status": "synced", "platform": platform,
-            "records_synced": len(deals),
-            "message": f"Synced {len(deals)} records from {PLATFORMS[platform]['name']}.",
-        }
+    await db.business_connections.update_one(
+        {"user_id": current_user.user_id, "platform": platform},
+        {"$set": {
+            "last_synced": now,
+            "records_synced": data["total_records"],
+            "sync_status": "synced",
+            "stats": data.get("stats"),
+        }}
+    )
+    return {
+        "status": "synced", "platform": platform, "is_live": True,
+        "records_synced": data["total_records"],
+        "stats": data.get("stats"),
+        "message": f"Synced {data['total_records']} live records from {PLATFORMS[platform]['name']}.",
+    }
 
 
 @router.get("/business/summary")
