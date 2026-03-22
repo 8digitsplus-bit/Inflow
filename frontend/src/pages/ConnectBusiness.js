@@ -2,10 +2,11 @@ import { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import CsvImportModal from '../components/CsvImportModal';
 import CustomApiModal from '../components/CustomApiModal';
+import { useAuth } from '../contexts/AuthContext';
 import {
   CreditCard, ShoppingBag, Users, Cloud, Calculator, Check, Loader2, RefreshCw, Unplug,
   ArrowRight, Zap, Database, TrendingUp, Clock, Key, ExternalLink, Shield, X,
-  FileSpreadsheet, Globe, Sparkles, Upload, AlertTriangle,
+  FileSpreadsheet, Globe, Sparkles, Upload, AlertTriangle, Lock,
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -15,6 +16,7 @@ const API_URL = process.env.REACT_APP_BACKEND_URL;
 const ICON_MAP = { CreditCard, ShoppingBag, Users, Cloud, Calculator };
 
 const ConnectBusiness = () => {
+  const { user } = useAuth();
   const [platforms, setPlatforms] = useState([]);
   const [summary, setSummary] = useState(null);
   const [customSources, setCustomSources] = useState([]);
@@ -25,6 +27,11 @@ const ConnectBusiness = () => {
   const [connectFields, setConnectFields] = useState({});
   const [csvModal, setCsvModal] = useState(false);
   const [apiModal, setApiModal] = useState(false);
+
+  const TIER_LEVEL = { trial: 0, expired: -1, cancelled: -1, free: 0, essential_monthly: 1, essential_yearly: 1, pro_monthly: 2, pro_yearly: 2, enterprise_monthly: 3, enterprise_yearly: 3 };
+  const userTier = user?.subscription_tier || 'trial';
+  const userLevel = TIER_LEVEL[userTier] ?? 0;
+  const isEnterprise = userLevel >= 3;
 
   const fetchData = useCallback(async () => {
     try {
@@ -279,15 +286,22 @@ const ConnectBusiness = () => {
                   </CardContent>
                 </Card>
 
-                <Card className="bg-zinc-950/50 border border-white/10 hover:border-blue-500/30 transition-all duration-300 cursor-pointer group"
-                  onClick={() => setApiModal(true)} data-testid="custom-api-card">
+                <Card className={`bg-zinc-950/50 border transition-all duration-300 ${isEnterprise ? 'border-white/10 hover:border-blue-500/30 cursor-pointer group' : 'border-white/5 opacity-80'}`}
+                  onClick={() => isEnterprise ? setApiModal(true) : toast.error('Custom API is available on the Enterprise plan. Upgrade to unlock.')} data-testid="custom-api-card">
                   <CardContent className="p-5">
                     <div className="flex items-start gap-3 mb-3">
                       <div className="w-11 h-11 rounded-xl bg-blue-500/10 flex items-center justify-center shrink-0">
                         <Globe className="w-5 h-5 text-blue-400" />
                       </div>
-                      <div>
-                        <h3 className="text-white font-semibold text-sm" style={{ fontFamily: 'Outfit' }}>Custom API</h3>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-white font-semibold text-sm" style={{ fontFamily: 'Outfit' }}>Custom API</h3>
+                          {!isEnterprise && (
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-purple-500/15 text-purple-400 flex items-center gap-1" data-testid="custom-api-enterprise-badge">
+                              <Lock className="w-2.5 h-2.5" /> Enterprise
+                            </span>
+                          )}
+                        </div>
                         <span className="text-[11px] text-zinc-500 font-medium">Connect Any API</span>
                       </div>
                     </div>
@@ -297,10 +311,17 @@ const ConnectBusiness = () => {
                         <span key={dt} className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-zinc-800 text-zinc-400">{dt}</span>
                       ))}
                     </div>
-                    <Button className="w-full bg-blue-600 hover:bg-blue-500 text-xs h-9 group-hover:bg-blue-500 transition-colors"
-                      onClick={(e) => { e.stopPropagation(); setApiModal(true); }} data-testid="custom-api-btn">
-                      <Globe className="w-3.5 h-3.5 mr-2" /> Connect API
-                    </Button>
+                    {isEnterprise ? (
+                      <Button className="w-full bg-blue-600 hover:bg-blue-500 text-xs h-9 group-hover:bg-blue-500 transition-colors"
+                        onClick={(e) => { e.stopPropagation(); setApiModal(true); }} data-testid="custom-api-btn">
+                        <Globe className="w-3.5 h-3.5 mr-2" /> Connect API
+                      </Button>
+                    ) : (
+                      <Button className="w-full bg-zinc-800 hover:bg-zinc-700 text-zinc-400 text-xs h-9"
+                        onClick={(e) => { e.stopPropagation(); toast.error('Custom API is available on the Enterprise plan. Upgrade to unlock.'); }} data-testid="custom-api-locked-btn">
+                        <Lock className="w-3.5 h-3.5 mr-2" /> Enterprise Only
+                      </Button>
+                    )}
                   </CardContent>
                 </Card>
               </div>

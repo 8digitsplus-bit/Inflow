@@ -12,6 +12,8 @@ from dependencies import get_current_user
 
 router = APIRouter()
 
+ENTERPRISE_TIERS = {"enterprise_monthly", "enterprise_yearly"}
+
 STAGES = ["lead", "qualified", "proposal", "negotiation", "closed_won", "closed_lost"]
 PROB_MAP = {"lead": 15, "qualified": 35, "proposal": 55, "negotiation": 75, "closed_won": 100, "closed_lost": 0}
 
@@ -225,8 +227,15 @@ async def import_csv(body: CsvImportRequest, current_user: User = Depends(get_cu
     }
 
 
+def _require_enterprise(user: User):
+    tier = getattr(user, "subscription_tier", "trial") or "trial"
+    if tier not in ENTERPRISE_TIERS:
+        raise HTTPException(status_code=403, detail="Custom API integration requires an Enterprise plan.")
+
+
 @router.post("/business/custom-api/test")
 async def test_custom_api(body: CustomApiTestRequest, current_user: User = Depends(get_current_user)):
+    _require_enterprise(current_user)
     headers = dict(body.headers or {})
     params = {}
     if body.api_key:
@@ -318,6 +327,7 @@ async def _fetch_custom_api_data(config, user_id):
 
 @router.post("/business/custom-api/connect")
 async def connect_custom_api(body: CustomApiConnectRequest, current_user: User = Depends(get_current_user)):
+    _require_enterprise(current_user)
     config = {
         "name": body.name,
         "endpoint": body.endpoint,
