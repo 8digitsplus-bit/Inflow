@@ -43,7 +43,7 @@
 - CRO (funnel analysis, AI recommendations)
 - Pricing Optimizer (AI pricing strategy)
 - Smart Assist (Claude AI chat + tickets)
-- **Agentic AI** — Multi-step investigation agent with 9 tools (query_deals, analytics, integrations, forecast, churn, deal updates, search). Agent mode toggle, investigation step display, markdown rendering.
+- **Agentic AI** — Multi-step investigation agent with 12 tools (query_deals, analytics, integrations, forecast, churn, deal updates, search, **remember**, **recall_memory**, **escalate_to_ticket**). Agent mode toggle, investigation step display, markdown rendering, cross-conversation memory, auto-escalation to tickets.
 - All 5 Live Integrations functional (Stripe, Shopify, HubSpot, Salesforce, QuickBooks)
 - CSV Import + Custom API (Enterprise) + Platform Auto-Detection
 - Custom Stripe Checkout (Payment Intents) with Monzo/Revolut/Tide/Wise badges
@@ -54,7 +54,7 @@
 
 ## Bug Fixes
 - **2026-03-22:** Fixed Recharts tooltip white background on Revenue Forecast page Pipeline chart. Root cause: CSS `!important` rule overriding contentStyle, and BarChart cursor fill defaulting to white.
-- **2026-03-22:** Built Agentic AI system for Smart Assist with 9 autonomous tools, multi-step reasoning, investigation steps UI, and markdown rendering.
+- **2026-03-22:** Built Agentic AI system with 12 autonomous tools, multi-step reasoning, investigation steps UI, markdown rendering, cross-conversation memory (remember/recall), and auto-escalation to support tickets.
 
 ## Backlog
 - **P1:** Integration Health Dashboard (sync status, data freshness, token expiry)
