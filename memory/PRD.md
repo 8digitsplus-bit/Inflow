@@ -17,40 +17,41 @@
 - **Pro:** $149/mo, $1,490/yr
 - **Enterprise:** $249/mo, $2,490/yr
 
-## Live Integrations (ALL REAL — No Mocks)
+## Live Integrations (ALL REAL)
 | Platform | Auth Type | Fields Required | Token Expires |
 |----------|-----------|-----------------|---------------|
-| **Stripe** | Secret API Key | api_key (sk_...) | No |
-| **Shopify** | Admin Access Token | store_url + api_key (shpat_...) | No |
-| **HubSpot** | Private App Token | api_key (pat-...) | No |
-| **Salesforce** | Access Token | instance_url + api_key | Yes (~2 hrs) |
-| **QuickBooks** | Access Token | company_id + api_key | Yes (~1 hr) |
-
-Each platform: validates credentials via real API call, fetches live data, transforms to InFlow deals.
+| Stripe | Secret API Key | api_key | No |
+| Shopify | Admin Access Token | store_url + api_key | No |
+| HubSpot | Private App Token | api_key | No |
+| Salesforce | Access Token | instance_url + api_key | Yes (~2 hrs) |
+| QuickBooks | Access Token | company_id + api_key | Yes (~1 hr) |
 
 ## Data Import Options
-- **CSV Import** — Upload CSV, map columns, stage mapping, up to 5,000 records
-- **Custom API** — Connect any REST API endpoint, test + map + sync
-- **Platform Auto-Detection** — Detects Stripe/Shopify/HubSpot/Salesforce/QuickBooks patterns in imported data
+- **CSV Import** — Open to all users
+- **Custom API** — Enterprise-only, connect any REST API
+- **Platform Auto-Detection** — Detects known platform patterns in imported data
 
-## Key Features
-- Sales Pipeline, Performance, Revenue, Intelligence (tier-gated)
-- Pricing Optimizer, CRO, Churn & Retention (tier-gated with AI insights)
-- Smart Assist — Claude AI chat + ticket system
-- Custom embedded Stripe Checkout (Payment Intents)
+## All Completed Features
+- Authentication (Google + Email/Password)
+- Dashboard with personalized metrics
+- Sales Pipeline (deal management, stages, analytics)
+- Sales Performance (win rates, team metrics)
+- Revenue Analytics (breakdown, trends)
+- Revenue Intelligence (advanced insights)
+- **Revenue Forecast** (weighted pipeline, 3 scenarios, velocity, top deals) — Pro+ tier-gated
+- Churn & Retention (CLV, churn rate, AI predictions, cohort analysis)
+- CRO (funnel analysis, AI recommendations)
+- Pricing Optimizer (AI pricing strategy)
+- Smart Assist (Claude AI chat + tickets)
+- All 5 Live Integrations functional (Stripe, Shopify, HubSpot, Salesforce, QuickBooks)
+- CSV Import + Custom API (Enterprise) + Platform Auto-Detection
+- Custom Stripe Checkout (Payment Intents) with Monzo/Revolut/Tide/Wise badges
+- 14-Day Free Trial with countdown
+- Onboarding flow
+- Tier-Gating across all features
 - Collapsible sidebar with persistent state
-- Checkout accepts: Visa, Mastercard, Amex, PayPal, Apple Pay, Google Pay, Samsung Pay, Monzo, Revolut, Tide, Wise
-
-## Completed (as of March 22, 2026)
-- Full app: auth, payments, AI, onboarding, dashboard, analytics
-- **All 5 Live Integrations functional** (Stripe, Shopify, HubSpot, Salesforce, QuickBooks)
-- CSV Import + Custom API Integration + Platform Auto-Detection
-- InFlow branding, 14-day free trial, checkout with Monzo/Revolut/Tide/Wise badges
-- Smart Assist, Pricing Optimizer, all chart fixes, responsive design
 
 ## Backlog
 - **P1:** Support Operations (human handoff, admin panel, email notifications)
-- **P2:** AI Insights for Sales Pipeline/Performance/CRO pages
-- **P2:** Revenue Forecasting page with scenario modeling
 - **P2:** Team/Collaboration features
-- **P2:** API Access for Enterprise tier
+- **P2:** Public API Access for Enterprise tier
