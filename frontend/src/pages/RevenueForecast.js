@@ -33,10 +33,10 @@ const RevenueForecast = () => {
   const CustomTooltip = ({ active, payload, label }) => {
     if (!active || !payload?.length) return null;
     return (
-      <div className="bg-zinc-900 border border-zinc-700 rounded-lg px-3 py-2 shadow-xl text-xs">
-        <p className="text-zinc-400 font-medium mb-1.5">{label}</p>
+      <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-3 shadow-xl">
+        <p className="text-zinc-400 text-sm mb-1">{label}</p>
         {payload.map((entry, i) => (
-          <div key={i} className="flex items-center justify-between gap-4">
+          <div key={i} className="flex items-center justify-between gap-4 text-xs">
             <span className="flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
               <span className="text-zinc-400">{entry.name}</span>
@@ -139,7 +139,12 @@ const RevenueForecast = () => {
                 <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
                 <XAxis dataKey="month" tick={{ fill: '#71717a', fontSize: 11 }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fill: '#71717a', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={fmtK} />
-                <Tooltip content={<CustomTooltip />} />
+                <Tooltip
+                  content={({ active, payload, label }) => <CustomTooltip active={active} payload={payload} label={label} />}
+                  cursor={{ stroke: '#27272A' }}
+                  wrapperStyle={{ outline: 'none' }}
+                  contentStyle={{ backgroundColor: 'transparent', border: 'none', boxShadow: 'none', padding: 0 }}
+                />
                 <Area type="monotone" dataKey="best" name="Best Case" stroke="#10B981" fill="url(#gradBest)" strokeWidth={scenario === 'best' ? 2.5 : 1} strokeOpacity={scenario === 'best' ? 1 : 0.3} fillOpacity={scenario === 'best' ? 1 : 0.1} />
                 <Area type="monotone" dataKey="expected" name="Expected" stroke="#6366F1" fill="url(#gradExpected)" strokeWidth={scenario === 'expected' ? 2.5 : 1} strokeOpacity={scenario === 'expected' ? 1 : 0.3} fillOpacity={scenario === 'expected' ? 1 : 0.1} />
                 <Area type="monotone" dataKey="worst" name="Conservative" stroke="#F59E0B" fill="url(#gradWorst)" strokeWidth={scenario === 'worst' ? 2.5 : 1} strokeOpacity={scenario === 'worst' ? 1 : 0.3} fillOpacity={scenario === 'worst' ? 1 : 0.1} />
@@ -162,7 +167,12 @@ const RevenueForecast = () => {
                   <CartesianGrid strokeDasharray="3 3" stroke="#27272a" horizontal={false} />
                   <XAxis type="number" tick={{ fill: '#71717a', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={fmtK} />
                   <YAxis type="category" dataKey="stage" tick={{ fill: '#a1a1aa', fontSize: 11 }} axisLine={false} tickLine={false} width={85} />
-                  <Tooltip content={<CustomTooltip />} />
+                  <Tooltip
+                    content={({ active, payload, label }) => <CustomTooltip active={active} payload={payload} label={label} />}
+                    cursor={{ stroke: '#27272A' }}
+                    wrapperStyle={{ outline: 'none' }}
+                    contentStyle={{ backgroundColor: 'transparent', border: 'none', boxShadow: 'none', padding: 0 }}
+                  />
                   <Bar dataKey="weighted" name="Weighted Value" radius={[0, 6, 6, 0]} barSize={20}>
                     {(data.stage_forecast || []).map((entry, i) => (
                       <Cell key={i} fill={['#818CF8', '#6366F1', '#4F46E5', '#4338CA', '#3730A3'][i % 5]} />

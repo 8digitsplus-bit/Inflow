@@ -51,7 +51,13 @@
 - Tier-Gating across all features
 - Collapsible sidebar with persistent state
 
+## Bug Fixes
+- **2026-03-22:** Fixed Recharts tooltip white background on Revenue Forecast page. Changed tooltip `content` prop from React element to render function, added `contentStyle` and `wrapperStyle` overrides.
+
 ## Backlog
 - **P1:** Support Operations (human handoff, admin panel, email notifications)
+- **P1:** Integration Health Dashboard (sync status, data freshness, token expiry)
+- **P1:** Email-Scheduled Forecast Reports (weekly summaries)
 - **P2:** Team/Collaboration features
 - **P2:** Public API Access for Enterprise tier
+- **P2:** Drag-and-Drop CSV Mapping interface
