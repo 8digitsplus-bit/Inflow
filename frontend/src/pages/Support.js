@@ -7,18 +7,23 @@ import {
   MessageSquare,
   Ticket,
   Loader2,
-  Shield,
   Clock,
   CheckCircle,
   AlertCircle,
   Sparkles,
-  ChevronRight,
-  ArrowLeft,
   Zap,
-  ArrowUpRight,
   CreditCard,
   Plug,
   XCircle,
+  Bot,
+  Search,
+  Database,
+  TrendingUp,
+  Activity,
+  BarChart3,
+  FileSearch,
+  ArrowRightLeft,
+  BrainCircuit,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -34,6 +39,30 @@ import { toast } from 'sonner';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
+const TOOL_ICONS = {
+  query_deals: BarChart3,
+  get_analytics_summary: TrendingUp,
+  check_integrations: Plug,
+  get_revenue_breakdown: TrendingUp,
+  get_churn_analysis: Activity,
+  get_deal_details: FileSearch,
+  update_deal_stage: ArrowRightLeft,
+  get_forecast: TrendingUp,
+  search_deals: Search,
+};
+
+const TOOL_LABELS = {
+  query_deals: 'Querying deals',
+  get_analytics_summary: 'Analyzing pipeline',
+  check_integrations: 'Checking integrations',
+  get_revenue_breakdown: 'Analyzing revenue',
+  get_churn_analysis: 'Assessing churn risk',
+  get_deal_details: 'Looking up deal',
+  update_deal_stage: 'Updating deal',
+  get_forecast: 'Running forecast',
+  search_deals: 'Searching deals',
+};
+
 const Support = () => {
   const { user } = useAuth();
   const [conversations, setConversations] = useState([]);
@@ -43,7 +72,8 @@ const Support = () => {
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
-  const [view, setView] = useState('chat'); // 'chat' | 'tickets'
+  const [view, setView] = useState('chat');
+  const [agentMode, setAgentMode] = useState(true);
   const [showTicketModal, setShowTicketModal] = useState(false);
   const [ticketForm, setTicketForm] = useState({ subject: '', description: '' });
   const messagesEndRef = useRef(null);
@@ -78,6 +108,7 @@ const Support = () => {
         const data = await res.json();
         setActiveConv(convId);
         setMessages(data.messages || []);
+        setAgentMode(data.mode === 'agent' || convId.startsWith('agent_'));
       }
     } catch (err) {
       console.error('Failed to load conversation:', err);
@@ -99,8 +130,10 @@ const Support = () => {
 
     setMessages(prev => [...prev, { role: 'user', content: userMsg, timestamp: new Date().toISOString() }]);
 
+    const endpoint = agentMode ? '/api/support/agent' : '/api/support/chat';
+
     try {
-      const res = await fetch(`${API_URL}/api/support/chat`, {
+      const res = await fetch(`${API_URL}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -110,11 +143,13 @@ const Support = () => {
       if (res.ok) {
         const data = await res.json();
         if (!activeConv) setActiveConv(data.conversation_id);
-        setMessages(prev => [...prev, { 
-          role: 'assistant', 
-          content: data.response, 
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          content: data.response,
           actions: data.actions || [],
-          timestamp: new Date().toISOString() 
+          steps: data.steps || [],
+          mode: data.mode || (agentMode ? 'agent' : 'chat'),
+          timestamp: new Date().toISOString(),
         }]);
         fetchData();
       } else {
@@ -145,9 +180,7 @@ const Support = () => {
         const data = await res.json();
         if (data.success) {
           toast.success(data.message);
-          if (data.redirect) {
-            setTimeout(() => { window.location.href = data.redirect; }, 1000);
-          }
+          if (data.redirect) setTimeout(() => { window.location.href = data.redirect; }, 1000);
         } else {
           toast.error(data.message);
         }
@@ -162,12 +195,8 @@ const Support = () => {
       const planLabel = (action.param || '').replace('_monthly', ' Monthly').replace('_yearly', ' Yearly').replace(/^\w/, c => c.toUpperCase());
       return { label: `Upgrade to ${planLabel}`, icon: CreditCard, color: 'bg-emerald-600 hover:bg-emerald-500' };
     }
-    if (action.type === 'cancel') {
-      return { label: 'Cancel Subscription', icon: XCircle, color: 'bg-red-600 hover:bg-red-500' };
-    }
-    if (action.type === 'connect') {
-      return { label: `Connect ${(action.param || '').replace(/^\w/, c => c.toUpperCase())}`, icon: Plug, color: 'bg-cyan-600 hover:bg-cyan-500' };
-    }
+    if (action.type === 'cancel') return { label: 'Cancel Subscription', icon: XCircle, color: 'bg-red-600 hover:bg-red-500' };
+    if (action.type === 'connect') return { label: `Connect ${(action.param || '').replace(/^\w/, c => c.toUpperCase())}`, icon: Plug, color: 'bg-cyan-600 hover:bg-cyan-500' };
     return null;
   };
 
@@ -203,6 +232,29 @@ const Support = () => {
     resolved: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
   };
 
+  const AgentSteps = ({ steps }) => {
+    if (!steps?.length) return null;
+    return (
+      <div className="mt-2 mb-3 space-y-1.5" data-testid="agent-steps">
+        <p className="text-[10px] uppercase tracking-wider text-indigo-400/70 font-medium">Investigation</p>
+        {steps.map((step, i) => {
+          const Icon = TOOL_ICONS[step.tool] || Database;
+          const label = TOOL_LABELS[step.tool] || step.tool;
+          return (
+            <div key={i} className="flex items-center gap-2 text-xs" data-testid={`agent-step-${i}`}>
+              <div className="w-5 h-5 rounded bg-indigo-500/10 flex items-center justify-center flex-shrink-0">
+                <Icon className="w-3 h-3 text-indigo-400" />
+              </div>
+              <span className="text-zinc-500">{label}</span>
+              <span className="text-zinc-600 mx-1">-</span>
+              <span className="text-zinc-400 truncate">{step.summary}</span>
+            </div>
+          );
+        })}
+      </div>
+    );
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6" data-testid="support-page">
@@ -219,7 +271,7 @@ const Support = () => {
                 </span>
               )}
             </div>
-            <p className="text-zinc-400 mt-1 text-sm">AI-powered support — get instant help or create a ticket</p>
+            <p className="text-zinc-400 mt-1 text-sm">AI-powered support — chat or let the agent investigate your data</p>
           </div>
           <div className="flex items-center gap-2">
             <Button
@@ -268,7 +320,10 @@ const Support = () => {
                     }`}
                     data-testid={`conv-${c.conversation_id}`}
                   >
-                    <p className="text-zinc-300 text-xs truncate">{c.last_message || 'New conversation'}</p>
+                    <div className="flex items-center gap-1.5">
+                      {c.conversation_id?.startsWith('agent_') && <BrainCircuit className="w-3 h-3 text-violet-400 flex-shrink-0" />}
+                      <p className="text-zinc-300 text-xs truncate">{c.last_message || 'New conversation'}</p>
+                    </div>
                     <p className="text-zinc-600 text-[10px] mt-1">{new Date(c.updated_at).toLocaleDateString()}</p>
                   </button>
                 ))}
@@ -281,15 +336,28 @@ const Support = () => {
                 {/* Chat Header */}
                 <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
                   <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-indigo-500/20 flex items-center justify-center">
-                      <Sparkles className="w-4 h-4 text-indigo-400" />
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${agentMode ? 'bg-violet-500/20' : 'bg-indigo-500/20'}`}>
+                      {agentMode ? <BrainCircuit className="w-4 h-4 text-violet-400" /> : <Sparkles className="w-4 h-4 text-indigo-400" />}
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-white">InFlow AI Support</p>
+                      <p className="text-sm font-medium text-white">{agentMode ? 'InFlow Agent' : 'InFlow AI Support'}</p>
                       <p className="text-[10px] text-emerald-400">Online</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
+                    {/* Agent Mode Toggle */}
+                    <button
+                      onClick={() => setAgentMode(!agentMode)}
+                      className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border transition-all ${
+                        agentMode
+                          ? 'bg-violet-500/15 border-violet-500/30 text-violet-300'
+                          : 'bg-zinc-800/50 border-zinc-700 text-zinc-500 hover:text-zinc-300 hover:border-zinc-600'
+                      }`}
+                      data-testid="agent-mode-toggle"
+                    >
+                      <BrainCircuit className="w-3 h-3" />
+                      {agentMode ? 'Agent' : 'Basic'}
+                    </button>
                     <Button
                       size="sm"
                       variant="outline"
@@ -309,20 +377,28 @@ const Support = () => {
                 <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
                   {messages.length === 0 && (
                     <div className="flex flex-col items-center justify-center h-full text-center">
-                      <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 flex items-center justify-center mb-4">
-                        <Sparkles className="w-8 h-8 text-indigo-400" />
+                      <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-4 ${agentMode ? 'bg-violet-500/10' : 'bg-indigo-500/10'}`}>
+                        {agentMode ? <BrainCircuit className="w-8 h-8 text-violet-400" /> : <Sparkles className="w-8 h-8 text-indigo-400" />}
                       </div>
-                      <h3 className="text-white font-semibold mb-1" style={{ fontFamily: 'Outfit' }}>How can I help?</h3>
+                      <h3 className="text-white font-semibold mb-1" style={{ fontFamily: 'Outfit' }}>
+                        {agentMode ? 'What should I investigate?' : 'How can I help?'}
+                      </h3>
                       <p className="text-zinc-500 text-sm max-w-sm mb-6">
-                        I know everything about InFlow — ask me about features, billing, your account, or any issue you're facing.
+                        {agentMode
+                          ? "I can query your data, analyze trends, check integrations, and take actions. Ask me anything about your business."
+                          : "I know everything about InFlow — ask me about features, billing, your account, or any issue you're facing."
+                        }
                       </p>
                       <div className="flex flex-wrap gap-2 justify-center max-w-md">
-                        {['Upgrade my plan', 'Connect my Stripe', 'What features are in my plan?', 'Cancel my subscription'].map((q) => (
+                        {(agentMode
+                          ? ['How is my pipeline doing?', 'Which deals are at risk?', 'Run a revenue forecast', 'Check my integrations']
+                          : ['Upgrade my plan', 'Connect my Stripe', 'What features are in my plan?', 'Cancel my subscription']
+                        ).map((q) => (
                           <button
                             key={q}
-                            onClick={() => { setInput(q); }}
+                            onClick={() => setInput(q)}
                             className="px-3 py-1.5 rounded-full bg-zinc-800/50 border border-zinc-700/50 text-zinc-400 text-xs hover:bg-zinc-800 hover:text-white transition-all"
-                            data-testid={`quick-q-${q.slice(0, 10).replace(/\s/g, '-')}`}
+                            data-testid={`quick-q-${q.slice(0, 15).replace(/\s/g, '-').replace(/\?/g, '')}`}
                           >
                             {q}
                           </button>
@@ -333,15 +409,42 @@ const Support = () => {
 
                   {messages.map((msg, i) => (
                     <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                      <div className={`max-w-[80%] sm:max-w-[70%] ${
+                      <div className={`max-w-[85%] sm:max-w-[75%] ${
                         msg.role === 'user'
                           ? 'bg-indigo-600 rounded-2xl rounded-br-md px-4 py-2.5'
                           : 'bg-zinc-800/70 border border-white/5 rounded-2xl rounded-bl-md px-4 py-2.5'
                       }`}>
-                        <p className={`text-sm leading-relaxed whitespace-pre-wrap ${
-                          msg.role === 'user' ? 'text-white' : 'text-zinc-200'
-                        }`}>{msg.content}</p>
+                        {/* Agent Mode Badge */}
+                        {msg.role === 'assistant' && msg.mode === 'agent' && (
+                          <div className="flex items-center gap-1.5 mb-2">
+                            <BrainCircuit className="w-3 h-3 text-violet-400" />
+                            <span className="text-[10px] text-violet-400 font-medium uppercase tracking-wider">Agent Analysis</span>
+                          </div>
+                        )}
 
+                        {/* Investigation Steps */}
+                        {msg.role === 'assistant' && <AgentSteps steps={msg.steps} />}
+
+                        {/* Message Content */}
+                        <div className={`text-sm leading-relaxed ${
+                          msg.role === 'user' ? 'text-white' : 'text-zinc-200'
+                        }`}>
+                          {msg.content?.split('\n').map((line, li) => {
+                            const renderBold = (text) => {
+                              const parts = text.split(/\*\*(.*?)\*\*/g);
+                              return parts.map((p, pi) => pi % 2 === 1 ? <strong key={pi} className="text-white font-semibold">{p}</strong> : p);
+                            };
+                            if (line.startsWith('## ')) return <h3 key={li} className="text-white font-semibold text-base mt-3 mb-1" style={{ fontFamily: 'Outfit' }}>{renderBold(line.replace('## ', ''))}</h3>;
+                            if (line.startsWith('### ')) return <h4 key={li} className="text-white font-medium text-sm mt-2 mb-0.5">{renderBold(line.replace('### ', ''))}</h4>;
+                            if (line.startsWith('---')) return <hr key={li} className="border-white/5 my-2" />;
+                            if (line.match(/^\d+\.\s/)) return <p key={li} className="text-zinc-300 text-sm ml-1 my-0.5">{renderBold(line)}</p>;
+                            if (line.startsWith('- ')) return <p key={li} className="text-zinc-300 text-sm ml-2 my-0.5">{renderBold(line)}</p>;
+                            if (line.trim() === '') return <div key={li} className="h-1.5" />;
+                            return <p key={li} className="my-0.5">{renderBold(line)}</p>;
+                          })}
+                        </div>
+
+                        {/* Action Buttons */}
                         {msg.actions?.length > 0 && (
                           <div className="flex flex-wrap gap-2 mt-3 pt-2 border-t border-white/5">
                             {msg.actions.map((action, j) => {
@@ -362,9 +465,7 @@ const Support = () => {
                           </div>
                         )}
 
-                        <p className={`text-[10px] mt-1 ${
-                          msg.role === 'user' ? 'text-indigo-200' : 'text-zinc-600'
-                        }`}>
+                        <p className={`text-[10px] mt-1.5 ${msg.role === 'user' ? 'text-indigo-200' : 'text-zinc-600'}`}>
                           {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </p>
                       </div>
@@ -375,8 +476,10 @@ const Support = () => {
                     <div className="flex justify-start">
                       <div className="bg-zinc-800/70 border border-white/5 rounded-2xl rounded-bl-md px-4 py-3">
                         <div className="flex items-center gap-2">
-                          <Loader2 className="w-4 h-4 animate-spin text-indigo-400" />
-                          <span className="text-zinc-400 text-sm">Thinking...</span>
+                          <Loader2 className="w-4 h-4 animate-spin text-violet-400" />
+                          <span className="text-zinc-400 text-sm">
+                            {agentMode ? 'Investigating...' : 'Thinking...'}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -391,12 +494,12 @@ const Support = () => {
                     <Input
                       value={input}
                       onChange={(e) => setInput(e.target.value)}
-                      placeholder="Ask anything about InFlow..."
+                      placeholder={agentMode ? "Ask the agent to investigate..." : "Ask anything about InFlow..."}
                       className="bg-zinc-800/50 border-zinc-700 text-white flex-1"
                       disabled={sending}
                       data-testid="chat-input"
                     />
-                    <Button type="submit" size="sm" className="bg-indigo-600 hover:bg-indigo-500 h-9 w-9 p-0" disabled={sending || !input.trim()} data-testid="send-btn">
+                    <Button type="submit" size="sm" className={`h-9 w-9 p-0 ${agentMode ? 'bg-violet-600 hover:bg-violet-500' : 'bg-indigo-600 hover:bg-indigo-500'}`} disabled={sending || !input.trim()} data-testid="send-btn">
                       <Send className="w-4 h-4" />
                     </Button>
                   </div>
@@ -419,7 +522,7 @@ const Support = () => {
                 <CardContent className="flex flex-col items-center justify-center py-16">
                   <Ticket className="w-10 h-10 text-zinc-700 mb-3" />
                   <p className="text-zinc-400 text-sm mb-1">No tickets yet</p>
-                  <p className="text-zinc-600 text-xs">Chat with AI support first — create a ticket if the issue needs human attention</p>
+                  <p className="text-zinc-600 text-xs">Chat with AI support first — create a ticket if the issue needs attention</p>
                 </CardContent>
               </Card>
             )}
