@@ -227,7 +227,7 @@ const Checkout = () => {
                       </div>
                     </div>
                     <div className="flex flex-wrap gap-1.5">
-                      {['Visa', 'Mastercard', 'Amex', 'PayPal', 'Apple Pay', 'Google Pay', 'Samsung Pay'].map(c => (
+                      {['Visa', 'Mastercard', 'Amex', 'PayPal', 'Apple Pay', 'Google Pay', 'Samsung Pay', 'Monzo', 'Revolut', 'Tide', 'Wise'].map(c => (
                         <span key={c} className="px-2 py-0.5 bg-zinc-700/40 rounded text-[10px] font-medium text-zinc-400">{c}</span>
                       ))}
                     </div>
