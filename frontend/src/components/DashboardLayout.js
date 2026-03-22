@@ -16,6 +16,7 @@ import {
   Headphones,
   Lock,
   Tag,
+  LineChart,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { Toaster } from './ui/sonner';
@@ -45,6 +46,7 @@ const navGroups = [
     label: 'Analytics',
     items: [
       { name: 'Intelligence', href: '/revenue', icon: BarChart3, minTier: 0 },
+      { name: 'Forecast', href: '/forecast', icon: LineChart, minTier: 2 },
       { name: 'Churn', href: '/churn', icon: Users, minTier: 1 },
       { name: 'CRO', href: '/cro', icon: Zap, minTier: 0 },
       { name: 'Pricing', href: '/pricing', icon: Tag, minTier: 2 },

@@ -17,6 +17,7 @@ import Onboarding from './pages/Onboarding';
 import ChoosePlan from './pages/ChoosePlan';
 import Checkout from './pages/Checkout';
 import Support from './pages/Support';
+import RevenueForecast from './pages/RevenueForecast';
 import AuthCallback from './pages/AuthCallback';
 import TrialNotification from './components/TrialNotification';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -121,6 +122,16 @@ const AppRouter = () => {
         element={
           <ProtectedRoute>
             <ConversionOptimization />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/forecast" 
+        element={
+          <ProtectedRoute>
+            <TierGate requiredLevel={2}>
+              <RevenueForecast />
+            </TierGate>
           </ProtectedRoute>
         } 
       />

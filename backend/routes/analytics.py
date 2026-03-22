@@ -312,7 +312,6 @@ async def get_sales_performance(user: User = Depends(get_current_user)):
     """Get sales performance analytics"""
     deals = await db.deals.find({"user_id": user.user_id}, {"_id": 0}).to_list(1000)
 
-    total_deals = len(deals)
     closed_won = [d for d in deals if d.get("stage") == "closed_won"]
     closed_lost = [d for d in deals if d.get("stage") == "closed_lost"]
     active_deals = [d for d in deals if d.get("stage") not in ["closed_won", "closed_lost"]]
@@ -634,4 +633,115 @@ async def get_pricing_analytics(user: User = Depends(get_current_user)):
         "elasticity_data": elasticity_data,
         "segment_breakdown": [{"segment": k.replace("_", " ").title(), **v} for k, v in segments.items()],
         "recent_analyses": recent_analyses
+    }
+
+
+
+@router.get("/analytics/forecasting")
+async def get_forecasting(user: User = Depends(get_current_user)):
+    """Revenue forecasting with weighted pipeline and scenario modeling."""
+    deals = await db.deals.find({"user_id": user.user_id}, {"_id": 0}).to_list(1000)
+
+    stage_prob = {"lead": 10, "qualified": 25, "proposal": 50, "negotiation": 75, "closed_won": 100, "closed_lost": 0}
+    open_stages = ["lead", "qualified", "proposal", "negotiation"]
+
+    open_deals = [d for d in deals if d.get("stage") in open_stages]
+    closed_won = [d for d in deals if d.get("stage") == "closed_won"]
+    closed_lost = [d for d in deals if d.get("stage") == "closed_lost"]
+    all_closed = closed_won + closed_lost
+
+    # Weighted pipeline
+    weighted_pipeline = sum(
+        d.get("value", 0) * (d.get("probability", stage_prob.get(d.get("stage", "lead"), 10)) / 100)
+        for d in open_deals
+    )
+
+    # Win rate
+    win_rate = (len(closed_won) / max(len(all_closed), 1)) * 100
+
+    # Average deal size and cycle
+    avg_deal_size = sum(d.get("value", 0) for d in open_deals) / max(len(open_deals), 1)
+    avg_cycle_days = 45  # Default estimate
+
+    # Revenue velocity = (deals * avg_value * win_rate) / cycle_days
+    velocity_per_day = (len(open_deals) * avg_deal_size * (win_rate / 100)) / max(avg_cycle_days, 1)
+
+    # Stage forecast breakdown
+    stage_forecast = []
+    for stage in open_stages:
+        stage_deals = [d for d in open_deals if d.get("stage") == stage]
+        raw = sum(d.get("value", 0) for d in stage_deals)
+        prob = stage_prob[stage]
+        weighted = raw * (prob / 100)
+        stage_forecast.append({
+            "stage": stage.replace("_", " ").title(),
+            "count": len(stage_deals),
+            "raw": round(raw, 2),
+            "weighted": round(weighted, 2),
+            "probability": prob,
+        })
+
+    # Monthly forecast (next 6 months)
+    closed_revenue = sum(d.get("value", 0) for d in closed_won)
+    base_monthly = closed_revenue / max(6, 1)  # Rough monthly baseline from history
+    monthly_forecast = []
+
+    for i in range(6):
+        month_dt = datetime.now(timezone.utc) + timedelta(days=30 * (i + 1))
+        month_label = month_dt.strftime("%b %Y")
+
+        # Growth factor: pipeline fills in gradually
+        pipeline_factor = weighted_pipeline / 6  # Spread weighted pipeline over 6 months
+        decay = max(0.3, 1.0 - (i * 0.12))  # Pipeline confidence decays over time
+
+        best = round(base_monthly + (pipeline_factor * 1.5) + (velocity_per_day * 30 * 0.8), 2)
+        expected = round(base_monthly + (pipeline_factor * decay) + (velocity_per_day * 30 * 0.5 * decay), 2)
+        worst = round(base_monthly * 0.7 + (pipeline_factor * 0.4 * decay), 2)
+
+        monthly_forecast.append({
+            "month": month_label,
+            "best": max(best, 0),
+            "expected": max(expected, 0),
+            "worst": max(worst, 0),
+        })
+
+    # Scenarios
+    best_total = sum(m["best"] for m in monthly_forecast)
+    expected_total = sum(m["expected"] for m in monthly_forecast)
+    worst_total = sum(m["worst"] for m in monthly_forecast)
+
+    scenarios = {
+        "best": {"total": round(best_total, 2), "monthly_avg": round(best_total / 6, 2), "confidence": 25},
+        "expected": {"total": round(expected_total, 2), "monthly_avg": round(expected_total / 6, 2), "confidence": 65},
+        "worst": {"total": round(worst_total, 2), "monthly_avg": round(worst_total / 6, 2), "confidence": 90},
+    }
+
+    # Top upcoming deals (highest weighted value, open only)
+    top_deals = sorted(open_deals, key=lambda d: d.get("value", 0) * (d.get("probability", 10) / 100), reverse=True)[:10]
+    top_deals_out = []
+    for d in top_deals:
+        prob = d.get("probability", stage_prob.get(d.get("stage", "lead"), 10))
+        top_deals_out.append({
+            "name": d.get("name", "Untitled"),
+            "company": d.get("company", "Unknown"),
+            "value": d.get("value", 0),
+            "weighted": round(d.get("value", 0) * (prob / 100), 2),
+            "probability": prob,
+            "stage": d.get("stage", "lead"),
+        })
+
+    return {
+        "weighted_pipeline": round(weighted_pipeline, 2),
+        "pipeline_trend": round(((weighted_pipeline - closed_revenue) / max(closed_revenue, 1)) * 100, 1) if closed_revenue else 0,
+        "velocity": {
+            "value_per_day": round(velocity_per_day, 2),
+            "avg_deal_size": round(avg_deal_size, 2),
+            "win_rate": round(win_rate, 1),
+            "avg_cycle_days": avg_cycle_days,
+            "open_deals": len(open_deals),
+        },
+        "scenarios": scenarios,
+        "monthly_forecast": monthly_forecast,
+        "stage_forecast": stage_forecast,
+        "top_deals": top_deals_out,
     }
