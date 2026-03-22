@@ -33,15 +33,15 @@ const RevenueForecast = () => {
   const CustomTooltip = ({ active, payload, label }) => {
     if (!active || !payload?.length) return null;
     return (
-      <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-3 shadow-xl">
-        <p className="text-zinc-400 text-sm mb-1">{label}</p>
+      <div style={{ backgroundColor: '#09090b', border: '1px solid #3f3f46', borderRadius: '0.5rem', padding: '0.75rem', boxShadow: '0 4px 20px rgba(0,0,0,0.8)' }}>
+        <p style={{ color: '#a1a1aa', fontSize: '0.875rem', marginBottom: '0.25rem' }}>{label}</p>
         {payload.map((entry, i) => (
-          <div key={i} className="flex items-center justify-between gap-4 text-xs">
-            <span className="flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
-              <span className="text-zinc-400">{entry.name}</span>
+          <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', fontSize: '0.75rem' }}>
+            <span style={{ display: 'flex', alignItems: 'center', gap: '0.375rem' }}>
+              <span style={{ width: '0.5rem', height: '0.5rem', borderRadius: '9999px', backgroundColor: entry.color, display: 'inline-block' }} />
+              <span style={{ color: '#a1a1aa' }}>{entry.name}</span>
             </span>
-            <span className="font-semibold text-white">{fmt(entry.value)}</span>
+            <span style={{ fontWeight: 600, color: '#ffffff' }}>{fmt(entry.value)}</span>
           </div>
         ))}
       </div>
@@ -141,9 +141,8 @@ const RevenueForecast = () => {
                 <YAxis tick={{ fill: '#71717a', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={fmtK} />
                 <Tooltip
                   content={({ active, payload, label }) => <CustomTooltip active={active} payload={payload} label={label} />}
-                  cursor={{ stroke: '#27272A' }}
-                  wrapperStyle={{ outline: 'none' }}
-                  contentStyle={{ backgroundColor: 'transparent', border: 'none', boxShadow: 'none', padding: 0 }}
+                  cursor={{ stroke: '#27272A', fill: 'none' }}
+                  wrapperStyle={{ outline: 'none', background: 'transparent' }}
                 />
                 <Area type="monotone" dataKey="best" name="Best Case" stroke="#10B981" fill="url(#gradBest)" strokeWidth={scenario === 'best' ? 2.5 : 1} strokeOpacity={scenario === 'best' ? 1 : 0.3} fillOpacity={scenario === 'best' ? 1 : 0.1} />
                 <Area type="monotone" dataKey="expected" name="Expected" stroke="#6366F1" fill="url(#gradExpected)" strokeWidth={scenario === 'expected' ? 2.5 : 1} strokeOpacity={scenario === 'expected' ? 1 : 0.3} fillOpacity={scenario === 'expected' ? 1 : 0.1} />
@@ -169,9 +168,8 @@ const RevenueForecast = () => {
                   <YAxis type="category" dataKey="stage" tick={{ fill: '#a1a1aa', fontSize: 11 }} axisLine={false} tickLine={false} width={85} />
                   <Tooltip
                     content={({ active, payload, label }) => <CustomTooltip active={active} payload={payload} label={label} />}
-                    cursor={{ stroke: '#27272A' }}
-                    wrapperStyle={{ outline: 'none' }}
-                    contentStyle={{ backgroundColor: 'transparent', border: 'none', boxShadow: 'none', padding: 0 }}
+                    cursor={{ fill: 'rgba(39, 39, 42, 0.3)', stroke: 'none' }}
+                    wrapperStyle={{ outline: 'none', background: 'transparent' }}
                   />
                   <Bar dataKey="weighted" name="Weighted Value" radius={[0, 6, 6, 0]} barSize={20}>
                     {(data.stage_forecast || []).map((entry, i) => (
