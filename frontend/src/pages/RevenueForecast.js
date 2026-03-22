@@ -167,9 +167,11 @@ const RevenueForecast = () => {
                   <XAxis type="number" tick={{ fill: '#71717a', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={fmtK} />
                   <YAxis type="category" dataKey="stage" tick={{ fill: '#a1a1aa', fontSize: 11 }} axisLine={false} tickLine={false} width={85} />
                   <Tooltip
-                    content={({ active, payload, label }) => <CustomTooltip active={active} payload={payload} label={label} />}
+                    contentStyle={{ backgroundColor: '#09090b', border: '1px solid #3f3f46', borderRadius: '0.5rem', color: '#fff', boxShadow: '0 4px 20px rgba(0,0,0,0.8)' }}
+                    itemStyle={{ color: '#e4e4e7' }}
+                    labelStyle={{ color: '#a1a1aa', marginBottom: '4px', fontSize: '13px' }}
+                    formatter={(value) => [fmt(value), null]}
                     cursor={{ fill: 'rgba(39, 39, 42, 0.3)', stroke: 'none' }}
-                    wrapperStyle={{ outline: 'none', background: 'transparent' }}
                   />
                   <Bar dataKey="weighted" name="Weighted Value" radius={[0, 6, 6, 0]} barSize={20}>
                     {(data.stage_forecast || []).map((entry, i) => (
