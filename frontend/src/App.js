@@ -1,7 +1,6 @@
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import Landing from './pages/Landing';
-import About from './pages/About';
 import Dashboard from './pages/Dashboard';
 import Pipeline from './pages/Pipeline';
 import SalesPerformance from './pages/SalesPerformance';
@@ -38,7 +37,6 @@ const AppRouter = () => {
   return (
     <Routes>
       <Route path="/" element={<Landing />} />
-      <Route path="/about" element={<About />} />
       <Route path="/auth" element={<AuthPage />} />
       <Route path="/onboarding" element={
         <ProtectedRoute>

@@ -7,6 +7,7 @@ import { FeaturesSection } from '../components/landing/FeaturesSection';
 import { ConnectBusinessSection } from '../components/landing/HowItWorks';
 import { PricingSection } from '../components/landing/PricingSection';
 import { FAQSection } from '../components/landing/FAQSection';
+import { AboutSection } from '../components/landing/AboutSection';
 import { CTASection, Footer } from '../components/landing/CTAFooter';
 import { Toaster } from '../components/ui/sonner';
 
@@ -47,7 +48,6 @@ const Landing = () => {
   const handleMenuClick = (target) => {
     setMenuOpen(false);
     if (target === 'signin') { navigate(isAuthenticated ? '/dashboard' : '/auth'); return; }
-    if (target.startsWith('/')) { navigate(target); return; }
     setTimeout(() => document.querySelector(target)?.scrollIntoView({ behavior: 'smooth' }), 200);
   };
 
@@ -61,6 +61,7 @@ const Landing = () => {
       <ConnectBusinessSection />
       <PricingSection handleGetStarted={handleGetStarted} isAuthenticated={isAuthenticated} />
       <FAQSection />
+      <AboutSection />
       <CTASection handleGetStarted={handleGetStarted} />
       <Footer />
     </div>

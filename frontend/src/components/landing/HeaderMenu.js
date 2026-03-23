@@ -15,7 +15,7 @@ export const FullScreenMenu = ({ menuOpen, setMenuOpen, handleMenuClick, handleG
         {[
           { label: 'Features', action: '#features', delay: '100ms' },
           { label: 'Pricing', action: '#pricing', delay: '150ms' },
-          { label: 'About', action: '/about', delay: '200ms' },
+          { label: 'About', action: '#about', delay: '200ms' },
           { label: 'Contact', action: '#contact', delay: '250ms' },
         ].map((item) => (
           <button key={item.label} onClick={() => handleMenuClick(item.action)}
