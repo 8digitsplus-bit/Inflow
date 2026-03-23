@@ -67,14 +67,14 @@ const SalesPerformance = () => {
         </div>
 
         {/* KPIs — Performance Specific */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
           <Card className="bg-zinc-950/50 border-white/10" data-testid="kpi-win-rate">
             <CardContent className="p-5">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-zinc-400 text-sm">Win Rate</span>
                 <div className="p-1.5 rounded bg-emerald-500/10"><Target className="w-4 h-4 text-emerald-400" /></div>
               </div>
-              <div className="text-2xl font-bold font-mono text-white">{data?.win_rate || 0}%</div>
+              <div className="text-lg sm:text-2xl font-bold font-mono text-white">{data?.win_rate || 0}%</div>
               <div className="text-zinc-500 text-xs mt-1">{data?.total_won || 0} won of {(data?.total_won || 0) + (data?.total_lost || 0)} closed</div>
             </CardContent>
           </Card>
@@ -84,7 +84,7 @@ const SalesPerformance = () => {
                 <span className="text-zinc-400 text-sm">Loss Rate</span>
                 <div className="p-1.5 rounded bg-red-500/10"><XCircle className="w-4 h-4 text-red-400" /></div>
               </div>
-              <div className="text-2xl font-bold font-mono text-white">{data?.loss_rate || 0}%</div>
+              <div className="text-lg sm:text-2xl font-bold font-mono text-white">{data?.loss_rate || 0}%</div>
               <div className="text-zinc-500 text-xs mt-1">{data?.total_lost || 0} lost deals</div>
             </CardContent>
           </Card>
@@ -94,7 +94,7 @@ const SalesPerformance = () => {
                 <span className="text-zinc-400 text-sm">Avg Sales Cycle</span>
                 <div className="p-1.5 rounded bg-amber-500/10"><Clock className="w-4 h-4 text-amber-400" /></div>
               </div>
-              <div className="text-2xl font-bold font-mono text-white">{data?.avg_cycle_days || 0}d</div>
+              <div className="text-lg sm:text-2xl font-bold font-mono text-white">{data?.avg_cycle_days || 0}d</div>
               <div className="flex items-center gap-1 mt-1 text-emerald-400 text-xs"><ArrowDownRight className="w-3 h-3" /><span>Lead to close</span></div>
             </CardContent>
           </Card>
@@ -104,7 +104,7 @@ const SalesPerformance = () => {
                 <span className="text-zinc-400 text-sm">Active Deals</span>
                 <div className="p-1.5 rounded bg-indigo-500/10"><Layers className="w-4 h-4 text-indigo-400" /></div>
               </div>
-              <div className="text-2xl font-bold font-mono text-white">{data?.total_active || 0}</div>
+              <div className="text-lg sm:text-2xl font-bold font-mono text-white">{data?.total_active || 0}</div>
               <div className="text-zinc-500 text-xs mt-1">In pipeline now</div>
             </CardContent>
           </Card>

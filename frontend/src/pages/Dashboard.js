@@ -186,7 +186,7 @@ const Dashboard = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>
+            <h1 className="text-xl sm:text-2xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>
               Welcome back, {user?.name?.split(' ')[0] || 'there'}
             </h1>
             <p className="text-zinc-400 mt-1">
@@ -211,45 +211,45 @@ const Dashboard = () => {
         </div>
 
         {/* Key Metrics - Available to all */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
           <Card className="bg-zinc-950/50 border-white/10 hover:border-indigo-500/30 transition-colors" data-testid="metric-pipeline">
-            <CardContent className="p-5">
+            <CardContent className="p-3 sm:p-5">
               <div className="flex items-center justify-between mb-3">
                 <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-400"><DollarSign className="w-5 h-5" /></div>
                 <span className="text-xs font-medium flex items-center gap-1 text-emerald-400"><TrendingUp className="w-3 h-3" /> +12.5%</span>
               </div>
-              <div className="text-2xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>{formatCurrency(analytics?.total_pipeline || 0)}</div>
-              <div className="text-sm text-zinc-400 mt-1">Total Pipeline</div>
+              <div className="text-lg sm:text-2xl font-bold text-white truncate" style={{ fontFamily: 'Outfit' }}>{formatCurrency(analytics?.total_pipeline || 0)}</div>
+              <div className="text-xs sm:text-sm text-zinc-400 mt-1">Total Pipeline</div>
             </CardContent>
           </Card>
           <Card className="bg-zinc-950/50 border-white/10 hover:border-emerald-500/30 transition-colors" data-testid="metric-revenue">
-            <CardContent className="p-5">
+            <CardContent className="p-3 sm:p-5">
               <div className="flex items-center justify-between mb-3">
                 <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400"><TrendingUp className="w-5 h-5" /></div>
                 <span className="text-xs font-medium flex items-center gap-1 text-emerald-400"><TrendingUp className="w-3 h-3" /> +8.2%</span>
               </div>
-              <div className="text-2xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>{formatCurrency(analytics?.closed_revenue || 0)}</div>
-              <div className="text-sm text-zinc-400 mt-1">Closed Revenue</div>
+              <div className="text-lg sm:text-2xl font-bold text-white truncate" style={{ fontFamily: 'Outfit' }}>{formatCurrency(analytics?.closed_revenue || 0)}</div>
+              <div className="text-xs sm:text-sm text-zinc-400 mt-1">Closed Revenue</div>
             </CardContent>
           </Card>
           <Card className="bg-zinc-950/50 border-white/10 hover:border-cyan-500/30 transition-colors" data-testid="metric-winrate">
-            <CardContent className="p-5">
+            <CardContent className="p-3 sm:p-5">
               <div className="flex items-center justify-between mb-3">
                 <div className="p-2 rounded-lg bg-cyan-500/10 text-cyan-400"><Target className="w-5 h-5" /></div>
                 <span className="text-xs font-medium flex items-center gap-1 text-emerald-400"><TrendingUp className="w-3 h-3" /> +3.1%</span>
               </div>
-              <div className="text-2xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>{analytics?.win_rate || 0}%</div>
-              <div className="text-sm text-zinc-400 mt-1">Win Rate</div>
+              <div className="text-lg sm:text-2xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>{analytics?.win_rate || 0}%</div>
+              <div className="text-xs sm:text-sm text-zinc-400 mt-1">Win Rate</div>
             </CardContent>
           </Card>
           <Card className="bg-zinc-950/50 border-white/10 hover:border-amber-500/30 transition-colors" data-testid="metric-deals">
-            <CardContent className="p-5">
+            <CardContent className="p-3 sm:p-5">
               <div className="flex items-center justify-between mb-3">
                 <div className="p-2 rounded-lg bg-amber-500/10 text-amber-400"><Users className="w-5 h-5" /></div>
                 <span className="text-xs font-medium flex items-center gap-1 text-emerald-400"><TrendingUp className="w-3 h-3" /> +5</span>
               </div>
-              <div className="text-2xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>{analytics?.total_deals || 0}</div>
-              <div className="text-sm text-zinc-400 mt-1">Active Deals</div>
+              <div className="text-lg sm:text-2xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>{analytics?.total_deals || 0}</div>
+              <div className="text-xs sm:text-sm text-zinc-400 mt-1">Active Deals</div>
             </CardContent>
           </Card>
         </div>
@@ -343,7 +343,7 @@ const Dashboard = () => {
                   <CardContent>
                     <div className="flex items-center justify-between mb-4">
                       <div>
-                        <div className={`text-3xl font-bold ${getHealthColor(churnData?.health_score || 0)}`} style={{ fontFamily: 'Outfit' }}>{churnData?.health_score || 0}</div>
+                        <div className={`text-xl sm:text-3xl font-bold ${getHealthColor(churnData?.health_score || 0)}`} style={{ fontFamily: 'Outfit' }}>{churnData?.health_score || 0}</div>
                         <p className="text-xs text-zinc-400">Health Score</p>
                       </div>
                       <div className="text-right">
@@ -377,7 +377,7 @@ const Dashboard = () => {
                   <CardContent>
                     <div className="flex items-center justify-between mb-4">
                       <div>
-                        <div className="text-3xl font-bold text-cyan-400" style={{ fontFamily: 'Outfit' }}>{croData?.overall_conversion || 0}%</div>
+                        <div className="text-xl sm:text-3xl font-bold text-cyan-400" style={{ fontFamily: 'Outfit' }}>{croData?.overall_conversion || 0}%</div>
                         <p className="text-xs text-zinc-400">Overall Conversion</p>
                       </div>
                       <div className="text-right">
@@ -445,16 +445,16 @@ const Dashboard = () => {
               {recentDeals.length > 0 ? (
                 <div className="space-y-3">
                   {recentDeals.map((deal, i) => (
-                    <div key={i} className="flex items-center justify-between p-3 bg-zinc-900/50 rounded-lg border border-zinc-800/50 hover:border-zinc-700 transition-colors">
-                      <div className="flex items-center gap-3">
-                        <div className="w-1 h-10 rounded-full" style={{ backgroundColor: stageColors[deal.stage] || '#6366F1' }} />
-                        <div>
-                          <h4 className="text-white font-medium text-sm">{deal.name}</h4>
-                          <p className="text-zinc-400 text-xs">{deal.company}</p>
+                    <div key={i} className="flex items-center justify-between p-2 sm:p-3 bg-zinc-900/50 rounded-lg border border-zinc-800/50 hover:border-zinc-700 transition-colors">
+                      <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                        <div className="w-1 h-10 rounded-full flex-shrink-0" style={{ backgroundColor: stageColors[deal.stage] || '#6366F1' }} />
+                        <div className="min-w-0">
+                          <h4 className="text-white font-medium text-xs sm:text-sm truncate">{deal.name}</h4>
+                          <p className="text-zinc-400 text-[10px] sm:text-xs truncate">{deal.company}</p>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="text-emerald-400 font-medium text-sm">{formatCurrency(deal.value)}</div>
+                      <div className="text-right flex-shrink-0 ml-2">
+                        <div className="text-emerald-400 font-medium text-xs sm:text-sm">{formatCurrency(deal.value)}</div>
                         <span className={`text-xs px-2 py-0.5 rounded capitalize ${deal.stage === 'closed_won' ? 'bg-emerald-500/20 text-emerald-400' : deal.stage === 'closed_lost' ? 'bg-red-500/20 text-red-400' : 'bg-zinc-700 text-zinc-300'}`}>{deal.stage.replace('_', ' ')}</span>
                       </div>
                     </div>

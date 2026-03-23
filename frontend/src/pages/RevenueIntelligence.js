@@ -117,65 +117,65 @@ const RevenueIntelligence = () => {
         </div>
 
         {/* Top-Level KPIs from all 3 features */}
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-4">
           <Card className="bg-zinc-950/50 border-white/10" data-testid="ri-revenue">
             <CardContent className="p-4">
               <span className="text-zinc-400 text-xs">Total Revenue</span>
-              <div className="text-xl font-bold font-mono text-white mt-1">{fmt(data?.total_revenue || 0)}</div>
+              <div className="text-base sm:text-xl font-bold font-mono truncate text-white mt-1">{fmt(data?.total_revenue || 0)}</div>
               <Link to="/sales-revenue" className="text-xs text-indigo-400 hover:text-indigo-300 mt-1 flex items-center gap-1">Details <ArrowRight className="w-3 h-3" /></Link>
             </CardContent>
           </Card>
           <Card className="bg-zinc-950/50 border-white/10" data-testid="ri-pipeline">
             <CardContent className="p-4">
               <span className="text-zinc-400 text-xs">Pipeline Value</span>
-              <div className="text-xl font-bold font-mono text-white mt-1">{fmt(data?.pipeline_value || 0)}</div>
+              <div className="text-base sm:text-xl font-bold font-mono truncate text-white mt-1">{fmt(data?.pipeline_value || 0)}</div>
               <Link to="/pipeline" className="text-xs text-indigo-400 hover:text-indigo-300 mt-1 flex items-center gap-1">Details <ArrowRight className="w-3 h-3" /></Link>
             </CardContent>
           </Card>
           <Card className="bg-zinc-950/50 border-white/10" data-testid="ri-weighted">
             <CardContent className="p-4">
               <span className="text-zinc-400 text-xs">Weighted Pipeline</span>
-              <div className="text-xl font-bold font-mono text-white mt-1">{fmt(data?.weighted_pipeline || 0)}</div>
+              <div className="text-base sm:text-xl font-bold font-mono truncate text-white mt-1">{fmt(data?.weighted_pipeline || 0)}</div>
             </CardContent>
           </Card>
           <Card className="bg-zinc-950/50 border-white/10" data-testid="ri-winrate">
             <CardContent className="p-4">
               <span className="text-zinc-400 text-xs">Win Rate</span>
-              <div className="text-xl font-bold font-mono text-white mt-1">{data?.win_rate || 0}%</div>
+              <div className="text-base sm:text-xl font-bold font-mono truncate text-white mt-1">{data?.win_rate || 0}%</div>
               <Link to="/sales-performance" className="text-xs text-indigo-400 hover:text-indigo-300 mt-1 flex items-center gap-1">Details <ArrowRight className="w-3 h-3" /></Link>
             </CardContent>
           </Card>
           <Card className="bg-zinc-950/50 border-white/10" data-testid="ri-avg-deal">
             <CardContent className="p-4">
               <span className="text-zinc-400 text-xs">Avg Deal Size</span>
-              <div className="text-xl font-bold font-mono text-white mt-1">{fmt(data?.avg_deal_value || 0)}</div>
+              <div className="text-base sm:text-xl font-bold font-mono truncate text-white mt-1">{fmt(data?.avg_deal_value || 0)}</div>
             </CardContent>
           </Card>
         </div>
 
         {/* Deal Snapshot */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4">
           <Card className="bg-zinc-950/50 border-white/10">
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>{data?.total_deals || 0}</div>
+            <CardContent className="p-3 sm:p-4 text-center">
+              <div className="text-lg sm:text-2xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>{data?.total_deals || 0}</div>
               <p className="text-xs text-zinc-400 mt-1">Total Deals</p>
             </CardContent>
           </Card>
           <Card className="bg-zinc-950/50 border-white/10">
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-indigo-400" style={{ fontFamily: 'Outfit' }}>{data?.active_deals || 0}</div>
+            <CardContent className="p-3 sm:p-4 text-center">
+              <div className="text-lg sm:text-2xl font-bold text-indigo-400" style={{ fontFamily: 'Outfit' }}>{data?.active_deals || 0}</div>
               <p className="text-xs text-zinc-400 mt-1">Active</p>
             </CardContent>
           </Card>
           <Card className="bg-zinc-950/50 border-white/10">
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-emerald-400" style={{ fontFamily: 'Outfit' }}>{data?.deals_won || 0}</div>
+            <CardContent className="p-3 sm:p-4 text-center">
+              <div className="text-lg sm:text-2xl font-bold text-emerald-400" style={{ fontFamily: 'Outfit' }}>{data?.deals_won || 0}</div>
               <p className="text-xs text-zinc-400 mt-1">Won</p>
             </CardContent>
           </Card>
           <Card className="bg-zinc-950/50 border-white/10">
-            <CardContent className="p-4 text-center">
-              <div className="text-2xl font-bold text-red-400" style={{ fontFamily: 'Outfit' }}>{data?.deals_lost || 0}</div>
+            <CardContent className="p-3 sm:p-4 text-center">
+              <div className="text-lg sm:text-2xl font-bold text-red-400" style={{ fontFamily: 'Outfit' }}>{data?.deals_lost || 0}</div>
               <p className="text-xs text-zinc-400 mt-1">Lost</p>
             </CardContent>
           </Card>
@@ -250,14 +250,14 @@ const RevenueIntelligence = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
               {(data?.stage_health || []).map((stage, i) => (
-                <div key={i} className="p-4 bg-zinc-900/50 rounded-lg border border-zinc-800">
+                <div key={i} className="p-2.5 sm:p-4 bg-zinc-900/50 rounded-lg border border-zinc-800">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-medium text-white">{stage.stage}</span>
-                    <span className="text-xs font-mono text-zinc-400">{stage.count} deals</span>
+                    <span className="text-xs sm:text-sm font-medium text-white truncate">{stage.stage}</span>
+                    <span className="text-[10px] sm:text-xs font-mono text-zinc-400 flex-shrink-0 ml-1">{stage.count} deals</span>
                   </div>
-                  <div className="text-lg font-bold text-emerald-400 font-mono">{fmt(stage.value)}</div>
+                  <div className="text-sm sm:text-lg font-bold text-emerald-400 font-mono truncate">{fmt(stage.value)}</div>
                   <div className="mt-2">
                     <div className="flex justify-between text-xs mb-1">
                       <span className="text-zinc-400">Avg Probability</span>

@@ -235,36 +235,36 @@ const Pipeline = () => {
         </div>
 
         {/* KPI Cards — Pipeline Specific */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
           <Card className="bg-zinc-950/50 border-white/10" data-testid="kpi-pipeline-value">
-            <CardContent className="p-5">
+            <CardContent className="p-3 sm:p-5">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-zinc-400 text-sm">Pipeline Value</span>
                 <div className="p-1.5 rounded bg-indigo-500/10"><DollarSign className="w-4 h-4 text-indigo-400" /></div>
               </div>
-              <div className="text-2xl font-bold font-mono text-white">{fmt(stats.total)}</div>
+              <div className="text-lg sm:text-2xl font-bold font-mono text-white">{fmt(stats.total)}</div>
               <div className="text-zinc-500 text-xs mt-1">{stats.activeCount} active deals</div>
             </CardContent>
           </Card>
           <Card className="bg-zinc-950/50 border-white/10" data-testid="kpi-weighted">
-            <CardContent className="p-5">
+            <CardContent className="p-3 sm:p-5">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-zinc-400 text-sm">Weighted Pipeline</span>
                 <div className="p-1.5 rounded bg-emerald-500/10"><Target className="w-4 h-4 text-emerald-400" /></div>
               </div>
-              <div className="text-2xl font-bold font-mono text-white">{fmt(stats.weighted)}</div>
+              <div className="text-lg sm:text-2xl font-bold font-mono text-white">{fmt(stats.weighted)}</div>
               <div className="text-zinc-500 text-xs mt-1">Probability-adjusted</div>
             </CardContent>
           </Card>
           <Card className={`bg-zinc-950/50 border-white/10 ${pipelineData?.bottleneck_stuck_count > 0 ? 'border-amber-500/20' : ''}`} data-testid="kpi-bottleneck">
-            <CardContent className="p-5">
+            <CardContent className="p-3 sm:p-5">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-zinc-400 text-sm">Bottleneck</span>
+                <span className="text-zinc-400 text-xs sm:text-sm">Bottleneck</span>
                 <div className={`p-1.5 rounded ${pipelineData?.bottleneck_stuck_count > 0 ? 'bg-amber-500/10' : 'bg-zinc-800'}`}>
                   <Filter className={`w-4 h-4 ${pipelineData?.bottleneck_stuck_count > 0 ? 'text-amber-400' : 'text-zinc-500'}`} />
                 </div>
               </div>
-              <div className="text-2xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>
+              <div className="text-lg sm:text-2xl font-bold text-white truncate" style={{ fontFamily: 'Outfit' }}>
                 {pipelineData?.bottleneck_stage || 'None'}
               </div>
               <div className={`text-xs mt-1 ${pipelineData?.bottleneck_stuck_count > 0 ? 'text-amber-400' : 'text-zinc-500'}`}>
@@ -273,12 +273,12 @@ const Pipeline = () => {
             </CardContent>
           </Card>
           <Card className="bg-zinc-950/50 border-white/10" data-testid="kpi-conversion">
-            <CardContent className="p-5">
+            <CardContent className="p-3 sm:p-5">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-zinc-400 text-sm">Top Conversion</span>
                 <div className="p-1.5 rounded bg-cyan-500/10"><ChevronRight className="w-4 h-4 text-cyan-400" /></div>
               </div>
-              <div className="text-2xl font-bold font-mono text-white">
+              <div className="text-lg sm:text-2xl font-bold font-mono text-white">
                 {pipelineData?.conversion_rates?.[0]?.rate || 0}%
               </div>
               <div className="text-zinc-500 text-xs mt-1">
@@ -380,7 +380,7 @@ const Pipeline = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold font-mono text-white mb-1">{fmt(stats.weighted)}</div>
+              <div className="text-xl sm:text-3xl font-bold font-mono text-white mb-1">{fmt(stats.weighted)}</div>
               <p className="text-zinc-500 text-xs mb-5">Probability-adjusted value</p>
               <div className="space-y-3">
                 {STAGES.filter(s => !['closed_won', 'closed_lost'].includes(s.id)).map((stage) => {

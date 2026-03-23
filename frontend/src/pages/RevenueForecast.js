@@ -106,18 +106,18 @@ const RevenueForecast = () => {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-3 gap-3 mb-4">
-              <div className="bg-zinc-900/60 rounded-lg p-3">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 mb-4">
+              <div className="bg-zinc-900/60 rounded-lg p-2 sm:p-3">
                 <span className="text-[10px] text-zinc-500 block">6-Month Total</span>
-                <span className="text-lg font-bold text-white" style={{ fontFamily: 'Outfit' }}>{fmt(scenarioData.total)}</span>
+                <span className="text-sm sm:text-lg font-bold text-white" style={{ fontFamily: 'Outfit' }}>{fmt(scenarioData.total)}</span>
               </div>
-              <div className="bg-zinc-900/60 rounded-lg p-3">
+              <div className="bg-zinc-900/60 rounded-lg p-2 sm:p-3">
                 <span className="text-[10px] text-zinc-500 block">Monthly Avg</span>
-                <span className="text-lg font-bold text-white" style={{ fontFamily: 'Outfit' }}>{fmt(scenarioData.monthly_avg)}</span>
+                <span className="text-sm sm:text-lg font-bold text-white" style={{ fontFamily: 'Outfit' }}>{fmt(scenarioData.monthly_avg)}</span>
               </div>
-              <div className="bg-zinc-900/60 rounded-lg p-3">
+              <div className="bg-zinc-900/60 rounded-lg p-2 sm:p-3">
                 <span className="text-[10px] text-zinc-500 block">Confidence</span>
-                <span className="text-lg font-bold" style={{ fontFamily: 'Outfit', color: scenarioColors[scenario] }}>{scenarioData.confidence}%</span>
+                <span className="text-sm sm:text-lg font-bold" style={{ fontFamily: 'Outfit', color: scenarioColors[scenario] }}>{scenarioData.confidence}%</span>
               </div>
             </div>
             <ResponsiveContainer width="100%" height={280}>
@@ -203,22 +203,22 @@ const RevenueForecast = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-3 mb-4">
-                <div className="bg-zinc-900/60 rounded-xl p-4">
+              <div className="grid grid-cols-2 gap-2 sm:gap-3 mb-4">
+                <div className="bg-zinc-900/60 rounded-xl p-2 sm:p-4">
                   <span className="text-[10px] text-zinc-500 block mb-1">Pipeline Value/Day</span>
-                  <span className="text-xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>{fmt(data.velocity?.value_per_day)}</span>
+                  <span className="text-sm sm:text-xl font-bold text-white truncate block" style={{ fontFamily: 'Outfit' }}>{fmt(data.velocity?.value_per_day)}</span>
                 </div>
-                <div className="bg-zinc-900/60 rounded-xl p-4">
+                <div className="bg-zinc-900/60 rounded-xl p-2 sm:p-4">
                   <span className="text-[10px] text-zinc-500 block mb-1">Avg Deal Size</span>
-                  <span className="text-xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>{fmt(data.velocity?.avg_deal_size)}</span>
+                  <span className="text-sm sm:text-xl font-bold text-white truncate block" style={{ fontFamily: 'Outfit' }}>{fmt(data.velocity?.avg_deal_size)}</span>
                 </div>
-                <div className="bg-zinc-900/60 rounded-xl p-4">
+                <div className="bg-zinc-900/60 rounded-xl p-2 sm:p-4">
                   <span className="text-[10px] text-zinc-500 block mb-1">Win Rate</span>
-                  <span className="text-xl font-bold text-emerald-400" style={{ fontFamily: 'Outfit' }}>{data.velocity?.win_rate || 0}%</span>
+                  <span className="text-sm sm:text-xl font-bold text-emerald-400" style={{ fontFamily: 'Outfit' }}>{data.velocity?.win_rate || 0}%</span>
                 </div>
-                <div className="bg-zinc-900/60 rounded-xl p-4">
+                <div className="bg-zinc-900/60 rounded-xl p-2 sm:p-4">
                   <span className="text-[10px] text-zinc-500 block mb-1">Open Deals</span>
-                  <span className="text-xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>{data.velocity?.open_deals || 0}</span>
+                  <span className="text-sm sm:text-xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>{data.velocity?.open_deals || 0}</span>
                 </div>
               </div>
               <div className="bg-zinc-900/40 rounded-xl p-4 border border-white/5">
@@ -291,21 +291,21 @@ const RevenueForecast = () => {
 };
 
 const MetricCard = ({ icon: Icon, label, value, change, sub, color }) => (
-  <div className="bg-zinc-900/50 border border-white/5 rounded-xl p-4" data-testid={`metric-${label.toLowerCase().replace(/\s/g, '-')}`}>
+  <div className="bg-zinc-900/50 border border-white/5 rounded-xl p-3 sm:p-4" data-testid={`metric-${label.toLowerCase().replace(/\s/g, '-')}`}>
     <div className="flex items-center justify-between mb-2">
-      <div className="flex items-center gap-2">
-        <Icon className={`w-4 h-4 ${color}`} />
-        <span className="text-[11px] text-zinc-500 font-medium">{label}</span>
+      <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
+        <Icon className={`w-4 h-4 flex-shrink-0 ${color}`} />
+        <span className="text-[10px] sm:text-[11px] text-zinc-500 font-medium truncate">{label}</span>
       </div>
       {typeof change === 'number' && (
-        <span className={`flex items-center gap-0.5 text-[11px] font-medium ${change >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+        <span className={`flex items-center gap-0.5 text-[10px] sm:text-[11px] font-medium flex-shrink-0 ${change >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
           {change >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
           {Math.abs(change)}%
         </span>
       )}
     </div>
-    <p className="text-xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>
-      {value}{sub && <span className="text-sm text-zinc-500 font-normal">{sub}</span>}
+    <p className="text-base sm:text-xl font-bold text-white truncate" style={{ fontFamily: 'Outfit' }}>
+      {value}{sub && <span className="text-xs sm:text-sm text-zinc-500 font-normal">{sub}</span>}
     </p>
   </div>
 );

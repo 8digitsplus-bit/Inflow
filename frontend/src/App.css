@@ -260,6 +260,15 @@
   .hide-mobile {
     display: none;
   }
+  .metric-value {
+    font-size: 20px;
+  }
+  .chart-container {
+    padding: 12px;
+  }
+  .kanban-column {
+    min-width: 260px;
+  }
 }
 
 @media (min-width: 641px) {

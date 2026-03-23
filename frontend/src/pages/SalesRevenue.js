@@ -74,14 +74,14 @@ const SalesRevenue = () => {
         </div>
 
         {/* KPIs — Revenue Specific */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
           <Card className="bg-zinc-950/50 border-white/10" data-testid="kpi-mrr">
             <CardContent className="p-5">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-zinc-400 text-sm">MRR</span>
                 <div className="p-1.5 rounded bg-indigo-500/10"><DollarSign className="w-4 h-4 text-indigo-400" /></div>
               </div>
-              <div className="text-2xl font-bold font-mono text-white">{fmt(data?.mrr || 0)}</div>
+              <div className="text-lg sm:text-2xl font-bold font-mono text-white">{fmt(data?.mrr || 0)}</div>
               <div className="text-zinc-500 text-xs mt-1">ARR: {fmt(data?.arr || 0)}</div>
             </CardContent>
           </Card>
@@ -91,7 +91,7 @@ const SalesRevenue = () => {
                 <span className="text-zinc-400 text-sm">ARPU</span>
                 <div className="p-1.5 rounded bg-emerald-500/10"><Users className="w-4 h-4 text-emerald-400" /></div>
               </div>
-              <div className="text-2xl font-bold font-mono text-white">{fmt(data?.arpu || 0)}</div>
+              <div className="text-lg sm:text-2xl font-bold font-mono text-white">{fmt(data?.arpu || 0)}</div>
               <div className="text-zinc-500 text-xs mt-1">{data?.unique_customers || 0} customers</div>
             </CardContent>
           </Card>
@@ -101,7 +101,7 @@ const SalesRevenue = () => {
                 <span className="text-zinc-400 text-sm">Net Revenue Retention</span>
                 <div className="p-1.5 rounded bg-violet-500/10"><Repeat className="w-4 h-4 text-violet-400" /></div>
               </div>
-              <div className={`text-2xl font-bold font-mono ${(data?.nrr || 100) >= 100 ? 'text-emerald-400' : 'text-amber-400'}`}>{data?.nrr || 100}%</div>
+              <div className={`text-lg sm:text-2xl font-bold font-mono ${(data?.nrr || 100) >= 100 ? 'text-emerald-400' : 'text-amber-400'}`}>{data?.nrr || 100}%</div>
               <div className="flex items-center gap-1 mt-1 text-emerald-400 text-xs">{(data?.nrr || 100) >= 100 && <><ArrowUpRight className="w-3 h-3" /><span>Net positive</span></>}</div>
             </CardContent>
           </Card>
@@ -113,7 +113,7 @@ const SalesRevenue = () => {
                   <AlertTriangle className={`w-4 h-4 ${riskColor}`} />
                 </div>
               </div>
-              <div className={`text-2xl font-bold font-mono ${riskColor}`}>{data?.concentration_risk || 0}%</div>
+              <div className={`text-lg sm:text-2xl font-bold font-mono ${riskColor}`}>{data?.concentration_risk || 0}%</div>
               <div className="text-zinc-500 text-xs mt-1">{riskLevel} — top 3 accounts</div>
             </CardContent>
           </Card>

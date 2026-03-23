@@ -109,14 +109,14 @@ const ChurnRetention = () => {
         </div>
 
         {/* Primary KPIs */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-4">
           <Card className="bg-zinc-950/50 border-white/10" data-testid="health-score-card">
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-zinc-400 text-xs">Health Score</span>
                 <Heart className={`w-4 h-4 ${getHealthColor(data?.health_score || 0)}`} />
               </div>
-              <div className={`text-2xl font-bold font-mono ${getHealthColor(data?.health_score || 0)}`}>{data?.health_score || 0}</div>
+              <div className={`text-lg sm:text-2xl font-bold font-mono truncate ${getHealthColor(data?.health_score || 0)}`}>{data?.health_score || 0}</div>
               <Progress value={data?.health_score || 0} className="mt-2 h-1.5" />
             </CardContent>
           </Card>
@@ -126,7 +126,7 @@ const ChurnRetention = () => {
                 <span className="text-zinc-400 text-xs">Retention Rate</span>
                 <TrendingUp className="w-4 h-4 text-emerald-400" />
               </div>
-              <div className="text-2xl font-bold font-mono text-emerald-400">{data?.retention_rate || 0}%</div>
+              <div className="text-lg sm:text-2xl font-bold font-mono truncate text-emerald-400">{data?.retention_rate || 0}%</div>
               <div className="flex items-center gap-1 mt-1 text-emerald-400 text-[10px]"><ArrowUpRight className="w-3 h-3" />+2.3%</div>
             </CardContent>
           </Card>
@@ -136,7 +136,7 @@ const ChurnRetention = () => {
                 <span className="text-zinc-400 text-xs">Churn Rate</span>
                 <TrendingDown className="w-4 h-4 text-red-400" />
               </div>
-              <div className="text-2xl font-bold font-mono text-red-400">{data?.churn_rate || 0}%</div>
+              <div className="text-lg sm:text-2xl font-bold font-mono truncate text-red-400">{data?.churn_rate || 0}%</div>
               <div className="flex items-center gap-1 mt-1 text-emerald-400 text-[10px]"><ArrowDownRight className="w-3 h-3" />-1.2%</div>
             </CardContent>
           </Card>
@@ -146,7 +146,7 @@ const ChurnRetention = () => {
                 <span className="text-zinc-400 text-xs">Net Revenue Retention</span>
                 <DollarSign className="w-4 h-4 text-indigo-400" />
               </div>
-              <div className="text-2xl font-bold font-mono text-indigo-400">{data?.nrr || 100}%</div>
+              <div className="text-lg sm:text-2xl font-bold font-mono truncate text-indigo-400">{data?.nrr || 100}%</div>
               <div className="text-[10px] text-zinc-500 mt-1">Target: {'>'}100%</div>
             </CardContent>
           </Card>
@@ -156,7 +156,7 @@ const ChurnRetention = () => {
                 <span className="text-zinc-400 text-xs">Revenue at Risk</span>
                 <AlertTriangle className="w-4 h-4 text-amber-400" />
               </div>
-              <div className="text-2xl font-bold font-mono text-amber-400">{fmt(data?.revenue_at_risk || 0)}</div>
+              <div className="text-lg sm:text-2xl font-bold font-mono truncate text-amber-400">{fmt(data?.revenue_at_risk || 0)}</div>
               <div className="text-[10px] text-zinc-500 mt-1">{data?.at_risk_count || 0} deals</div>
             </CardContent>
           </Card>
@@ -166,7 +166,7 @@ const ChurnRetention = () => {
                 <span className="text-zinc-400 text-xs">Avg CLV</span>
                 <Shield className="w-4 h-4 text-purple-400" />
               </div>
-              <div className="text-2xl font-bold font-mono text-purple-400">{fmt(data?.clv || 0)}</div>
+              <div className="text-lg sm:text-2xl font-bold font-mono truncate text-purple-400">{fmt(data?.clv || 0)}</div>
               <div className="text-[10px] text-zinc-500 mt-1">ARPA: {fmt(data?.arpa || 0)}</div>
             </CardContent>
           </Card>
@@ -333,7 +333,7 @@ const ChurnRetention = () => {
                   <div key={i} className="p-4 bg-zinc-900/50 rounded-lg border border-zinc-800">
                     <h4 className="text-white font-medium text-sm mb-3">{seg.segment}</h4>
                     <div className="flex items-end justify-between mb-2">
-                      <span className="text-2xl font-bold font-mono text-white">{seg.total}</span>
+                      <span className="text-lg sm:text-2xl font-bold font-mono truncate text-white">{seg.total}</span>
                       <span className={`text-xs font-mono ${riskPct > 30 ? 'text-red-400' : riskPct > 15 ? 'text-amber-400' : 'text-emerald-400'}`}>
                         {seg.at_risk} at risk ({riskPct}%)
                       </span>

@@ -137,12 +137,12 @@ const ConversionOptimization = () => {
         {/* Key Metrics */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card className="bg-zinc-950/50 border-white/10" data-testid="overall-conversion-card">
-            <CardContent className="p-5">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-zinc-400 text-sm">Overall Conversion</span>
+            <CardContent className="p-3 sm:p-5">
+              <div className="flex items-center justify-between mb-2 sm:mb-3">
+                <span className="text-zinc-400 text-xs sm:text-sm">Overall Conversion</span>
                 <Target className="w-5 h-5 text-emerald-400" />
               </div>
-              <div className="text-3xl font-bold font-mono text-emerald-400">
+              <div className="text-xl sm:text-3xl font-bold font-mono text-emerald-400">
                 {data?.overall_conversion || 0}%
               </div>
               <p className="text-xs text-emerald-400/70 mt-2">+4.2% vs last month</p>
@@ -150,12 +150,12 @@ const ConversionOptimization = () => {
           </Card>
 
           <Card className="bg-zinc-950/50 border-white/10" data-testid="total-opportunities-card">
-            <CardContent className="p-5">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-zinc-400 text-sm">Total Opportunities</span>
+            <CardContent className="p-3 sm:p-5">
+              <div className="flex items-center justify-between mb-2 sm:mb-3">
+                <span className="text-zinc-400 text-xs sm:text-sm">Total Opportunities</span>
                 <TrendingUp className="w-5 h-5 text-indigo-400" />
               </div>
-              <div className="text-3xl font-bold font-mono text-white">
+              <div className="text-xl sm:text-3xl font-bold font-mono text-white">
                 {data?.total_opportunities || 0}
               </div>
               <p className="text-xs text-zinc-500 mt-2">In pipeline</p>
@@ -163,12 +163,12 @@ const ConversionOptimization = () => {
           </Card>
 
           <Card className="bg-zinc-950/50 border-white/10" data-testid="active-tests-card">
-            <CardContent className="p-5">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-zinc-400 text-sm">Active A/B Tests</span>
+            <CardContent className="p-3 sm:p-5">
+              <div className="flex items-center justify-between mb-2 sm:mb-3">
+                <span className="text-zinc-400 text-xs sm:text-sm">Active A/B Tests</span>
                 <FlaskConical className="w-5 h-5 text-purple-400" />
               </div>
-              <div className="text-3xl font-bold font-mono text-purple-400">
+              <div className="text-xl sm:text-3xl font-bold font-mono text-purple-400">
                 {data?.ab_tests?.filter(t => t.status === 'running').length || 0}
               </div>
               <p className="text-xs text-zinc-500 mt-2">{data?.ab_tests?.length || 0} total tests</p>
@@ -176,12 +176,12 @@ const ConversionOptimization = () => {
           </Card>
 
           <Card className={`bg-zinc-950/50 border-white/10 ${data?.bottlenecks?.length > 0 ? 'border-amber-500/20' : ''}`} data-testid="worst-dropoff-card">
-            <CardContent className="p-5">
-              <div className="flex items-center justify-between mb-3">
-                <span className="text-zinc-400 text-sm">Worst Drop-off</span>
+            <CardContent className="p-3 sm:p-5">
+              <div className="flex items-center justify-between mb-2 sm:mb-3">
+                <span className="text-zinc-400 text-xs sm:text-sm">Worst Drop-off</span>
                 <AlertCircle className={`w-5 h-5 ${data?.bottlenecks?.length > 0 ? 'text-amber-400' : 'text-zinc-500'}`} />
               </div>
-              <div className={`text-3xl font-bold font-mono ${data?.bottlenecks?.length > 0 ? 'text-amber-400' : 'text-zinc-500'}`}>
+              <div className={`text-xl sm:text-3xl font-bold font-mono ${data?.bottlenecks?.length > 0 ? 'text-amber-400' : 'text-zinc-500'}`}>
                 {data?.bottlenecks?.[0]?.drop_rate || 0}%
               </div>
               <p className="text-xs text-zinc-500 mt-2">{data?.bottlenecks?.[0]?.stage || 'No bottleneck'} stage</p>
