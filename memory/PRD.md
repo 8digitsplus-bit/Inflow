@@ -33,14 +33,14 @@
 
 ## All Completed Features
 - Authentication (Google + Email/Password)
-- Dashboard with personalized metrics
-- Sales Pipeline (deal management, stages, analytics)
-- Sales Performance (win rates, team metrics)
-- Revenue Analytics (breakdown, trends)
-- Revenue Intelligence (advanced insights)
+- Dashboard with personalized, tier-gated overview metrics
+- Sales Pipeline (deal management, stages, velocity, bottleneck detection, kanban board)
+- Sales Performance (win/loss rates, avg sales cycle, deal aging, close rate by size, activity-to-close)
+- Revenue Analytics (MRR, ARR, ARPU, NRR, concentration risk, expansion vs new revenue, top accounts)
+- Revenue Intelligence (unified overview with recommendations, stage health, monthly trends, quick navigation)
 - **Revenue Forecast** (weighted pipeline, 3 scenarios, velocity, top deals) — Pro+ tier-gated
-- Churn & Retention (CLV, churn rate, AI predictions, cohort analysis)
-- CRO (funnel analysis, AI recommendations)
+- Churn & Retention (health score, CLV, ARPA, churn/retention rates, NRR, revenue at risk, cohort analysis, churn reasons, risk by segment, at-risk deals, AI predictions)
+- CRO (overall conversion, funnel analysis, stage-to-stage conversion, active A/B tests, worst drop-off detection, bottlenecks, AI recommendations)
 - Pricing Optimizer (AI pricing strategy)
 - Smart Assist (Claude AI chat + tickets)
 - **Agentic AI** — Multi-step investigation agent with 12 tools (query_deals, analytics, integrations, forecast, churn, deal updates, search, **remember**, **recall_memory**, **escalate_to_ticket**). Agent mode toggle, investigation step display, markdown rendering, cross-conversation memory, auto-escalation to tickets.
@@ -52,13 +52,29 @@
 - Tier-Gating across all features
 - Collapsible sidebar with persistent state
 
+## Differentiated Analytics Pages (Completed 2026-03-23)
+Each analytics page now provides unique, non-redundant metrics:
+| Page | Unique Focus | Key Metrics |
+|------|-------------|-------------|
+| Dashboard | High-level overview | Total Pipeline, Closed Revenue, Win Rate, Active Deals |
+| Pipeline | Deal flow & velocity | Weighted Pipeline, Bottleneck Stage, Stage Velocity, Conversion Rates |
+| Sales Performance | Closing efficiency | Win/Loss Rate, Avg Sales Cycle, Deal Aging, Close Rate by Size |
+| Sales Revenue | Revenue health | MRR/ARR, ARPU, NRR, Concentration Risk, Expansion vs New Revenue |
+| Churn & Retention | Customer health | Health Score, CLV, ARPA, Churn Reasons, Cohort Retention, At-Risk Deals |
+| CRO | Conversion optimization | Funnel Rates, Active A/B Tests, Worst Drop-off, Bottlenecks |
+| Revenue Intelligence | Unified insights | Pipeline Health, Performance Trend, Recommendations, Stage Health |
+| Revenue Forecast | Future projections | Scenario Modeling, Revenue Velocity, Pipeline Confidence |
+
 ## Bug Fixes
-- **2026-03-22:** Fixed Recharts tooltip white background on Revenue Forecast page Pipeline chart. Root cause: CSS `!important` rule overriding contentStyle, and BarChart cursor fill defaulting to white.
-- **2026-03-22:** Built Agentic AI system with 12 autonomous tools, multi-step reasoning, investigation steps UI, markdown rendering, cross-conversation memory (remember/recall), and auto-escalation to support tickets.
+- **2026-03-22:** Fixed Recharts tooltip white background on Revenue Forecast page Pipeline chart.
+- **2026-03-22:** Built Agentic AI system with 12 autonomous tools, multi-step reasoning, cross-conversation memory, auto-escalation.
+- **2026-03-23:** Fixed tooltip white background across ALL analytics pages (inline styles prevent CSS conflicts).
+- **2026-03-23:** Completed differentiated metrics refactor — replaced redundant CRO KPIs (Won Deals → Active A/B Tests, Avg Sales Cycle → Worst Drop-off).
 
 ## Backlog
 - **P1:** Integration Health Dashboard (sync status, data freshness, token expiry)
 - **P1:** Email-Scheduled Forecast Reports (weekly summaries)
+- **P1:** Daily AI Briefing (proactive pipeline analysis via email)
 - **P1:** Admin panel for support ticket management
 - **P2:** Team/Collaboration features
 - **P2:** Public API Access for Enterprise tier
