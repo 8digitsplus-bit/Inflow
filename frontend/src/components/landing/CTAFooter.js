@@ -66,18 +66,6 @@ export const Footer = () => (
           </ul>
         </div>
 
-        {/* Company */}
-        <div>
-          <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-widest mb-5" style={{ fontFamily: 'Outfit' }}>Company</h4>
-          <ul className="space-y-3">
-            {['About', 'Blog', 'Careers', 'Press', 'Partners'].map((item) => (
-              <li key={item}>
-                <a href="#" className="text-sm text-zinc-500 hover:text-white transition-colors duration-200">{item}</a>
-              </li>
-            ))}
-          </ul>
-        </div>
-
         {/* Contact */}
         <div className="hidden lg:block" id="contact">
           <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-widest mb-5" style={{ fontFamily: 'Outfit' }}>Contact</h4>
