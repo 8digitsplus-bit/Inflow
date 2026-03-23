@@ -57,7 +57,7 @@ const RevenueIntelligence = () => {
   const CustomTooltip = ({ active, payload, label }) => {
     if (!active || !payload?.length) return null;
     return (
-      <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-3 shadow-xl">
+      <div style={{ backgroundColor: '#09090b', border: '1px solid #3f3f46', borderRadius: '0.5rem', padding: '0.75rem' }}>
         <p className="text-zinc-400 text-sm mb-1">{label}</p>
         {payload.map((e, i) => (
           <p key={i} className="text-sm font-medium" style={{ color: e.color }}>
@@ -230,7 +230,7 @@ const RevenueIntelligence = () => {
                     <XAxis dataKey="month" stroke="#71717A" fontSize={12} />
                     <YAxis yAxisId="left" stroke="#71717A" fontSize={12} />
                     <YAxis yAxisId="right" orientation="right" stroke="#71717A" fontSize={12} tickFormatter={(v) => `${v}%`} />
-                    <Tooltip content={<CustomTooltip />} cursor={{ fill: 'transparent' }} />
+                    <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(39, 39, 42, 0.3)' }} />
                     <Legend />
                     <Bar yAxisId="left" dataKey="deals_won" name="Won" fill="#10B981" radius={[4, 4, 0, 0]} />
                     <Bar yAxisId="left" dataKey="deals_lost" name="Lost" fill="#EF4444" radius={[4, 4, 0, 0]} />

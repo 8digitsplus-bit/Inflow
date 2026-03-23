@@ -4,7 +4,6 @@ import DashboardLayout from '../components/DashboardLayout';
 import { 
   TrendingUp, 
   Target, 
-  Zap,
   AlertCircle,
   Sparkles,
   Loader2,
@@ -92,19 +91,17 @@ const ConversionOptimization = () => {
   };
 
   const CustomTooltip = ({ active, payload, label }) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-3 shadow-xl">
-          <p className="text-zinc-400 text-sm mb-1">{label}</p>
-          {payload.map((entry, index) => (
-            <p key={index} className="text-sm font-medium" style={{ color: entry.color || '#fff' }}>
-              {entry.name}: {entry.value}{typeof entry.value === 'number' && entry.name.includes('rate') ? '%' : ''}
-            </p>
-          ))}
-        </div>
-      );
-    }
-    return null;
+    if (!active || !payload?.length) return null;
+    return (
+      <div style={{ backgroundColor: '#09090b', border: '1px solid #3f3f46', borderRadius: '0.5rem', padding: '0.75rem' }}>
+        <p className="text-zinc-400 text-sm mb-1">{label}</p>
+        {payload.map((entry, index) => (
+          <p key={index} className="text-sm font-medium" style={{ color: entry.color || '#fff' }}>
+            {entry.name}: {entry.value}{typeof entry.value === 'number' && entry.name.includes('rate') ? '%' : ''}
+          </p>
+        ))}
+      </div>
+    );
   };
 
   const getStatusColor = (status) => {
@@ -165,29 +162,29 @@ const ConversionOptimization = () => {
             </CardContent>
           </Card>
 
-          <Card className="bg-zinc-950/50 border-white/10" data-testid="won-deals-card">
+          <Card className="bg-zinc-950/50 border-white/10" data-testid="active-tests-card">
             <CardContent className="p-5">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-zinc-400 text-sm">Win Deals</span>
-                <Zap className="w-5 h-5 text-amber-400" />
+                <span className="text-zinc-400 text-sm">Active A/B Tests</span>
+                <FlaskConical className="w-5 h-5 text-purple-400" />
               </div>
-              <div className="text-3xl font-bold font-mono text-amber-400">
-                {data?.won_deals || 0}
+              <div className="text-3xl font-bold font-mono text-purple-400">
+                {data?.ab_tests?.filter(t => t.status === 'running').length || 0}
               </div>
-              <p className="text-xs text-zinc-500 mt-2">This period</p>
+              <p className="text-xs text-zinc-500 mt-2">{data?.ab_tests?.length || 0} total tests</p>
             </CardContent>
           </Card>
 
-          <Card className="bg-zinc-950/50 border-white/10" data-testid="avg-cycle-card">
+          <Card className={`bg-zinc-950/50 border-white/10 ${data?.bottlenecks?.length > 0 ? 'border-amber-500/20' : ''}`} data-testid="worst-dropoff-card">
             <CardContent className="p-5">
               <div className="flex items-center justify-between mb-3">
-                <span className="text-zinc-400 text-sm">Avg. Sales Cycle</span>
-                <Target className="w-5 h-5 text-cyan-400" />
+                <span className="text-zinc-400 text-sm">Worst Drop-off</span>
+                <AlertCircle className={`w-5 h-5 ${data?.bottlenecks?.length > 0 ? 'text-amber-400' : 'text-zinc-500'}`} />
               </div>
-              <div className="text-3xl font-bold font-mono text-cyan-400">
-                {data?.avg_cycle_days || 0}
+              <div className={`text-3xl font-bold font-mono ${data?.bottlenecks?.length > 0 ? 'text-amber-400' : 'text-zinc-500'}`}>
+                {data?.bottlenecks?.[0]?.drop_rate || 0}%
               </div>
-              <p className="text-xs text-zinc-500 mt-2">Days to close</p>
+              <p className="text-xs text-zinc-500 mt-2">{data?.bottlenecks?.[0]?.stage || 'No bottleneck'} stage</p>
             </CardContent>
           </Card>
         </div>
@@ -209,7 +206,7 @@ const ConversionOptimization = () => {
                     <CartesianGrid strokeDasharray="3 3" stroke="#27272A" horizontal={false} />
                     <XAxis type="number" stroke="#71717A" fontSize={12} />
                     <YAxis type="category" dataKey="stage" stroke="#71717A" fontSize={11} width={80} />
-                    <Tooltip content={<CustomTooltip />} cursor={{ fill: 'transparent' }} />
+                    <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(39, 39, 42, 0.3)' }} wrapperStyle={{ outline: 'none' }} />
                     <Bar dataKey="conversion" name="Conversion Rate" radius={[0, 4, 4, 0]}>
                       {data?.funnel_data?.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={FUNNEL_COLORS[index % FUNNEL_COLORS.length]} />

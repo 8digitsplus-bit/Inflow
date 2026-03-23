@@ -132,19 +132,17 @@ const Dashboard = () => {
   const formatCurrency = (value) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
 
   const CustomTooltip = ({ active, payload, label }) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-3 shadow-xl">
-          <p className="text-zinc-400 text-sm mb-1">{label}</p>
-          {payload.map((entry, index) => (
-            <p key={index} className="text-sm font-medium" style={{ color: entry.color }}>
-              {entry.name}: {typeof entry.value === 'number' && entry.name.toLowerCase().includes('revenue') ? formatCurrency(entry.value) : `${entry.value}${entry.name.toLowerCase().includes('rate') ? '%' : ''}`}
-            </p>
-          ))}
-        </div>
-      );
-    }
-    return null;
+    if (!active || !payload?.length) return null;
+    return (
+      <div style={{ backgroundColor: '#09090b', border: '1px solid #3f3f46', borderRadius: '0.5rem', padding: '0.75rem' }}>
+        <p className="text-zinc-400 text-sm mb-1">{label}</p>
+        {payload.map((entry, index) => (
+          <p key={index} className="text-sm font-medium" style={{ color: entry.color }}>
+            {entry.name}: {typeof entry.value === 'number' && entry.name.toLowerCase().includes('revenue') ? formatCurrency(entry.value) : `${entry.value}${entry.name.toLowerCase().includes('rate') ? '%' : ''}`}
+          </p>
+        ))}
+      </div>
+    );
   };
 
   const getHealthColor = (score) => {
@@ -309,7 +307,7 @@ const Dashboard = () => {
                     <Pie data={pieData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={3} dataKey="count">
                       {pieData.map((entry, index) => (<Cell key={`cell-${index}`} fill={stageColors[entry.stage] || '#6366F1'} />))}
                     </Pie>
-                    <Tooltip contentStyle={{ backgroundColor: '#18181B', border: '1px solid #27272A', borderRadius: '8px', color: '#fff' }} itemStyle={{ color: '#A1A1AA' }} />
+                    <Tooltip contentStyle={{ backgroundColor: '#09090b', border: '1px solid #3f3f46', borderRadius: '8px', color: '#fff' }} itemStyle={{ color: '#A1A1AA' }} />
                   </RechartsPie>
                 </ResponsiveContainer>
               </div>

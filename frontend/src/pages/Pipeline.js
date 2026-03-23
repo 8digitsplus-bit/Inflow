@@ -83,6 +83,7 @@ const CustomTooltip = ({ active, payload, label }) => {
 const Pipeline = () => {
   const { user } = useAuth();
   const [deals, setDeals] = useState([]);
+  const [pipelineData, setPipelineData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showDealModal, setShowDealModal] = useState(false);
   const [editingDeal, setEditingDeal] = useState(null);
@@ -94,7 +95,7 @@ const Pipeline = () => {
     probability: 20, expected_close_date: '', notes: '',
   });
 
-  useEffect(() => { fetchDeals(); }, []);
+  useEffect(() => { fetchDeals(); fetchPipelineData(); }, []);
 
   const fetchDeals = async () => {
     try {
@@ -105,6 +106,13 @@ const Pipeline = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const fetchPipelineData = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/analytics/pipeline`, { credentials: 'include' });
+      if (res.ok) setPipelineData(await res.json());
+    } catch (e) { console.error('Failed to fetch pipeline data:', e); }
   };
 
   const handleSubmit = async (e) => {
@@ -226,7 +234,7 @@ const Pipeline = () => {
           </Button>
         </div>
 
-        {/* KPI Cards */}
+        {/* KPI Cards — Pipeline Specific */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <Card className="bg-zinc-950/50 border-white/10" data-testid="kpi-pipeline-value">
             <CardContent className="p-5">
@@ -235,39 +243,105 @@ const Pipeline = () => {
                 <div className="p-1.5 rounded bg-indigo-500/10"><DollarSign className="w-4 h-4 text-indigo-400" /></div>
               </div>
               <div className="text-2xl font-bold font-mono text-white">{fmt(stats.total)}</div>
-              <div className="flex items-center gap-1 mt-2 text-zinc-400 text-xs">
-                <span>{stats.totalDeals} total deals</span>
+              <div className="text-zinc-500 text-xs mt-1">{stats.activeCount} active deals</div>
+            </CardContent>
+          </Card>
+          <Card className="bg-zinc-950/50 border-white/10" data-testid="kpi-weighted">
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-zinc-400 text-sm">Weighted Pipeline</span>
+                <div className="p-1.5 rounded bg-emerald-500/10"><Target className="w-4 h-4 text-emerald-400" /></div>
+              </div>
+              <div className="text-2xl font-bold font-mono text-white">{fmt(stats.weighted)}</div>
+              <div className="text-zinc-500 text-xs mt-1">Probability-adjusted</div>
+            </CardContent>
+          </Card>
+          <Card className={`bg-zinc-950/50 border-white/10 ${pipelineData?.bottleneck_stuck_count > 0 ? 'border-amber-500/20' : ''}`} data-testid="kpi-bottleneck">
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between mb-2">
+                <span className="text-zinc-400 text-sm">Bottleneck</span>
+                <div className={`p-1.5 rounded ${pipelineData?.bottleneck_stuck_count > 0 ? 'bg-amber-500/10' : 'bg-zinc-800'}`}>
+                  <Filter className={`w-4 h-4 ${pipelineData?.bottleneck_stuck_count > 0 ? 'text-amber-400' : 'text-zinc-500'}`} />
+                </div>
+              </div>
+              <div className="text-2xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>
+                {pipelineData?.bottleneck_stage || 'None'}
+              </div>
+              <div className={`text-xs mt-1 ${pipelineData?.bottleneck_stuck_count > 0 ? 'text-amber-400' : 'text-zinc-500'}`}>
+                {pipelineData?.bottleneck_stuck_count || 0} deals stuck 14+ days
               </div>
             </CardContent>
           </Card>
-          <Card className="bg-zinc-950/50 border-white/10" data-testid="kpi-won-value">
+          <Card className="bg-zinc-950/50 border-white/10" data-testid="kpi-conversion">
             <CardContent className="p-5">
               <div className="flex items-center justify-between mb-2">
-                <span className="text-zinc-400 text-sm">Win Revenue</span>
-                <div className="p-1.5 rounded bg-emerald-500/10"><TrendingUp className="w-4 h-4 text-emerald-400" /></div>
+                <span className="text-zinc-400 text-sm">Top Conversion</span>
+                <div className="p-1.5 rounded bg-cyan-500/10"><ChevronRight className="w-4 h-4 text-cyan-400" /></div>
               </div>
-              <div className="text-2xl font-bold font-mono text-white">{fmt(stats.wonValue)}</div>
-              <div className="flex items-center gap-1 mt-2 text-emerald-400 text-xs"><ArrowUpRight className="w-3 h-3" /><span>{stats.winRate}% win rate</span></div>
+              <div className="text-2xl font-bold font-mono text-white">
+                {pipelineData?.conversion_rates?.[0]?.rate || 0}%
+              </div>
+              <div className="text-zinc-500 text-xs mt-1">
+                from {pipelineData?.conversion_rates?.[0]?.from_stage || 'Lead'}
+              </div>
             </CardContent>
           </Card>
-          <Card className="bg-zinc-950/50 border-white/10" data-testid="kpi-active-deals">
-            <CardContent className="p-5">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-zinc-400 text-sm">Active Deals</span>
-                <div className="p-1.5 rounded bg-cyan-500/10"><Layers className="w-4 h-4 text-cyan-400" /></div>
-              </div>
-              <div className="text-2xl font-bold font-mono text-white">{stats.activeCount}</div>
-              <div className="flex items-center gap-1 mt-2 text-zinc-400 text-xs"><span>across {STAGES.length - 2} stages</span></div>
+        </div>
+
+        {/* Pipeline Velocity + Conversion Rates */}
+        <div className="grid lg:grid-cols-2 gap-4">
+          <Card className="bg-zinc-950/50 border-white/10" data-testid="velocity-section">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
+                <Layers className="w-4 h-4 text-indigo-400" /> Stage Velocity
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {(pipelineData?.pipeline_velocity || []).map((v, i) => {
+                const maxDays = Math.max(...(pipelineData?.pipeline_velocity || []).map(x => x.avg_days || 1), 1);
+                return (
+                  <div key={i}>
+                    <div className="flex items-center justify-between text-xs mb-1">
+                      <span className="text-zinc-300">{v.stage}</span>
+                      <div className="flex items-center gap-3">
+                        <span className="text-zinc-500">{v.count} deals</span>
+                        <span className={`font-mono font-medium ${v.avg_days > 14 ? 'text-amber-400' : 'text-zinc-400'}`}>{v.avg_days}d avg</span>
+                      </div>
+                    </div>
+                    <div className="h-1.5 bg-zinc-800/50 rounded-full overflow-hidden">
+                      <div className="h-full rounded-full transition-all duration-700" style={{
+                        width: `${Math.min((v.avg_days / maxDays) * 100, 100)}%`,
+                        backgroundColor: v.avg_days > 14 ? '#F59E0B' : STAGES[i]?.color || '#6366F1',
+                      }} />
+                    </div>
+                    {v.stuck_count > 0 && <p className="text-amber-400/70 text-[10px] mt-0.5">{v.stuck_count} stuck 14+ days</p>}
+                  </div>
+                );
+              })}
             </CardContent>
           </Card>
-          <Card className="bg-zinc-950/50 border-white/10" data-testid="kpi-avg-deal">
-            <CardContent className="p-5">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-zinc-400 text-sm">Avg Deal Size</span>
-                <div className="p-1.5 rounded bg-amber-500/10"><Target className="w-4 h-4 text-amber-400" /></div>
-              </div>
-              <div className="text-2xl font-bold font-mono text-white">{fmt(stats.avgDeal)}</div>
-              <div className="flex items-center gap-1 mt-2 text-zinc-400 text-xs"><Briefcase className="w-3 h-3" /><span>per deal average</span></div>
+
+          <Card className="bg-zinc-950/50 border-white/10" data-testid="conversion-section">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
+                <ChevronRight className="w-4 h-4 text-cyan-400" /> Stage Conversion Rates
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {(pipelineData?.conversion_rates || []).map((c, i) => (
+                <div key={i}>
+                  <div className="flex items-center justify-between text-xs mb-1">
+                    <span className="text-zinc-300">{c.from_stage} &rarr; next</span>
+                    <span className={`font-mono font-medium ${c.rate > 60 ? 'text-emerald-400' : c.rate > 30 ? 'text-zinc-400' : 'text-red-400'}`}>{c.rate}%</span>
+                  </div>
+                  <div className="h-1.5 bg-zinc-800/50 rounded-full overflow-hidden">
+                    <div className="h-full rounded-full transition-all duration-700" style={{
+                      width: `${c.rate}%`,
+                      backgroundColor: c.rate > 60 ? '#10B981' : c.rate > 30 ? '#6366F1' : '#EF4444',
+                    }} />
+                  </div>
+                </div>
+              ))}
             </CardContent>
           </Card>
         </div>

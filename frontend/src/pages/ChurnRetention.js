@@ -80,7 +80,7 @@ const ChurnRetention = () => {
   const CustomTooltip = ({ active, payload, label }) => {
     if (!active || !payload?.length) return null;
     return (
-      <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-3 shadow-xl">
+      <div style={{ backgroundColor: '#09090b', border: '1px solid #3f3f46', borderRadius: '0.5rem', padding: '0.75rem' }}>
         <p className="text-zinc-400 text-sm mb-1">{label}</p>
         {payload.map((e, i) => (
           <p key={i} className="text-sm font-medium" style={{ color: e.color || e.stroke }}>
@@ -236,7 +236,7 @@ const ChurnRetention = () => {
                         const total = (data?.health_distribution || []).reduce((s, h) => s + h.count, 0);
                         const pct = total > 0 ? ((d.count / total) * 100).toFixed(0) : 0;
                         return (
-                          <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-3 shadow-xl">
+                          <div style={{ backgroundColor: '#09090b', border: '1px solid #3f3f46', borderRadius: '0.5rem', padding: '0.75rem' }}>
                             <p className="text-sm font-medium text-white">{d.status}</p>
                             <p className="text-indigo-400 text-sm font-mono">{d.count} customers ({pct}%)</p>
                           </div>
