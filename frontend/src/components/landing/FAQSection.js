@@ -32,7 +32,7 @@ const faqs = [
   },
   {
     q: 'What kind of support do you offer?',
-    a: 'All plans include access to our AI-powered Smart Assist — a live chat assistant that knows InFlow inside and out and can answer questions about your account instantly. Pro and Enterprise users get priority queuing. You can also create formal support tickets for complex issues.',
+    a: 'Every plan includes our Agentic AI assistant — a powerful AI that can autonomously investigate your data, analyze your pipeline, and answer complex questions in real time. It remembers context between conversations and can even auto-escalate critical issues to our support team by creating tickets on your behalf. Pro and Enterprise users get priority support and access to the full suite of AI investigation tools.',
   },
 ];
 
