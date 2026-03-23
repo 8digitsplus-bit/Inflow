@@ -351,16 +351,16 @@ const ConversionOptimization = () => {
 
         {/* AI Recommendations */}
         <Card className="bg-gradient-to-br from-purple-500/10 to-indigo-500/5 border-purple-500/20" data-testid="ai-recommendations-card">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-lg font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
-              <Sparkles className="w-5 h-5 text-purple-400" />
+          <CardHeader className="flex flex-col sm:flex-row sm:items-center gap-3">
+            <CardTitle className="text-base sm:text-lg font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
+              <Sparkles className="w-5 h-5 text-purple-400 flex-shrink-0" />
               AI Optimization Recommendations
             </CardTitle>
             {['pro_monthly', 'pro_yearly', 'enterprise_monthly', 'enterprise_yearly'].includes(user?.subscription_tier) && (
               <Button
                 onClick={getAIRecommendations}
                 disabled={loadingAI}
-                className="bg-purple-600 hover:bg-purple-500"
+                className="bg-purple-600 hover:bg-purple-500 w-full sm:w-auto sm:ml-auto flex-shrink-0"
                 data-testid="get-ai-recs-btn"
               >
                 {loadingAI ? (

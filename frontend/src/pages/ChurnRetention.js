@@ -367,9 +367,9 @@ const ChurnRetention = () => {
                           }`}>{deal.risk_level}</span>
                         </div>
                         <p className="text-zinc-400 text-xs">{deal.company} &middot; {fmt(deal.value)}</p>
-                        <div className="flex items-center gap-3 mt-1.5">
-                          <span className="text-[10px] text-zinc-500 flex items-center gap-1"><Activity className="w-3 h-3" /> Engagement: {deal.engagement_score}%</span>
-                          <span className="text-[10px] text-zinc-500 flex items-center gap-1"><Clock className="w-3 h-3" /> {deal.days_inactive}d inactive</span>
+                        <div className="flex flex-wrap items-center gap-2 sm:gap-3 mt-1.5">
+                          <span className="text-[10px] text-zinc-500 flex items-center gap-1"><Activity className="w-3 h-3" /> {deal.engagement_score}%</span>
+                          <span className="text-[10px] text-zinc-500 flex items-center gap-1"><Clock className="w-3 h-3" /> {deal.days_inactive}d idle</span>
                         </div>
                       </div>
                       <Button size="sm" variant="outline" className="border-zinc-700 text-zinc-300 hover:bg-white/5 ml-2 flex-shrink-0"
