@@ -63,6 +63,30 @@ export const AuthProvider = ({ children }) => {
       throw new Error(err.detail || 'Login failed');
     }
 
+    const data = await response.json();
+
+    // 2FA challenge
+    if (data.requires_2fa) {
+      return data;
+    }
+
+    setUser(data);
+    return data;
+  };
+
+  const verify2FA = async (userId, code) => {
+    const response = await fetch(`${API_URL}/api/auth/2fa/verify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify({ user_id: userId, code }),
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      throw new Error(err.detail || 'Verification failed');
+    }
+
     const userData = await response.json();
     setUser(userData);
     return userData;
@@ -136,6 +160,7 @@ export const AuthProvider = ({ children }) => {
     loginWithGoogle,
     loginWithEmail,
     registerWithEmail,
+    verify2FA,
     logout,
     exchangeSession,
     refreshUser,

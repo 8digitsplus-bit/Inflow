@@ -73,6 +73,8 @@ Each analytics page now provides unique, non-redundant metrics:
 
 - **2026-03-23:** Fixed mobile responsiveness overflow across all analytics pages (responsive font sizes, card padding, grid gaps, truncation).
 
+- **2026-03-23:** Added optional email-based 2FA (OTP) with toggle in Settings. Confirmation dialogs on logout and subscription cancellation.
+
 ## Backlog
 - **P1:** Integration Health Dashboard (sync status, data freshness, token expiry)
 - **P1:** Email-Scheduled Forecast Reports (weekly summaries)

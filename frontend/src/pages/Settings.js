@@ -12,7 +12,8 @@ import {
   LogOut,
   AlertCircle,
   XCircle,
-  Clock
+  Clock,
+  ShieldCheck
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -32,9 +33,12 @@ const Settings = () => {
   const [cancellingSubscription, setCancellingSubscription] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [twoFAEnabled, setTwoFAEnabled] = useState(false);
+  const [toggling2FA, setToggling2FA] = useState(false);
 
   useEffect(() => {
     fetchPlans();
+    fetch2FAStatus();
     
     // Check for payment return
     const sessionId = searchParams.get('session_id');
@@ -44,6 +48,34 @@ const Settings = () => {
       pollPaymentStatus(sessionId);
     }
   }, [searchParams]);
+
+  const fetch2FAStatus = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/auth/2fa/status`, { credentials: 'include' });
+      if (res.ok) {
+        const data = await res.json();
+        setTwoFAEnabled(data.enabled);
+      }
+    } catch {}
+  };
+
+  const toggle2FA = async () => {
+    setToggling2FA(true);
+    try {
+      const endpoint = twoFAEnabled ? '/api/auth/2fa/disable' : '/api/auth/2fa/enable';
+      const res = await fetch(`${API_URL}${endpoint}`, { method: 'POST', credentials: 'include' });
+      if (res.ok) {
+        setTwoFAEnabled(!twoFAEnabled);
+        toast.success(twoFAEnabled ? 'Two-factor authentication disabled' : 'Two-factor authentication enabled');
+      } else {
+        toast.error('Failed to update 2FA settings');
+      }
+    } catch {
+      toast.error('Failed to update 2FA settings');
+    } finally {
+      setToggling2FA(false);
+    }
+  };
 
   const fetchPlans = async () => {
     try {
@@ -300,6 +332,42 @@ const Settings = () => {
                     </div>
                   </div>
                 </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Security — Two-Factor Authentication */}
+        <Card className="bg-zinc-950/50 border-white/10" data-testid="security-2fa-card">
+          <CardHeader>
+            <CardTitle className="text-lg font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
+              <ShieldCheck className="w-5 h-5 text-indigo-400" />
+              Security
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center justify-between p-4 bg-zinc-900/50 rounded-lg border border-zinc-800">
+              <div className="min-w-0 flex-1">
+                <h4 className="text-sm font-medium text-white mb-0.5">Two-Factor Authentication</h4>
+                <p className="text-xs text-zinc-500">
+                  {twoFAEnabled
+                    ? 'A verification code will be sent to your email each time you sign in.'
+                    : 'Add an extra layer of security by requiring a verification code at sign-in.'}
+                </p>
+              </div>
+              <button
+                onClick={toggle2FA}
+                disabled={toggling2FA}
+                className={`ml-4 relative inline-flex h-6 w-11 items-center rounded-full flex-shrink-0 transition-colors duration-200 focus:outline-none ${twoFAEnabled ? 'bg-indigo-600' : 'bg-zinc-700'}`}
+                data-testid="2fa-toggle"
+              >
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${twoFAEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+              </button>
+            </div>
+            {twoFAEnabled && (
+              <div className="flex items-center gap-2 px-3 py-2 bg-indigo-500/5 border border-indigo-500/20 rounded-lg">
+                <ShieldCheck className="w-4 h-4 text-indigo-400 flex-shrink-0" />
+                <p className="text-xs text-indigo-300">2FA is active. A code will be emailed to you on every sign-in.</p>
               </div>
             )}
           </CardContent>

@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { ArrowLeft, Mail, Loader2, Eye, EyeOff } from 'lucide-react';
+import { ArrowLeft, Mail, Loader2, Eye, EyeOff, ShieldCheck } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { toast } from 'sonner';
@@ -11,13 +11,16 @@ const AuthPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const isTrial = searchParams.get('trial') === 'true';
-  const { loginWithGoogle, loginWithEmail, registerWithEmail, isAuthenticated } = useAuth();
+  const { loginWithGoogle, loginWithEmail, registerWithEmail, verify2FA, isAuthenticated } = useAuth();
   const [mode, setMode] = useState('register');
   const [showEmailForm, setShowEmailForm] = useState(false);
   const [loading, setLoading] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState({ name: '', email: '', password: '' });
   const [isRegistering, setIsRegistering] = useState(false);
+  const [twoFAState, setTwoFAState] = useState(null);
+  const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
+  const otpRefs = useRef([]);
 
   if (isAuthenticated && !isRegistering) {
     navigate('/dashboard');
@@ -27,6 +30,48 @@ const AuthPage = () => {
   const handleGoogle = () => {
     setLoading('google');
     loginWithGoogle();
+  };
+
+  const handleOtpChange = (index, value) => {
+    if (!/^\d*$/.test(value)) return;
+    const newDigits = [...otpDigits];
+    newDigits[index] = value.slice(-1);
+    setOtpDigits(newDigits);
+    if (value && index < 5) {
+      otpRefs.current[index + 1]?.focus();
+    }
+  };
+
+  const handleOtpKeyDown = (index, e) => {
+    if (e.key === 'Backspace' && !otpDigits[index] && index > 0) {
+      otpRefs.current[index - 1]?.focus();
+    }
+  };
+
+  const handleOtpPaste = (e) => {
+    e.preventDefault();
+    const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, 6);
+    if (pasted.length === 6) {
+      const newDigits = pasted.split('');
+      setOtpDigits(newDigits);
+      otpRefs.current[5]?.focus();
+    }
+  };
+
+  const handleVerify2FA = async () => {
+    const code = otpDigits.join('');
+    if (code.length !== 6) { toast.error('Please enter the full 6-digit code'); return; }
+    setLoading('2fa');
+    try {
+      await verify2FA(twoFAState.user_id, code);
+      navigate('/dashboard');
+    } catch (err) {
+      toast.error(err.message);
+      setOtpDigits(['', '', '', '', '', '']);
+      otpRefs.current[0]?.focus();
+    } finally {
+      setLoading(null);
+    }
   };
 
   const handleEmailSubmit = async (e) => {
@@ -44,7 +89,12 @@ const AuthPage = () => {
         navigate(isTrial ? '/onboarding' : '/choose-plan');
         return;
       } else {
-        await loginWithEmail(form.email, form.password);
+        const result = await loginWithEmail(form.email, form.password);
+        if (result.requires_2fa) {
+          setTwoFAState(result);
+          toast.info(`Verification code: ${result.otp_code_debug}`, { duration: 15000 });
+          return;
+        }
         navigate('/dashboard');
       }
     } catch (err) {
@@ -75,6 +125,59 @@ const AuthPage = () => {
         </div>
 
         <div className="bg-zinc-900/60 border border-white/10 rounded-2xl p-8 backdrop-blur-xl">
+          {twoFAState ? (
+            /* 2FA Verification Step */
+            <div data-testid="2fa-verify-form">
+              <div className="flex justify-center mb-4">
+                <div className="w-12 h-12 rounded-full bg-indigo-500/10 flex items-center justify-center">
+                  <ShieldCheck className="w-6 h-6 text-indigo-400" />
+                </div>
+              </div>
+              <h2 className="text-xl font-semibold text-white text-center mb-1" style={{ fontFamily: 'Outfit' }}>
+                Verify your identity
+              </h2>
+              <p className="text-zinc-400 text-sm text-center mb-6">
+                We sent a 6-digit code to <span className="text-zinc-300">{twoFAState.email_hint}</span>
+              </p>
+
+              <div className="flex justify-center gap-2 mb-6" onPaste={handleOtpPaste}>
+                {otpDigits.map((digit, i) => (
+                  <input
+                    key={i}
+                    ref={el => otpRefs.current[i] = el}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={digit}
+                    onChange={e => handleOtpChange(i, e.target.value)}
+                    onKeyDown={e => handleOtpKeyDown(i, e)}
+                    className="w-11 h-13 text-center text-xl font-mono font-bold bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-colors"
+                    data-testid={`otp-input-${i}`}
+                    autoFocus={i === 0}
+                  />
+                ))}
+              </div>
+
+              <Button
+                className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium h-11"
+                onClick={handleVerify2FA}
+                disabled={loading === '2fa' || otpDigits.join('').length < 6}
+                data-testid="verify-2fa-btn"
+              >
+                {loading === '2fa' ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                Verify & Sign In
+              </Button>
+
+              <button
+                className="w-full text-zinc-500 hover:text-zinc-300 text-sm mt-4 transition-colors"
+                onClick={() => { setTwoFAState(null); setOtpDigits(['', '', '', '', '', '']); }}
+                data-testid="back-to-login-btn"
+              >
+                Back to sign in
+              </button>
+            </div>
+          ) : (
+          <>
           <h2 className="text-xl font-semibold text-white text-center mb-1" style={{ fontFamily: 'Outfit' }}>
             {mode === 'register' ? 'Create your account' : 'Welcome back'}
           </h2>
@@ -142,6 +245,8 @@ const AuthPage = () => {
               {mode === 'register' ? 'Sign in' : 'Sign up'}
             </button>
           </p>
+          </>
+          )}
         </div>
 
         <p className="text-xs text-zinc-600 text-center mt-6">By continuing, you agree to our Terms of Service and Privacy Policy.</p>

@@ -4,6 +4,7 @@ import uuid
 import os
 import httpx
 import bcrypt
+import random
 
 from database import db
 from models import User, RegisterRequest, LoginRequest, OnboardingData
@@ -190,7 +191,7 @@ async def register_with_email(req: RegisterRequest, response: Response):
     return user_doc
 @router.post("/auth/login")
 async def login_with_email(req: LoginRequest, response: Response):
-    """Login with email and password"""
+    """Login with email and password — returns 2FA challenge if enabled"""
     user_doc = await db.users.find_one({"email": req.email}, {"_id": 0})
     if not user_doc:
         raise HTTPException(status_code=401, detail="Invalid email or password")
@@ -202,6 +203,88 @@ async def login_with_email(req: LoginRequest, response: Response):
     if not bcrypt.checkpw(req.password.encode("utf-8"), stored_hash.encode("utf-8")):
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
+    # Check if 2FA is enabled
+    if user_doc.get("two_fa_enabled"):
+        otp_code = str(random.randint(100000, 999999))
+        await db.otp_codes.delete_many({"user_id": user_doc["user_id"]})
+        await db.otp_codes.insert_one({
+            "user_id": user_doc["user_id"],
+            "code": otp_code,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "expires_at": (datetime.now(timezone.utc) + timedelta(minutes=10)).isoformat(),
+        })
+        # Mock email: return code in response (swap for real email service later)
+        return {
+            "requires_2fa": True,
+            "user_id": user_doc["user_id"],
+            "email_hint": user_doc["email"][:3] + "***" + user_doc["email"][user_doc["email"].index("@"):],
+            "otp_code_debug": otp_code,
+        }
+
+    # No 2FA — proceed with normal login
+    return await _create_session_and_respond(user_doc, response)
+
+
+@router.post("/auth/2fa/verify")
+async def verify_2fa(request: Request, response: Response):
+    """Verify OTP code and complete login"""
+    data = await request.json()
+    user_id = data.get("user_id")
+    code = data.get("code")
+
+    if not user_id or not code:
+        raise HTTPException(status_code=400, detail="user_id and code are required")
+
+    otp_doc = await db.otp_codes.find_one({"user_id": user_id, "code": code}, {"_id": 0})
+    if not otp_doc:
+        raise HTTPException(status_code=401, detail="Invalid verification code")
+
+    expires_at = datetime.fromisoformat(otp_doc["expires_at"].replace("Z", "+00:00"))
+    if datetime.now(timezone.utc) > expires_at:
+        await db.otp_codes.delete_many({"user_id": user_id})
+        raise HTTPException(status_code=401, detail="Code has expired. Please log in again.")
+
+    await db.otp_codes.delete_many({"user_id": user_id})
+
+    user_doc = await db.users.find_one({"user_id": user_id}, {"_id": 0})
+    if not user_doc:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return await _create_session_and_respond(user_doc, response)
+
+
+@router.post("/auth/2fa/enable")
+async def enable_2fa(current_user: User = Depends(get_current_user)):
+    """Enable 2FA for the current user"""
+    await db.users.update_one(
+        {"user_id": current_user.user_id},
+        {"$set": {"two_fa_enabled": True, "two_fa_method": "email"}}
+    )
+    return {"status": "enabled", "method": "email"}
+
+
+@router.post("/auth/2fa/disable")
+async def disable_2fa(current_user: User = Depends(get_current_user)):
+    """Disable 2FA for the current user"""
+    await db.users.update_one(
+        {"user_id": current_user.user_id},
+        {"$set": {"two_fa_enabled": False, "two_fa_method": None}}
+    )
+    return {"status": "disabled"}
+
+
+@router.get("/auth/2fa/status")
+async def get_2fa_status(current_user: User = Depends(get_current_user)):
+    """Get 2FA status for the current user"""
+    user_doc = await db.users.find_one({"user_id": current_user.user_id}, {"_id": 0, "two_fa_enabled": 1, "two_fa_method": 1})
+    return {
+        "enabled": user_doc.get("two_fa_enabled", False),
+        "method": user_doc.get("two_fa_method"),
+    }
+
+
+async def _create_session_and_respond(user_doc: dict, response: Response):
+    """Create session and return user data"""
     session_token = f"session_{uuid.uuid4().hex}"
     expires_at = datetime.now(timezone.utc) + timedelta(days=7)
 
