@@ -10,7 +10,7 @@ export const AboutSection = () => (
         </div>
         <h2 className="text-2xl sm:text-4xl font-bold text-white mb-4" style={{ fontFamily: 'Outfit' }}>
           Turn Revenue Data Into{' '}
-          <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">Actionable Growth</span>
+          <span className="text-indigo-400">Actionable Growth</span>
         </h2>
         <p className="text-sm sm:text-base text-zinc-400 max-w-2xl mx-auto leading-relaxed">
           InFlow is a revenue intelligence platform that helps businesses optimize pricing, accelerate their sales pipeline, and predict churn before it happens.
