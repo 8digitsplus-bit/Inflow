@@ -19,6 +19,7 @@ import {
   LineChart,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from './ui/alert-dialog';
 import { Toaster } from './ui/sonner';
 
 const TIER_LEVEL = {
@@ -67,6 +68,7 @@ const DashboardLayout = ({ children }) => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [collapsed, setCollapsed] = useState(() => {
     try { return localStorage.getItem('sidebar_collapsed') === 'true'; } catch { return false; }
   });
@@ -182,7 +184,7 @@ const DashboardLayout = ({ children }) => {
                   <AvatarImage src={user?.picture} alt={user?.name} />
                   <AvatarFallback className="bg-indigo-600 text-white text-[9px]">{getInitials(user?.name)}</AvatarFallback>
                 </Avatar>
-                <button onClick={logout} className="text-zinc-600 hover:text-red-400 transition-colors p-1" data-testid="sidebar-logout-btn">
+                <button onClick={() => setShowLogoutConfirm(true)} className="text-zinc-600 hover:text-red-400 transition-colors p-1" data-testid="sidebar-logout-btn">
                   <LogOut className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -196,7 +198,7 @@ const DashboardLayout = ({ children }) => {
                   <p className="text-[12px] font-medium text-zinc-300 truncate">{user?.name}</p>
                 </div>
                 <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${tierColor()}`}>{tierLabel()}</span>
-                <button onClick={logout} className="text-zinc-600 hover:text-red-400 transition-colors p-1 flex-shrink-0" data-testid="sidebar-logout-btn">
+                <button onClick={() => setShowLogoutConfirm(true)} className="text-zinc-600 hover:text-red-400 transition-colors p-1 flex-shrink-0" data-testid="sidebar-logout-btn">
                   <LogOut className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -218,6 +220,21 @@ const DashboardLayout = ({ children }) => {
       </main>
 
       <Toaster position="top-right" richColors />
+
+      <AlertDialog open={showLogoutConfirm} onOpenChange={setShowLogoutConfirm}>
+        <AlertDialogContent className="bg-zinc-950 border-zinc-800" data-testid="logout-confirm-dialog">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white" style={{ fontFamily: 'Outfit' }}>Are you sure you want to sign out?</AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-400">
+              You'll need to sign back in to access your dashboard and analytics.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-zinc-900 border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white" data-testid="logout-cancel-btn">Cancel</AlertDialogCancel>
+            <AlertDialogAction className="bg-red-600 hover:bg-red-500 text-white" onClick={logout} data-testid="logout-confirm-btn">Sign Out</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

@@ -17,6 +17,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../components/ui/alert-dialog';
 import { toast } from 'sonner';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
@@ -30,6 +31,7 @@ const Settings = () => {
   const [billingPeriod, setBillingPeriod] = useState('monthly');
   const [cancellingSubscription, setCancellingSubscription] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   useEffect(() => {
     fetchPlans();
@@ -238,7 +240,7 @@ const Settings = () => {
               <Button 
                 variant="outline" 
                 className="border-red-500/30 text-red-400 hover:bg-red-500/10"
-                onClick={logout}
+                onClick={() => setShowLogoutConfirm(true)}
                 data-testid="logout-btn"
               >
                 <LogOut className="w-4 h-4 mr-2" />
@@ -437,6 +439,21 @@ const Settings = () => {
           </CardContent>
         </Card>
       </div>
+
+      <AlertDialog open={showLogoutConfirm} onOpenChange={setShowLogoutConfirm}>
+        <AlertDialogContent className="bg-zinc-950 border-zinc-800" data-testid="settings-logout-confirm-dialog">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-white" style={{ fontFamily: 'Outfit' }}>Are you sure you want to sign out?</AlertDialogTitle>
+            <AlertDialogDescription className="text-zinc-400">
+              You'll need to sign back in to access your dashboard and analytics.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel className="bg-zinc-900 border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white" data-testid="settings-logout-cancel-btn">Cancel</AlertDialogCancel>
+            <AlertDialogAction className="bg-red-600 hover:bg-red-500 text-white" onClick={logout} data-testid="settings-logout-confirm-btn">Sign Out</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 };
