@@ -31,7 +31,7 @@ const About = () => {
             <span className="bg-gradient-to-r from-indigo-400 via-purple-400 to-cyan-400 bg-clip-text text-transparent">Actionable Growth</span>
           </h1>
           <p className="text-base sm:text-lg text-zinc-400 max-w-2xl mx-auto leading-relaxed">
-            InFlow is a revenue intelligence platform that helps B2B teams optimize pricing, accelerate their sales pipeline, and predict churn before it happens.
+            InFlow is a revenue intelligence platform that helps businesses optimize pricing, accelerate their sales pipeline, and predict churn before it happens.
           </p>
         </div>
       </section>
