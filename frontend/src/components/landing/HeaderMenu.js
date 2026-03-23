@@ -15,7 +15,8 @@ export const FullScreenMenu = ({ menuOpen, setMenuOpen, handleMenuClick, handleG
         {[
           { label: 'Features', action: '#features', delay: '100ms' },
           { label: 'Pricing', action: '#pricing', delay: '150ms' },
-          { label: 'Contact', action: '#contact', delay: '200ms' },
+          { label: 'About', action: '/about', delay: '200ms' },
+          { label: 'Contact', action: '#contact', delay: '250ms' },
         ].map((item) => (
           <button key={item.label} onClick={() => handleMenuClick(item.action)}
             className={`group px-8 py-5 rounded-2xl transition-all duration-300 hover:bg-white/5 hover:shadow-[0_0_40px_rgba(255,255,255,0.25)] ${menuOpen ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}
@@ -25,10 +26,10 @@ export const FullScreenMenu = ({ menuOpen, setMenuOpen, handleMenuClick, handleG
             <span className="text-2xl font-semibold text-zinc-300 group-hover:text-white transition-colors" style={{ fontFamily: 'Outfit' }}>{item.label}</span>
           </button>
         ))}
-        <div className={`w-24 h-px bg-gradient-to-r from-transparent via-zinc-700 to-transparent my-4 transition-all duration-300 ${menuOpen ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-0'}`} style={{ transitionDelay: '250ms' }} />
+        <div className={`w-24 h-px bg-gradient-to-r from-transparent via-zinc-700 to-transparent my-4 transition-all duration-300 ${menuOpen ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-0'}`} style={{ transitionDelay: '300ms' }} />
         <button onClick={() => handleMenuClick('signin')}
           className={`group px-8 py-5 rounded-2xl transition-all duration-300 hover:bg-white/5 hover:shadow-[0_0_40px_rgba(255,255,255,0.25)] ${menuOpen ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}
-          style={{ transitionDelay: '300ms' }}
+          style={{ transitionDelay: '350ms' }}
           data-testid="menu-signin"
         >
           <span className="text-2xl font-semibold text-zinc-300 group-hover:text-white transition-colors" style={{ fontFamily: 'Outfit' }}>
@@ -36,7 +37,7 @@ export const FullScreenMenu = ({ menuOpen, setMenuOpen, handleMenuClick, handleG
           </span>
         </button>
       </nav>
-      <div className={`mt-10 transition-all duration-300 ${menuOpen ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`} style={{ transitionDelay: '350ms' }}>
+      <div className={`mt-10 transition-all duration-300 ${menuOpen ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`} style={{ transitionDelay: '400ms' }}>
         <Button className="bg-indigo-600 hover:bg-indigo-500 text-white btn-glow px-3 py-2.5 text-sm" onClick={() => { setMenuOpen(false); handleGetStarted(); }}>
           Start Free Trial <ArrowRight className="w-5 h-5 ml-2" />
         </Button>
