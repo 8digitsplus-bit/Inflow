@@ -71,6 +71,8 @@ Each analytics page now provides unique, non-redundant metrics:
 - **2026-03-23:** Fixed tooltip white background across ALL analytics pages (inline styles prevent CSS conflicts).
 - **2026-03-23:** Completed differentiated metrics refactor — replaced redundant CRO KPIs (Won Deals → Active A/B Tests, Avg Sales Cycle → Worst Drop-off).
 
+- **2026-03-23:** Fixed mobile responsiveness overflow across all analytics pages (responsive font sizes, card padding, grid gaps, truncation).
+
 ## Backlog
 - **P1:** Integration Health Dashboard (sync status, data freshness, token expiry)
 - **P1:** Email-Scheduled Forecast Reports (weekly summaries)
