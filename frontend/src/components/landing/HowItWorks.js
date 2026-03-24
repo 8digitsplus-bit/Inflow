@@ -22,7 +22,7 @@ export const ConnectBusinessSection = () => {
   const handleStartTrial = () => navigate('/auth?trial=true');
 
   return (
-    <section className="py-24 px-4 sm:px-6 lg:px-8 bg-zinc-950/50">
+    <section className="py-24 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         <div className="grid lg:grid-cols-2 gap-16 items-center">
           <div>
@@ -63,15 +63,15 @@ export const ConnectBusinessSection = () => {
           </div>
 
           <div className="relative reveal-right">
-            <div className="absolute -inset-4 bg-indigo-500/10 blur-3xl rounded-3xl" />
-            <div className="relative bg-zinc-900/80 border border-white/10 rounded-2xl p-6 backdrop-blur">
+            <div className="absolute -inset-4 bg-indigo-500/5 blur-3xl rounded-3xl" />
+            <div className="relative bg-[#0c0c10] border border-white/10 rounded-2xl p-6 backdrop-blur">
               <div className="flex items-center gap-2 mb-5">
                 <Zap className="w-4 h-4 text-indigo-400" />
                 <span className="text-sm font-medium text-white" style={{ fontFamily: 'Outfit' }}>Your Integrations</span>
               </div>
               <div className="space-y-3">
                 {platforms.map((p, i) => (
-                  <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-zinc-800/50 border border-white/5 hover:border-indigo-500/20 transition-all group">
+                  <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-[#0a0a0e] border border-white/5 hover:border-indigo-500/20 transition-all group">
                     <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: `${p.color}18` }}>
                       <p.icon className="w-4 h-4" style={{ color: p.color }} />
                     </div>
