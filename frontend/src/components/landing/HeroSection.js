@@ -10,7 +10,7 @@ export const HeroSection = ({ handleGetStarted }) => (
         <div className="lg:col-span-7 space-y-8 reveal-left">
           <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-500/10 border border-indigo-500/20">
             <Sparkles className="w-4 h-4 text-indigo-400" />
-            <span className="text-sm text-indigo-300">Powered by Claude AI</span>
+            <span className="text-sm text-indigo-300">AI-Powered Revenue Intelligence</span>
           </div>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight" style={{ fontFamily: 'Outfit' }}>
             Optimize Pricing.<br />
