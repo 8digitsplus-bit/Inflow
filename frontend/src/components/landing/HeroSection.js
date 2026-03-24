@@ -4,7 +4,6 @@ import { Button } from '../ui/button';
 export const HeroSection = ({ handleGetStarted }) => (
   <section className="landing-hero relative pt-32 pb-20 px-4 sm:px-6 lg:px-8">
     <div className="absolute inset-0 hero-glow" />
-    <div className="absolute inset-0 noise-overlay" />
     <div className="max-w-7xl mx-auto relative z-10">
       <div className="grid lg:grid-cols-12 gap-12 items-center">
         <div className="lg:col-span-7 space-y-8 reveal-left">
