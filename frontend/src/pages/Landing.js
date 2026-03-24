@@ -52,7 +52,7 @@ const Landing = () => {
   };
 
   return (
-    <div ref={mainRef} className="min-h-screen bg-black text-white overflow-x-hidden relative">
+    <div ref={mainRef} className="min-h-screen bg-[#050507] text-white overflow-x-hidden relative">
       <Toaster position="top-center" />
       <Header setMenuOpen={setMenuOpen} menuOpen={menuOpen} handleGetStarted={handleStartTrial} />
       <FullScreenMenu menuOpen={menuOpen} setMenuOpen={setMenuOpen} handleMenuClick={handleMenuClick} handleGetStarted={handleStartTrial} isAuthenticated={isAuthenticated} />
