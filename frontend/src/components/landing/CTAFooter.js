@@ -6,7 +6,7 @@ export const CTASection = ({ handleGetStarted }) => (
     <div className="max-w-4xl mx-auto text-center reveal-scale">
       <div className="relative">
         <div className="absolute inset-0 hero-glow" />
-        <div className="cta-card relative bg-zinc-900/50 border border-white/10 rounded-3xl p-12 backdrop-blur">
+        <div className="cta-card relative bg-white/[0.04] border border-white/[0.1] rounded-3xl p-12 backdrop-blur-xl">
           <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4" style={{ fontFamily: 'Outfit' }}>
             Ready to optimize your pricing?
           </h2>

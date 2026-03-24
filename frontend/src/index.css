@@ -316,26 +316,31 @@ h1, h2, h3, h4, h5, h6 {
   position: relative;
   padding: 2rem;
   border-radius: 1rem;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  background: rgba(24, 24, 27, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
               border-color 0.4s ease,
-              box-shadow 0.4s ease;
+              box-shadow 0.4s ease,
+              background 0.4s ease;
 }
 
 .pricing-card:hover {
   transform: translateY(-6px);
-  border-color: rgba(99, 102, 241, 0.25);
+  border-color: rgba(99, 102, 241, 0.3);
+  background: rgba(255, 255, 255, 0.05);
   box-shadow: 0 20px 60px -15px rgba(99, 102, 241, 0.15);
 }
 
 .pricing-card.featured {
-  border-color: rgba(99, 102, 241, 0.3);
-  background: linear-gradient(180deg, rgba(99, 102, 241, 0.08) 0%, rgba(24, 24, 27, 0.5) 100%);
+  border-color: rgba(99, 102, 241, 0.2);
+  background: linear-gradient(180deg, rgba(99, 102, 241, 0.06) 0%, rgba(255, 255, 255, 0.03) 100%);
 }
 
 .pricing-card.featured:hover {
   border-color: rgba(99, 102, 241, 0.5);
+  background: linear-gradient(180deg, rgba(99, 102, 241, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
   box-shadow: 0 20px 60px -10px rgba(99, 102, 241, 0.25);
 }
 
@@ -356,12 +361,14 @@ h1, h2, h3, h4, h5, h6 {
 .feature-card {
   transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1),
               border-color 0.3s ease,
-              box-shadow 0.4s ease;
+              box-shadow 0.4s ease,
+              background 0.3s ease;
 }
 
 .feature-card:hover {
   transform: translateY(-4px);
   border-color: rgba(99, 102, 241, 0.2);
+  background: rgba(255, 255, 255, 0.05);
   box-shadow: 0 12px 40px -10px rgba(99, 102, 241, 0.1);
 }
 

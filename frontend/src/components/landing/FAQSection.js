@@ -73,7 +73,7 @@ export const FAQSection = () => {
           <p className="text-zinc-400 text-sm sm:text-base">Everything you need to know about InFlow</p>
         </div>
 
-        <div className="bg-zinc-900/30 border border-white/5 rounded-2xl px-6 sm:px-8">
+        <div className="bg-white/[0.03] backdrop-blur-xl border border-white/[0.08] rounded-2xl px-6 sm:px-8">
           {faqs.map((faq, i) => (
             <FAQItem
               key={i}

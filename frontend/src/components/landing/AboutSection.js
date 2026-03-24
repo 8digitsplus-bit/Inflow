@@ -26,7 +26,7 @@ export const AboutSection = () => (
           { icon: Brain, title: 'Agentic AI Assistant', desc: 'Ask complex questions in natural language. Our AI autonomously investigates your data and delivers insights.', color: 'text-purple-400', bg: 'bg-purple-500/10' },
           { icon: Users, title: 'Platform Integrations', desc: 'Connect Stripe, Shopify, HubSpot, Salesforce, and QuickBooks. Import via CSV or custom API.', color: 'text-cyan-400', bg: 'bg-cyan-500/10' },
         ].map((item) => (
-          <div key={item.title} className="group p-5 rounded-2xl border border-white/5 bg-zinc-950/50 hover:border-white/10 transition-all duration-300" data-testid={`about-card-${item.title.toLowerCase().replace(/\s/g, '-')}`}>
+          <div key={item.title} className="group p-5 rounded-2xl border border-white/[0.08] bg-white/[0.03] backdrop-blur-xl hover:border-white/[0.15] hover:bg-white/[0.05] transition-all duration-300" data-testid={`about-card-${item.title.toLowerCase().replace(/\s/g, '-')}`}>
             <div className={`w-10 h-10 rounded-xl ${item.bg} flex items-center justify-center mb-4`}>
               <item.icon className={`w-5 h-5 ${item.color}`} />
             </div>
@@ -49,7 +49,7 @@ export const AboutSection = () => (
           { num: '02', title: 'Get Instant Clarity', desc: 'See pipeline health, revenue trends, churn risk, and conversion rates across a single dashboard.' },
           { num: '03', title: 'Act on AI Insights', desc: 'Our agentic AI surfaces the actions that matter: which deals to prioritize, which accounts are at risk, and where your funnel leaks.' },
         ].map((step) => (
-          <div key={step.num} className="relative" data-testid={`about-step-${step.num}`}>
+          <div key={step.num} className="relative p-5 rounded-2xl border border-white/[0.08] bg-white/[0.03] backdrop-blur-xl" data-testid={`about-step-${step.num}`}>
             <span className="text-5xl sm:text-6xl font-bold text-white/[0.03] absolute -top-2 -left-1" style={{ fontFamily: 'Outfit' }}>{step.num}</span>
             <div className="pt-8">
               <h4 className="text-sm font-semibold text-white mb-2" style={{ fontFamily: 'Outfit' }}>{step.title}</h4>

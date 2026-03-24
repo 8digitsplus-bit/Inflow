@@ -24,7 +24,7 @@ export const FeaturesSection = () => (
 
       <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
         {features.map((feature, i) => (
-          <div key={i} className={`feature-card reveal reveal-delay-${Math.min(i + 1, 4)} group p-6 rounded-xl bg-zinc-900/30 border border-white/[0.06] cursor-default`}>
+          <div key={i} className={`feature-card reveal reveal-delay-${Math.min(i + 1, 4)} group p-6 rounded-xl bg-white/[0.03] border border-white/[0.08] backdrop-blur-xl cursor-default`}>
             <div className="w-10 h-10 rounded-lg bg-indigo-500/10 flex items-center justify-center mb-4 group-hover:bg-indigo-500/20 transition-colors duration-300">
               <feature.icon className="w-5 h-5 text-indigo-400 group-hover:scale-110 transition-transform duration-300" />
             </div>

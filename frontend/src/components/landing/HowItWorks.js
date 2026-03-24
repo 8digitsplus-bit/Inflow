@@ -64,14 +64,14 @@ export const ConnectBusinessSection = () => {
 
           <div className="relative reveal-right">
             <div className="absolute -inset-4 bg-indigo-500/5 blur-3xl rounded-3xl" />
-            <div className="relative bg-[#0c0c10] border border-white/10 rounded-2xl p-6 backdrop-blur">
+            <div className="relative bg-white/[0.03] border border-white/[0.08] rounded-2xl p-6 backdrop-blur-xl">
               <div className="flex items-center gap-2 mb-5">
                 <Zap className="w-4 h-4 text-indigo-400" />
                 <span className="text-sm font-medium text-white" style={{ fontFamily: 'Outfit' }}>Your Integrations</span>
               </div>
               <div className="space-y-3">
                 {platforms.map((p, i) => (
-                  <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-[#0a0a0e] border border-white/5 hover:border-indigo-500/20 transition-all group">
+                  <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] backdrop-blur-lg hover:border-indigo-500/20 hover:bg-white/[0.04] transition-all group">
                     <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: `${p.color}18` }}>
                       <p.icon className="w-4 h-4" style={{ color: p.color }} />
                     </div>
