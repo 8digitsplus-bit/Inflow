@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ArrowRight, X, Menu, ChevronRight } from 'lucide-react';
+import { ArrowRight, X, Menu } from 'lucide-react';
 import { Button } from '../ui/button';
 
 export const FullScreenMenu = ({ menuOpen, setMenuOpen, handleMenuClick, handleGetStarted, isAuthenticated }) => (
@@ -102,14 +102,22 @@ export const Header = ({ setMenuOpen, menuOpen, handleGetStarted }) => {
             <Menu className="w-5 h-5" />
           </button>
 
-          {/* Right side CTA */}
-          <div className="flex items-center">
+          {/* Right side CTAs */}
+          <div className="hidden sm:flex items-center gap-3">
             <Button
-              className={`bg-indigo-600 hover:bg-indigo-500 text-white btn-glow hidden sm:flex items-center gap-1.5 transition-all duration-500 ${scrolled ? 'h-8 text-xs px-4' : 'h-9 text-sm px-5'}`}
+              variant="ghost"
+              className={`text-zinc-400 hover:text-white hover:bg-white/10 transition-all duration-500 ${scrolled ? 'h-8 text-xs px-4' : 'h-9 text-sm px-5'}`}
+              onClick={() => window.location.href = '/auth'}
+              data-testid="header-login-btn"
+            >
+              Log In
+            </Button>
+            <Button
+              className={`bg-indigo-600 hover:bg-indigo-500 text-white btn-glow transition-all duration-500 ${scrolled ? 'h-8 text-xs px-4' : 'h-9 text-sm px-5'}`}
               onClick={handleGetStarted}
               data-testid="header-cta-btn"
             >
-              14-Day Free Trial <ChevronRight className="w-3.5 h-3.5" />
+              Get Started
             </Button>
           </div>
         </div>
