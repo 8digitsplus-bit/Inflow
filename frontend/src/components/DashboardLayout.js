@@ -208,7 +208,7 @@ const DashboardLayout = ({ children }) => {
       </aside>
 
       <main className={`dashboard-content ${collapsed ? 'sidebar-collapsed' : ''}`}>
-        <div className="lg:hidden fixed top-0 left-0 right-0 h-12 bg-[#09090B] border-b border-white/[0.06] flex items-center px-4 z-20">
+        <div className="lg:hidden fixed top-0 left-0 right-0 h-12 bg-[#050507] border-b border-white/[0.06] flex items-center px-4 z-20">
           <button onClick={() => setSidebarOpen(true)} className="p-1.5 text-zinc-500 hover:text-white" data-testid="mobile-sidebar-btn">
             <Menu className="w-5 h-5" />
           </button>

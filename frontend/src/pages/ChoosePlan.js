@@ -84,7 +84,7 @@ const ChoosePlan = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#09090B] flex flex-col items-center px-4 py-12 relative overflow-hidden">
+    <div className="min-h-screen bg-[#050507] flex flex-col items-center px-4 py-12 relative overflow-hidden">
       <div className="absolute inset-0 hero-glow pointer-events-none" />
       <Toaster position="top-center" richColors />
 

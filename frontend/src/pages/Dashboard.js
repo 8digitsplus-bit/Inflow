@@ -134,7 +134,7 @@ const Dashboard = () => {
   const CustomTooltip = ({ active, payload, label }) => {
     if (!active || !payload?.length) return null;
     return (
-      <div style={{ backgroundColor: '#09090b', border: '1px solid #3f3f46', borderRadius: '0.5rem', padding: '0.75rem' }}>
+      <div style={{ backgroundColor: '#0c0c10', border: '1px solid #3f3f46', borderRadius: '0.5rem', padding: '0.75rem' }}>
         <p className="text-zinc-400 text-sm mb-1">{label}</p>
         {payload.map((entry, index) => (
           <p key={index} className="text-sm font-medium" style={{ color: entry.color }}>
@@ -307,7 +307,7 @@ const Dashboard = () => {
                     <Pie data={pieData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={3} dataKey="count">
                       {pieData.map((entry, index) => (<Cell key={`cell-${index}`} fill={stageColors[entry.stage] || '#6366F1'} />))}
                     </Pie>
-                    <Tooltip contentStyle={{ backgroundColor: '#09090b', border: '1px solid #3f3f46', borderRadius: '8px', color: '#fff' }} itemStyle={{ color: '#A1A1AA' }} />
+                    <Tooltip contentStyle={{ backgroundColor: '#0c0c10', border: '1px solid #3f3f46', borderRadius: '8px', color: '#fff' }} itemStyle={{ color: '#A1A1AA' }} />
                   </RechartsPie>
                 </ResponsiveContainer>
               </div>

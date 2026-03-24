@@ -103,7 +103,7 @@ const Checkout = () => {
 
   if (!plan) {
     return (
-      <div className="min-h-screen bg-[#09090B] flex items-center justify-center">
+      <div className="min-h-screen bg-[#050507] flex items-center justify-center">
         <div className="text-center">
           <p className="text-zinc-400 mb-4">Invalid plan selected</p>
           <Button onClick={() => navigate('/choose-plan')} className="bg-indigo-600 hover:bg-indigo-500">View Plans</Button>
@@ -115,7 +115,7 @@ const Checkout = () => {
   // Success state
   if (step === 'success') {
     return (
-      <div className="min-h-screen bg-[#09090B] flex items-center justify-center px-4">
+      <div className="min-h-screen bg-[#050507] flex items-center justify-center px-4">
         <Toaster position="top-center" richColors />
         <div className="text-center max-w-md">
           <div className="w-20 h-20 rounded-full bg-emerald-500/10 flex items-center justify-center mx-auto mb-6 animate-in zoom-in duration-500">
@@ -143,11 +143,11 @@ const Checkout = () => {
   const total = plan.price;
 
   return (
-    <div className="min-h-screen bg-[#09090B] relative overflow-hidden">
+    <div className="min-h-screen bg-[#050507] relative overflow-hidden">
       <Toaster position="top-center" richColors />
 
       {/* Header */}
-      <div className="border-b border-white/[0.06] bg-[#09090B]">
+      <div className="border-b border-white/[0.06] bg-[#050507]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <button onClick={() => navigate('/choose-plan')} className="flex items-center gap-2 text-zinc-500 hover:text-white text-sm transition-colors" data-testid="back-btn">
             <ArrowLeft className="w-4 h-4" /> Back to plans

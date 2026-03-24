@@ -47,7 +47,7 @@ const SalesPerformance = () => {
   const CustomTooltip = ({ active, payload, label }) => {
     if (!active || !payload?.length) return null;
     return (
-      <div style={{ backgroundColor: '#09090b', border: '1px solid #3f3f46', borderRadius: '0.5rem', padding: '0.75rem' }}>
+      <div style={{ backgroundColor: '#0c0c10', border: '1px solid #3f3f46', borderRadius: '0.5rem', padding: '0.75rem' }}>
         <p className="text-zinc-400 text-sm mb-1">{label}</p>
         {payload.map((e, i) => (
           <p key={i} className="text-sm font-medium" style={{ color: e.color || e.fill }}>
@@ -137,7 +137,7 @@ const SalesPerformance = () => {
                         <Cell key={i} fill={AGING_COLORS[i % AGING_COLORS.length]} />
                       ))}
                     </Pie>
-                    <Tooltip contentStyle={{ backgroundColor: '#09090b', border: '1px solid #3f3f46', borderRadius: '0.5rem' }} itemStyle={{ color: '#e4e4e7' }} />
+                    <Tooltip contentStyle={{ backgroundColor: '#0c0c10', border: '1px solid #3f3f46', borderRadius: '0.5rem' }} itemStyle={{ color: '#e4e4e7' }} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>

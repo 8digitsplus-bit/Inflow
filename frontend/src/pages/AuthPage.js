@@ -109,7 +109,7 @@ const AuthPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#09090B] flex flex-col items-center justify-center px-4 relative overflow-hidden">
+    <div className="min-h-screen bg-[#050507] flex flex-col items-center justify-center px-4 relative overflow-hidden">
       <div className="absolute inset-0 hero-glow pointer-events-none" />
       <div className="absolute inset-0 noise-overlay pointer-events-none" />
 

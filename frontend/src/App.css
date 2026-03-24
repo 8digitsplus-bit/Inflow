@@ -98,7 +98,7 @@
 
 /* Chart containers */
 .chart-container {
-  background: #121214;
+  background: #0f0f12;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   padding: 20px;
@@ -115,7 +115,7 @@
 .kanban-column {
   min-width: 300px;
   flex-shrink: 0;
-  background: #121214;
+  background: #0f0f12;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
 }
@@ -133,7 +133,7 @@
 
 /* Deal cards */
 .deal-card {
-  background: #18181B;
+  background: #141418;
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 6px;
   padding: 14px;
@@ -154,7 +154,7 @@
 
 /* Pricing cards */
 .pricing-card {
-  background: #121214;
+  background: #0f0f12;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 12px;
   padding: 32px;
@@ -168,12 +168,12 @@
 
 .pricing-card.featured {
   border-color: #6366F1;
-  background: linear-gradient(180deg, rgba(99, 102, 241, 0.1) 0%, #121214 100%);
+  background: linear-gradient(180deg, rgba(99, 102, 241, 0.1) 0%, #0f0f12 100%);
 }
 
 /* Metric cards */
 .metric-card {
-  background: #121214;
+  background: #0f0f12;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
   padding: 20px;
@@ -219,7 +219,7 @@
 
 /* Form inputs dark theme */
 .input-dark {
-  background: #18181B;
+  background: #141418;
   border: 1px solid #27272A;
   color: #FAFAFA;
   border-radius: 6px;

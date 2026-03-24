@@ -5,24 +5,24 @@
 @tailwind utilities;
 
 :root {
-  --background: 240 6% 4%;
+  --background: 240 6% 2%;
   --foreground: 0 0% 98%;
-  --card: 240 5% 7%;
+  --card: 240 5% 5%;
   --card-foreground: 0 0% 98%;
-  --popover: 240 5% 7%;
+  --popover: 240 5% 5%;
   --popover-foreground: 0 0% 98%;
   --primary: 239 84% 67%;
   --primary-foreground: 0 0% 100%;
   --secondary: 160 84% 39%;
   --secondary-foreground: 0 0% 100%;
-  --muted: 240 4% 16%;
+  --muted: 240 4% 12%;
   --muted-foreground: 240 5% 65%;
-  --accent: 240 4% 16%;
+  --accent: 240 4% 12%;
   --accent-foreground: 0 0% 98%;
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 98%;
-  --border: 240 4% 16%;
-  --input: 240 4% 16%;
+  --border: 240 4% 12%;
+  --input: 240 4% 12%;
   --ring: 239 84% 67%;
   --radius: 0.5rem;
   
