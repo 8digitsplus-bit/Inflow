@@ -107,7 +107,7 @@ export const Header = ({ setMenuOpen, menuOpen, handleGetStarted }) => {
             <Button
               variant="ghost"
               className={`text-zinc-400 hover:text-white hover:bg-white/10 transition-all duration-500 ${scrolled ? 'h-8 text-xs px-4' : 'h-9 text-sm px-5'}`}
-              onClick={() => window.location.href = '/auth'}
+              onClick={() => window.location.href = '/auth?mode=login'}
               data-testid="header-login-btn"
             >
               Log In

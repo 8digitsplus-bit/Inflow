@@ -71,6 +71,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     setUser(data);
+    localStorage.setItem('inflow_last_account', JSON.stringify({ name: data.name, email: data.email }));
     return data;
   };
 
@@ -107,6 +108,7 @@ export const AuthProvider = ({ children }) => {
 
     const userData = await response.json();
     setUser(userData);
+    localStorage.setItem('inflow_last_account', JSON.stringify({ name: userData.name, email: userData.email }));
     return userData;
   };
 
@@ -138,6 +140,7 @@ export const AuthProvider = ({ children }) => {
 
       const userData = await response.json();
       setUser(userData);
+      localStorage.setItem('inflow_last_account', JSON.stringify({ name: userData.name, email: userData.email }));
       return userData;
     } catch (err) {
       setError(err.message);

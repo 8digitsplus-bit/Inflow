@@ -1,18 +1,62 @@
 import { useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { ArrowLeft, Mail, Loader2, Eye, EyeOff, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, Mail, Loader2, Eye, EyeOff, ShieldCheck, User, ChevronRight } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { toast } from 'sonner';
 import { Toaster } from '../components/ui/sonner';
 
+const AccountChooser = ({ savedAccount, onSelectAccount, onUseAnother }) => {
+  const initials = savedAccount.name
+    ? savedAccount.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
+    : savedAccount.email[0].toUpperCase();
+
+  return (
+    <div data-testid="account-chooser">
+      <h2 className="text-xl font-semibold text-white text-center mb-1" style={{ fontFamily: 'Outfit' }}>
+        Choose an account
+      </h2>
+      <p className="text-zinc-400 text-sm text-center mb-6">
+        to continue to InFlow
+      </p>
+
+      <button
+        onClick={onSelectAccount}
+        className="w-full flex items-center gap-3 p-4 rounded-xl bg-white/[0.03] border border-white/[0.08] backdrop-blur-xl hover:bg-white/[0.06] hover:border-indigo-500/30 transition-all duration-200 group"
+        data-testid="saved-account-card"
+      >
+        <div className="w-10 h-10 rounded-full bg-indigo-500/20 flex items-center justify-center shrink-0">
+          <span className="text-sm font-semibold text-indigo-300">{initials}</span>
+        </div>
+        <div className="flex-1 text-left min-w-0">
+          <p className="text-sm font-medium text-white truncate">{savedAccount.name || 'User'}</p>
+          <p className="text-xs text-zinc-500 truncate">{savedAccount.email}</p>
+        </div>
+        <ChevronRight className="w-4 h-4 text-zinc-600 group-hover:text-zinc-400 transition-colors shrink-0" />
+      </button>
+
+      <button
+        onClick={onUseAnother}
+        className="w-full flex items-center gap-3 p-4 rounded-xl hover:bg-white/[0.04] transition-all duration-200 mt-2 group"
+        data-testid="use-another-account-btn"
+      >
+        <div className="w-10 h-10 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center shrink-0">
+          <User className="w-4 h-4 text-zinc-400" />
+        </div>
+        <span className="text-sm text-zinc-400 group-hover:text-zinc-200 transition-colors">Use another account</span>
+      </button>
+    </div>
+  );
+};
+
 const AuthPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const isTrial = searchParams.get('trial') === 'true';
+  const isLoginMode = searchParams.get('mode') === 'login';
   const { loginWithGoogle, loginWithEmail, registerWithEmail, verify2FA, isAuthenticated } = useAuth();
-  const [mode, setMode] = useState('register');
+  const [mode, setMode] = useState(isLoginMode ? 'login' : 'register');
   const [showEmailForm, setShowEmailForm] = useState(false);
   const [loading, setLoading] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -21,6 +65,11 @@ const AuthPage = () => {
   const [twoFAState, setTwoFAState] = useState(null);
   const [otpDigits, setOtpDigits] = useState(['', '', '', '', '', '']);
   const otpRefs = useRef([]);
+
+  // Account chooser state
+  const savedAccountRaw = localStorage.getItem('inflow_last_account');
+  const savedAccount = savedAccountRaw ? JSON.parse(savedAccountRaw) : null;
+  const [showAccountChooser, setShowAccountChooser] = useState(isLoginMode && !!savedAccount);
 
   if (isAuthenticated && !isRegistering) {
     navigate('/dashboard');
@@ -176,6 +225,22 @@ const AuthPage = () => {
                 Back to sign in
               </button>
             </div>
+          ) : showAccountChooser && savedAccount ? (
+            /* Account Chooser (Google-style) */
+            <AccountChooser
+              savedAccount={savedAccount}
+              onSelectAccount={() => {
+                setShowAccountChooser(false);
+                setMode('login');
+                setForm({ ...form, email: savedAccount.email });
+                setShowEmailForm(true);
+              }}
+              onUseAnother={() => {
+                setShowAccountChooser(false);
+                setMode('login');
+                setForm({ name: '', email: '', password: '' });
+              }}
+            />
           ) : (
           <>
           <h2 className="text-xl font-semibold text-white text-center mb-1" style={{ fontFamily: 'Outfit' }}>
