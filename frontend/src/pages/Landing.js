@@ -53,7 +53,6 @@ const Landing = () => {
 
   return (
     <div ref={mainRef} className="min-h-screen bg-[#09090B] text-white overflow-x-hidden relative">
-      <div className="absolute inset-0 noise-overlay pointer-events-none" />
       <Toaster position="top-center" />
       <Header setMenuOpen={setMenuOpen} menuOpen={menuOpen} handleGetStarted={handleStartTrial} />
       <FullScreenMenu menuOpen={menuOpen} setMenuOpen={setMenuOpen} handleMenuClick={handleMenuClick} handleGetStarted={handleStartTrial} isAuthenticated={isAuthenticated} />
