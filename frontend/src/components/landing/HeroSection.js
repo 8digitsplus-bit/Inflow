@@ -1,4 +1,4 @@
-import { ArrowRight, Sparkles } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { Button } from '../ui/button';
 
 export const HeroSection = ({ handleGetStarted }) => (
@@ -6,10 +6,6 @@ export const HeroSection = ({ handleGetStarted }) => (
     <div className="max-w-7xl mx-auto relative z-10">
       <div className="grid lg:grid-cols-12 gap-12 items-center">
         <div className="lg:col-span-7 space-y-8 reveal-left">
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-500/10 border border-indigo-500/20">
-            <Sparkles className="w-4 h-4 text-indigo-400" />
-            <span className="text-sm text-indigo-300">AI-Powered Revenue Intelligence</span>
-          </div>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight text-white leading-tight" style={{ fontFamily: 'Outfit' }}>
             Optimize Pricing.<br />
             <span className="gradient-text">Accelerate Revenue.</span>
