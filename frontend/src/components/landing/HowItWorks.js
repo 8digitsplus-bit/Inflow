@@ -1,6 +1,4 @@
-import { CreditCard, ShoppingBag, Users, Cloud, Calculator, ArrowRight, Zap, Database, RefreshCw } from 'lucide-react';
-import { Button } from '../../components/ui/button';
-import { useNavigate } from 'react-router-dom';
+import { CreditCard, ShoppingBag, Users, Cloud, Calculator, Zap, Database, RefreshCw } from 'lucide-react';
 
 const platforms = [
   { name: 'Stripe', desc: 'Payments & subscriptions', icon: CreditCard, color: '#635BFF' },
@@ -17,9 +15,6 @@ const benefits = [
 ];
 
 export const ConnectBusinessSection = () => {
-  const navigate = useNavigate();
-
-  const handleStartTrial = () => navigate('/auth?trial=true');
 
   return (
     <section className="py-24 px-4 sm:px-6 lg:px-8">
@@ -48,17 +43,6 @@ export const ConnectBusinessSection = () => {
                   </div>
                 </div>
               ))}
-            </div>
-
-            <div className="mt-8 reveal reveal-delay-4">
-              <Button
-                className="bg-indigo-600 hover:bg-indigo-500 text-white px-3 group"
-                onClick={() => handleStartTrial()}
-                data-testid="connect-business-cta"
-              >
-                Start 14-Day Free Trial
-                <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-              </Button>
             </div>
           </div>
 
