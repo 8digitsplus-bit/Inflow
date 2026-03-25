@@ -981,6 +981,7 @@ const babelMetadataPlugin = ({ types: t }) => {
    * Detects if we're inside an array iteration (.map(), etc.) and extracts context
    */
   function getArrayIterationContext(exprPath, state) {
+    try {
     // Find the parent .map() or similar call
     const callExprParent = exprPath.findParent((p) => {
       if (!p.isCallExpression()) return false;
@@ -1065,6 +1066,7 @@ const babelMetadataPlugin = ({ types: t }) => {
       indexParam,
       isEditable,
     };
+    } catch (e) { return null; }
   }
 
   /**

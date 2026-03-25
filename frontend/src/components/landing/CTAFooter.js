@@ -90,9 +90,9 @@ export const Footer = () => (
       <div className="border-t border-white/[0.06] py-6 flex flex-col sm:flex-row items-center justify-between gap-4">
         <p className="text-xs text-zinc-600">&copy; 2026 InFlow. All rights reserved.</p>
         <div className="flex items-center gap-6">
-          {['Privacy Policy', 'Terms of Service', 'Cookies'].map((item) => (
-            <a key={item} href="#" className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors duration-200">{item}</a>
-          ))}
+          <a href="/privacy" className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors duration-200">Privacy Policy</a>
+          <a href="#" className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors duration-200">Terms of Service</a>
+          <a href="#" className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors duration-200">Cookies</a>
         </div>
       </div>
     </div>

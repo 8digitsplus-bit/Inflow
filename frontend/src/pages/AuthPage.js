@@ -314,7 +314,7 @@ const AuthPage = () => {
           )}
         </div>
 
-        <p className="text-xs text-zinc-600 text-center mt-6">By continuing, you agree to our Terms of Service and Privacy Policy.</p>
+        <p className="text-xs text-zinc-600 text-center mt-6">By continuing, you agree to our <a href="/terms" className="text-zinc-500 hover:text-zinc-400 underline underline-offset-2">Terms of Service</a> and <a href="/privacy" className="text-zinc-500 hover:text-zinc-400 underline underline-offset-2">Privacy Policy</a>.</p>
       </div>
       <Toaster position="top-right" richColors />
     </div>

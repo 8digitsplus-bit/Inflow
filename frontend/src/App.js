@@ -19,6 +19,7 @@ import Checkout from './pages/Checkout';
 import Support from './pages/Support';
 import RevenueForecast from './pages/RevenueForecast';
 import AuthCallback from './pages/AuthCallback';
+import PrivacyPolicy from './pages/PrivacyPolicy';
 import TrialNotification from './components/TrialNotification';
 import ProtectedRoute from './components/ProtectedRoute';
 import TierGate from './components/TierGate';
@@ -38,6 +39,7 @@ const AppRouter = () => {
     <Routes>
       <Route path="/" element={<Landing />} />
       <Route path="/auth" element={<AuthPage />} />
+      <Route path="/privacy" element={<PrivacyPolicy />} />
       <Route path="/onboarding" element={
         <ProtectedRoute>
           <Onboarding />
