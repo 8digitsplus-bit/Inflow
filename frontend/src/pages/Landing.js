@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { Header, FullScreenMenu } from '../components/landing/HeaderMenu';
 import { HeroSection } from '../components/landing/HeroSection';
 import { FeaturesSection } from '../components/landing/FeaturesSection';
-import { ConnectBusinessSection } from '../components/landing/HowItWorks';
+import { ConnectBusinessSection, CustomIntegrationSection } from '../components/landing/HowItWorks';
 import { PricingSection } from '../components/landing/PricingSection';
 import { FAQSection } from '../components/landing/FAQSection';
 import { AboutSection } from '../components/landing/AboutSection';
@@ -59,6 +59,7 @@ const Landing = () => {
       <HeroSection handleGetStarted={handleStartTrial} />
       <FeaturesSection />
       <ConnectBusinessSection />
+      <CustomIntegrationSection />
       <PricingSection handleGetStarted={handleGetStarted} isAuthenticated={isAuthenticated} />
       <FAQSection />
       <AboutSection />

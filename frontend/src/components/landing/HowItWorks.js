@@ -1,4 +1,4 @@
-import { CreditCard, ShoppingBag, Users, Cloud, Calculator, Zap, Database, RefreshCw } from 'lucide-react';
+import { CreditCard, ShoppingBag, Users, Cloud, Calculator, Zap, Database, RefreshCw, Code2, FileSpreadsheet, Shield, Gauge } from 'lucide-react';
 
 const platforms = [
   { name: 'Stripe', desc: 'Payments & subscriptions', icon: CreditCard, color: '#635BFF' },
@@ -80,3 +80,67 @@ export const ConnectBusinessSection = () => {
     </section>
   );
 };
+
+const customBenefits = [
+  { icon: Code2, title: 'Connect Any REST API', desc: 'Point InFlow at any internal or third-party API endpoint. Your data, your schema, your rules.', color: 'text-purple-400', bg: 'bg-purple-500/10' },
+  { icon: FileSpreadsheet, title: 'CSV Import for Everyone', desc: 'Every tier can upload CSV files to bring in historical data, forecasts, or custom datasets instantly.', color: 'text-cyan-400', bg: 'bg-cyan-500/10' },
+  { icon: Shield, title: 'Secure by Default', desc: 'All credentials are encrypted at rest. OAuth tokens auto-refresh. Your integration keys never leave our servers.', color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
+  { icon: Gauge, title: 'Unified Analytics', desc: 'No matter the source — platform, API, or CSV — your data feeds into every dashboard, forecast, and AI insight.', color: 'text-amber-400', bg: 'bg-amber-500/10' },
+];
+
+export const CustomIntegrationSection = () => (
+  <section className="pb-24 px-4 sm:px-6 lg:px-8" data-testid="custom-integration-section">
+    <div className="max-w-7xl mx-auto">
+      <div className="reveal">
+        <div className="text-center mb-14">
+          <span className="text-purple-400 text-sm font-medium uppercase tracking-widest">Custom Integration</span>
+          <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>
+            Your business. Your data sources.
+          </h2>
+          <p className="mt-4 text-zinc-400 max-w-2xl mx-auto">
+            Not limited to pre-built connectors. Enterprise users can plug in any REST API endpoint to bring proprietary data directly into InFlow.
+          </p>
+        </div>
+      </div>
+
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-12">
+        {customBenefits.map((b, i) => (
+          <div key={i} className={`reveal reveal-delay-${Math.min(i + 1, 4)} group p-5 rounded-2xl border border-white/[0.08] bg-white/[0.03] backdrop-blur-xl hover:border-white/[0.15] hover:bg-white/[0.05] transition-all duration-300`} data-testid={`custom-benefit-${i}`}>
+            <div className={`w-10 h-10 rounded-xl ${b.bg} flex items-center justify-center mb-4`}>
+              <b.icon className={`w-5 h-5 ${b.color}`} />
+            </div>
+            <h3 className="text-sm font-semibold text-white mb-1.5 group-hover:text-indigo-300 transition-colors" style={{ fontFamily: 'Outfit' }}>{b.title}</h3>
+            <p className="text-sm text-zinc-500 leading-relaxed">{b.desc}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="reveal">
+        <div className="relative bg-white/[0.03] border border-white/[0.08] rounded-2xl p-6 sm:p-8 backdrop-blur-xl overflow-hidden">
+          <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/[0.04] blur-[80px] rounded-full pointer-events-none" />
+          <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <h3 className="text-base font-semibold text-white" style={{ fontFamily: 'Outfit' }}>Custom API</h3>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-500/15 text-purple-400 border border-purple-500/20">Enterprise</span>
+              </div>
+              <p className="text-sm text-zinc-400 max-w-lg">
+                Define your endpoint URL, authentication headers, and data mapping. InFlow handles the sync schedule, error retries, and data normalization automatically.
+              </p>
+            </div>
+            <div className="flex items-center gap-3 shrink-0">
+              <div className="hidden sm:flex items-center gap-1.5 text-xs text-zinc-500">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                Auto-retry on failure
+              </div>
+              <div className="hidden sm:flex items-center gap-1.5 text-xs text-zinc-500">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                Scheduled syncing
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+);
