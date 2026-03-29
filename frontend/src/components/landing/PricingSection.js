@@ -61,15 +61,15 @@ export const PricingSection = ({ handleGetStarted, isAuthenticated }) => {
               className="absolute top-1 bottom-1 rounded-full bg-indigo-600 shadow-lg shadow-indigo-500/25 transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)]"
               style={{
                 width: 'calc(50% - 4px)',
-                left: billingPeriod === 'monthly' ? '4px' : 'calc(50% + 0px)',
+                left: billingPeriod === 'monthly' ? '4px' : 'calc(50%)',
               }}
             />
             <button onClick={() => setBillingPeriod('monthly')}
-              className={`relative z-10 px-6 py-2 rounded-full text-sm font-medium transition-colors duration-300 ${billingPeriod === 'monthly' ? 'text-white' : 'text-zinc-400 hover:text-zinc-200'}`}
+              className={`relative z-10 w-28 py-2 rounded-full text-sm font-medium text-center transition-colors duration-300 ${billingPeriod === 'monthly' ? 'text-white' : 'text-zinc-400 hover:text-zinc-200'}`}
               data-testid="billing-monthly-btn">Monthly</button>
             <button onClick={() => setBillingPeriod('yearly')}
-              className={`relative z-10 px-6 py-2 rounded-full text-sm font-medium transition-colors duration-300 ${billingPeriod === 'yearly' ? 'text-white' : 'text-zinc-400 hover:text-zinc-200'}`}
-              data-testid="billing-yearly-btn">Yearly <span className={`ml-1 transition-colors duration-300 ${billingPeriod === 'yearly' ? 'text-emerald-300' : 'text-emerald-400'}`}>Save more</span></button>
+              className={`relative z-10 w-28 py-2 rounded-full text-sm font-medium text-center transition-colors duration-300 ${billingPeriod === 'yearly' ? 'text-white' : 'text-zinc-400 hover:text-zinc-200'}`}
+              data-testid="billing-yearly-btn">Yearly</button>
           </div>
         </div>
 
