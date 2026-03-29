@@ -93,7 +93,7 @@ export const CustomIntegrationSection = () => (
     <div className="max-w-7xl mx-auto">
       <div className="reveal">
         <div className="text-center mb-14">
-          <span className="text-purple-400 text-sm font-medium uppercase tracking-widest">Custom Integration</span>
+          <span className="text-indigo-400 text-sm font-medium uppercase tracking-widest">Custom Integration</span>
           <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>
             Your business. Your data sources.
           </h2>
