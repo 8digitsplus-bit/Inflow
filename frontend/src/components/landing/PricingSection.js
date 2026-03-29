@@ -8,7 +8,6 @@ const API_URL = process.env.REACT_APP_BACKEND_URL;
 const monthlyPlans = [
   { name: 'Essential', price: '59', period: '/month', features: ['Sales Pipeline', 'Core analytics', 'Email support', 'Churn alerts'], cta: 'Unlock Access', featured: false, planId: 'essential_monthly' },
   { name: 'Pro', price: '149', period: '/month', features: ['Sales Performance', 'Priority support', 'Advanced analytics', 'Revenue forecasting', 'Churn prediction', 'CRO tools'], cta: 'Scale Up', featured: true, planId: 'pro_monthly' },
-  { name: 'Enterprise', price: '249', period: '/month', features: ['Everything in Pro', 'Sales Revenue', 'Revenue Intelligence', 'Custom integrations', 'API access'], cta: 'Maximise', featured: false, planId: 'enterprise_monthly' }
 ];
 
 const multiYearContracts = [
@@ -87,7 +86,7 @@ export const PricingSection = ({ handleGetStarted, isAuthenticated }) => {
         </div>
 
         {billingPeriod === 'monthly' ? (
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
             {monthlyPlans.map((plan, i) => (
               <div key={i} className={`pricing-card ${plan.featured ? 'featured' : ''}`} data-testid={`pricing-card-${plan.name.toLowerCase()}`}>
                 <h3 className="text-xl font-semibold text-white" style={{ fontFamily: 'Outfit' }}>{plan.name}</h3>
@@ -132,7 +131,7 @@ export const PricingSection = ({ handleGetStarted, isAuthenticated }) => {
               ))}
             </div>
 
-            <div className="pricing-card max-w-3xl mx-auto" data-testid="contract-features">
+            <div className="border border-white/[0.08] bg-white/[0.03] backdrop-blur-xl rounded-2xl p-8 max-w-3xl mx-auto" data-testid="contract-features">
               <h4 className="text-base font-semibold text-white mb-5" style={{ fontFamily: 'Outfit' }}>All contracts include full platform access</h4>
               <div className="grid sm:grid-cols-2 gap-x-8 gap-y-3">
                 {allFeatures.map((feature, j) => (
