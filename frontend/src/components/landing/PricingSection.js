@@ -1,34 +1,22 @@
 import { useState } from 'react';
-import { Check, ChevronRight, Loader2, RefreshCw } from 'lucide-react';
+import { Check, ChevronRight, Loader2 } from 'lucide-react';
 import { Button } from '../ui/button';
 import { toast } from 'sonner';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
-const monthlyPlans = [
-  { name: 'Essential', price: '59', period: '/month', features: ['Sales Pipeline', 'Core analytics', 'Email support', 'Churn alerts'], cta: 'Unlock Access', featured: false, planId: 'essential_monthly' },
-  { name: 'Pro', price: '149', period: '/month', features: ['Sales Performance', 'Priority support', 'Advanced analytics', 'Revenue forecasting', 'Churn prediction', 'CRO tools'], cta: 'Scale Up', featured: true, planId: 'pro_monthly' },
-];
-
-const multiYearContracts = [
-  { duration: '1 Year', price: '5,000', period: '/year', renewal: 'Auto-renews annually', planId: 'contract_1yr', featured: false },
-  { duration: '3 Years', price: '10,000', period: '/3 years', renewal: 'Auto-renews every 3 years', planId: 'contract_3yr', featured: true },
-  { duration: '6 Years', price: '25,000', period: '/6 years', renewal: 'Auto-renews every 6 years', planId: 'contract_6yr', featured: false },
-];
-
-const allFeatures = [
-  'Sales Pipeline',
-  'Sales Performance',
-  'Sales Revenue',
-  'Revenue Intelligence',
-  'Revenue forecasting',
-  'Advanced analytics',
-  'Churn prediction',
-  'CRO tools',
-  'Custom integrations',
-  'API access',
-  'Priority support',
-];
+const plans = {
+  monthly: [
+    { name: 'Essential', price: '59', period: '/month', features: ['Sales Pipeline', 'Core analytics', 'Email support', 'Churn alerts'], cta: 'Unlock Access', featured: false, planId: 'essential_monthly' },
+    { name: 'Pro', price: '149', period: '/month', features: ['Sales Performance', 'Priority support', 'Advanced analytics', 'Revenue forecasting', 'Churn prediction', 'CRO tools'], cta: 'Scale Up', featured: true, planId: 'pro_monthly' },
+    { name: 'Enterprise', price: '249', period: '/month', features: ['Everything in Pro', 'Sales Revenue', 'Revenue Intelligence', 'Custom integrations', 'API access'], cta: 'Maximise', featured: false, planId: 'enterprise_monthly' }
+  ],
+  yearly: [
+    { name: 'Essential', price: '496', originalPrice: '708', period: '/year', features: ['Sales Pipeline', 'Core analytics', 'Email support', 'Churn alerts'], cta: 'Unlock Access', featured: false, planId: 'essential_yearly', savings: '30% off 1st year' },
+    { name: 'Pro', price: '1,252', originalPrice: '1,788', period: '/year', features: ['Sales Performance', 'Priority support', 'Advanced analytics', 'Revenue forecasting', 'Churn prediction', 'CRO tools'], cta: 'Scale Up', featured: true, planId: 'pro_yearly', savings: '30% off 1st year' },
+    { name: 'Enterprise', price: '2,092', originalPrice: '2,988', period: '/year', features: ['Everything in Pro', 'Sales Revenue', 'Revenue Intelligence', 'Custom integrations', 'API access'], cta: 'Maximise', featured: false, planId: 'enterprise_yearly', savings: '30% off 1st year' }
+  ]
+};
 
 export const PricingSection = ({ handleGetStarted, isAuthenticated }) => {
   const [billingPeriod, setBillingPeriod] = useState('monthly');
@@ -79,71 +67,41 @@ export const PricingSection = ({ handleGetStarted, isAuthenticated }) => {
             <button onClick={() => setBillingPeriod('monthly')}
               className={`relative z-10 w-28 py-2 rounded-full text-sm font-medium text-center transition-colors duration-300 ${billingPeriod === 'monthly' ? 'text-white' : 'text-zinc-400 hover:text-zinc-200'}`}
               data-testid="billing-monthly-btn">Monthly</button>
-            <button onClick={() => setBillingPeriod('multiyear')}
-              className={`relative z-10 w-28 py-2 rounded-full text-sm font-medium text-center transition-colors duration-300 ${billingPeriod === 'multiyear' ? 'text-white' : 'text-zinc-400 hover:text-zinc-200'}`}
-              data-testid="billing-multiyear-btn">Multi-Year</button>
+            <button onClick={() => setBillingPeriod('yearly')}
+              className={`relative z-10 w-28 py-2 rounded-full text-sm font-medium text-center transition-colors duration-300 ${billingPeriod === 'yearly' ? 'text-white' : 'text-zinc-400 hover:text-zinc-200'}`}
+              data-testid="billing-yearly-btn">Yearly</button>
           </div>
         </div>
 
-        {billingPeriod === 'monthly' ? (
-          <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-            {monthlyPlans.map((plan, i) => (
-              <div key={i} className={`pricing-card ${plan.featured ? 'featured' : ''}`} data-testid={`pricing-card-${plan.name.toLowerCase()}`}>
-                <h3 className="text-xl font-semibold text-white" style={{ fontFamily: 'Outfit' }}>{plan.name}</h3>
-                <div className="mt-4 flex items-baseline gap-2">
-                  <span className="text-4xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>${plan.price}</span>
-                  <span className="text-zinc-400">{plan.period}</span>
+        <div className="grid md:grid-cols-3 gap-8">
+          {plans[billingPeriod].map((plan, i) => (
+            <div key={i} className={`pricing-card ${plan.featured ? 'featured' : ''}`} data-testid={`pricing-card-${plan.name.toLowerCase()}`}>
+              {plan.savings && (
+                <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-medium mb-4">
+                  {plan.savings}
                 </div>
-                <ul className="mt-8 space-y-4">
-                  {plan.features.map((feature, j) => (
-                    <li key={j} className="flex items-center gap-3 text-zinc-300">
-                      <Check className="w-5 h-5 text-emerald-400 flex-shrink-0" />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-                <Button className={`w-full mt-8 ${plan.featured ? 'bg-indigo-600 hover:bg-indigo-500 btn-glow' : 'bg-zinc-800 hover:bg-zinc-700 border border-zinc-700'}`}
-                  onClick={() => handlePlanClick(plan.planId)} disabled={loadingPlan === plan.planId} data-testid={`pricing-cta-${plan.name.toLowerCase()}`}>
-                  {loadingPlan === plan.planId ? <Loader2 className="w-4 h-4 animate-spin" /> : <>{plan.cta} <ChevronRight className="w-4 h-4 ml-1" /></>}
-                </Button>
+              )}
+              <h3 className="text-xl font-semibold text-white" style={{ fontFamily: 'Outfit' }}>{plan.name}</h3>
+              <div className="mt-4 flex items-baseline gap-2">
+                <span className="text-4xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>${plan.price}</span>
+                {plan.originalPrice && <span className="text-lg text-zinc-500 line-through">${plan.originalPrice}</span>}
+                <span className="text-zinc-400">{plan.period}</span>
               </div>
-            ))}
-          </div>
-        ) : (
-          <div>
-            <div className="grid md:grid-cols-3 gap-6 mb-10">
-              {multiYearContracts.map((contract, i) => (
-                <div key={i} className={`pricing-card ${contract.featured ? 'featured' : ''}`} data-testid={`contract-card-${contract.duration.toLowerCase().replace(/\s/g, '-')}`}>
-                  <h3 className="text-xl font-semibold text-white" style={{ fontFamily: 'Outfit' }}>{contract.duration}</h3>
-                  <div className="mt-4 flex items-baseline gap-2">
-                    <span className="text-4xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>${contract.price}</span>
-                    <span className="text-zinc-400">{contract.period}</span>
-                  </div>
-                  <div className="flex items-center gap-2 mt-3 text-sm text-zinc-500">
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    {contract.renewal}
-                  </div>
-                  <Button className={`w-full mt-8 ${contract.featured ? 'bg-indigo-600 hover:bg-indigo-500 btn-glow' : 'bg-zinc-800 hover:bg-zinc-700 border border-zinc-700'}`}
-                    onClick={() => handlePlanClick(contract.planId)} disabled={loadingPlan === contract.planId} data-testid={`contract-cta-${contract.duration.toLowerCase().replace(/\s/g, '-')}`}>
-                    {loadingPlan === contract.planId ? <Loader2 className="w-4 h-4 animate-spin" /> : <>Get Started <ChevronRight className="w-4 h-4 ml-1" /></>}
-                  </Button>
-                </div>
-              ))}
-            </div>
-
-            <div className="border border-white/[0.08] bg-white/[0.03] backdrop-blur-xl rounded-2xl p-8 max-w-3xl mx-auto" data-testid="contract-features">
-              <h4 className="text-base font-semibold text-white mb-5" style={{ fontFamily: 'Outfit' }}>All contracts include full platform access</h4>
-              <div className="grid sm:grid-cols-2 gap-x-8 gap-y-3">
-                {allFeatures.map((feature, j) => (
-                  <div key={j} className="flex items-center gap-3 text-zinc-300 text-sm">
-                    <Check className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+              <ul className="mt-8 space-y-4">
+                {plan.features.map((feature, j) => (
+                  <li key={j} className="flex items-center gap-3 text-zinc-300">
+                    <Check className="w-5 h-5 text-emerald-400 flex-shrink-0" />
                     {feature}
-                  </div>
+                  </li>
                 ))}
-              </div>
+              </ul>
+              <Button className={`w-full mt-8 ${plan.featured ? 'bg-indigo-600 hover:bg-indigo-500 btn-glow' : 'bg-zinc-800 hover:bg-zinc-700 border border-zinc-700'}`}
+                onClick={() => handlePlanClick(plan.planId)} disabled={loadingPlan === plan.planId} data-testid={`pricing-cta-${plan.name.toLowerCase()}`}>
+                {loadingPlan === plan.planId ? <Loader2 className="w-4 h-4 animate-spin" /> : <>{plan.cta} <ChevronRight className="w-4 h-4 ml-1" /></>}
+              </Button>
             </div>
-          </div>
-        )}
+          ))}
+        </div>
       </div>
     </section>
   );
