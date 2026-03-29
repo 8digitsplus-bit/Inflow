@@ -20,8 +20,8 @@ def generate_video(prompt, output_path, duration=12):
         return output_path
     return None
 
-prompt = """A sleek, cinematic dark-themed technology product reveal. Camera slowly pushes through a dark environment with floating holographic data visualizations - glowing indigo and cyan charts, revenue graphs trending upward, pipeline funnels, and AI neural network patterns. The aesthetic is premium, minimal, and futuristic with deep blacks and electric indigo accents. Particles of light drift through the scene. The mood is anticipation and innovation. Professional B2B SaaS product launch teaser style. No text overlays."""
+prompt = """A smooth cinematic shot of a modern minimalist office desk at night. A large monitor displays a beautiful dark-themed analytics dashboard with glowing indigo and teal line charts showing upward trends. Soft ambient light illuminates the scene. The camera slowly orbits around the desk, revealing floating holographic data points and subtle light particles in the air. Premium tech aesthetic, clean and professional. Dark background with indigo accent lighting."""
 
-print("Starting video generation... (this may take several minutes)")
-result = generate_video(prompt, '/app/frontend/public/inflow-teaser.mp4')
+print("Generating TikTok/Instagram Reels video (vertical 720x1280)...")
+result = generate_video(prompt, '/app/frontend/public/inflow-social-vertical.mp4')
 print(f'Video saved to: {result}' if result else 'Video generation failed')
