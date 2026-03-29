@@ -125,7 +125,7 @@ export const CustomIntegrationSection = () => (
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-500/15 text-purple-400 border border-purple-500/20">Enterprise</span>
               </div>
               <p className="text-sm text-zinc-400 max-w-lg">
-                Define your endpoint URL, authentication headers, and data mapping. InFlow handles the sync schedule, error retries, and data flow automatically.
+                Define your endpoint URL, authentication headers, and data mapping. InFlow handles the sync schedule, error retries, and data flows automatically.
               </p>
             </div>
           </div>
