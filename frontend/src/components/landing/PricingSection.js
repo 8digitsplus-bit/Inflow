@@ -60,8 +60,8 @@ export const PricingSection = ({ handleGetStarted, isAuthenticated }) => {
             <div
               className="absolute top-1 bottom-1 rounded-full bg-indigo-600 shadow-lg shadow-indigo-500/25 transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)]"
               style={{
-                width: billingPeriod === 'monthly' ? 'calc(40% - 2px)' : 'calc(60% - 2px)',
-                left: billingPeriod === 'monthly' ? '4px' : 'calc(40% + 2px)',
+                width: 'calc(50% - 4px)',
+                left: billingPeriod === 'monthly' ? '4px' : 'calc(50% + 0px)',
               }}
             />
             <button onClick={() => setBillingPeriod('monthly')}
