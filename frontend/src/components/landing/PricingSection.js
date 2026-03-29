@@ -89,7 +89,7 @@ export const PricingSection = ({ handleGetStarted, isAuthenticated }) => {
         {billingPeriod === 'monthly' ? (
           <div className="grid md:grid-cols-3 gap-8">
             {monthlyPlans.map((plan, i) => (
-              <div key={i} className={`pricing-card ${plan.featured ? 'featured' : ''} reveal reveal-delay-${i + 1}`} data-testid={`pricing-card-${plan.name.toLowerCase()}`}>
+              <div key={i} className={`pricing-card ${plan.featured ? 'featured' : ''}`} data-testid={`pricing-card-${plan.name.toLowerCase()}`}>
                 <h3 className="text-xl font-semibold text-white" style={{ fontFamily: 'Outfit' }}>{plan.name}</h3>
                 <div className="mt-4 flex items-baseline gap-2">
                   <span className="text-4xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>${plan.price}</span>
