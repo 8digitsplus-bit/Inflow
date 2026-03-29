@@ -8,6 +8,7 @@ import { ConnectBusinessSection, CustomIntegrationSection } from '../components/
 import { PricingSection } from '../components/landing/PricingSection';
 import { FAQSection } from '../components/landing/FAQSection';
 import { AboutSection } from '../components/landing/AboutSection';
+import { ComingSoonVideo } from '../components/landing/ComingSoonVideo';
 import { CTASection, Footer } from '../components/landing/CTAFooter';
 import { Toaster } from '../components/ui/sonner';
 
@@ -57,6 +58,7 @@ const Landing = () => {
       <Header setMenuOpen={setMenuOpen} menuOpen={menuOpen} handleGetStarted={handleStartTrial} />
       <FullScreenMenu menuOpen={menuOpen} setMenuOpen={setMenuOpen} handleMenuClick={handleMenuClick} handleGetStarted={handleStartTrial} isAuthenticated={isAuthenticated} />
       <HeroSection handleGetStarted={handleStartTrial} />
+      <ComingSoonVideo />
       <FeaturesSection />
       <ConnectBusinessSection />
       <CustomIntegrationSection />
