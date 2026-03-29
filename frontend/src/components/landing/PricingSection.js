@@ -7,14 +7,14 @@ const API_URL = process.env.REACT_APP_BACKEND_URL;
 
 const plans = {
   monthly: [
-    { name: 'Essential', price: '59', period: '/month', deals: '1,500 usages', features: ['1,500 usages/month', 'Sales Pipeline', 'Core analytics', 'Email support', 'Churn alerts'], cta: 'Unlock Access', featured: false, planId: 'essential_monthly' },
-    { name: 'Pro', price: '149', period: '/month', deals: '7,500 usages', features: ['7,500 usages/month', 'Sales Performance', 'Priority support', 'Advanced analytics', 'Revenue forecasting', 'Churn prediction', 'CRO tools'], cta: 'Scale Up', featured: true, planId: 'pro_monthly' },
-    { name: 'Enterprise', price: '249', period: '/month', deals: '20,000 usages', features: ['20,000 usages/month', 'Everything in Pro', 'Sales Revenue', 'Revenue Intelligence', 'Custom integrations', 'API access'], cta: 'Maximise', featured: false, planId: 'enterprise_monthly' }
+    { name: 'Essential', price: '59', period: '/month', features: ['Sales Pipeline', 'Core analytics', 'Email support', 'Churn alerts'], cta: 'Unlock Access', featured: false, planId: 'essential_monthly' },
+    { name: 'Pro', price: '149', period: '/month', features: ['Sales Performance', 'Priority support', 'Advanced analytics', 'Revenue forecasting', 'Churn prediction', 'CRO tools'], cta: 'Scale Up', featured: true, planId: 'pro_monthly' },
+    { name: 'Enterprise', price: '249', period: '/month', features: ['Everything in Pro', 'Sales Revenue', 'Revenue Intelligence', 'Custom integrations', 'API access'], cta: 'Maximise', featured: false, planId: 'enterprise_monthly' }
   ],
   yearly: [
-    { name: 'Essential', price: '496', originalPrice: '708', period: '/year', deals: '3,000 usages', features: ['3,000 usages/year', 'Sales Pipeline', 'Core analytics', 'Email support', 'Churn alerts'], cta: 'Unlock Access', featured: false, planId: 'essential_yearly', savings: '30% off 1st year' },
-    { name: 'Pro', price: '1,252', originalPrice: '1,788', period: '/year', deals: '15,000 usages', features: ['15,000 usages/year', 'Sales Performance', 'Priority support', 'Advanced analytics', 'Revenue forecasting', 'Churn prediction', 'CRO tools'], cta: 'Scale Up', featured: true, planId: 'pro_yearly', savings: '30% off 1st year' },
-    { name: 'Enterprise', price: '2,092', originalPrice: '2,988', period: '/year', deals: '40,000 usages', features: ['40,000 usages/year', 'Everything in Pro', 'Sales Revenue', 'Revenue Intelligence', 'Custom integrations', 'API access'], cta: 'Maximise', featured: false, planId: 'enterprise_yearly', savings: '30% off 1st year' }
+    { name: 'Essential', price: '496', originalPrice: '708', period: '/year', features: ['Sales Pipeline', 'Core analytics', 'Email support', 'Churn alerts'], cta: 'Unlock Access', featured: false, planId: 'essential_yearly', savings: '30% off 1st year' },
+    { name: 'Pro', price: '1,252', originalPrice: '1,788', period: '/year', features: ['Sales Performance', 'Priority support', 'Advanced analytics', 'Revenue forecasting', 'Churn prediction', 'CRO tools'], cta: 'Scale Up', featured: true, planId: 'pro_yearly', savings: '30% off 1st year' },
+    { name: 'Enterprise', price: '2,092', originalPrice: '2,988', period: '/year', features: ['Everything in Pro', 'Sales Revenue', 'Revenue Intelligence', 'Custom integrations', 'API access'], cta: 'Maximise', featured: false, planId: 'enterprise_yearly', savings: '30% off 1st year' }
   ]
 };
 
@@ -87,7 +87,6 @@ export const PricingSection = ({ handleGetStarted, isAuthenticated }) => {
                 {plan.originalPrice && <span className="text-lg text-zinc-500 line-through">${plan.originalPrice}</span>}
                 <span className="text-zinc-400">{plan.period}</span>
               </div>
-              <p className="mt-2 text-sm text-indigo-400">{plan.deals}</p>
               <ul className="mt-8 space-y-4">
                 {plan.features.map((feature, j) => (
                   <li key={j} className="flex items-center gap-3 text-zinc-300">
