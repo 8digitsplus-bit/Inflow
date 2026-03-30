@@ -145,25 +145,29 @@ const SalesPerformance = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
                 {(data?.close_rate_by_size || []).map((d, i) => {
-                  const radius = 40;
-                  const stroke = 7;
+                  const radius = 36;
+                  const stroke = 6;
+                  const size = 96;
+                  const center = size / 2;
                   const circumference = 2 * Math.PI * radius;
                   const offset = circumference - (d.rate / 100) * circumference;
                   return (
-                    <div key={i} className="flex flex-col items-center">
-                      <svg width="96" height="96" className="transform -rotate-90">
-                        <circle cx="48" cy="48" r={radius} stroke="#27272a" strokeWidth={stroke} fill="none" />
-                        <circle cx="48" cy="48" r={radius} stroke={SIZE_COLORS[i]} strokeWidth={stroke} fill="none" strokeLinecap="round"
-                          strokeDasharray={circumference} strokeDashoffset={offset}
-                          style={{ transition: 'stroke-dashoffset 1s ease' }}
-                        />
-                      </svg>
-                      <div className="relative -mt-[62px] flex flex-col items-center mb-4">
-                        <span className="text-lg font-bold font-mono text-white">{d.rate}%</span>
+                    <div key={i} className="flex flex-col items-center gap-2">
+                      <div className="relative" style={{ width: size, height: size }}>
+                        <svg width={size} height={size} className="transform -rotate-90">
+                          <circle cx={center} cy={center} r={radius} stroke="#27272a" strokeWidth={stroke} fill="none" />
+                          <circle cx={center} cy={center} r={radius} stroke={SIZE_COLORS[i]} strokeWidth={stroke} fill="none" strokeLinecap="round"
+                            strokeDasharray={circumference} strokeDashoffset={offset}
+                            style={{ transition: 'stroke-dashoffset 1s ease' }}
+                          />
+                        </svg>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <span className="text-base font-bold font-mono text-white">{d.rate}%</span>
+                        </div>
                       </div>
-                      <span className="text-xs text-zinc-400 mt-1">{d.size}</span>
+                      <span className="text-xs text-zinc-400">{d.size}</span>
                       <span className="text-[10px] font-mono" style={{ color: SIZE_COLORS[i] }}>{d.won}W / {d.lost}L</span>
                     </div>
                   );
