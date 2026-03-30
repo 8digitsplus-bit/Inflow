@@ -1,87 +1,94 @@
-# InFlow - Product Requirements Document
+# InFlow - Revenue Intelligence SaaS Platform
 
-## Product Overview
-**InFlow** is a subscription-based SaaS for pricing optimization, sales pipeline management, and revenue intelligence.
+## Original Problem Statement
+Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization, sales pipeline management, and revenue intelligence. Core features include tier-gated analytics, integrations (Stripe, HubSpot, Salesforce, etc.), and AI tools.
 
 ## Tech Stack
-- **Frontend:** React, Tailwind CSS, Shadcn/UI, Recharts, Framer Motion, PapaParse
-- **Backend:** FastAPI, Pydantic, Motor (async MongoDB), bcrypt, httpx
-- **Database:** MongoDB
-- **Auth:** Emergent Google Auth, Email/Password
-- **Payments:** Stripe (test keys)
-- **AI:** Claude Sonnet 4.5 (via Emergent LLM Key)
+- Frontend: React + Tailwind CSS + Shadcn UI + Recharts
+- Backend: FastAPI (Python)
+- Database: MongoDB
+- Auth: JWT + Google OAuth
+- Encryption: AES-256 (Fernet) for API keys at rest
 
-## Pricing & Trial
-- **14-Day Free Trial** for all new signups
-- **Essential:** $59/mo, $599/yr
-- **Pro:** $149/mo, $1,490/yr
-- **Enterprise:** $249/mo, $2,490/yr
+## What's Been Implemented
 
-## Live Integrations (ALL REAL)
-| Platform | Auth Type | Fields Required | Token Expires |
-|----------|-----------|-----------------|---------------|
-| Stripe | Secret API Key | api_key | No |
-| Shopify | Admin Access Token | store_url + api_key | No |
-| HubSpot | Private App Token | api_key | No |
-| Salesforce | Access Token | instance_url + api_key | Yes (~2 hrs) |
-| QuickBooks | Access Token | company_id + api_key | Yes (~1 hr) |
+### Core Features
+- Landing page with glassmorphism cards, dark theme
+- Authentication: Email/password + Google OAuth + account chooser
+- Subscription tiers: Essential ($79/mo), Pro ($249/mo), Enterprise ($500/mo) with Monthly/Yearly toggle
+- Privacy Policy page (/privacy)
+- Favicon setup (32x32, 180x180, 192x192)
 
-## Data Import Options
-- **CSV Import** — Open to all users
-- **Custom API** — Enterprise-only, connect any REST API
-- **Platform Auto-Detection** — Detects known platform patterns in imported data
+### Dashboard & Analytics
+- Main Dashboard with KPI cards
+- Sales Pipeline with Kanban board + drag-and-drop
+- Sales Performance with radial progress rings
+- Revenue Forecast with area charts, scenario modeling, radial bar chart
+- Conversion Rate Optimization (CRO) with funnel visualization
+- Churn Analytics
 
-## All Completed Features
-- Authentication (Google + Email/Password)
-- Dashboard with personalized, tier-gated overview metrics
-- Sales Pipeline (deal management, stages, velocity, bottleneck detection, kanban board)
-- Sales Performance (win/loss rates, avg sales cycle, deal aging, close rate by size, activity-to-close)
-- Revenue Analytics (MRR, ARR, ARPU, NRR, concentration risk, expansion vs new revenue, top accounts)
-- Revenue Intelligence (unified overview with recommendations, stage health, monthly trends, quick navigation)
-- **Revenue Forecast** (weighted pipeline, 3 scenarios, velocity, top deals) — Pro+ tier-gated
-- Churn & Retention (health score, CLV, ARPA, churn/retention rates, NRR, revenue at risk, cohort analysis, churn reasons, risk by segment, at-risk deals, AI predictions)
-- CRO (overall conversion, funnel analysis, stage-to-stage conversion, active A/B tests, worst drop-off detection, bottlenecks, AI recommendations)
-- Pricing Optimizer (AI pricing strategy)
-- Smart Assist (Claude AI chat + tickets)
-- **Agentic AI** — Multi-step investigation agent with 12 tools (query_deals, analytics, integrations, forecast, churn, deal updates, search, **remember**, **recall_memory**, **escalate_to_ticket**). Agent mode toggle, investigation step display, markdown rendering, cross-conversation memory, auto-escalation to tickets.
-- All 5 Live Integrations functional (Stripe, Shopify, HubSpot, Salesforce, QuickBooks)
-- CSV Import + Custom API (Enterprise) + Platform Auto-Detection
-- Custom Stripe Checkout (Payment Intents) with Monzo/Revolut/Tide/Wise badges
-- 14-Day Free Trial with countdown
-- Onboarding flow
-- Tier-Gating across all features
-- Collapsible sidebar with persistent state
+### Data Visualizations (Diverse - No Duplicate Chart Types)
+- Area Charts: Monthly Forecast (Revenue Forecast page)
+- Line Charts: Stage Velocity (Pipeline), Activity-to-Close (Sales Performance)
+- Radial Progress Rings: Close Rate (Sales Performance)
+- CSS Trapezoid Funnels: Pipeline by Stage (Pipeline)
+- Donut Chart (Recharts PieChart): Weighted Pipeline (Sales Pipeline)
+- Radial Bar Chart: Pipeline Weighted by Stage (Revenue Forecast)
+- Conversion Funnel Bars: CRO page
 
-## Differentiated Analytics Pages (Completed 2026-03-23)
-Each analytics page now provides unique, non-redundant metrics:
-| Page | Unique Focus | Key Metrics |
-|------|-------------|-------------|
-| Dashboard | High-level overview | Total Pipeline, Closed Revenue, Win Rate, Active Deals |
-| Pipeline | Deal flow & velocity | Weighted Pipeline, Bottleneck Stage, Stage Velocity, Conversion Rates |
-| Sales Performance | Closing efficiency | Win/Loss Rate, Avg Sales Cycle, Deal Aging, Close Rate by Size |
-| Sales Revenue | Revenue health | MRR/ARR, ARPU, NRR, Concentration Risk, Expansion vs New Revenue |
-| Churn & Retention | Customer health | Health Score, CLV, ARPA, Churn Reasons, Cohort Retention, At-Risk Deals |
-| CRO | Conversion optimization | Funnel Rates, Active A/B Tests, Worst Drop-off, Bottlenecks |
-| Revenue Intelligence | Unified insights | Pipeline Health, Performance Trend, Recommendations, Stage Health |
-| Revenue Forecast | Future projections | Scenario Modeling, Revenue Velocity, Pipeline Confidence |
+### Security
+- AES-256 encryption at rest for all integration API keys
+- Encryption utility: /backend/utils/crypto.py
 
-## Bug Fixes
-- **2026-03-22:** Fixed Recharts tooltip white background on Revenue Forecast page Pipeline chart.
-- **2026-03-22:** Built Agentic AI system with 12 autonomous tools, multi-step reasoning, cross-conversation memory, auto-escalation.
-- **2026-03-23:** Fixed tooltip white background across ALL analytics pages (inline styles prevent CSS conflicts).
-- **2026-03-23:** Completed differentiated metrics refactor — replaced redundant CRO KPIs (Won Deals → Active A/B Tests, Avg Sales Cycle → Worst Drop-off).
+### Integrations Setup
+- Stripe, Shopify, HubSpot, Salesforce, QuickBooks (user API key, encrypted at rest)
+- Google Auth (functional)
+- OpenAI Sora-2 (marketing videos via Emergent LLM Key)
+- Claude Sonnet 4.5 (via Emergent LLM Key)
 
-- **2026-03-23:** Fixed mobile responsiveness overflow across all analytics pages (responsive font sizes, card padding, grid gaps, truncation).
+### Marketing Assets
+- Cinematic teaser video + 9:16 social media video (Sora-2 + ffmpeg)
 
-- **2026-03-23:** Added optional email-based 2FA (OTP) with toggle in Settings. Confirmation dialogs on logout and subscription cancellation.
+## Changes Made (Mar 30, 2026)
+- Fixed Weighted Pipeline donut chart (Pipeline page) - switched from custom SVG to Recharts PieChart for reliable rendering + added sample data fallback
+- Fixed Conversion Funnel spacing/overlapping (CRO page) - increased spacing, added stage labels on left with percentages on right
+- Changed Pipeline Weighted by Stage (Revenue Forecast) from Waterfall chart to Recharts RadialBarChart
+- Fixed Pipeline funnel deal count bug (d.deals -> d.count)
 
-- **2026-03-24:** Applied glassmorphism frosted glass effect to ALL landing page cards (About, FAQ, Integration, CTA sections updated with `backdrop-blur-xl`, transparent backgrounds, subtle borders).
+## Prioritized Backlog
 
-## Backlog
-- **P1:** Integration Health Dashboard (sync status, data freshness, token expiry)
-- **P1:** Email-Scheduled Forecast Reports (weekly summaries)
-- **P1:** Daily AI Briefing (proactive pipeline analysis via email)
-- **P1:** Admin panel for support ticket management
-- **P2:** Team/Collaboration features
-- **P2:** Public API Access for Enterprise tier
-- **P2:** Drag-and-Drop CSV Mapping interface
+### P0 - Critical
+- Implement Functional Email 2FA (currently MOCKED via toast notification, needs Resend/SendGrid integration)
+
+### P1 - High Priority
+- AI Deal Scorer (scores pipeline deals)
+- AI Revenue Copilot (proactive alerts/notifications)
+- AI Email Draft Generator (contextual drafts from deal data)
+- Terms of Service page (/terms)
+
+### P2 - Medium Priority
+- Integration Health Dashboard
+- Email-Scheduled Forecast Reports / Daily AI Briefing
+
+## Key API Endpoints
+- `/api/business/connect/{platform}` - Connect integration (encrypts API keys)
+- `/api/business/sync/{platform}` - Sync data (decrypts keys)
+- `/api/custom-integration/connect` - Custom integration connect
+- `/api/custom-integration/fetch` - Custom integration fetch
+- `/api/deals` - CRUD for deals
+- `/api/analytics/pipeline` - Pipeline analytics
+- `/api/analytics/forecasting` - Revenue forecasting
+- `/api/analytics/cro` - CRO analytics
+
+## Key Files
+- `/app/backend/utils/crypto.py` - AES-256 encryption
+- `/app/frontend/src/pages/Pipeline.js` - Sales Pipeline + Donut chart
+- `/app/frontend/src/pages/RevenueForecast.js` - Revenue Forecast + Radial Bar
+- `/app/frontend/src/pages/ConversionOptimization.js` - CRO + Funnel
+- `/app/frontend/src/pages/SalesPerformance.js` - Performance + Radial rings
+- `/app/backend/routes/business.py` - Integration connections
+- `/app/backend/routes/auth.py` - Authentication (2FA still mocked)
+
+## Test Credentials
+- Email: testpro@test.com
+- Password: password

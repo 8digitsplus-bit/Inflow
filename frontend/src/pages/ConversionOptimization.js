@@ -200,22 +200,23 @@ const ConversionOptimization = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
+              <div className="space-y-4">
                 {(data?.funnel_data || []).map((d, i, arr) => {
                   const maxConv = Math.max(...arr.map(x => x.conversion), 1);
-                  const widthPct = Math.max((d.conversion / maxConv) * 100, 20);
+                  const widthPct = Math.max((d.conversion / maxConv) * 100, 25);
                   return (
-                    <div key={i} className="flex items-center justify-center">
-                      <div
-                        className="relative h-12 flex items-center justify-center rounded-lg transition-all duration-700"
-                        style={{
-                          width: `${widthPct}%`,
-                          backgroundColor: FUNNEL_COLORS[i % FUNNEL_COLORS.length],
-                          opacity: 0.9,
-                        }}
-                      >
-                        <span className="text-xs font-medium text-white">{d.stage}</span>
-                        <span className="absolute right-3 text-xs font-mono text-white/70">{d.conversion}%</span>
+                    <div key={i} className="flex items-center gap-3">
+                      <span className="text-[11px] text-zinc-400 w-20 text-right shrink-0 truncate">{d.stage}</span>
+                      <div className="flex-1 relative">
+                        <div
+                          className="relative h-10 flex items-center justify-end pr-3 rounded-md transition-all duration-700"
+                          style={{
+                            width: `${widthPct}%`,
+                            backgroundColor: FUNNEL_COLORS[i % FUNNEL_COLORS.length],
+                          }}
+                        >
+                          <span className="text-xs font-mono font-semibold text-white">{d.conversion}%</span>
+                        </div>
                       </div>
                     </div>
                   );

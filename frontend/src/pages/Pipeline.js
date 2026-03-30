@@ -50,6 +50,9 @@ import {
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
 } from 'recharts';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
@@ -383,7 +386,7 @@ const Pipeline = () => {
                             </span>
                           </div>
                         </div>
-                        <span className="text-[10px] text-zinc-500 w-12 shrink-0">{d.deals} deals</span>
+                        <span className="text-[10px] text-zinc-500 w-12 shrink-0">{d.count} deals</span>
                       </div>
                     );
                   });
@@ -400,62 +403,63 @@ const Pipeline = () => {
             </CardHeader>
             <CardContent>
               {(() => {
-                const stageData = STAGES.filter(s => !['closed_won', 'closed_lost'].includes(s.id)).map((stage) => {
+                const SAMPLE_DATA = [
+                  { name: 'Lead', color: '#6366F1', value: 28500 },
+                  { name: 'Qualified', color: '#8B5CF6', value: 64000 },
+                  { name: 'Proposal', color: '#06B6D4', value: 115000 },
+                  { name: 'Negotiation', color: '#F59E0B', value: 82000 },
+                ];
+
+                const realData = STAGES.filter(s => !['closed_won', 'closed_lost'].includes(s.id)).map((stage) => {
                   const stageDeals = getDealsByStage(stage.id);
                   const stageWeighted = stageDeals.reduce((s, d) => s + (d.value * (d.probability / 100)), 0);
-                  return { ...stage, weighted: stageWeighted, deals: stageDeals.length };
-                }).filter(s => s.weighted > 0);
+                  return { name: stage.label, color: stage.color, value: stageWeighted };
+                }).filter(s => s.value > 0);
 
-                const total = stageData.reduce((s, d) => s + d.weighted, 0);
-                const cx = 130, cy = 130, outerR = 120, innerR = 75, gap = 0.03;
-                let startAngle = -Math.PI / 2;
+                const isSample = realData.length === 0;
+                const chartData = isSample ? SAMPLE_DATA : realData;
+                const total = chartData.reduce((s, d) => s + d.value, 0);
 
                 return (
                   <div className="flex flex-col items-center">
-                    <svg width={260} height={260} viewBox="0 0 260 260">
-                      {stageData.map((stage, i) => {
-                        const pct = total > 0 ? stage.weighted / total : 0;
-                        const sweep = pct * Math.PI * 2 - gap;
-                        if (sweep <= 0) { startAngle += pct * Math.PI * 2; return null; }
-                        const endAngle = startAngle + sweep;
-                        const x1o = cx + outerR * Math.cos(startAngle);
-                        const y1o = cy + outerR * Math.sin(startAngle);
-                        const x2o = cx + outerR * Math.cos(endAngle);
-                        const y2o = cy + outerR * Math.sin(endAngle);
-                        const x1i = cx + innerR * Math.cos(endAngle);
-                        const y1i = cy + innerR * Math.sin(endAngle);
-                        const x2i = cx + innerR * Math.cos(startAngle);
-                        const y2i = cy + innerR * Math.sin(startAngle);
-                        const largeArc = sweep > Math.PI ? 1 : 0;
-                        const midAngle = startAngle + sweep / 2;
-                        const labelR = (outerR + innerR) / 2;
-                        const lx = cx + labelR * Math.cos(midAngle);
-                        const ly = cy + labelR * Math.sin(midAngle);
-                        const path = `M ${x1o} ${y1o} A ${outerR} ${outerR} 0 ${largeArc} 1 ${x2o} ${y2o} L ${x1i} ${y1i} A ${innerR} ${innerR} 0 ${largeArc} 0 ${x2i} ${y2i} Z`;
-                        startAngle = endAngle + gap;
-                        return (
-                          <g key={i}>
-                            <path d={path} fill={stage.color} opacity={0.85} className="transition-opacity hover:opacity-100" style={{ cursor: 'default' }}>
-                              <title>{stage.label}: {fmt(stage.weighted)} ({(pct * 100).toFixed(1)}%)</title>
-                            </path>
-                            {pct > 0.08 && (
-                              <text x={lx} y={ly} textAnchor="middle" dominantBaseline="middle" fill="white" fontSize={10} fontWeight={600} style={{ pointerEvents: 'none' }}>
-                                {(pct * 100).toFixed(0)}%
-                              </text>
-                            )}
-                          </g>
-                        );
-                      })}
-                      <circle cx={cx} cy={cy} r={innerR - 4} fill="#0a0a0f" />
-                      <text x={cx} y={cy - 8} textAnchor="middle" fill="white" fontSize={16} fontWeight={700} fontFamily="monospace">{fmt(total)}</text>
-                      <text x={cx} y={cy + 10} textAnchor="middle" fill="#71717a" fontSize={10}>Weighted total</text>
-                    </svg>
-                    <div className="flex flex-wrap justify-center gap-x-4 gap-y-1.5 mt-3">
-                      {stageData.map((s, i) => (
+                    {isSample && (
+                      <span className="text-[10px] text-zinc-600 mb-1 px-2 py-0.5 rounded-full bg-zinc-800/60 border border-zinc-700/40">Sample data</span>
+                    )}
+                    <div className="relative">
+                      <ResponsiveContainer width={240} height={240}>
+                        <PieChart>
+                          <Pie
+                            data={chartData}
+                            cx="50%"
+                            cy="50%"
+                            innerRadius={60}
+                            outerRadius={100}
+                            paddingAngle={3}
+                            dataKey="value"
+                            stroke="none"
+                          >
+                            {chartData.map((entry, i) => (
+                              <Cell key={i} fill={entry.color} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            contentStyle={{ backgroundColor: '#0c0c10', border: '1px solid #3f3f46', borderRadius: '0.5rem' }}
+                            formatter={(value) => [fmt(value), 'Weighted']}
+                            itemStyle={{ color: '#e4e4e7' }}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                        <span className="text-sm font-bold font-mono text-white">{fmt(total)}</span>
+                        <span className="text-[9px] text-zinc-500">Weighted total</span>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap justify-center gap-x-4 gap-y-1.5 mt-2">
+                      {chartData.map((s, i) => (
                         <div key={i} className="flex items-center gap-1.5 text-xs">
-                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: s.color }} />
-                          <span className="text-zinc-400">{s.label}</span>
-                          <span className="text-zinc-500 font-mono">{fmt(s.weighted)}</span>
+                          <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: s.color }} />
+                          <span className="text-zinc-400">{s.name}</span>
+                          <span className="text-zinc-500 font-mono">{fmt(s.value)}</span>
                         </div>
                       ))}
                     </div>

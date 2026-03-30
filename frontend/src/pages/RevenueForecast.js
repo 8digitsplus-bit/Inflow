@@ -2,12 +2,12 @@ import { useState, useEffect } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import {
   TrendingUp, DollarSign, Target, BarChart3, Loader2, ArrowUpRight, ArrowDownRight,
-  Layers, Clock, CalendarDays, Zap,
+  Layers, Clock, CalendarDays, Zap
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import {
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  BarChart, Bar, Cell,
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+  ComposedChart, RadialBarChart, RadialBar, Cell,
 } from 'recharts';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
@@ -120,44 +120,39 @@ const RevenueForecast = () => {
                 <span className="text-sm sm:text-lg font-bold" style={{ fontFamily: 'Outfit', color: scenarioColors[scenario] }}>{scenarioData.confidence}%</span>
               </div>
             </div>
-            {(() => {
-              const months = data.monthly_forecast || [];
-              const waterfallData = [];
-              let cumulative = 0;
-              months.forEach((m) => {
-                const val = m[scenario] || 0;
-                waterfallData.push({ month: m.month, value: val, base: cumulative, cumulative: cumulative + val });
-                cumulative += val;
-              });
-              waterfallData.push({ month: 'Total', value: cumulative, base: 0, cumulative, isTotal: true });
-              const maxVal = Math.max(...waterfallData.map(d => d.cumulative), 1);
-              const color = scenarioColors[scenario];
-
-              return (
-                <ResponsiveContainer width="100%" height={280}>
-                  <BarChart data={waterfallData} barCategoryGap="15%">
-                    <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
-                    <XAxis dataKey="month" tick={{ fill: '#71717a', fontSize: 11 }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fill: '#71717a', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={fmtK} domain={[0, maxVal * 1.1]} />
-                    <Tooltip
-                      content={({ active, payload, label }) => <CustomTooltip active={active} payload={payload} label={label} />}
-                      cursor={{ fill: 'rgba(39, 39, 42, 0.15)' }}
-                    />
-                    <Bar dataKey="base" stackId="waterfall" fill="transparent" radius={0} />
-                    <Bar dataKey="value" stackId="waterfall" name={scenarioLabels[scenario]} radius={[4, 4, 0, 0]}>
-                      {waterfallData.map((entry, i) => (
-                        <Cell key={i} fill={entry.isTotal ? '#A78BFA' : color} fillOpacity={entry.isTotal ? 0.9 : 0.85} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              );
-            })()}
+            <ResponsiveContainer width="100%" height={280}>
+              <ComposedChart data={data.monthly_forecast}>
+                <defs>
+                  <linearGradient id="gradBest" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#10B981" stopOpacity={0.3} />
+                    <stop offset="100%" stopColor="#10B981" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="gradExpected" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#6366F1" stopOpacity={0.3} />
+                    <stop offset="100%" stopColor="#6366F1" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="gradWorst" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#F59E0B" stopOpacity={0.3} />
+                    <stop offset="100%" stopColor="#F59E0B" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+                <XAxis dataKey="month" tick={{ fill: '#71717a', fontSize: 11 }} axisLine={false} tickLine={false} />
+                <YAxis tick={{ fill: '#71717a', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={fmtK} />
+                <Tooltip
+                  content={({ active, payload, label }) => <CustomTooltip active={active} payload={payload} label={label} />}
+                  cursor={{ stroke: '#27272A', fill: 'none' }}
+                />
+                <Area type="monotone" dataKey="best" name="Best Case" stroke="#10B981" fill="url(#gradBest)" strokeWidth={scenario === 'best' ? 2.5 : 1} strokeOpacity={scenario === 'best' ? 1 : 0.3} fillOpacity={scenario === 'best' ? 1 : 0.1} />
+                <Area type="monotone" dataKey="expected" name="Expected" stroke="#6366F1" fill="url(#gradExpected)" strokeWidth={scenario === 'expected' ? 2.5 : 1} strokeOpacity={scenario === 'expected' ? 1 : 0.3} fillOpacity={scenario === 'expected' ? 1 : 0.1} />
+                <Area type="monotone" dataKey="worst" name="Conservative" stroke="#F59E0B" fill="url(#gradWorst)" strokeWidth={scenario === 'worst' ? 2.5 : 1} strokeOpacity={scenario === 'worst' ? 1 : 0.3} fillOpacity={scenario === 'worst' ? 1 : 0.1} />
+              </ComposedChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
 
         <div className="grid lg:grid-cols-2 gap-4">
-          {/* Weighted Pipeline by Stage - Donut Chart */}
+          {/* Weighted Pipeline by Stage - Radial Bar Chart */}
           <Card className="bg-zinc-950/50 border border-white/10">
             <CardHeader>
               <CardTitle className="text-base text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
@@ -167,58 +162,51 @@ const RevenueForecast = () => {
             <CardContent>
               {(() => {
                 const stages = data.stage_forecast || [];
-                const total = stages.reduce((s, d) => s + (d.weighted || 0), 0);
-                const colors = ['#818CF8', '#6366F1', '#4F46E5', '#4338CA', '#3730A3'];
-                const cx = 120, cy = 120, outerR = 100, innerR = 65;
-                let startAngle = -Math.PI / 2;
-                const gap = 0.04;
+                const colors = ['#818CF8', '#6366F1', '#A78BFA', '#4F46E5', '#3730A3'];
+                const maxWeighted = Math.max(...stages.map(s => s.weighted), 1);
+
+                const radialData = stages.map((s, i) => ({
+                  name: s.stage?.replace(/_/g, ' '),
+                  value: s.weighted,
+                  pct: Math.round((s.weighted / maxWeighted) * 100),
+                  count: s.count,
+                  fill: colors[i % colors.length],
+                })).reverse();
 
                 return (
-                  <div className="flex flex-col items-center">
-                    <svg width={240} height={240} viewBox="0 0 240 240">
-                      {stages.map((stage, i) => {
-                        const pct = total > 0 ? stage.weighted / total : 0;
-                        const sweep = pct * Math.PI * 2 - gap;
-                        if (sweep <= 0) { startAngle += pct * Math.PI * 2; return null; }
-                        const endAngle = startAngle + sweep;
-                        const x1o = cx + outerR * Math.cos(startAngle);
-                        const y1o = cy + outerR * Math.sin(startAngle);
-                        const x2o = cx + outerR * Math.cos(endAngle);
-                        const y2o = cy + outerR * Math.sin(endAngle);
-                        const x1i = cx + innerR * Math.cos(endAngle);
-                        const y1i = cy + innerR * Math.sin(endAngle);
-                        const x2i = cx + innerR * Math.cos(startAngle);
-                        const y2i = cy + innerR * Math.sin(startAngle);
-                        const largeArc = sweep > Math.PI ? 1 : 0;
-                        const midAngle = startAngle + sweep / 2;
-                        const labelR = (outerR + innerR) / 2;
-                        const lx = cx + labelR * Math.cos(midAngle);
-                        const ly = cy + labelR * Math.sin(midAngle);
-                        const path = `M ${x1o} ${y1o} A ${outerR} ${outerR} 0 ${largeArc} 1 ${x2o} ${y2o} L ${x1i} ${y1i} A ${innerR} ${innerR} 0 ${largeArc} 0 ${x2i} ${y2i} Z`;
-                        startAngle = endAngle + gap;
-                        return (
-                          <g key={i}>
-                            <path d={path} fill={colors[i % colors.length]} opacity={0.9} className="transition-opacity hover:opacity-100" style={{ cursor: 'default' }}>
-                              <title>{stage.stage}: {fmt(stage.weighted)} ({(pct * 100).toFixed(1)}%)</title>
-                            </path>
-                            {pct > 0.08 && (
-                              <text x={lx} y={ly} textAnchor="middle" dominantBaseline="middle" fill="white" fontSize={10} fontWeight={600} style={{ pointerEvents: 'none' }}>
-                                {(pct * 100).toFixed(0)}%
-                              </text>
-                            )}
-                          </g>
-                        );
-                      })}
-                      <circle cx={cx} cy={cy} r={innerR - 3} fill="#0a0a0f" />
-                      <text x={cx} y={cy - 6} textAnchor="middle" fill="white" fontSize={14} fontWeight={700} fontFamily="monospace">{fmtK(total)}</text>
-                      <text x={cx} y={cy + 10} textAnchor="middle" fill="#71717a" fontSize={9}>Weighted</text>
-                    </svg>
-                    <div className="w-full mt-3 space-y-1.5">
+                  <>
+                    <ResponsiveContainer width="100%" height={260}>
+                      <RadialBarChart
+                        cx="50%"
+                        cy="50%"
+                        innerRadius="20%"
+                        outerRadius="90%"
+                        barSize={16}
+                        data={radialData}
+                        startAngle={180}
+                        endAngle={-45}
+                      >
+                        <RadialBar
+                          background={{ fill: '#27272a' }}
+                          dataKey="pct"
+                          cornerRadius={8}
+                        >
+                          {radialData.map((entry, i) => (
+                            <Cell key={i} fill={entry.fill} />
+                          ))}
+                        </RadialBar>
+                        <Tooltip
+                          contentStyle={{ backgroundColor: '#0c0c10', border: '1px solid #3f3f46', borderRadius: '0.5rem', color: '#fff' }}
+                          formatter={(value, name, props) => [fmt(props.payload.value), props.payload.name]}
+                        />
+                      </RadialBarChart>
+                    </ResponsiveContainer>
+                    <div className="mt-2 space-y-1.5">
                       {stages.map((s, i) => (
                         <div key={i} className="flex items-center justify-between text-xs">
                           <div className="flex items-center gap-2">
-                            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: colors[i % colors.length] }} />
-                            <span className="text-zinc-400 capitalize">{s.stage.replace(/_/g, ' ')}</span>
+                            <div className="w-2.5 h-2.5 rounded-sm" style={{ backgroundColor: colors[i % colors.length] }} />
+                            <span className="text-zinc-400 capitalize">{s.stage?.replace(/_/g, ' ')}</span>
                           </div>
                           <div className="flex items-center gap-3">
                             <span className="text-zinc-500">{s.count} deals</span>
@@ -227,7 +215,7 @@ const RevenueForecast = () => {
                         </div>
                       ))}
                     </div>
-                  </div>
+                  </>
                 );
               })()}
             </CardContent>
