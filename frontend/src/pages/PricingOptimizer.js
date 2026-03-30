@@ -178,15 +178,15 @@ const PricingOptimizer = () => {
             <Card className="bg-zinc-950/50 border-white/10" data-testid="pricing-input-card">
               <CardHeader>
                 <CardTitle className="text-lg font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
-                  <Target className="w-5 h-5 text-indigo-400" /> Product / Service Info
+                  <Target className="w-5 h-5 text-indigo-400" /> Product Information
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="text-sm text-zinc-400 mb-1.5 block">Product / Service Name</label>
+                    <label className="text-sm text-zinc-400 mb-1.5 block">Product Name</label>
                     <Input value={form.product_name} onChange={(e) => setForm({ ...form, product_name: e.target.value })}
-                      placeholder="e.g., Pro Plan, Consulting, Sneakers" className="bg-zinc-800 border-zinc-700 text-white" data-testid="product-name-input" />
+                      placeholder="e.g., Enterprise Plan" className="bg-zinc-800 border-zinc-700 text-white" data-testid="product-name-input" />
                   </div>
                   <div>
                     <label className="text-sm text-zinc-400 mb-1.5 block">Current Price ($)</label>
@@ -234,12 +234,9 @@ const PricingOptimizer = () => {
                     <Select value={form.market_segment} onValueChange={(val) => setForm({ ...form, market_segment: val })}>
                       <SelectTrigger className="bg-zinc-800 border-zinc-700 text-white" data-testid="market-segment-select"><SelectValue /></SelectTrigger>
                       <SelectContent className="bg-zinc-900 border-zinc-800">
-                        <SelectItem value="saas" className="text-zinc-300">SaaS / Subscription</SelectItem>
-                        <SelectItem value="services" className="text-zinc-300">Services / Consulting</SelectItem>
                         <SelectItem value="startup" className="text-zinc-300">Startup / SMB</SelectItem>
                         <SelectItem value="mid-market" className="text-zinc-300">Mid-Market</SelectItem>
                         <SelectItem value="enterprise" className="text-zinc-300">Enterprise</SelectItem>
-                        <SelectItem value="retail" className="text-zinc-300">Retail / E-commerce</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
