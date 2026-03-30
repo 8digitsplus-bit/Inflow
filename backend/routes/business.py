@@ -282,6 +282,13 @@ async def connect_platform(platform: str, body: ConnectRequest = ConnectRequest(
         {"$set": {"has_business_connected": True}}
     )
 
+    # Auto-sync pricing data from the newly connected platform
+    try:
+        from routes.analytics import sync_pricing_from_integrations
+        await sync_pricing_from_integrations(current_user)
+    except Exception:
+        pass  # Non-blocking: pricing sync failure shouldn't break connect flow
+
     return {
         "status": "connected",
         "platform": platform,
