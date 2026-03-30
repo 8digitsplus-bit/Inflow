@@ -42,6 +42,15 @@ import {
   SelectValue,
 } from '../components/ui/select';
 import { toast } from 'sonner';
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -286,28 +295,30 @@ const Pipeline = () => {
                 <Layers className="w-4 h-4 text-indigo-400" /> Stage Velocity
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-3">
-              {(pipelineData?.pipeline_velocity || []).map((v, i) => {
-                const maxDays = Math.max(...(pipelineData?.pipeline_velocity || []).map(x => x.avg_days || 1), 1);
-                return (
-                  <div key={i}>
-                    <div className="flex items-center justify-between text-xs mb-1">
-                      <span className="text-zinc-300">{v.stage}</span>
-                      <div className="flex items-center gap-3">
-                        <span className="text-zinc-500">{v.count} deals</span>
-                        <span className={`font-mono font-medium ${v.avg_days > 14 ? 'text-amber-400' : 'text-zinc-400'}`}>{v.avg_days}d avg</span>
-                      </div>
-                    </div>
-                    <div className="h-1.5 bg-zinc-800/50 rounded-full overflow-hidden">
-                      <div className="h-full rounded-full transition-all duration-700" style={{
-                        width: `${Math.min((v.avg_days / maxDays) * 100, 100)}%`,
-                        backgroundColor: v.avg_days > 14 ? '#F59E0B' : STAGES[i]?.color || '#6366F1',
-                      }} />
-                    </div>
-                    {v.stuck_count > 0 && <p className="text-amber-400/70 text-[10px] mt-0.5">{v.stuck_count} stuck 14+ days</p>}
-                  </div>
-                );
-              })}
+            <CardContent>
+              <div className="h-[200px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={(pipelineData?.pipeline_velocity || []).map(v => ({ ...v, stage: v.stage?.replace('Closed ', '') }))} margin={{ left: 0, right: 10, top: 5, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
+                    <XAxis dataKey="stage" tick={{ fill: '#a1a1aa', fontSize: 11 }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fill: '#a1a1aa', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}d`} />
+                    <Tooltip
+                      contentStyle={{ backgroundColor: '#0c0c10', border: '1px solid #3f3f46', borderRadius: '0.5rem' }}
+                      itemStyle={{ color: '#e4e4e7' }}
+                      cursor={{ stroke: '#27272A' }}
+                      formatter={(v, name) => [name === 'avg_days' ? `${v} days avg` : `${v} deals`, name === 'avg_days' ? 'Velocity' : 'Deals']}
+                    />
+                    <Line type="monotone" dataKey="avg_days" name="avg_days" stroke="#6366F1" strokeWidth={2} dot={{ r: 5, fill: '#6366F1', stroke: '#0c0c10', strokeWidth: 2 }} activeDot={{ r: 7, stroke: '#6366F1', strokeWidth: 2 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+              {(pipelineData?.pipeline_velocity || []).some(v => v.stuck_count > 0) && (
+                <div className="flex flex-wrap gap-3 mt-3">
+                  {(pipelineData?.pipeline_velocity || []).filter(v => v.stuck_count > 0).map((v, i) => (
+                    <span key={i} className="text-amber-400/70 text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 border border-amber-500/15">{v.stage}: {v.stuck_count} stuck 14+ days</span>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
 
