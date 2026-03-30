@@ -28,8 +28,8 @@ import {
   CartesianGrid, 
   Tooltip, 
   ResponsiveContainer,
-  PieChart as RechartsPie,
-  Pie,
+  BarChart,
+  Bar,
   Cell
 } from 'recharts';
 
@@ -303,21 +303,15 @@ const Dashboard = () => {
             <CardContent>
               <div className="h-[200px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <RechartsPie>
-                    <Pie data={pieData} cx="50%" cy="50%" innerRadius={50} outerRadius={80} paddingAngle={3} dataKey="count">
+                  <BarChart data={pieData} layout="vertical" margin={{ left: 10, right: 20, top: 5, bottom: 5 }}>
+                    <XAxis type="number" hide />
+                    <YAxis type="category" dataKey="stage" tick={{ fill: '#a1a1aa', fontSize: 12, textTransform: 'capitalize' }} width={80} tickFormatter={(v) => v.charAt(0).toUpperCase() + v.slice(1)} />
+                    <Tooltip contentStyle={{ backgroundColor: '#0c0c10', border: '1px solid #3f3f46', borderRadius: '8px', color: '#fff' }} itemStyle={{ color: '#A1A1AA' }} formatter={(v) => [`${v} deals`, 'Count']} />
+                    <Bar dataKey="count" radius={[0, 6, 6, 0]} barSize={18}>
                       {pieData.map((entry, index) => (<Cell key={`cell-${index}`} fill={stageColors[entry.stage] || '#6366F1'} />))}
-                    </Pie>
-                    <Tooltip contentStyle={{ backgroundColor: '#0c0c10', border: '1px solid #3f3f46', borderRadius: '8px', color: '#fff' }} itemStyle={{ color: '#A1A1AA' }} />
-                  </RechartsPie>
+                    </Bar>
+                  </BarChart>
                 </ResponsiveContainer>
-              </div>
-              <div className="flex flex-wrap justify-center gap-3 mt-2">
-                {pieData.slice(0, 4).map((stage, i) => (
-                  <div key={i} className="flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: stageColors[stage.stage] }} />
-                    <span className="text-xs text-zinc-400 capitalize">{stage.stage}</span>
-                  </div>
-                ))}
               </div>
             </CardContent>
           </Card>

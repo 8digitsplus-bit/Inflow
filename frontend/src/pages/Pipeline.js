@@ -328,7 +328,10 @@ const Pipeline = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {(pipelineData?.conversion_rates || []).map((c, i) => (
+              {(pipelineData?.conversion_rates || []).map((c, i) => {
+                const stageObj = STAGES.find(s => s.id === c.from_stage?.toLowerCase()?.replace(/\s/g, '_'));
+                const barColor = stageObj?.color || '#6366F1';
+                return (
                 <div key={i}>
                   <div className="flex items-center justify-between text-xs mb-1">
                     <span className="text-zinc-300">{c.from_stage} &rarr; next</span>
@@ -337,11 +340,12 @@ const Pipeline = () => {
                   <div className="h-1.5 bg-zinc-800/50 rounded-full overflow-hidden">
                     <div className="h-full rounded-full transition-all duration-700" style={{
                       width: `${c.rate}%`,
-                      backgroundColor: c.rate > 60 ? '#10B981' : c.rate > 30 ? '#6366F1' : '#EF4444',
+                      backgroundColor: barColor,
                     }} />
                   </div>
                 </div>
-              ))}
+                );
+              })}
             </CardContent>
           </Card>
         </div>

@@ -20,13 +20,12 @@ import {
   BarChart,
   Bar,
   Cell,
-  PieChart,
-  Pie,
 } from 'recharts';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 const fmt = (v) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(v);
 const AGING_COLORS = ['#10B981', '#6366F1', '#F59E0B', '#EF4444'];
+const AGING_LABELS = { '7d': '0-7 days', '14d': '8-14 days', '30d': '15-30 days', '60d+': '31+ days' };
 const SIZE_COLORS = ['#06B6D4', '#8B5CF6', '#6366F1', '#F59E0B'];
 
 const SalesPerformance = () => {
@@ -115,41 +114,26 @@ const SalesPerformance = () => {
           <Card className="bg-zinc-950/50 border-white/10" data-testid="deal-aging-chart">
             <CardHeader>
               <CardTitle className="text-sm font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
-                <Timer className="w-4 h-4 text-amber-400" /> Deal Aging Distribution
+                <Timer className="w-4 h-4 text-amber-400" /> Deal Age Distribution
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="h-[220px]">
                 <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={data?.deal_aging || []}
-                      dataKey="count"
-                      nameKey="bucket"
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={55}
-                      outerRadius={85}
-                      paddingAngle={3}
-                      label={({ bucket, count }) => count > 0 ? `${bucket}: ${count}` : ''}
-                    >
+                  <BarChart data={(data?.deal_aging || []).map(d => ({ ...d, label: AGING_LABELS[d.bucket] || d.bucket }))} margin={{ left: 0, right: 10, top: 5, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
+                    <XAxis dataKey="label" tick={{ fill: '#a1a1aa', fontSize: 11 }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fill: '#a1a1aa', fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
+                    <Tooltip contentStyle={{ backgroundColor: '#0c0c10', border: '1px solid #3f3f46', borderRadius: '0.5rem' }} itemStyle={{ color: '#e4e4e7' }} formatter={(v) => [`${v} deals`, 'Count']} />
+                    <Bar dataKey="count" radius={[6, 6, 0, 0]} barSize={32}>
                       {(data?.deal_aging || []).map((_, i) => (
                         <Cell key={i} fill={AGING_COLORS[i % AGING_COLORS.length]} />
                       ))}
-                    </Pie>
-                    <Tooltip contentStyle={{ backgroundColor: '#0c0c10', border: '1px solid #3f3f46', borderRadius: '0.5rem' }} itemStyle={{ color: '#e4e4e7' }} />
-                  </PieChart>
+                    </Bar>
+                  </BarChart>
                 </ResponsiveContainer>
               </div>
-              <div className="flex flex-wrap justify-center gap-3 mt-2">
-                {(data?.deal_aging || []).map((d, i) => (
-                  <div key={i} className="flex items-center gap-1.5 text-xs">
-                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: AGING_COLORS[i] }} />
-                    <span className="text-zinc-400">{d.bucket}</span>
-                    <span className="text-white font-mono">{d.count}</span>
-                  </div>
-                ))}
-              </div>
+              <p className="text-xs text-zinc-500 mt-2 text-center">How long open deals have been in the pipeline</p>
             </CardContent>
           </Card>
 
