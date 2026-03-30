@@ -44,7 +44,9 @@ import {
   PolarGrid,
   PolarAngleAxis,
   PolarRadiusAxis,
-  Radar
+  Radar,
+  ComposedChart,
+  Line
 } from 'recharts';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
@@ -432,7 +434,7 @@ const PricingOptimizer = () => {
                 </CardContent>
               </Card>
 
-              {/* Competitor Positioning */}
+              {/* Competitor Positioning - Pareto Chart */}
               <Card className="bg-zinc-950/50 border-white/10" data-testid="positioning-chart">
                 <CardHeader>
                   <CardTitle className="text-lg font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
@@ -442,18 +444,39 @@ const PricingOptimizer = () => {
                 <CardContent>
                   {dashData?.price_position_data?.length > 0 ? (
                     <div className="h-[300px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={dashData.price_position_data}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#27272A" vertical={false} />
-                          <XAxis dataKey="product" stroke="#71717A" fontSize={11} />
-                          <YAxis stroke="#71717A" fontSize={12} tickFormatter={(v) => `$${v}`} />
-                          <Tooltip content={<CustomTooltip />} cursor={{ fill: 'transparent' }} />
-                          <Legend />
-                          <Bar dataKey="your_price" name="Your Price" fill="#6366F1" radius={[4, 4, 0, 0]} />
-                          <Bar dataKey="competitor_avg" name="Competitor Avg" fill="#EF4444" radius={[4, 4, 0, 0]} />
-                          <Bar dataKey="optimal" name="Optimal" fill="#10B981" radius={[4, 4, 0, 0]} />
-                        </BarChart>
-                      </ResponsiveContainer>
+                      {(() => {
+                        const sorted = [...dashData.price_position_data].sort((a, b) => (b.competitor_avg || 0) - (a.competitor_avg || 0));
+                        const total = sorted.reduce((s, d) => s + (d.competitor_avg || 0), 0);
+                        let cumulative = 0;
+                        const paretoData = sorted.map((d) => {
+                          cumulative += (d.competitor_avg || 0);
+                          return { ...d, cumulative_pct: total > 0 ? Math.round((cumulative / total) * 100) : 0 };
+                        });
+                        return (
+                          <ResponsiveContainer width="100%" height="100%">
+                            <ComposedChart data={paretoData}>
+                              <CartesianGrid strokeDasharray="3 3" stroke="#27272A" vertical={false} />
+                              <XAxis dataKey="product" stroke="#71717A" fontSize={11} />
+                              <YAxis yAxisId="left" stroke="#71717A" fontSize={12} tickFormatter={(v) => `$${v}`} />
+                              <YAxis yAxisId="right" orientation="right" stroke="#71717A" fontSize={12} tickFormatter={(v) => `${v}%`} domain={[0, 100]} />
+                              <Tooltip
+                                contentStyle={{ backgroundColor: '#0c0c10', border: '1px solid #3f3f46', borderRadius: '0.5rem' }}
+                                formatter={(value, name) => {
+                                  if (name === 'Cumulative %') return [`${value}%`, name];
+                                  return [fmt(value), name];
+                                }}
+                                itemStyle={{ color: '#e4e4e7' }}
+                                cursor={{ fill: 'rgba(39, 39, 42, 0.15)' }}
+                              />
+                              <Legend />
+                              <Bar yAxisId="left" dataKey="your_price" name="Your Price" fill="#6366F1" radius={[4, 4, 0, 0]} />
+                              <Bar yAxisId="left" dataKey="competitor_avg" name="Competitor Avg" fill="#EF4444" radius={[4, 4, 0, 0]} />
+                              <Bar yAxisId="left" dataKey="optimal" name="Optimal" fill="#10B981" radius={[4, 4, 0, 0]} />
+                              <Line yAxisId="right" type="monotone" dataKey="cumulative_pct" name="Cumulative %" stroke="#F59E0B" strokeWidth={2.5} dot={{ r: 4, fill: '#F59E0B', stroke: '#0c0c10', strokeWidth: 2 }} />
+                            </ComposedChart>
+                          </ResponsiveContainer>
+                        );
+                      })()}
                     </div>
                   ) : (
                     <div className="text-center py-12 text-zinc-500"><Target className="w-10 h-10 mx-auto mb-3 opacity-50" /><p className="text-sm">Run analyses to see competitor data</p></div>
@@ -462,7 +485,7 @@ const PricingOptimizer = () => {
               </Card>
             </div>
 
-            {/* Price Elasticity */}
+            {/* Price Elasticity - Histogram Style */}
             <Card className="bg-zinc-950/50 border-white/10" data-testid="elasticity-chart">
               <CardHeader>
                 <CardTitle className="text-lg font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
@@ -473,15 +496,23 @@ const PricingOptimizer = () => {
                 {dashData?.elasticity_data?.length > 0 ? (
                   <div className="h-[280px]">
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={dashData.elasticity_data}>
+                      <BarChart data={dashData.elasticity_data} barCategoryGap={0} barGap={0}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#27272A" vertical={false} />
                         <XAxis dataKey="price_change" stroke="#71717A" fontSize={12} />
                         <YAxis stroke="#71717A" fontSize={12} tickFormatter={(v) => `$${(v/1000).toFixed(0)}k`} />
-                        <Tooltip content={<CustomTooltip />} cursor={{ fill: 'transparent' }} />
-                        <Bar dataKey="estimated_revenue" name="Estimated Revenue" radius={[4, 4, 0, 0]}>
-                          {dashData.elasticity_data.map((_, i) => (
-                            <Cell key={i} fill={COLORS[i % COLORS.length]} />
-                          ))}
+                        <Tooltip
+                          contentStyle={{ backgroundColor: '#0c0c10', border: '1px solid #3f3f46', borderRadius: '0.5rem' }}
+                          formatter={(value) => [fmt(value), 'Est. Revenue']}
+                          itemStyle={{ color: '#e4e4e7' }}
+                          cursor={{ fill: 'rgba(39, 39, 42, 0.15)' }}
+                        />
+                        <Bar dataKey="estimated_revenue" name="Estimated Revenue" radius={0}>
+                          {dashData.elasticity_data.map((entry, i) => {
+                            const mid = Math.floor(dashData.elasticity_data.length / 2);
+                            const dist = Math.abs(i - mid);
+                            const opacity = 1 - dist * 0.12;
+                            return <Cell key={i} fill="#06B6D4" fillOpacity={Math.max(opacity, 0.4)} stroke="#0c0c10" strokeWidth={1} />;
+                          })}
                         </Bar>
                       </BarChart>
                     </ResponsiveContainer>
