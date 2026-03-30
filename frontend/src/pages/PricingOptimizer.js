@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import DashboardLayout from '../components/DashboardLayout';
+import { STAGE_COLOR_ARRAY } from '../constants/colors';
 import {
   Sparkles,
   TrendingUp,
@@ -496,7 +497,7 @@ const PricingOptimizer = () => {
                 {dashData?.elasticity_data?.length > 0 ? (
                   <div className="h-[280px]">
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={dashData.elasticity_data} barCategoryGap={0} barGap={0}>
+                      <BarChart data={dashData.elasticity_data} barCategoryGap="20%" barGap={2}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#27272A" vertical={false} />
                         <XAxis dataKey="price_change" stroke="#71717A" fontSize={12} />
                         <YAxis stroke="#71717A" fontSize={12} tickFormatter={(v) => `$${(v/1000).toFixed(0)}k`} />
@@ -506,13 +507,10 @@ const PricingOptimizer = () => {
                           itemStyle={{ color: '#e4e4e7' }}
                           cursor={{ fill: 'rgba(39, 39, 42, 0.15)' }}
                         />
-                        <Bar dataKey="estimated_revenue" name="Estimated Revenue" radius={0}>
-                          {dashData.elasticity_data.map((entry, i) => {
-                            const mid = Math.floor(dashData.elasticity_data.length / 2);
-                            const dist = Math.abs(i - mid);
-                            const opacity = 1 - dist * 0.12;
-                            return <Cell key={i} fill="#06B6D4" fillOpacity={Math.max(opacity, 0.4)} stroke="#0c0c10" strokeWidth={1} />;
-                          })}
+                        <Bar dataKey="estimated_revenue" name="Estimated Revenue" radius={[3, 3, 0, 0]} maxBarSize={60}>
+                          {dashData.elasticity_data.map((_, i) => (
+                            <Cell key={i} fill={STAGE_COLOR_ARRAY[i % STAGE_COLOR_ARRAY.length]} />
+                          ))}
                         </Bar>
                       </BarChart>
                     </ResponsiveContainer>
