@@ -41,16 +41,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '../components/ui/select';
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  Cell,
-} from 'recharts';
 import { toast } from 'sonner';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
@@ -359,20 +349,34 @@ const Pipeline = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-[220px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={funnelData} layout="vertical" barCategoryGap="20%">
-                    <CartesianGrid strokeDasharray="3 3" stroke="#27272A" horizontal={false} />
-                    <XAxis type="number" stroke="#71717A" fontSize={12} tickFormatter={(v) => `$${v >= 1000 ? `${(v/1000).toFixed(0)}k` : v}`} />
-                    <YAxis type="category" dataKey="name" stroke="#71717A" fontSize={11} width={75} tick={{ fontSize: 11 }} />
-                    <Tooltip content={<CustomTooltip />} wrapperStyle={{ outline: 'none' }} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
-                    <Bar dataKey="value" name="Value" radius={[0, 6, 6, 0]} barSize={28}>
-                      {funnelData.map((entry, i) => (
-                        <Cell key={i} fill={entry.color} fillOpacity={0.85} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+              <div className="space-y-2">
+                {(() => {
+                  const maxVal = Math.max(...funnelData.map(d => d.value), 1);
+                  return funnelData.map((d, i) => {
+                    const widthPct = Math.max((d.value / maxVal) * 100, 15);
+                    return (
+                      <div key={i} className="flex items-center gap-3">
+                        <span className="text-xs text-zinc-400 w-20 text-right shrink-0">{d.name}</span>
+                        <div className="flex-1 relative h-9">
+                          <div
+                            className="absolute inset-y-0 left-0 rounded-r-lg flex items-center px-3 transition-all duration-700"
+                            style={{
+                              width: `${widthPct}%`,
+                              backgroundColor: d.color,
+                              opacity: 0.85,
+                              clipPath: `polygon(0 0, 100% 8%, 100% 92%, 0 100%)`,
+                            }}
+                          >
+                            <span className="text-xs font-mono text-white font-medium">
+                              ${d.value >= 1000 ? `${(d.value / 1000).toFixed(0)}k` : d.value}
+                            </span>
+                          </div>
+                        </div>
+                        <span className="text-[10px] text-zinc-500 w-12 shrink-0">{d.deals} deals</span>
+                      </div>
+                    );
+                  });
+                })()}
               </div>
             </CardContent>
           </Card>

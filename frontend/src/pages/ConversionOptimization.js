@@ -200,20 +200,26 @@ const ConversionOptimization = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-[220px] sm:h-[300px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={data?.funnel_data || []} layout="vertical">
-                    <CartesianGrid strokeDasharray="3 3" stroke="#27272A" horizontal={false} />
-                    <XAxis type="number" stroke="#71717A" fontSize={12} />
-                    <YAxis type="category" dataKey="stage" stroke="#71717A" fontSize={11} width={80} />
-                    <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(39, 39, 42, 0.3)' }} wrapperStyle={{ outline: 'none' }} />
-                    <Bar dataKey="conversion" name="Conversion Rate" radius={[0, 4, 4, 0]}>
-                      {data?.funnel_data?.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={FUNNEL_COLORS[index % FUNNEL_COLORS.length]} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
+              <div className="space-y-2">
+                {(data?.funnel_data || []).map((d, i, arr) => {
+                  const maxConv = Math.max(...arr.map(x => x.conversion), 1);
+                  const widthPct = Math.max((d.conversion / maxConv) * 100, 20);
+                  return (
+                    <div key={i} className="flex items-center justify-center">
+                      <div
+                        className="relative h-12 flex items-center justify-center rounded-lg transition-all duration-700"
+                        style={{
+                          width: `${widthPct}%`,
+                          backgroundColor: FUNNEL_COLORS[i % FUNNEL_COLORS.length],
+                          opacity: 0.9,
+                        }}
+                      >
+                        <span className="text-xs font-medium text-white">{d.stage}</span>
+                        <span className="absolute right-3 text-xs font-mono text-white/70">{d.conversion}%</span>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>

@@ -5,7 +5,6 @@ import {
   Award,
   Clock,
   ArrowDownRight,
-  BarChart3,
   XCircle,
   Timer,
   Layers,
@@ -20,6 +19,8 @@ import {
   BarChart,
   Bar,
   Cell,
+  LineChart,
+  Line,
 } from 'recharts';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
@@ -144,28 +145,29 @@ const SalesPerformance = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="h-[220px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={data?.close_rate_by_size || []} barCategoryGap="20%">
-                    <CartesianGrid strokeDasharray="3 3" stroke="#27272A" vertical={false} />
-                    <XAxis dataKey="size" stroke="#71717A" fontSize={11} />
-                    <YAxis stroke="#71717A" fontSize={11} tickFormatter={(v) => `${v}%`} domain={[0, 100]} />
-                    <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(39, 39, 42, 0.3)' }} />
-                    <Bar dataKey="rate" name="Close Rate %" radius={[6, 6, 0, 0]} barSize={36}>
-                      {(data?.close_rate_by_size || []).map((_, i) => (
-                        <Cell key={i} fill={SIZE_COLORS[i % SIZE_COLORS.length]} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="flex flex-wrap justify-center gap-4 mt-3">
-                {(data?.close_rate_by_size || []).map((d, i) => (
-                  <div key={i} className="text-center">
-                    <div className="text-[10px] text-zinc-500">{d.size}</div>
-                    <div className="text-xs font-mono" style={{ color: SIZE_COLORS[i] }}>{d.won}W / {d.lost}L</div>
-                  </div>
-                ))}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                {(data?.close_rate_by_size || []).map((d, i) => {
+                  const radius = 40;
+                  const stroke = 7;
+                  const circumference = 2 * Math.PI * radius;
+                  const offset = circumference - (d.rate / 100) * circumference;
+                  return (
+                    <div key={i} className="flex flex-col items-center">
+                      <svg width="96" height="96" className="transform -rotate-90">
+                        <circle cx="48" cy="48" r={radius} stroke="#27272a" strokeWidth={stroke} fill="none" />
+                        <circle cx="48" cy="48" r={radius} stroke={SIZE_COLORS[i]} strokeWidth={stroke} fill="none" strokeLinecap="round"
+                          strokeDasharray={circumference} strokeDashoffset={offset}
+                          style={{ transition: 'stroke-dashoffset 1s ease' }}
+                        />
+                      </svg>
+                      <div className="relative -mt-[62px] flex flex-col items-center mb-4">
+                        <span className="text-lg font-bold font-mono text-white">{d.rate}%</span>
+                      </div>
+                      <span className="text-xs text-zinc-400 mt-1">{d.size}</span>
+                      <span className="text-[10px] font-mono" style={{ color: SIZE_COLORS[i] }}>{d.won}W / {d.lost}L</span>
+                    </div>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
@@ -175,21 +177,25 @@ const SalesPerformance = () => {
         <Card className="bg-zinc-950/50 border-white/10" data-testid="activity-close-chart">
           <CardHeader>
             <CardTitle className="text-sm font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
-              <BarChart3 className="w-4 h-4 text-cyan-400" /> Activity-to-Close Ratio
+              <Layers className="w-4 h-4 text-cyan-400" /> Activity-to-Close Ratio
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="h-[220px]">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={data?.activity_to_close || []}>
+                <LineChart data={data?.activity_to_close || []}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#27272A" vertical={false} />
                   <XAxis dataKey="month" stroke="#71717A" fontSize={12} />
                   <YAxis stroke="#71717A" fontSize={12} />
-                  <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(39, 39, 42, 0.3)' }} />
-                  <Bar dataKey="opened" name="Opened" fill="#6366F1" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="closed" name="Closed" fill="#10B981" radius={[4, 4, 0, 0]} />
-                </BarChart>
+                  <Tooltip content={<CustomTooltip />} />
+                  <Line type="monotone" dataKey="opened" name="Opened" stroke="#6366F1" strokeWidth={2} dot={{ r: 4, fill: '#6366F1', stroke: '#0c0c10', strokeWidth: 2 }} activeDot={{ r: 6 }} />
+                  <Line type="monotone" dataKey="closed" name="Closed" stroke="#10B981" strokeWidth={2} dot={{ r: 4, fill: '#10B981', stroke: '#0c0c10', strokeWidth: 2 }} activeDot={{ r: 6 }} />
+                </LineChart>
               </ResponsiveContainer>
+            </div>
+            <div className="flex justify-center gap-6 mt-3">
+              <div className="flex items-center gap-2 text-xs"><div className="w-3 h-0.5 bg-indigo-500 rounded" /><span className="text-zinc-400">Opened</span></div>
+              <div className="flex items-center gap-2 text-xs"><div className="w-3 h-0.5 bg-emerald-500 rounded" /><span className="text-zinc-400">Closed</span></div>
             </div>
           </CardContent>
         </Card>
