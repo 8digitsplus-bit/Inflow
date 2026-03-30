@@ -9,6 +9,7 @@ import re
 from database import db
 from models import User
 from dependencies import get_current_user
+from utils.crypto import encrypt, decrypt
 
 router = APIRouter()
 
@@ -286,6 +287,8 @@ async def _fetch_custom_api_data(config, user_id):
     headers = dict(config.get("headers") or {})
     params = {}
     api_key = config.get("api_key_encrypted") or config.get("api_key")
+    if api_key:
+        api_key = decrypt(api_key)
     auth_type = config.get("auth_type", "bearer")
     auth_key_name = config.get("auth_key_name")
 
@@ -333,7 +336,7 @@ async def connect_custom_api(body: CustomApiConnectRequest, current_user: User =
         "endpoint": body.endpoint,
         "method": body.method,
         "auth_type": body.auth_type,
-        "api_key_encrypted": body.api_key,
+        "api_key_encrypted": encrypt(body.api_key) if body.api_key else None,
         "api_key_last4": body.api_key[-4:] if body.api_key else None,
         "auth_key_name": body.auth_key_name,
         "headers": body.headers,

@@ -7,6 +7,7 @@ import uuid
 from database import db
 from models import User
 from dependencies import get_current_user
+from utils.crypto import encrypt, decrypt
 from routes.stripe_integration import validate_stripe_key, fetch_stripe_data
 from routes.shopify_integration import validate_shopify_key, fetch_shopify_data
 from routes.hubspot_integration import validate_hubspot_key, fetch_hubspot_data
@@ -122,7 +123,7 @@ async def _connect_stripe(body: ConnectRequest, user_id: str, now: str):
         "account_name": validation.get("account_name", "Stripe Account"),
         "account_id": validation.get("account_id", ""),
         "api_key_last4": body.api_key[-4:],
-        "api_key_encrypted": body.api_key,
+        "api_key_encrypted": encrypt(body.api_key),
         "stats": data["stats"], "is_live": True,
     }
     return data, connection, validation.get("account_name")
@@ -144,7 +145,7 @@ async def _connect_shopify(body: ConnectRequest, user_id: str, now: str):
         "records_synced": data["total_records"], "sync_status": "synced",
         "account_name": validation.get("account_name", "Shopify Store"),
         "api_key_last4": body.api_key[-4:],
-        "api_key_encrypted": body.api_key,
+        "api_key_encrypted": encrypt(body.api_key),
         "store_url": validation["store_url"],
         "stats": data["stats"], "is_live": True,
     }
@@ -165,7 +166,7 @@ async def _connect_hubspot(body: ConnectRequest, user_id: str, now: str):
         "records_synced": data["total_records"], "sync_status": "synced",
         "account_name": validation.get("account_name", "HubSpot Account"),
         "api_key_last4": body.api_key[-4:],
-        "api_key_encrypted": body.api_key,
+        "api_key_encrypted": encrypt(body.api_key),
         "stats": data["stats"], "is_live": True,
     }
     return data, connection, validation.get("account_name")
@@ -187,7 +188,7 @@ async def _connect_salesforce(body: ConnectRequest, user_id: str, now: str):
         "records_synced": data["total_records"], "sync_status": "synced",
         "account_name": validation.get("account_name", "Salesforce Org"),
         "api_key_last4": body.api_key[-4:],
-        "api_key_encrypted": body.api_key,
+        "api_key_encrypted": encrypt(body.api_key),
         "instance_url": validation["instance_url"],
         "stats": data["stats"], "is_live": True,
     }
@@ -210,7 +211,7 @@ async def _connect_quickbooks(body: ConnectRequest, user_id: str, now: str):
         "records_synced": data["total_records"], "sync_status": "synced",
         "account_name": validation.get("account_name", "QuickBooks Company"),
         "api_key_last4": body.api_key[-4:],
-        "api_key_encrypted": body.api_key,
+        "api_key_encrypted": encrypt(body.api_key),
         "company_id": body.company_id,
         "sandbox": body.sandbox or False,
         "stats": data["stats"], "is_live": True,
@@ -331,6 +332,7 @@ async def sync_platform(platform: str, current_user: User = Depends(get_current_
     api_key = connection.get("api_key_encrypted")
     if not api_key:
         raise HTTPException(status_code=400, detail="No API key found. Please reconnect.")
+    api_key = decrypt(api_key)
 
     # Remove old synced deals
     await db.deals.delete_many({"user_id": current_user.user_id, "source": platform, "synced": True})
