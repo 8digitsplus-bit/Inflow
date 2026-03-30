@@ -181,12 +181,10 @@ const RevenueForecast = () => {
                             data={pieData}
                             cx="50%"
                             cy="50%"
-                            outerRadius={100}
+                            outerRadius={95}
                             paddingAngle={2}
                             dataKey="value"
                             stroke="none"
-                            label={({ name, percent }) => percent > 0.06 ? `${(percent * 100).toFixed(0)}%` : ''}
-                            labelLine={false}
                           >
                             {pieData.map((entry, i) => (
                               <Cell key={i} fill={entry.fill} />
