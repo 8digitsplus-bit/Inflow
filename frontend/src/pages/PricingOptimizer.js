@@ -443,7 +443,7 @@ const PricingOptimizer = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {dashData?.price_position_data?.length > 0 ? (
+                  {dashData?.price_position_data?.length > 1 ? (
                     <div className="h-[300px]">
                       <ResponsiveContainer width="100%" height="100%">
                         <LineChart data={dashData.price_position_data} margin={{ top: 10, right: 20, left: 5, bottom: 5 }}>
@@ -461,6 +461,33 @@ const PricingOptimizer = () => {
                           <Line type="monotone" dataKey="optimal" name="Optimal" stroke="#10B981" strokeWidth={2.5} dot={{ r: 5, fill: '#10B981', stroke: '#0c0c10', strokeWidth: 2 }} activeDot={{ r: 7 }} />
                         </LineChart>
                       </ResponsiveContainer>
+                    </div>
+                  ) : dashData?.price_position_data?.length === 1 ? (
+                    <div className="space-y-4 py-2">
+                      <p className="text-xs text-zinc-500 text-center mb-2">{dashData.price_position_data[0].product}</p>
+                      {[
+                        { label: 'Your Price', value: dashData.price_position_data[0].your_price, color: '#6366F1' },
+                        { label: 'Competitor Avg', value: dashData.price_position_data[0].competitor_avg, color: '#EF4444' },
+                        { label: 'Optimal', value: dashData.price_position_data[0].optimal, color: '#10B981' },
+                      ].map((item, i) => {
+                        const max = Math.max(dashData.price_position_data[0].your_price, dashData.price_position_data[0].competitor_avg, dashData.price_position_data[0].optimal, 1);
+                        const pct = (item.value / max) * 100;
+                        return (
+                          <div key={i} className="space-y-1">
+                            <div className="flex items-center justify-between text-sm">
+                              <div className="flex items-center gap-2">
+                                <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: item.color }} />
+                                <span className="text-zinc-300">{item.label}</span>
+                              </div>
+                              <span className="font-mono font-semibold text-white">{fmt(item.value)}</span>
+                            </div>
+                            <div className="h-3 bg-zinc-800 rounded-full overflow-hidden">
+                              <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, backgroundColor: item.color }} />
+                            </div>
+                          </div>
+                        );
+                      })}
+                      <p className="text-[10px] text-zinc-600 text-center mt-3">Analyze more products to see trend lines</p>
                     </div>
                   ) : (
                     <div className="text-center py-12 text-zinc-500"><Target className="w-10 h-10 mx-auto mb-3 opacity-50" /><p className="text-sm">Run analyses to see competitor data</p></div>
