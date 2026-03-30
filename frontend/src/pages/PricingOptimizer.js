@@ -446,19 +446,23 @@ const PricingOptimizer = () => {
                   {dashData?.price_position_data?.length > 0 ? (
                     <div className="h-[300px]">
                       {(() => {
-                        const sorted = [...dashData.price_position_data].sort((a, b) => (b.competitor_avg || 0) - (a.competitor_avg || 0));
-                        const total = sorted.reduce((s, d) => s + (d.competitor_avg || 0), 0);
+                        const withGap = dashData.price_position_data.map((d) => ({
+                          ...d,
+                          gap: Math.abs((d.competitor_avg || 0) - (d.your_price || 0)),
+                        }));
+                        const sorted = [...withGap].sort((a, b) => b.gap - a.gap);
+                        const totalGap = sorted.reduce((s, d) => s + d.gap, 0);
                         let cumulative = 0;
                         const paretoData = sorted.map((d) => {
-                          cumulative += (d.competitor_avg || 0);
-                          return { ...d, cumulative_pct: total > 0 ? Math.round((cumulative / total) * 100) : 0 };
+                          cumulative += d.gap;
+                          return { ...d, cumulative_pct: totalGap > 0 ? Math.round((cumulative / totalGap) * 100) : 0 };
                         });
                         return (
                           <ResponsiveContainer width="100%" height="100%">
-                            <ComposedChart data={paretoData} margin={{ top: 5, right: 40, left: 5, bottom: 5 }}>
+                            <ComposedChart data={paretoData} margin={{ top: 10, right: 40, left: 5, bottom: 5 }}>
                               <CartesianGrid strokeDasharray="3 3" stroke="#27272A" vertical={false} />
                               <XAxis dataKey="product" stroke="#71717A" fontSize={10} angle={-15} textAnchor="end" height={50} />
-                              <YAxis yAxisId="left" stroke="#71717A" fontSize={11} tickFormatter={(v) => `$${v}`} />
+                              <YAxis yAxisId="left" stroke="#71717A" fontSize={11} tickFormatter={(v) => `$${v}`} label={{ value: 'Price Gap', angle: -90, position: 'insideLeft', fill: '#71717A', fontSize: 10, dx: -5 }} />
                               <YAxis yAxisId="right" orientation="right" stroke="#71717A" fontSize={11} tickFormatter={(v) => `${v}%`} domain={[0, 100]} />
                               <Tooltip
                                 contentStyle={{ backgroundColor: '#0c0c10', border: '1px solid #3f3f46', borderRadius: '0.5rem' }}
@@ -470,10 +474,8 @@ const PricingOptimizer = () => {
                                 cursor={{ fill: 'rgba(39, 39, 42, 0.15)' }}
                               />
                               <Legend wrapperStyle={{ fontSize: 11 }} />
-                              <Bar yAxisId="left" dataKey="competitor_avg" name="Competitor Avg" fill="#EF4444" radius={[4, 4, 0, 0]} barSize={20} />
-                              <Bar yAxisId="left" dataKey="your_price" name="Your Price" fill="#6366F1" radius={[4, 4, 0, 0]} barSize={20} />
-                              <Bar yAxisId="left" dataKey="optimal" name="Optimal" fill="#10B981" radius={[4, 4, 0, 0]} barSize={20} />
-                              <Line yAxisId="right" type="monotone" dataKey="cumulative_pct" name="Cumulative %" stroke="#F59E0B" strokeWidth={2.5} dot={{ r: 4, fill: '#F59E0B', stroke: '#0c0c10', strokeWidth: 2 }} />
+                              <Bar yAxisId="left" dataKey="gap" name="Price Gap" fill="#6366F1" radius={[4, 4, 0, 0]} barSize={36} />
+                              <Line yAxisId="right" type="monotone" dataKey="cumulative_pct" name="Cumulative %" stroke="#F59E0B" strokeWidth={2.5} dot={{ r: 5, fill: '#F59E0B', stroke: '#0c0c10', strokeWidth: 2 }} />
                             </ComposedChart>
                           </ResponsiveContainer>
                         );
