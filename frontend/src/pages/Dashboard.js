@@ -136,11 +136,16 @@ const Dashboard = () => {
     return (
       <div style={{ backgroundColor: '#0c0c10', border: '1px solid #3f3f46', borderRadius: '0.5rem', padding: '0.75rem' }}>
         <p className="text-zinc-400 text-sm mb-1">{label}</p>
-        {payload.map((entry, index) => (
-          <p key={index} className="text-sm font-medium" style={{ color: entry.color }}>
-            {entry.name}: {typeof entry.value === 'number' && entry.name.toLowerCase().includes('revenue') ? formatCurrency(entry.value) : `${entry.value}${entry.name.toLowerCase().includes('rate') ? '%' : ''}`}
-          </p>
-        ))}
+        {payload.map((entry, index) => {
+          const name = (entry.name || '').toLowerCase();
+          const isMoney = name.includes('revenue') || name.includes('forecast') || name.includes('pipeline');
+          const isRate = name.includes('rate');
+          return (
+            <p key={index} className="text-sm font-medium" style={{ color: entry.color }}>
+              {entry.name}: {isMoney ? formatCurrency(entry.value) : isRate ? `${entry.value}%` : entry.value}
+            </p>
+          );
+        })}
       </div>
     );
   };

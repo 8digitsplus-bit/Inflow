@@ -373,13 +373,14 @@ const Pipeline = () => {
                         <span className="text-xs text-zinc-400 w-20 text-right shrink-0">{d.name}</span>
                         <div className="flex-1 relative h-9">
                           <div
-                            className="absolute inset-y-0 left-0 rounded-r-lg flex items-center px-3 transition-all duration-700"
+                            className="absolute inset-y-0 left-0 rounded-r-lg flex items-center px-3 transition-all duration-700 cursor-default"
                             style={{
                               width: `${widthPct}%`,
                               backgroundColor: d.color,
                               opacity: 0.85,
                               clipPath: `polygon(0 0, 100% 8%, 100% 92%, 0 100%)`,
                             }}
+                            title={`${d.name}: ${fmt(d.value)} (${d.count} deals)`}
                           >
                             <span className="text-xs font-mono text-white font-medium">
                               ${d.value >= 1000 ? `${(d.value / 1000).toFixed(0)}k` : d.value}
@@ -391,6 +392,9 @@ const Pipeline = () => {
                     );
                   });
                 })()}
+                {funnelData.length === 0 && (
+                  <p className="text-xs text-zinc-600 text-center py-4">No pipeline data yet</p>
+                )}
               </div>
             </CardContent>
           </Card>

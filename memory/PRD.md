@@ -54,6 +54,9 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 - Fixed Conversion Funnel spacing/overlapping (CRO page) - increased spacing, added stage labels on left with percentages on right
 - Changed Pipeline Weighted by Stage (Revenue Forecast) from Waterfall chart to Recharts RadialBarChart
 - Fixed Pipeline funnel deal count bug (d.deals -> d.count)
+- Fixed Dashboard Revenue Trend tooltip: "Forecast" value now formatted as currency (was showing raw number like 380249.99999999994)
+- Fixed SalesPerformance Activity-to-Close tooltip: removed fragile >100 threshold that could format deal counts as currency
+- Added hover title attributes to Pipeline funnel bars and CRO conversion funnel bars for tooltip data on hover
 
 ## Prioritized Backlog
 

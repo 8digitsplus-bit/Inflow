@@ -209,11 +209,12 @@ const ConversionOptimization = () => {
                       <span className="text-[11px] text-zinc-400 w-20 text-right shrink-0 truncate">{d.stage}</span>
                       <div className="flex-1 relative">
                         <div
-                          className="relative h-10 flex items-center justify-end pr-3 rounded-md transition-all duration-700"
+                          className="relative h-10 flex items-center justify-end pr-3 rounded-md transition-all duration-700 cursor-default"
                           style={{
                             width: `${widthPct}%`,
                             backgroundColor: FUNNEL_COLORS[i % FUNNEL_COLORS.length],
                           }}
+                          title={`${d.stage}: ${d.conversion}% conversion`}
                         >
                           <span className="text-xs font-mono font-semibold text-white">{d.conversion}%</span>
                         </div>

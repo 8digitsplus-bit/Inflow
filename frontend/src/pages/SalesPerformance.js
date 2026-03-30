@@ -51,7 +51,7 @@ const SalesPerformance = () => {
         <p className="text-zinc-400 text-sm mb-1">{label}</p>
         {payload.map((e, i) => (
           <p key={i} className="text-sm font-medium" style={{ color: e.color || e.fill }}>
-            {e.name}: {typeof e.value === 'number' && e.value > 100 ? fmt(e.value) : e.value}
+            {e.name}: {e.value}
           </p>
         ))}
       </div>
