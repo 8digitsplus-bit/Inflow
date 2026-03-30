@@ -19,8 +19,8 @@ const faqs = [
     a: 'Our Pricing Optimizer uses Claude AI to analyze your current pricing, competitor data, margins, and market segment. It recommends an optimal price point with a detailed strategy — including projected revenue impact and market positioning insights.',
   },
   {
-    q: 'What\'s the difference between Essential, Pro, and Enterprise?',
-    a: 'Essential ($59/mo) gives you the Sales Pipeline and core analytics. Pro ($149/mo) adds Sales Performance, revenue forecasting, churn prediction, CRO tools, and priority support. Enterprise ($249/mo) includes everything plus Revenue Intelligence, custom integrations, and API access.',
+    q: 'What\'s the difference between Essential, Pro & Enterprise?',
+    a: 'Essential ($79/mo) gives you the Sales Pipeline and core analytics. Pro ($249/mo) adds Sales Performance, revenue forecasting, churn prediction, CRO tools, and priority support. Enterprise ($500/mo) includes everything plus Revenue Intelligence, custom integrations, and API access.',
   },
   {
     q: 'Can I cancel or change my plan at any time?',
