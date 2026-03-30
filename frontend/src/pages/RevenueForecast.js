@@ -7,7 +7,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  ComposedChart, RadialBarChart, RadialBar, Cell,
+  ComposedChart, PieChart, Pie, Cell,
 } from 'recharts';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
@@ -152,7 +152,7 @@ const RevenueForecast = () => {
         </Card>
 
         <div className="grid lg:grid-cols-2 gap-4">
-          {/* Weighted Pipeline by Stage - Radial Bar Chart */}
+          {/* Weighted Pipeline by Stage - Pie Chart */}
           <Card className="bg-zinc-950/50 border border-white/10">
             <CardHeader>
               <CardTitle className="text-base text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
@@ -163,44 +163,43 @@ const RevenueForecast = () => {
               {(() => {
                 const stages = data.stage_forecast || [];
                 const colors = ['#818CF8', '#6366F1', '#A78BFA', '#4F46E5', '#3730A3'];
-                const maxWeighted = Math.max(...stages.map(s => s.weighted), 1);
+                const total = stages.reduce((s, d) => s + d.weighted, 0);
 
-                const radialData = stages.map((s, i) => ({
+                const pieData = stages.map((s, i) => ({
                   name: s.stage?.replace(/_/g, ' '),
                   value: s.weighted,
-                  pct: Math.round((s.weighted / maxWeighted) * 100),
                   count: s.count,
                   fill: colors[i % colors.length],
-                })).reverse();
+                }));
 
                 return (
                   <>
-                    <ResponsiveContainer width="100%" height={260}>
-                      <RadialBarChart
-                        cx="50%"
-                        cy="50%"
-                        innerRadius="20%"
-                        outerRadius="90%"
-                        barSize={16}
-                        data={radialData}
-                        startAngle={180}
-                        endAngle={-45}
-                      >
-                        <RadialBar
-                          background={{ fill: '#27272a' }}
-                          dataKey="pct"
-                          cornerRadius={8}
-                        >
-                          {radialData.map((entry, i) => (
-                            <Cell key={i} fill={entry.fill} />
-                          ))}
-                        </RadialBar>
-                        <Tooltip
-                          contentStyle={{ backgroundColor: '#0c0c10', border: '1px solid #3f3f46', borderRadius: '0.5rem', color: '#fff' }}
-                          formatter={(value, name, props) => [fmt(props.payload.value), props.payload.name]}
-                        />
-                      </RadialBarChart>
-                    </ResponsiveContainer>
+                    <div className="relative">
+                      <ResponsiveContainer width="100%" height={240}>
+                        <PieChart>
+                          <Pie
+                            data={pieData}
+                            cx="50%"
+                            cy="50%"
+                            outerRadius={100}
+                            paddingAngle={2}
+                            dataKey="value"
+                            stroke="none"
+                            label={({ name, percent }) => percent > 0.06 ? `${(percent * 100).toFixed(0)}%` : ''}
+                            labelLine={false}
+                          >
+                            {pieData.map((entry, i) => (
+                              <Cell key={i} fill={entry.fill} />
+                            ))}
+                          </Pie>
+                          <Tooltip
+                            contentStyle={{ backgroundColor: '#0c0c10', border: '1px solid #3f3f46', borderRadius: '0.5rem', color: '#fff' }}
+                            formatter={(value, name) => [fmt(value), name]}
+                            itemStyle={{ color: '#e4e4e7' }}
+                          />
+                        </PieChart>
+                      </ResponsiveContainer>
+                    </div>
                     <div className="mt-2 space-y-1.5">
                       {stages.map((s, i) => (
                         <div key={i} className="flex items-center justify-between text-xs">

@@ -33,7 +33,7 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 - Radial Progress Rings: Close Rate (Sales Performance)
 - CSS Trapezoid Funnels: Pipeline by Stage (Pipeline)
 - Donut Chart (Recharts PieChart): Weighted Pipeline (Sales Pipeline)
-- Radial Bar Chart: Pipeline Weighted by Stage (Revenue Forecast)
+- Pie Chart: Pipeline Weighted by Stage (Revenue Forecast)
 - Conversion Funnel Bars: CRO page
 
 ### Security
