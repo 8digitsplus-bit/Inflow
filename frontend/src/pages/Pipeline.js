@@ -399,32 +399,69 @@ const Pipeline = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-xl sm:text-3xl font-bold font-mono text-white mb-1">{fmt(stats.weighted)}</div>
-              <p className="text-zinc-500 text-xs mb-5">Probability-adjusted value</p>
-              <div className="space-y-3">
-                {STAGES.filter(s => !['closed_won', 'closed_lost'].includes(s.id)).map((stage) => {
+              {(() => {
+                const stageData = STAGES.filter(s => !['closed_won', 'closed_lost'].includes(s.id)).map((stage) => {
                   const stageDeals = getDealsByStage(stage.id);
                   const stageWeighted = stageDeals.reduce((s, d) => s + (d.value * (d.probability / 100)), 0);
-                  const pct = stats.weighted > 0 ? (stageWeighted / stats.weighted) * 100 : 0;
-                  return (
-                    <div key={stage.id}>
-                      <div className="flex items-center justify-between text-sm mb-1.5">
-                        <div className="flex items-center gap-2">
-                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: stage.color }} />
-                          <span className="text-zinc-300 text-xs">{stage.label}</span>
+                  return { ...stage, weighted: stageWeighted, deals: stageDeals.length };
+                }).filter(s => s.weighted > 0);
+
+                const total = stageData.reduce((s, d) => s + d.weighted, 0);
+                const cx = 130, cy = 130, outerR = 120, innerR = 75, gap = 0.03;
+                let startAngle = -Math.PI / 2;
+
+                return (
+                  <div className="flex flex-col items-center">
+                    <svg width={260} height={260} viewBox="0 0 260 260">
+                      {stageData.map((stage, i) => {
+                        const pct = total > 0 ? stage.weighted / total : 0;
+                        const sweep = pct * Math.PI * 2 - gap;
+                        if (sweep <= 0) { startAngle += pct * Math.PI * 2; return null; }
+                        const endAngle = startAngle + sweep;
+                        const x1o = cx + outerR * Math.cos(startAngle);
+                        const y1o = cy + outerR * Math.sin(startAngle);
+                        const x2o = cx + outerR * Math.cos(endAngle);
+                        const y2o = cy + outerR * Math.sin(endAngle);
+                        const x1i = cx + innerR * Math.cos(endAngle);
+                        const y1i = cy + innerR * Math.sin(endAngle);
+                        const x2i = cx + innerR * Math.cos(startAngle);
+                        const y2i = cy + innerR * Math.sin(startAngle);
+                        const largeArc = sweep > Math.PI ? 1 : 0;
+                        const midAngle = startAngle + sweep / 2;
+                        const labelR = (outerR + innerR) / 2;
+                        const lx = cx + labelR * Math.cos(midAngle);
+                        const ly = cy + labelR * Math.sin(midAngle);
+                        const path = `M ${x1o} ${y1o} A ${outerR} ${outerR} 0 ${largeArc} 1 ${x2o} ${y2o} L ${x1i} ${y1i} A ${innerR} ${innerR} 0 ${largeArc} 0 ${x2i} ${y2i} Z`;
+                        startAngle = endAngle + gap;
+                        return (
+                          <g key={i}>
+                            <path d={path} fill={stage.color} opacity={0.85} className="transition-opacity hover:opacity-100" style={{ cursor: 'default' }}>
+                              <title>{stage.label}: {fmt(stage.weighted)} ({(pct * 100).toFixed(1)}%)</title>
+                            </path>
+                            {pct > 0.08 && (
+                              <text x={lx} y={ly} textAnchor="middle" dominantBaseline="middle" fill="white" fontSize={10} fontWeight={600} style={{ pointerEvents: 'none' }}>
+                                {(pct * 100).toFixed(0)}%
+                              </text>
+                            )}
+                          </g>
+                        );
+                      })}
+                      <circle cx={cx} cy={cy} r={innerR - 4} fill="#0a0a0f" />
+                      <text x={cx} y={cy - 8} textAnchor="middle" fill="white" fontSize={16} fontWeight={700} fontFamily="monospace">{fmt(total)}</text>
+                      <text x={cx} y={cy + 10} textAnchor="middle" fill="#71717a" fontSize={10}>Weighted total</text>
+                    </svg>
+                    <div className="flex flex-wrap justify-center gap-x-4 gap-y-1.5 mt-3">
+                      {stageData.map((s, i) => (
+                        <div key={i} className="flex items-center gap-1.5 text-xs">
+                          <div className="w-2 h-2 rounded-full" style={{ backgroundColor: s.color }} />
+                          <span className="text-zinc-400">{s.label}</span>
+                          <span className="text-zinc-500 font-mono">{fmt(s.weighted)}</span>
                         </div>
-                        <span className="text-zinc-400 font-mono text-xs">{fmt(stageWeighted)}</span>
-                      </div>
-                      <div className="h-1.5 bg-zinc-800/50 rounded-full overflow-hidden">
-                        <div
-                          className="h-full rounded-full transition-all duration-700"
-                          style={{ width: `${Math.max(pct, 0)}%`, backgroundColor: stage.color }}
-                        />
-                      </div>
+                      ))}
                     </div>
-                  );
-                })}
-              </div>
+                  </div>
+                );
+              })()}
             </CardContent>
           </Card>
         </div>
