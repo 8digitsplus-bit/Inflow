@@ -162,7 +162,7 @@ const SalesRevenue = () => {
                     <Pie data={expPieData} dataKey="value" cx="50%" cy="50%" innerRadius={50} outerRadius={75} paddingAngle={3}>
                       {expPieData.map((e, i) => <Cell key={i} fill={e.color} />)}
                     </Pie>
-                    <Tooltip contentStyle={{ backgroundColor: '#0c0c10', border: '1px solid #3f3f46', borderRadius: '0.5rem' }} itemStyle={{ color: '#e4e4e7' }} formatter={(v) => fmt(v)} />
+                    <Tooltip contentStyle={{ backgroundColor: '#0c0c10', border: '1px solid #3f3f46', borderRadius: '0.5rem' }} itemStyle={{ color: '#e4e4e7' }} formatter={(v) => fmt(v)} cursor={{ fill: 'rgba(39, 39, 42, 0.3)' }} />
                   </PieChart>
                 </ResponsiveContainer>
               </div>

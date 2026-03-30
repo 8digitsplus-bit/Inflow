@@ -306,7 +306,7 @@ const Dashboard = () => {
                   <BarChart data={pieData} layout="vertical" margin={{ left: 10, right: 20, top: 5, bottom: 5 }}>
                     <XAxis type="number" hide />
                     <YAxis type="category" dataKey="stage" tick={{ fill: '#a1a1aa', fontSize: 12, textTransform: 'capitalize' }} width={80} tickFormatter={(v) => v.charAt(0).toUpperCase() + v.slice(1)} />
-                    <Tooltip contentStyle={{ backgroundColor: '#0c0c10', border: '1px solid #3f3f46', borderRadius: '8px', color: '#fff' }} itemStyle={{ color: '#A1A1AA' }} formatter={(v) => [`${v} deals`, 'Count']} />
+                    <Tooltip contentStyle={{ backgroundColor: '#0c0c10', border: '1px solid #3f3f46', borderRadius: '8px', color: '#fff' }} itemStyle={{ color: '#A1A1AA' }} formatter={(v) => [`${v} deals`, 'Count']} cursor={{ fill: 'rgba(39, 39, 42, 0.3)' }} />
                     <Bar dataKey="count" radius={[0, 6, 6, 0]} barSize={18}>
                       {pieData.map((entry, index) => (<Cell key={`cell-${index}`} fill={stageColors[entry.stage] || '#6366F1'} />))}
                     </Bar>

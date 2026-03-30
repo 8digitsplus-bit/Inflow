@@ -125,7 +125,7 @@ const SalesPerformance = () => {
                     <CartesianGrid strokeDasharray="3 3" stroke="#27272a" vertical={false} />
                     <XAxis dataKey="label" tick={{ fill: '#a1a1aa', fontSize: 11 }} axisLine={false} tickLine={false} />
                     <YAxis tick={{ fill: '#a1a1aa', fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
-                    <Tooltip contentStyle={{ backgroundColor: '#0c0c10', border: '1px solid #3f3f46', borderRadius: '0.5rem' }} itemStyle={{ color: '#e4e4e7' }} formatter={(v) => [`${v} deals`, 'Count']} />
+                    <Tooltip contentStyle={{ backgroundColor: '#0c0c10', border: '1px solid #3f3f46', borderRadius: '0.5rem' }} itemStyle={{ color: '#e4e4e7' }} formatter={(v) => [`${v} deals`, 'Count']} cursor={{ fill: 'rgba(39, 39, 42, 0.3)' }} />
                     <Bar dataKey="count" radius={[6, 6, 0, 0]} barSize={32}>
                       {(data?.deal_aging || []).map((_, i) => (
                         <Cell key={i} fill={AGING_COLORS[i % AGING_COLORS.length]} />
@@ -187,7 +187,7 @@ const SalesPerformance = () => {
                   <CartesianGrid strokeDasharray="3 3" stroke="#27272A" vertical={false} />
                   <XAxis dataKey="month" stroke="#71717A" fontSize={12} />
                   <YAxis stroke="#71717A" fontSize={12} />
-                  <Tooltip content={<CustomTooltip />} />
+                  <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#27272A' }} />
                   <Line type="monotone" dataKey="opened" name="Opened" stroke="#6366F1" strokeWidth={2} dot={{ r: 4, fill: '#6366F1', stroke: '#0c0c10', strokeWidth: 2 }} activeDot={{ r: 6 }} />
                   <Line type="monotone" dataKey="closed" name="Closed" stroke="#10B981" strokeWidth={2} dot={{ r: 4, fill: '#10B981', stroke: '#0c0c10', strokeWidth: 2 }} activeDot={{ r: 6 }} />
                 </LineChart>
