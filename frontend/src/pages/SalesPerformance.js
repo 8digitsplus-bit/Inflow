@@ -10,6 +10,7 @@ import {
   Layers,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { STAGE_COLORS } from '../constants/colors';
 import {
   XAxis,
   YAxis,
@@ -25,9 +26,9 @@ import {
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 const fmt = (v) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(v);
-const AGING_COLORS = ['#10B981', '#6366F1', '#F59E0B', '#EF4444'];
+const AGING_COLORS = [STAGE_COLORS.closed_won, STAGE_COLORS.lead, STAGE_COLORS.negotiation, STAGE_COLORS.closed_lost];
 const AGING_LABELS = { '7d': '0-7 days', '14d': '8-14 days', '30d': '15-30 days', '60d+': '31+ days' };
-const SIZE_COLORS = ['#06B6D4', '#8B5CF6', '#6366F1', '#F59E0B'];
+const SIZE_COLORS = [STAGE_COLORS.proposal, STAGE_COLORS.qualified, STAGE_COLORS.lead, STAGE_COLORS.negotiation];
 
 const SalesPerformance = () => {
   const [data, setData] = useState(null);
@@ -192,8 +193,8 @@ const SalesPerformance = () => {
                   <XAxis dataKey="month" stroke="#71717A" fontSize={12} />
                   <YAxis stroke="#71717A" fontSize={12} />
                   <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#27272A' }} />
-                  <Line type="monotone" dataKey="opened" name="Opened" stroke="#6366F1" strokeWidth={2} dot={{ r: 4, fill: '#6366F1', stroke: '#0c0c10', strokeWidth: 2 }} activeDot={{ r: 6 }} />
-                  <Line type="monotone" dataKey="closed" name="Closed" stroke="#10B981" strokeWidth={2} dot={{ r: 4, fill: '#10B981', stroke: '#0c0c10', strokeWidth: 2 }} activeDot={{ r: 6 }} />
+                  <Line type="monotone" dataKey="opened" name="Opened" stroke={STAGE_COLORS.lead} strokeWidth={2} dot={{ r: 4, fill: STAGE_COLORS.lead, stroke: '#0c0c10', strokeWidth: 2 }} activeDot={{ r: 6 }} />
+                  <Line type="monotone" dataKey="closed" name="Closed" stroke={STAGE_COLORS.closed_won} strokeWidth={2} dot={{ r: 4, fill: STAGE_COLORS.closed_won, stroke: '#0c0c10', strokeWidth: 2 }} activeDot={{ r: 6 }} />
                 </LineChart>
               </ResponsiveContainer>
             </div>

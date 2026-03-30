@@ -5,6 +5,7 @@ import {
   Layers, Clock, CalendarDays, Zap
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { STAGE_COLOR_ARRAY } from '../constants/colors';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   ComposedChart, PieChart, Pie, Cell,
@@ -162,7 +163,7 @@ const RevenueForecast = () => {
             <CardContent>
               {(() => {
                 const stages = data.stage_forecast || [];
-                const colors = ['#818CF8', '#6366F1', '#A78BFA', '#4F46E5', '#3730A3'];
+                const colors = STAGE_COLOR_ARRAY;
                 const total = stages.reduce((s, d) => s + d.weighted, 0);
 
                 const pieData = stages.map((s, i) => ({

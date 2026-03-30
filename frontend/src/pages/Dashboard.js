@@ -18,6 +18,7 @@ import {
   Lock
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { STAGE_COLORS } from '../constants/colors';
 import { Button } from '../components/ui/button';
 import { Progress } from '../components/ui/progress';
 import { 
@@ -157,7 +158,7 @@ const Dashboard = () => {
   };
 
   const recentDeals = deals.slice(0, 5);
-  const stageColors = { lead: '#6366F1', qualified: '#8B5CF6', proposal: '#06B6D4', negotiation: '#F59E0B', closed_won: '#10B981', closed_lost: '#EF4444' };
+  const stageColors = STAGE_COLORS;
   const pieData = analytics?.stage_breakdown?.filter(s => !['closed_won', 'closed_lost'].includes(s.stage) && s.count > 0) || [];
 
   // Locked section overlay

@@ -19,6 +19,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { STAGE_COLORS } from '../constants/colors';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { 
@@ -58,12 +59,12 @@ import {
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
 const STAGES = [
-  { id: 'lead', label: 'Lead', color: '#6366F1', bg: 'bg-indigo-500' },
-  { id: 'qualified', label: 'Qualified', color: '#8B5CF6', bg: 'bg-violet-500' },
-  { id: 'proposal', label: 'Proposal', color: '#06B6D4', bg: 'bg-cyan-500' },
-  { id: 'negotiation', label: 'Negotiation', color: '#F59E0B', bg: 'bg-amber-500' },
-  { id: 'closed_won', label: 'Closed Win', color: '#10B981', bg: 'bg-emerald-500' },
-  { id: 'closed_lost', label: 'Closed Lost', color: '#EF4444', bg: 'bg-red-500' },
+  { id: 'lead', label: 'Lead', color: STAGE_COLORS.lead, bg: 'bg-indigo-500' },
+  { id: 'qualified', label: 'Qualified', color: STAGE_COLORS.qualified, bg: 'bg-violet-500' },
+  { id: 'proposal', label: 'Proposal', color: STAGE_COLORS.proposal, bg: 'bg-cyan-500' },
+  { id: 'negotiation', label: 'Negotiation', color: STAGE_COLORS.negotiation, bg: 'bg-amber-500' },
+  { id: 'closed_won', label: 'Closed Win', color: STAGE_COLORS.closed_won, bg: 'bg-emerald-500' },
+  { id: 'closed_lost', label: 'Closed Lost', color: STAGE_COLORS.closed_lost, bg: 'bg-red-500' },
 ];
 
 const fmt = (v) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(v);
@@ -408,10 +409,10 @@ const Pipeline = () => {
             <CardContent>
               {(() => {
                 const SAMPLE_DATA = [
-                  { name: 'Lead', color: '#6366F1', value: 28500 },
-                  { name: 'Qualified', color: '#8B5CF6', value: 64000 },
-                  { name: 'Proposal', color: '#06B6D4', value: 115000 },
-                  { name: 'Negotiation', color: '#F59E0B', value: 82000 },
+                  { name: 'Lead', color: STAGE_COLORS.lead, value: 28500 },
+                  { name: 'Qualified', color: STAGE_COLORS.qualified, value: 64000 },
+                  { name: 'Proposal', color: STAGE_COLORS.proposal, value: 115000 },
+                  { name: 'Negotiation', color: STAGE_COLORS.negotiation, value: 82000 },
                 ];
 
                 const realData = STAGES.filter(s => !['closed_won', 'closed_lost'].includes(s.id)).map((stage) => {

@@ -12,6 +12,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
+import { STAGE_COLOR_ARRAY } from '../constants/colors';
 import { Button } from '../components/ui/button';
 import { Progress } from '../components/ui/progress';
 import { Badge } from '../components/ui/badge';
@@ -32,7 +33,7 @@ import { toast } from 'sonner';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
-const FUNNEL_COLORS = ['#6366F1', '#8B5CF6', '#06B6D4', '#F59E0B', '#10B981'];
+const FUNNEL_COLORS = STAGE_COLOR_ARRAY;
 
 const ConversionOptimization = () => {
   const { user } = useAuth();
