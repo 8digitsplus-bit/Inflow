@@ -94,7 +94,7 @@ const ConversionOptimization = () => {
   const CustomTooltip = ({ active, payload, label }) => {
     if (!active || !payload?.length) return null;
     return (
-      <div style={{ backgroundColor: '#0c0c10', border: '1px solid #3f3f46', borderRadius: '0.5rem', padding: '0.75rem' }}>
+      <div style={{ backgroundColor: '#0c0c10', border: '1px solid #3f3f46', borderRadius: '6px', padding: '6px 10px', fontSize: '11px', lineHeight: '1.4' }}>
         <p className="text-zinc-400 text-sm mb-1">{label}</p>
         {payload.map((entry, index) => (
           <p key={index} className="text-sm font-medium" style={{ color: entry.color || '#fff' }}>

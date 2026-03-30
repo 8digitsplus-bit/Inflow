@@ -307,7 +307,7 @@ const Pipeline = () => {
                     <XAxis dataKey="stage" tick={{ fill: '#a1a1aa', fontSize: 11 }} axisLine={false} tickLine={false} />
                     <YAxis tick={{ fill: '#a1a1aa', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={(v) => `${v}d`} />
                     <Tooltip
-                      contentStyle={{ backgroundColor: '#0c0c10', border: '1px solid #3f3f46', borderRadius: '0.5rem' }}
+                      contentStyle={{ backgroundColor: '#0c0c10', border: '1px solid #3f3f46', borderRadius: '6px', padding: '6px 10px', fontSize: '11px' }}
                       itemStyle={{ color: '#e4e4e7' }}
                       cursor={{ stroke: '#27272A' }}
                       formatter={(v, name) => [name === 'avg_days' ? `${v} days avg` : `${v} deals`, name === 'avg_days' ? 'Velocity' : 'Deals']}
@@ -448,7 +448,7 @@ const Pipeline = () => {
                             ))}
                           </Pie>
                           <Tooltip
-                            contentStyle={{ backgroundColor: '#0c0c10', border: '1px solid #3f3f46', borderRadius: '0.5rem' }}
+                            contentStyle={{ backgroundColor: '#0c0c10', border: '1px solid #3f3f46', borderRadius: '6px', padding: '6px 10px', fontSize: '11px' }}
                             formatter={(value) => [fmt(value), 'Weighted']}
                             itemStyle={{ color: '#e4e4e7' }}
                           />

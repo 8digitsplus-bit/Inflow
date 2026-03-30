@@ -48,10 +48,10 @@ const SalesPerformance = () => {
   const CustomTooltip = ({ active, payload, label }) => {
     if (!active || !payload?.length) return null;
     return (
-      <div style={{ backgroundColor: '#0c0c10', border: '1px solid #3f3f46', borderRadius: '0.5rem', padding: '0.75rem' }}>
-        <p className="text-zinc-400 text-sm mb-1">{label}</p>
+      <div style={{ backgroundColor: '#0c0c10', border: '1px solid #3f3f46', borderRadius: '6px', padding: '6px 10px', fontSize: '11px', lineHeight: '1.4' }}>
+        <p style={{ color: '#a1a1aa', marginBottom: '2px', fontWeight: 500 }}>{label}</p>
         {payload.map((e, i) => (
-          <p key={i} className="text-sm font-medium" style={{ color: e.color || e.fill }}>
+          <p key={i} style={{ color: e.color || e.fill, margin: 0 }}>
             {e.name}: {e.value}
           </p>
         ))}

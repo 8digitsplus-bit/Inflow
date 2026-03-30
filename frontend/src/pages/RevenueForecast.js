@@ -34,7 +34,7 @@ const RevenueForecast = () => {
   const CustomTooltip = ({ active, payload, label }) => {
     if (!active || !payload?.length) return null;
     return (
-      <div style={{ backgroundColor: '#0c0c10', border: '1px solid #3f3f46', borderRadius: '0.5rem', padding: '0.75rem', boxShadow: '0 4px 20px rgba(0,0,0,0.8)' }}>
+      <div style={{ backgroundColor: '#0c0c10', border: '1px solid #3f3f46', borderRadius: '6px', padding: '6px 10px', fontSize: '11px', lineHeight: '1.4' }}>
         <p style={{ color: '#a1a1aa', fontSize: '0.875rem', marginBottom: '0.25rem' }}>{label}</p>
         {payload.map((entry, i) => (
           <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', fontSize: '0.75rem' }}>
@@ -192,7 +192,7 @@ const RevenueForecast = () => {
                             ))}
                           </Pie>
                           <Tooltip
-                            contentStyle={{ backgroundColor: '#0c0c10', border: '1px solid #3f3f46', borderRadius: '0.5rem', color: '#fff' }}
+                            contentStyle={{ backgroundColor: '#0c0c10', border: '1px solid #3f3f46', borderRadius: '6px', padding: '6px 10px', fontSize: '11px', color: '#fff' }}
                             formatter={(value, name) => [fmt(value), name]}
                             itemStyle={{ color: '#e4e4e7' }}
                           />

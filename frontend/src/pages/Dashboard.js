@@ -135,14 +135,14 @@ const Dashboard = () => {
   const CustomTooltip = ({ active, payload, label }) => {
     if (!active || !payload?.length) return null;
     return (
-      <div style={{ backgroundColor: '#0c0c10', border: '1px solid #3f3f46', borderRadius: '0.5rem', padding: '0.75rem' }}>
-        <p className="text-zinc-400 text-sm mb-1">{label}</p>
+      <div style={{ backgroundColor: '#0c0c10', border: '1px solid #3f3f46', borderRadius: '6px', padding: '6px 10px', fontSize: '11px', lineHeight: '1.4' }}>
+        <p style={{ color: '#a1a1aa', marginBottom: '2px', fontWeight: 500 }}>{label}</p>
         {payload.map((entry, index) => {
           const name = (entry.name || '').toLowerCase();
           const isMoney = name.includes('revenue') || name.includes('forecast') || name.includes('pipeline');
           const isRate = name.includes('rate');
           return (
-            <p key={index} className="text-sm font-medium" style={{ color: entry.color }}>
+            <p key={index} style={{ color: entry.color, margin: 0 }}>
               {entry.name}: {isMoney ? formatCurrency(entry.value) : isRate ? `${entry.value}%` : entry.value}
             </p>
           );

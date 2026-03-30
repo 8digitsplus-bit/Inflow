@@ -132,13 +132,13 @@ const PricingOptimizer = () => {
 
   const fmt = (v) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(v);
 
-  const CustomTooltip = ({ active, payload, label }) => {
+  const CompactTooltip = ({ active, payload, label }) => {
     if (!active || !payload?.length) return null;
     return (
-      <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-3 shadow-xl">
-        <p className="text-zinc-400 text-sm mb-1">{label}</p>
+      <div style={{ backgroundColor: '#0c0c10', border: '1px solid #3f3f46', borderRadius: '6px', padding: '6px 10px', fontSize: '11px', lineHeight: '1.4', maxWidth: '180px' }}>
+        <p style={{ color: '#a1a1aa', marginBottom: '2px', fontWeight: 500 }}>{label}</p>
         {payload.map((e, i) => (
-          <p key={i} className="text-sm font-medium" style={{ color: e.color || e.fill }}>
+          <p key={i} style={{ color: e.color || e.fill, margin: 0 }}>
             {e.name}: {typeof e.value === 'number' && e.value > 100 ? fmt(e.value) : e.name.includes('argin') ? `${e.value}%` : e.value}
           </p>
         ))}
@@ -423,9 +423,9 @@ const PricingOptimizer = () => {
                           <XAxis dataKey="product" stroke="#71717A" fontSize={10} angle={dashData.margin_data.length > 3 ? -15 : 0} textAnchor={dashData.margin_data.length > 3 ? 'end' : 'middle'} height={dashData.margin_data.length > 3 ? 50 : 30} />
                           <YAxis stroke="#71717A" fontSize={11} tickFormatter={(v) => `${v}%`} />
                           <Tooltip
-                            contentStyle={{ backgroundColor: '#0c0c10', border: '1px solid #3f3f46', borderRadius: '0.5rem' }}
+                            contentStyle={{ backgroundColor: '#0c0c10', border: '1px solid #3f3f46', borderRadius: '6px', padding: '6px 10px', fontSize: '11px' }}
                             formatter={(value, name) => [`${value}%`, name]}
-                            itemStyle={{ color: '#e4e4e7' }}
+                            itemStyle={{ color: '#e4e4e7', fontSize: '11px' }}
                           />
                           <Legend wrapperStyle={{ fontSize: 11 }} />
                           <Line type="monotone" dataKey="current_margin" name="Current Margin" stroke="#6366F1" strokeWidth={2.5} dot={{ r: 5, fill: '#6366F1', stroke: '#0c0c10', strokeWidth: 2 }} activeDot={{ r: 7 }} />
@@ -466,12 +466,12 @@ const PricingOptimizer = () => {
                               <YAxis yAxisId="left" stroke="#71717A" fontSize={11} tickFormatter={(v) => `$${v}`} />
                               <YAxis yAxisId="right" orientation="right" stroke="#71717A" fontSize={11} tickFormatter={(v) => `${v}%`} domain={[0, 100]} />
                               <Tooltip
-                                contentStyle={{ backgroundColor: '#0c0c10', border: '1px solid #3f3f46', borderRadius: '0.5rem' }}
+                                contentStyle={{ backgroundColor: '#0c0c10', border: '1px solid #3f3f46', borderRadius: '6px', padding: '6px 10px', fontSize: '11px' }}
                                 formatter={(value, name) => {
                                   if (name === 'Cumulative %') return [`${value}%`, name];
                                   return [fmt(value), name];
                                 }}
-                                itemStyle={{ color: '#e4e4e7' }}
+                                itemStyle={{ color: '#e4e4e7', fontSize: '11px' }}
                                 cursor={{ fill: 'rgba(39, 39, 42, 0.15)' }}
                               />
                               <Legend wrapperStyle={{ fontSize: 11 }} />
@@ -507,9 +507,9 @@ const PricingOptimizer = () => {
                         <XAxis dataKey="price_change" stroke="#71717A" fontSize={12} />
                         <YAxis stroke="#71717A" fontSize={12} tickFormatter={(v) => `$${(v/1000).toFixed(0)}k`} />
                         <Tooltip
-                          contentStyle={{ backgroundColor: '#0c0c10', border: '1px solid #3f3f46', borderRadius: '0.5rem' }}
+                          contentStyle={{ backgroundColor: '#0c0c10', border: '1px solid #3f3f46', borderRadius: '6px', padding: '6px 10px', fontSize: '11px' }}
                           formatter={(value) => [fmt(value), 'Est. Revenue']}
-                          itemStyle={{ color: '#e4e4e7' }}
+                          itemStyle={{ color: '#e4e4e7', fontSize: '11px' }}
                           cursor={{ fill: 'rgba(39, 39, 42, 0.15)' }}
                         />
                         <Bar dataKey="estimated_revenue" name="Estimated Revenue" radius={[3, 3, 0, 0]} maxBarSize={60}>
