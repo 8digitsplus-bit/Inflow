@@ -455,11 +455,11 @@ const PricingOptimizer = () => {
                         });
                         return (
                           <ResponsiveContainer width="100%" height="100%">
-                            <ComposedChart data={paretoData}>
+                            <ComposedChart data={paretoData} margin={{ top: 5, right: 40, left: 5, bottom: 5 }}>
                               <CartesianGrid strokeDasharray="3 3" stroke="#27272A" vertical={false} />
-                              <XAxis dataKey="product" stroke="#71717A" fontSize={11} />
-                              <YAxis yAxisId="left" stroke="#71717A" fontSize={12} tickFormatter={(v) => `$${v}`} />
-                              <YAxis yAxisId="right" orientation="right" stroke="#71717A" fontSize={12} tickFormatter={(v) => `${v}%`} domain={[0, 100]} />
+                              <XAxis dataKey="product" stroke="#71717A" fontSize={10} angle={-15} textAnchor="end" height={50} />
+                              <YAxis yAxisId="left" stroke="#71717A" fontSize={11} tickFormatter={(v) => `$${v}`} />
+                              <YAxis yAxisId="right" orientation="right" stroke="#71717A" fontSize={11} tickFormatter={(v) => `${v}%`} domain={[0, 100]} />
                               <Tooltip
                                 contentStyle={{ backgroundColor: '#0c0c10', border: '1px solid #3f3f46', borderRadius: '0.5rem' }}
                                 formatter={(value, name) => {
@@ -469,10 +469,10 @@ const PricingOptimizer = () => {
                                 itemStyle={{ color: '#e4e4e7' }}
                                 cursor={{ fill: 'rgba(39, 39, 42, 0.15)' }}
                               />
-                              <Legend />
-                              <Bar yAxisId="left" dataKey="your_price" name="Your Price" fill="#6366F1" radius={[4, 4, 0, 0]} />
-                              <Bar yAxisId="left" dataKey="competitor_avg" name="Competitor Avg" fill="#EF4444" radius={[4, 4, 0, 0]} />
-                              <Bar yAxisId="left" dataKey="optimal" name="Optimal" fill="#10B981" radius={[4, 4, 0, 0]} />
+                              <Legend wrapperStyle={{ fontSize: 11 }} />
+                              <Bar yAxisId="left" dataKey="competitor_avg" name="Competitor Avg" fill="#EF4444" radius={[4, 4, 0, 0]} barSize={20} />
+                              <Bar yAxisId="left" dataKey="your_price" name="Your Price" fill="#6366F1" radius={[4, 4, 0, 0]} barSize={20} />
+                              <Bar yAxisId="left" dataKey="optimal" name="Optimal" fill="#10B981" radius={[4, 4, 0, 0]} barSize={20} />
                               <Line yAxisId="right" type="monotone" dataKey="cumulative_pct" name="Cumulative %" stroke="#F59E0B" strokeWidth={2.5} dot={{ r: 4, fill: '#F59E0B', stroke: '#0c0c10', strokeWidth: 2 }} />
                             </ComposedChart>
                           </ResponsiveContainer>
