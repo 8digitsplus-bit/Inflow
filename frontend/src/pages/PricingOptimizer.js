@@ -35,6 +35,7 @@ import {
   BarChart,
   Bar,
   LineChart,
+  Line,
   XAxis,
   YAxis,
   CartesianGrid,
@@ -47,7 +48,7 @@ import {
   PolarAngleAxis,
   PolarRadiusAxis,
   Radar,
-  Line
+  ComposedChart
 } from 'recharts';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
@@ -406,7 +407,7 @@ const PricingOptimizer = () => {
 
             {/* Charts Row */}
             <div className="grid lg:grid-cols-2 gap-6">
-              {/* Margin Analysis Chart */}
+              {/* Margin Analysis - Line Chart */}
               <Card className="bg-zinc-950/50 border-white/10" data-testid="margin-chart">
                 <CardHeader>
                   <CardTitle className="text-lg font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
@@ -417,16 +418,20 @@ const PricingOptimizer = () => {
                   {dashData?.margin_data?.length > 0 ? (
                     <div className="h-[300px]">
                       <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={dashData.margin_data} layout="vertical">
-                          <CartesianGrid strokeDasharray="3 3" stroke="#27272A" horizontal={false} />
-                          <XAxis type="number" stroke="#71717A" fontSize={12} tickFormatter={(v) => `${v}%`} />
-                          <YAxis type="category" dataKey="product" stroke="#71717A" fontSize={11} width={90} />
-                          <Tooltip content={<CustomTooltip />} cursor={{ fill: 'transparent' }} />
-                          <Legend />
-                          <Bar dataKey="current_margin" name="Current Margin" fill="#6366F1" radius={[0, 4, 4, 0]} />
-                          <Bar dataKey="optimal_margin" name="Optimal Margin" fill="#10B981" radius={[0, 4, 4, 0]} />
-                          <Bar dataKey="target_margin" name="Target Margin" fill="#F59E0B" radius={[0, 4, 4, 0]} />
-                        </BarChart>
+                        <LineChart data={dashData.margin_data} margin={{ top: 10, right: 20, left: 5, bottom: 5 }}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="#27272A" vertical={false} />
+                          <XAxis dataKey="product" stroke="#71717A" fontSize={10} angle={dashData.margin_data.length > 3 ? -15 : 0} textAnchor={dashData.margin_data.length > 3 ? 'end' : 'middle'} height={dashData.margin_data.length > 3 ? 50 : 30} />
+                          <YAxis stroke="#71717A" fontSize={11} tickFormatter={(v) => `${v}%`} />
+                          <Tooltip
+                            contentStyle={{ backgroundColor: '#0c0c10', border: '1px solid #3f3f46', borderRadius: '0.5rem' }}
+                            formatter={(value, name) => [`${value}%`, name]}
+                            itemStyle={{ color: '#e4e4e7' }}
+                          />
+                          <Legend wrapperStyle={{ fontSize: 11 }} />
+                          <Line type="monotone" dataKey="current_margin" name="Current Margin" stroke="#6366F1" strokeWidth={2.5} dot={{ r: 5, fill: '#6366F1', stroke: '#0c0c10', strokeWidth: 2 }} activeDot={{ r: 7 }} />
+                          <Line type="monotone" dataKey="optimal_margin" name="Optimal Margin" stroke="#10B981" strokeWidth={2.5} dot={{ r: 5, fill: '#10B981', stroke: '#0c0c10', strokeWidth: 2 }} activeDot={{ r: 7 }} />
+                          <Line type="monotone" dataKey="target_margin" name="Target Margin" stroke="#F59E0B" strokeWidth={2.5} dot={{ r: 5, fill: '#F59E0B', stroke: '#0c0c10', strokeWidth: 2 }} activeDot={{ r: 7 }} />
+                        </LineChart>
                       </ResponsiveContainer>
                     </div>
                   ) : (
@@ -435,7 +440,7 @@ const PricingOptimizer = () => {
                 </CardContent>
               </Card>
 
-              {/* Competitor Positioning - Line Chart */}
+              {/* Competitor Positioning - Pareto Chart */}
               <Card className="bg-zinc-950/50 border-white/10" data-testid="positioning-chart">
                 <CardHeader>
                   <CardTitle className="text-lg font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
@@ -443,51 +448,41 @@ const PricingOptimizer = () => {
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  {dashData?.price_position_data?.length > 1 ? (
+                  {dashData?.price_position_data?.length > 0 ? (
                     <div className="h-[300px]">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={dashData.price_position_data} margin={{ top: 10, right: 20, left: 5, bottom: 5 }}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#27272A" vertical={false} />
-                          <XAxis dataKey="product" stroke="#71717A" fontSize={10} angle={dashData.price_position_data.length > 3 ? -15 : 0} textAnchor={dashData.price_position_data.length > 3 ? 'end' : 'middle'} height={dashData.price_position_data.length > 3 ? 50 : 30} />
-                          <YAxis stroke="#71717A" fontSize={11} tickFormatter={(v) => `$${v}`} />
-                          <Tooltip
-                            contentStyle={{ backgroundColor: '#0c0c10', border: '1px solid #3f3f46', borderRadius: '0.5rem' }}
-                            formatter={(value, name) => [fmt(value), name]}
-                            itemStyle={{ color: '#e4e4e7' }}
-                          />
-                          <Legend wrapperStyle={{ fontSize: 11 }} />
-                          <Line type="monotone" dataKey="your_price" name="Your Price" stroke="#6366F1" strokeWidth={2.5} dot={{ r: 5, fill: '#6366F1', stroke: '#0c0c10', strokeWidth: 2 }} activeDot={{ r: 7 }} />
-                          <Line type="monotone" dataKey="competitor_avg" name="Competitor Avg" stroke="#EF4444" strokeWidth={2.5} dot={{ r: 5, fill: '#EF4444', stroke: '#0c0c10', strokeWidth: 2 }} activeDot={{ r: 7 }} />
-                          <Line type="monotone" dataKey="optimal" name="Optimal" stroke="#10B981" strokeWidth={2.5} dot={{ r: 5, fill: '#10B981', stroke: '#0c0c10', strokeWidth: 2 }} activeDot={{ r: 7 }} />
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </div>
-                  ) : dashData?.price_position_data?.length === 1 ? (
-                    <div className="space-y-4 py-2">
-                      <p className="text-xs text-zinc-500 text-center mb-2">{dashData.price_position_data[0].product}</p>
-                      {[
-                        { label: 'Your Price', value: dashData.price_position_data[0].your_price, color: '#6366F1' },
-                        { label: 'Competitor Avg', value: dashData.price_position_data[0].competitor_avg, color: '#EF4444' },
-                        { label: 'Optimal', value: dashData.price_position_data[0].optimal, color: '#10B981' },
-                      ].map((item, i) => {
-                        const max = Math.max(dashData.price_position_data[0].your_price, dashData.price_position_data[0].competitor_avg, dashData.price_position_data[0].optimal, 1);
-                        const pct = (item.value / max) * 100;
+                      {(() => {
+                        const sorted = [...dashData.price_position_data].sort((a, b) => (b.competitor_avg || 0) - (a.competitor_avg || 0));
+                        const totalCompAvg = sorted.reduce((s, d) => s + (d.competitor_avg || 0), 0);
+                        let cumulative = 0;
+                        const paretoData = sorted.map((d) => {
+                          cumulative += (d.competitor_avg || 0);
+                          return { ...d, cumulative_pct: totalCompAvg > 0 ? Math.round((cumulative / totalCompAvg) * 100) : 0 };
+                        });
                         return (
-                          <div key={i} className="space-y-1">
-                            <div className="flex items-center justify-between text-sm">
-                              <div className="flex items-center gap-2">
-                                <div className="w-3 h-3 rounded-sm" style={{ backgroundColor: item.color }} />
-                                <span className="text-zinc-300">{item.label}</span>
-                              </div>
-                              <span className="font-mono font-semibold text-white">{fmt(item.value)}</span>
-                            </div>
-                            <div className="h-3 bg-zinc-800 rounded-full overflow-hidden">
-                              <div className="h-full rounded-full transition-all duration-700" style={{ width: `${pct}%`, backgroundColor: item.color }} />
-                            </div>
-                          </div>
+                          <ResponsiveContainer width="100%" height="100%">
+                            <ComposedChart data={paretoData} margin={{ top: 10, right: 40, left: 5, bottom: 5 }} barGap={2} barCategoryGap="20%">
+                              <CartesianGrid strokeDasharray="3 3" stroke="#27272A" vertical={false} />
+                              <XAxis dataKey="product" stroke="#71717A" fontSize={10} angle={paretoData.length > 3 ? -15 : 0} textAnchor={paretoData.length > 3 ? 'end' : 'middle'} height={paretoData.length > 3 ? 50 : 30} />
+                              <YAxis yAxisId="left" stroke="#71717A" fontSize={11} tickFormatter={(v) => `$${v}`} />
+                              <YAxis yAxisId="right" orientation="right" stroke="#71717A" fontSize={11} tickFormatter={(v) => `${v}%`} domain={[0, 100]} />
+                              <Tooltip
+                                contentStyle={{ backgroundColor: '#0c0c10', border: '1px solid #3f3f46', borderRadius: '0.5rem' }}
+                                formatter={(value, name) => {
+                                  if (name === 'Cumulative %') return [`${value}%`, name];
+                                  return [fmt(value), name];
+                                }}
+                                itemStyle={{ color: '#e4e4e7' }}
+                                cursor={{ fill: 'rgba(39, 39, 42, 0.15)' }}
+                              />
+                              <Legend wrapperStyle={{ fontSize: 11 }} />
+                              <Bar yAxisId="left" dataKey="your_price" name="Your Price" fill="#6366F1" radius={[4, 4, 0, 0]} maxBarSize={32} />
+                              <Bar yAxisId="left" dataKey="competitor_avg" name="Competitor Avg" fill="#EF4444" radius={[4, 4, 0, 0]} maxBarSize={32} />
+                              <Bar yAxisId="left" dataKey="optimal" name="Optimal" fill="#10B981" radius={[4, 4, 0, 0]} maxBarSize={32} />
+                              <Line yAxisId="right" type="monotone" dataKey="cumulative_pct" name="Cumulative %" stroke="#F59E0B" strokeWidth={2.5} dot={{ r: 5, fill: '#F59E0B', stroke: '#0c0c10', strokeWidth: 2 }} />
+                            </ComposedChart>
+                          </ResponsiveContainer>
                         );
-                      })}
-                      <p className="text-[10px] text-zinc-600 text-center mt-3">Analyze more products to see trend lines</p>
+                      })()}
                     </div>
                   ) : (
                     <div className="text-center py-12 text-zinc-500"><Target className="w-10 h-10 mx-auto mb-3 opacity-50" /><p className="text-sm">Run analyses to see competitor data</p></div>
