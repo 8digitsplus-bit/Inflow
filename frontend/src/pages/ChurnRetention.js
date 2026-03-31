@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import DashboardLayout from '../components/DashboardLayout';
 import { AIResponseRenderer } from '../components/AIResponseRenderer';
 import {
+  Users,
   TrendingDown,
   TrendingUp,
   AlertTriangle,

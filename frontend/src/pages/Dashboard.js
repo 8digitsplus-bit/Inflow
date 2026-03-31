@@ -4,6 +4,8 @@ import { useAuth } from '../contexts/AuthContext';
 import DashboardLayout from '../components/DashboardLayout';
 import { AIResponseRenderer } from '../components/AIResponseRenderer';
 import { 
+  TrendingUp,
+  DollarSign,
   Target, 
   Users, 
   Sparkles,
