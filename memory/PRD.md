@@ -1,14 +1,15 @@
 # InFlow - Revenue Intelligence SaaS Platform
 
 ## Original Problem Statement
-Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization, sales pipeline management, and revenue intelligence. Core features include tier-gated analytics, integrations (Stripe, HubSpot, Salesforce, etc.), and AI tools.
+Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization, sales pipeline management, and revenue intelligence. Core features include tier-gated analytics, integrations (Stripe, HubSpot, Salesforce, etc.), and AI tools. The app is now pivoting to be highly AI-driven with a custom AI orchestration engine that executes tasks and orchestrates workflows.
 
 ## Tech Stack
 - Frontend: React + Tailwind CSS + Shadcn UI + Recharts
 - Backend: FastAPI (Python)
 - Database: MongoDB
-- Auth: JWT + Google OAuth
+- Auth: Session cookies (httpOnly) + Google OAuth
 - Encryption: AES-256 (Fernet) for API keys at rest
+- AI: Claude Opus 4.6 via Emergent LLM Key (emergentintegrations library)
 
 ## What's Been Implemented
 
@@ -26,13 +27,29 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 - Revenue Forecast with area charts, scenario modeling, radial bar chart
 - Conversion Rate Optimization (CRO) with funnel visualization
 - Churn Analytics
+- Pricing Optimizer (automated sync from integrations)
+
+### AI Copilot Orchestrator (NEW - Mar 31, 2026)
+- **Sidebar copilot** accessible from every dashboard page via floating sparkles button
+- **Powered by Claude Opus 4.6** via Emergent LLM Key
+- **Natural language interface** — users type plain English questions
+- **Page-context aware** — knows which page user is viewing, provides relevant suggestions
+- **Tool-use architecture** — AI can call 12 tools to query real business data:
+  - query_deals, analytics_summary, integration_status, revenue_breakdown
+  - churn_risk, deal_details, forecast, search_deals
+  - top_opportunities, stage_velocity, draft_email, score_deal
+- **Multi-step reasoning** — up to 3 iterations of tool calls per query
+- **Persistent chat sessions** — conversations saved in MongoDB, history browseable
+- **Read-only mode** — gives recommendations without modifying data
+- Backend: `/app/backend/routes/orchestrator.py`
+- Frontend: `/app/frontend/src/components/AICopilot.js`
 
 ### Data Visualizations (Diverse - No Duplicate Chart Types)
 - Area Charts: Monthly Forecast (Revenue Forecast page)
 - Line Charts: Stage Velocity (Pipeline), Activity-to-Close (Sales Performance)
 - Radial Progress Rings: Close Rate (Sales Performance)
 - CSS Trapezoid Funnels: Pipeline by Stage (Pipeline)
-- Donut Chart (Recharts PieChart): Weighted Pipeline (Sales Pipeline)
+- Donut Chart: Weighted Pipeline (Sales Pipeline)
 - Pie Chart: Pipeline Weighted by Stage (Revenue Forecast)
 - Conversion Funnel Bars: CRO page
 
@@ -44,19 +61,11 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 - Stripe, Shopify, HubSpot, Salesforce, QuickBooks (user API key, encrypted at rest)
 - Google Auth (functional)
 - OpenAI Sora-2 (marketing videos via Emergent LLM Key)
-- Claude Sonnet 4.5 (via Emergent LLM Key)
+- Claude Sonnet 4.5 (via Emergent LLM Key) - used in support agent
+- Claude Opus 4.6 (via Emergent LLM Key) - AI Copilot Orchestrator
 
 ### Marketing Assets
 - Cinematic teaser video + 9:16 social media video (Sora-2 + ffmpeg)
-
-## Changes Made (Mar 30, 2026)
-- Fixed Weighted Pipeline donut chart (Pipeline page) - switched from custom SVG to Recharts PieChart for reliable rendering + added sample data fallback
-- Fixed Conversion Funnel spacing/overlapping (CRO page) - increased spacing, added stage labels on left with percentages on right
-- Changed Pipeline Weighted by Stage (Revenue Forecast) from Waterfall chart to Recharts RadialBarChart
-- Fixed Pipeline funnel deal count bug (d.deals -> d.count)
-- Fixed Dashboard Revenue Trend tooltip: "Forecast" value now formatted as currency (was showing raw number like 380249.99999999994)
-- Fixed SalesPerformance Activity-to-Close tooltip: removed fragile >100 threshold that could format deal counts as currency
-- Added hover title attributes to Pipeline funnel bars and CRO conversion funnel bars for tooltip data on hover
 
 ## Prioritized Backlog
 
@@ -64,34 +73,36 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 - Implement Functional Email 2FA (currently MOCKED via toast notification, needs Resend/SendGrid integration)
 
 ### P1 - High Priority
-- AI Deal Scorer (scores pipeline deals)
-- AI Revenue Copilot (proactive alerts/notifications)
-- AI Email Draft Generator (contextual drafts from deal data)
 - Terms of Service page (/terms)
+- AI Deal Scorer as standalone feature (currently available via copilot)
+- AI Revenue Copilot (proactive alerts/notifications)
+- AI Email Draft Generator as standalone feature (currently available via copilot)
 
 ### P2 - Medium Priority
 - Integration Health Dashboard
 - Email-Scheduled Forecast Reports / Daily AI Briefing
+- Copilot write mode (allow AI to update deal stages, create deals)
 
 ## Key API Endpoints
-- `/api/business/connect/{platform}` - Connect integration (encrypts API keys)
-- `/api/business/sync/{platform}` - Sync data (decrypts keys)
-- `/api/custom-integration/connect` - Custom integration connect
-- `/api/custom-integration/fetch` - Custom integration fetch
+- `/api/orchestrator/chat` - AI Copilot chat (POST)
+- `/api/orchestrator/sessions` - List chat sessions (GET)
+- `/api/orchestrator/sessions/{id}` - Get/Delete session (GET/DELETE/PATCH)
+- `/api/business/connect/{platform}` - Connect integration
+- `/api/business/sync/{platform}` - Sync data
 - `/api/deals` - CRUD for deals
 - `/api/analytics/pipeline` - Pipeline analytics
 - `/api/analytics/forecasting` - Revenue forecasting
 - `/api/analytics/cro` - CRO analytics
+- `/api/analytics/pricing/sync` - Auto-sync pricing data
 
 ## Key Files
+- `/app/backend/routes/orchestrator.py` - AI Copilot Orchestrator (Claude Opus 4.6)
+- `/app/frontend/src/components/AICopilot.js` - Copilot sidebar UI
+- `/app/frontend/src/components/DashboardLayout.js` - Layout with copilot integration
+- `/app/backend/routes/agent.py` - Legacy support agent (Claude Sonnet 4.5)
 - `/app/backend/utils/crypto.py` - AES-256 encryption
-- `/app/frontend/src/pages/Pipeline.js` - Sales Pipeline + Donut chart
-- `/app/frontend/src/pages/RevenueForecast.js` - Revenue Forecast + Radial Bar
-- `/app/frontend/src/pages/ConversionOptimization.js` - CRO + Funnel
-- `/app/frontend/src/pages/SalesPerformance.js` - Performance + Radial rings
-- `/app/backend/routes/business.py` - Integration connections
-- `/app/backend/routes/auth.py` - Authentication (2FA still mocked)
+- `/app/frontend/src/constants/colors.js` - Global chart color scheme
 
 ## Test Credentials
-- Email: testpro@test.com
-- Password: password
+- Email: testpro@test.com / Password: password (Pro plan)
+- Email: testdemo@inflow.com / Password: password (Demo account)

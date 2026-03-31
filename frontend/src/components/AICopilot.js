@@ -348,10 +348,12 @@ export const AICopilot = () => {
                 </div>
               ) : (
                 sessions.map((s) => (
-                  <button
+                  <div
                     key={s.session_id}
                     onClick={() => loadSession(s.session_id)}
-                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-md text-left transition-colors group ${
+                    role="button"
+                    tabIndex={0}
+                    className={`w-full flex items-center gap-2 px-3 py-2 rounded-md text-left transition-colors group cursor-pointer ${
                       activeSession === s.session_id
                         ? 'bg-white/[0.06] text-white'
                         : 'text-zinc-400 hover:bg-white/[0.03] hover:text-zinc-200'
@@ -367,7 +369,7 @@ export const AICopilot = () => {
                     >
                       <Trash2 className="w-3 h-3" />
                     </button>
-                  </button>
+                  </div>
                 ))
               )}
             </div>
