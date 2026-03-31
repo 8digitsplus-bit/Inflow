@@ -14,6 +14,7 @@ from routes.business import router as business_router
 from routes.support import router as support_router
 from routes.agent import router as agent_router
 from routes.custom_integration import router as custom_integration_router
+from routes.orchestrator import router as orchestrator_router
 
 # Configure logging
 logging.basicConfig(
@@ -39,6 +40,7 @@ api_router.include_router(business_router)
 api_router.include_router(support_router)
 api_router.include_router(agent_router)
 api_router.include_router(custom_integration_router)
+api_router.include_router(orchestrator_router)
 
 
 # Basic routes

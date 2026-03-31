@@ -21,6 +21,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from './ui/alert-dialog';
 import { Toaster } from './ui/sonner';
+import { AICopilot } from './AICopilot';
 
 const TIER_LEVEL = {
   trial: 0, expired: -1, cancelled: -1, free: 0,
@@ -220,6 +221,7 @@ const DashboardLayout = ({ children }) => {
       </main>
 
       <Toaster position="top-right" richColors />
+      <AICopilot />
 
       <AlertDialog open={showLogoutConfirm} onOpenChange={setShowLogoutConfirm}>
         <AlertDialogContent className="bg-zinc-950 border-zinc-800" data-testid="logout-confirm-dialog">
