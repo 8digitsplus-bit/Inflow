@@ -56,7 +56,7 @@ const AuthPage = () => {
   const isTrial = searchParams.get('trial') === 'true';
   const isLoginMode = searchParams.get('mode') === 'login';
   const { loginWithGoogle, loginWithEmail, registerWithEmail, verify2FA, isAuthenticated } = useAuth();
-  const [mode, setMode] = useState(isLoginMode ? 'login' : 'register');
+  const [mode, setMode] = useState(isLoginMode || localStorage.getItem('inflow_last_account') ? 'login' : 'register');
   const [showEmailForm, setShowEmailForm] = useState(false);
   const [loading, setLoading] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -69,7 +69,7 @@ const AuthPage = () => {
   // Account chooser state
   const savedAccountRaw = localStorage.getItem('inflow_last_account');
   const savedAccount = savedAccountRaw ? JSON.parse(savedAccountRaw) : null;
-  const [showAccountChooser, setShowAccountChooser] = useState(isLoginMode && !!savedAccount);
+  const [showAccountChooser, setShowAccountChooser] = useState(!!savedAccount);
 
   if (isAuthenticated && !isRegistering) {
     navigate('/dashboard');
