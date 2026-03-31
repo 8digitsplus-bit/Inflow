@@ -2,9 +2,8 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import DashboardLayout from '../components/DashboardLayout';
+import { AIResponseRenderer } from '../components/AIResponseRenderer';
 import { 
-  TrendingUp, 
-  DollarSign, 
   Target, 
   Users, 
   Sparkles,
@@ -413,7 +412,7 @@ const Dashboard = () => {
                   </CardHeader>
                   <CardContent>
                     {aiInsight ? (
-                      <div className="text-zinc-300 text-xs leading-relaxed max-h-[120px] overflow-y-auto">{aiInsight.substring(0, 300)}...</div>
+                      <div className="max-h-[120px] overflow-y-auto"><AIResponseRenderer text={aiInsight.substring(0, 300)} /></div>
                     ) : (
                       <div className="text-center py-4">
                         <Button onClick={getAIInsight} disabled={loadingInsight} size="sm" className="bg-purple-600 hover:bg-purple-500 h-8 text-xs">

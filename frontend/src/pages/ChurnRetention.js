@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import DashboardLayout from '../components/DashboardLayout';
+import { AIResponseRenderer } from '../components/AIResponseRenderer';
 import {
-  Users,
   TrendingDown,
   TrendingUp,
   AlertTriangle,
@@ -402,7 +402,7 @@ const ChurnRetention = () => {
                   <Button className="bg-purple-600 hover:bg-purple-500" onClick={() => window.location.href = '/settings'}>Upgrade Now</Button>
                 </div>
               ) : aiPrediction ? (
-                <div className="text-zinc-300 text-sm leading-relaxed whitespace-pre-wrap max-h-[360px] overflow-y-auto">{aiPrediction}</div>
+                <div className="max-h-[360px] overflow-y-auto"><AIResponseRenderer text={aiPrediction} /></div>
               ) : (
                 <div className="text-center py-8 text-zinc-500">
                   <Sparkles className="w-10 h-10 mx-auto mb-3 opacity-50" />

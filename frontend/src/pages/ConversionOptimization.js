@@ -1,10 +1,8 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import DashboardLayout from '../components/DashboardLayout';
+import { AIResponseRenderer } from '../components/AIResponseRenderer';
 import { 
-  TrendingUp, 
-  Target, 
-  AlertCircle,
   Sparkles,
   Loader2,
   RefreshCw,
@@ -395,8 +393,8 @@ const ConversionOptimization = () => {
                 </Button>
               </div>
             ) : aiRecommendations ? (
-              <div className="text-zinc-300 text-sm leading-relaxed whitespace-pre-wrap max-h-[400px] overflow-y-auto">
-                {aiRecommendations}
+              <div className="max-h-[400px] overflow-y-auto">
+                <AIResponseRenderer text={aiRecommendations} />
               </div>
             ) : (
               <div className="text-center py-8 text-zinc-500">

@@ -34,9 +34,10 @@ async def analyze_pricing(
         chat = LlmChat(
             api_key=api_key,
             session_id=f"pricing_{user.user_id}_{uuid.uuid4().hex[:8]}",
-            system_message="""You are an expert pricing strategist and revenue optimization consultant. 
+            system_message="""You are an expert pricing strategist and revenue optimization consultant.
             Analyze pricing data and provide actionable recommendations. Be concise but thorough.
-            Structure your response with clear sections using markdown headers.
+            Structure your response with numbered sections and bullet points.
+            Do NOT use emojis, hashtags, or markdown formatting symbols like # ## ** or *. Write in plain, professional English with clear section titles on their own line followed by a colon.
             Always include: 1) Optimal price recommendation, 2) Margin analysis, 3) Competitive positioning, 
             4) Volume impact assessment, 5) Discount strategy, 6) Risk factors, 7) Implementation roadmap."""
         ).with_model("anthropic", "claude-sonnet-4-5-20250929")
@@ -169,7 +170,8 @@ async def get_ai_insights(
             api_key=api_key,
             session_id=f"insight_{user.user_id}_{uuid.uuid4().hex[:8]}",
             system_message="""You are an expert business intelligence analyst specializing in B2B SaaS.
-            Provide concise, actionable insights. Use bullet points for clarity.
+            Provide concise, actionable insights using numbered points and bullet points.
+            Do NOT use emojis, hashtags, or markdown formatting symbols like # ## ** or *. Write in plain, professional English.
             Focus on revenue optimization, deal velocity, and pipeline health."""
         ).with_model("anthropic", "claude-sonnet-4-5-20250929")
 
@@ -216,6 +218,7 @@ async def predict_churn(
             session_id=f"churn_{user.user_id}_{uuid.uuid4().hex[:8]}",
             system_message="""You are an expert customer success analyst specializing in B2B SaaS churn prediction.
             Analyze customer data and provide actionable retention strategies. Be concise and data-driven.
+            Do NOT use emojis, hashtags, or markdown formatting symbols like # ## ** or *. Write in plain, professional English with clear section titles.
             Focus on: 1) Churn risk score (0-100), 2) Key risk factors, 3) Recommended actions, 4) Timeline."""
         ).with_model("anthropic", "claude-sonnet-4-5-20250929")
 
@@ -265,6 +268,7 @@ async def get_cro_recommendations(
             session_id=f"cro_{user.user_id}_{uuid.uuid4().hex[:8]}",
             system_message="""You are an expert conversion rate optimization specialist for B2B SaaS.
             Analyze funnel data and provide actionable recommendations to improve conversion rates.
+            Do NOT use emojis, hashtags, or markdown formatting symbols like # ## ** or *. Write in plain, professional English with clear section titles.
             Focus on: 1) Quick wins, 2) High-impact changes, 3) A/B test ideas, 4) Process improvements."""
         ).with_model("anthropic", "claude-sonnet-4-5-20250929")
 
