@@ -217,11 +217,8 @@ const ChurnRetention = () => {
                   <PieChart>
                     <Pie
                       data={(data?.health_distribution || []).filter(h => h.count > 0)}
-                      cx="50%" cy="50%" outerRadius={80}
+                      cx="50%" cy="45%" outerRadius="70%"
                       paddingAngle={2} dataKey="count" nameKey="status"
-                      label={({ status, percent }) => `${status} ${(percent * 100).toFixed(0)}%`}
-                      labelLine={{ stroke: '#52525B', strokeWidth: 1 }}
-                      style={{ fontSize: '11px' }}
                     >
                       {(data?.health_distribution || []).filter(h => h.count > 0).map((entry, i) => (
                         <Cell key={i} fill={entry.color} />
@@ -241,7 +238,12 @@ const ChurnRetention = () => {
                         );
                       }} 
                     />
-                    <Legend formatter={(value) => <span style={{ color: '#A1A1AA', fontSize: '11px' }}>{value}</span>} />
+                    <Legend
+                      verticalAlign="bottom"
+                      iconType="circle"
+                      iconSize={8}
+                      formatter={(value) => <span style={{ color: '#A1A1AA', fontSize: '11px' }}>{value}</span>}
+                    />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
