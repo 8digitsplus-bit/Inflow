@@ -248,14 +248,6 @@ const ChurnRetention = () => {
                   </PieChart>
                 </ResponsiveContainer>
               </div>
-              <div className="flex justify-center gap-4 -mt-2">
-                {(data?.health_distribution || []).map((h, i) => (
-                  <div key={i} className="flex items-center gap-1.5">
-                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: h.color }} />
-                    <span className="text-[10px] text-zinc-400">{h.status}: {h.count}</span>
-                  </div>
-                ))}
-              </div>
             </CardContent>
           </Card>
         </div>
