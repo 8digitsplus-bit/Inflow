@@ -217,8 +217,8 @@ const ChurnRetention = () => {
                   <PieChart>
                     <Pie
                       data={(data?.health_distribution || []).filter(h => h.count > 0)}
-                      cx="50%" cy="50%" innerRadius={45} outerRadius={75}
-                      paddingAngle={4} dataKey="count" nameKey="status"
+                      cx="50%" cy="50%" outerRadius={90}
+                      paddingAngle={2} dataKey="count" nameKey="status"
                       label={({ status, percent }) => {
                         const short = status.length > 8 ? status.slice(0, 7) + '..' : status;
                         return `${short} ${(percent * 100).toFixed(0)}%`;
