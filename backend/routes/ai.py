@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Request, Depends
 import os
 import uuid
+import asyncio
 import logging
 
 from database import db
@@ -10,6 +11,30 @@ from dependencies import get_current_user
 logger = logging.getLogger(__name__)
 
 router = APIRouter()
+
+AI_TIMEOUT = 45  # seconds
+
+
+async def call_llm_with_timeout(chat, message, timeout=AI_TIMEOUT):
+    """Call LLM with timeout and single retry on failure."""
+    from emergentintegrations.llm.chat import UserMessage
+    for attempt in range(2):
+        try:
+            return await asyncio.wait_for(
+                chat.send_message(UserMessage(text=message)),
+                timeout=timeout
+            )
+        except asyncio.TimeoutError:
+            if attempt == 0:
+                logger.warning("LLM call timed out, retrying...")
+                continue
+            raise HTTPException(status_code=504, detail="AI service timed out. Please try again.")
+        except Exception as e:
+            if attempt == 0 and ("502" in str(e) or "503" in str(e) or "BadGateway" in str(e)):
+                logger.warning(f"LLM transient error, retrying: {e}")
+                await asyncio.sleep(1)
+                continue
+            raise
 
 
 @router.post("/ai/pricing-analysis")
@@ -89,8 +114,7 @@ Provide a comprehensive analysis covering:
 6. **Risk Assessment** - Key risks of changing price and mitigation strategies
 7. **Implementation Roadmap** - Step-by-step plan to implement the new pricing"""
 
-        user_message = UserMessage(text=prompt)
-        ai_response = await chat.send_message(user_message)
+        ai_response = await call_llm_with_timeout(chat, prompt)
 
         price_diff = avg_competitor - analysis_request.current_price
         suggested_adjustment = min(max(price_diff * 0.3, -analysis_request.current_price * 0.15), analysis_request.current_price * 0.25)
@@ -142,9 +166,11 @@ Provide a comprehensive analysis covering:
 
     except ImportError:
         raise HTTPException(status_code=500, detail="AI service not available")
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"AI analysis error: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"AI analysis failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="AI analysis failed. Please try again.")
 
 
 @router.post("/ai/insights")
@@ -181,14 +207,15 @@ async def get_ai_insights(
 
         prompt = f"{insight_request.context}{data_context}\n\nProvide 3-5 key insights and recommended actions."
 
-        user_message = UserMessage(text=prompt)
-        ai_response = await chat.send_message(user_message)
+        ai_response = await call_llm_with_timeout(chat, prompt)
 
         return {"insight": ai_response}
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"AI insight error: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"AI insight failed: {str(e)}")
+        raise HTTPException(status_code=500, detail="AI insight failed. Please try again.")
 
 
 @router.post("/ai/churn-prediction")
@@ -231,14 +258,15 @@ Provide:
 3. Recommended retention actions
 4. Urgency level and timeline"""
 
-        user_message = UserMessage(text=prompt)
-        ai_response = await chat.send_message(user_message)
+        ai_response = await call_llm_with_timeout(chat, prompt)
 
         return {"prediction": ai_response}
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Churn prediction error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="Churn prediction failed. Please try again.")
 
 
 @router.post("/ai/cro-recommendations")
@@ -263,17 +291,36 @@ async def get_cro_recommendations(
         data = await request.json()
         funnel_data = data.get("funnel_data", {})
 
+        # Summarize data for the LLM instead of dumping raw JSON
+        summary_parts = [f"Overall Conversion: {funnel_data.get('overall_conversion', 'N/A')}%"]
+        summary_parts.append(f"Total Opportunities: {funnel_data.get('total_opportunities', 'N/A')}")
+        summary_parts.append(f"Won Deals: {funnel_data.get('won_deals', 'N/A')}")
+        summary_parts.append(f"Avg Cycle: {funnel_data.get('avg_cycle_days', 'N/A')} days")
+
+        for stage in funnel_data.get("funnel_data", []):
+            summary_parts.append(f"  {stage.get('stage', '?')}: {stage.get('count', 0)} deals ({stage.get('conversion', 0)}%)")
+
+        for conv in funnel_data.get("stage_conversions", []):
+            summary_parts.append(f"  {conv.get('from', '?')} -> {conv.get('to', '?')}: {conv.get('rate', 0)}%")
+
+        for bn in funnel_data.get("bottlenecks", []):
+            summary_parts.append(f"  Bottleneck at {bn.get('stage', '?')}: {bn.get('avg_days', 0)} days, {bn.get('stuck_deals', 0)} stuck deals")
+
+        funnel_summary = "\n".join(summary_parts)
+
         chat = LlmChat(
             api_key=api_key,
             session_id=f"cro_{user.user_id}_{uuid.uuid4().hex[:8]}",
             system_message="""You are an expert conversion rate optimization specialist for B2B SaaS.
             Analyze funnel data and provide actionable recommendations to improve conversion rates.
             Do NOT use emojis, hashtags, or markdown formatting symbols like # ## ** or *. Write in plain, professional English with clear section titles.
+            Keep your response under 500 words. Be specific and actionable.
             Focus on: 1) Quick wins, 2) High-impact changes, 3) A/B test ideas, 4) Process improvements."""
         ).with_model("anthropic", "claude-sonnet-4-5-20250929")
 
-        prompt = f"""Analyze this sales funnel data and provide CRO recommendations:
-{funnel_data}
+        prompt = f"""Analyze this B2B SaaS sales funnel and provide CRO recommendations:
+
+{funnel_summary}
 
 Provide:
 1. Top 3 quick wins to improve conversion
@@ -281,11 +328,12 @@ Provide:
 3. A/B test recommendations
 4. Process improvements for each stage"""
 
-        user_message = UserMessage(text=prompt)
-        ai_response = await chat.send_message(user_message)
+        ai_response = await call_llm_with_timeout(chat, prompt)
 
         return {"recommendations": ai_response}
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"CRO recommendation error: {str(e)}")
-        raise HTTPException(status_code=500, detail=str(e))
+        raise HTTPException(status_code=500, detail="AI analysis failed. Please try again.")
