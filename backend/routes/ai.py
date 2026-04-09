@@ -196,8 +196,8 @@ async def get_ai_insights(
             api_key=api_key,
             session_id=f"insight_{user.user_id}_{uuid.uuid4().hex[:8]}",
             system_message="""You are an expert business intelligence analyst specializing in B2B SaaS.
-            Provide concise, actionable insights using numbered points and bullet points.
             Do NOT use emojis, hashtags, or markdown formatting symbols like # ## ** or *. Write in plain, professional English.
+            Keep your ENTIRE response under 120 words. Be direct and scannable.
             Focus on revenue optimization, deal velocity, and pipeline health."""
         ).with_model("anthropic", "claude-sonnet-4-5-20250929")
 
@@ -205,7 +205,7 @@ async def get_ai_insights(
         if insight_request.data:
             data_context = f"\n\nRelevant data:\n{insight_request.data}"
 
-        prompt = f"{insight_request.context}{data_context}\n\nProvide 3-5 key insights and recommended actions."
+        prompt = f"{insight_request.context}{data_context}\n\nProvide 3 key insights (one sentence each) and 1 top priority action."
 
         ai_response = await call_llm_with_timeout(chat, prompt)
 
@@ -244,19 +244,14 @@ async def predict_churn(
             api_key=api_key,
             session_id=f"churn_{user.user_id}_{uuid.uuid4().hex[:8]}",
             system_message="""You are an expert customer success analyst specializing in B2B SaaS churn prediction.
-            Analyze customer data and provide actionable retention strategies. Be concise and data-driven.
-            Do NOT use emojis, hashtags, or markdown formatting symbols like # ## ** or *. Write in plain, professional English with clear section titles.
-            Focus on: 1) Churn risk score (0-100), 2) Key risk factors, 3) Recommended actions, 4) Timeline."""
+            Do NOT use emojis, hashtags, or markdown formatting symbols like # ## ** or *. Write in plain, professional English.
+            Keep your ENTIRE response under 120 words. Be direct and scannable."""
         ).with_model("anthropic", "claude-sonnet-4-5-20250929")
 
-        prompt = f"""Analyze this customer/deal for churn risk:
+        prompt = f"""Churn risk assessment for:
 {deal_data}
 
-Provide:
-1. Churn risk score (0-100) with reasoning
-2. Top 3 risk factors
-3. Recommended retention actions
-4. Urgency level and timeline"""
+Respond with: Risk score (0-100), top 2 risk factors (one line each), and 1 recommended action."""
 
         ai_response = await call_llm_with_timeout(chat, prompt)
 
@@ -312,21 +307,20 @@ async def get_cro_recommendations(
             api_key=api_key,
             session_id=f"cro_{user.user_id}_{uuid.uuid4().hex[:8]}",
             system_message="""You are an expert conversion rate optimization specialist for B2B SaaS.
-            Analyze funnel data and provide actionable recommendations to improve conversion rates.
-            Do NOT use emojis, hashtags, or markdown formatting symbols like # ## ** or *. Write in plain, professional English with clear section titles.
-            Keep your response under 500 words. Be specific and actionable.
-            Focus on: 1) Quick wins, 2) High-impact changes, 3) A/B test ideas, 4) Process improvements."""
+            Analyze funnel data and provide a brief, scannable summary.
+            Do NOT use emojis, hashtags, or markdown formatting symbols like # ## ** or *. Write in plain, professional English.
+            Keep your ENTIRE response under 150 words. Be direct and punchy.
+            Format: 1 sentence summary, then 3 bullet-point recommendations (1 line each), then 1 key metric to watch."""
         ).with_model("anthropic", "claude-sonnet-4-5-20250929")
 
-        prompt = f"""Analyze this B2B SaaS sales funnel and provide CRO recommendations:
+        prompt = f"""Give a brief CRO summary for this B2B SaaS funnel:
 
 {funnel_summary}
 
-Provide:
-1. Top 3 quick wins to improve conversion
-2. Biggest bottleneck and how to fix it
-3. A/B test recommendations
-4. Process improvements for each stage"""
+Respond with:
+- One sentence overall assessment
+- 3 quick recommendations (one line each, be specific)
+- One key metric to focus on"""
 
         ai_response = await call_llm_with_timeout(chat, prompt)
 
