@@ -2,6 +2,8 @@ from fastapi import FastAPI, APIRouter
 from starlette.middleware.cors import CORSMiddleware
 import logging
 
+import os
+
 from database import client
 from routes.auth import router as auth_router
 from routes.deals import router as deals_router
@@ -55,10 +57,16 @@ async def health_check():
 # Include the router in the main app
 app.include_router(api_router)
 
+ALLOWED_ORIGINS = os.environ.get("ALLOWED_ORIGINS", "*")
+if ALLOWED_ORIGINS == "*":
+    origins = ["*"]
+else:
+    origins = [o.strip() for o in ALLOWED_ORIGINS.split(",")]
+
 app.add_middleware(
     CORSMiddleware,
     allow_credentials=True,
-    allow_origins=["*"],
+    allow_origins=origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
