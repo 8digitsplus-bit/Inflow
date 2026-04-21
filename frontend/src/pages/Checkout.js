@@ -13,11 +13,11 @@ const API_URL = process.env.REACT_APP_BACKEND_URL;
 
 const PLANS = {
   essential_monthly: { name: 'Essential', price: 59, period: 'month', color: '#06B6D4', features: ['Sales Pipeline', 'Core Analytics', 'Churn Monitoring', 'Live Integration', '1,500 usages/mo'] },
-  essential_yearly: { name: 'Essential', price: 496, period: 'year', color: '#06B6D4', originalPrice: 708, features: ['Sales Pipeline', 'Core Analytics', 'Churn Monitoring', 'Live Integration', '1,500 usages/mo'] },
+  essential_yearly: { name: 'Essential', price: 664, period: 'year', color: '#06B6D4', originalPrice: 948, features: ['Sales Pipeline', 'Core Analytics', 'Churn Monitoring', 'Live Integration', '1,500 usages/mo'] },
   pro_monthly: { name: 'Pro', price: 149, period: 'month', color: '#6366F1', features: ['Everything in Essential', 'Sales Performance', 'AI Insights', 'Pricing Optimization', 'CRO Analysis', '7,500 usages/mo'] },
-  pro_yearly: { name: 'Pro', price: 1252, period: 'year', color: '#6366F1', originalPrice: 1788, features: ['Everything in Essential', 'Sales Performance', 'AI Insights', 'Pricing Optimization', 'CRO Analysis', '7,500 usages/mo'] },
+  pro_yearly: { name: 'Pro', price: 2092, period: 'year', color: '#6366F1', originalPrice: 2988, features: ['Everything in Essential', 'Sales Performance', 'AI Insights', 'Pricing Optimization', 'CRO Analysis', '7,500 usages/mo'] },
   enterprise_monthly: { name: 'Enterprise', price: 249, period: 'month', color: '#A855F7', features: ['Everything in Pro', 'Revenue Intelligence', 'Smart Assist AI', 'Custom Integrations', 'API Access', '20,000 usages/mo'] },
-  enterprise_yearly: { name: 'Enterprise', price: 2092, period: 'year', color: '#A855F7', originalPrice: 2988, features: ['Everything in Pro', 'Revenue Intelligence', 'Smart Assist AI', 'Custom Integrations', 'API Access', '20,000 usages/mo'] },
+  enterprise_yearly: { name: 'Enterprise', price: 4200, period: 'year', color: '#A855F7', originalPrice: 6000, features: ['Everything in Pro', 'Revenue Intelligence', 'Smart Assist AI', 'Custom Integrations', 'API Access', '20,000 usages/mo'] },
 };
 
 const Checkout = () => {
