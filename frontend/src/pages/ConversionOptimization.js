@@ -126,14 +126,6 @@ const ConversionOptimization = () => {
             </h1>
             <p className="text-zinc-400 mt-1 text-sm">Optimize your sales funnel and increase conversions</p>
           </div>
-          <Button 
-            variant="outline" 
-            className="border-zinc-700"
-            onClick={fetchCROData}
-            data-testid="refresh-cro-btn"
-          >
-            <RefreshCw className="w-4 h-4 mr-2" /> Refresh
-          </Button>
         </div>
 
         {/* Key Metrics */}

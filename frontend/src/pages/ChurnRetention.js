@@ -104,9 +104,6 @@ const ChurnRetention = () => {
             <h1 className="text-2xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>Churn & Retention</h1>
             <p className="text-zinc-400 mt-1 text-sm">Monitor customer health, predict churn, and protect revenue</p>
           </div>
-          <Button variant="outline" className="border-zinc-700" onClick={fetchChurnData} data-testid="refresh-churn-btn">
-            <RefreshCw className="w-4 h-4 mr-2" /> Refresh
-          </Button>
         </div>
 
         {/* Primary KPIs */}
