@@ -141,7 +141,11 @@ const AuthPage = () => {
         const result = await loginWithEmail(form.email, form.password);
         if (result.requires_2fa) {
           setTwoFAState(result);
-          toast.info(`Verification code: ${result.otp_code_debug}`, { duration: 15000 });
+          if (result.email_sent) {
+            toast.success(`Code sent to ${result.email_hint}`);
+          } else {
+            toast.warning('Email service not configured — contact support.', { duration: 6000 });
+          }
           return;
         }
         navigate('/dashboard');
@@ -218,7 +222,28 @@ const AuthPage = () => {
               </Button>
 
               <button
-                className="w-full text-zinc-500 hover:text-zinc-300 text-sm mt-4 transition-colors"
+                className="w-full text-xs text-zinc-500 hover:text-zinc-300 mt-3 transition-colors"
+                onClick={async () => {
+                  try {
+                    const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/auth/2fa/resend`, {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ user_id: twoFAState.user_id }),
+                    });
+                    const d = await res.json();
+                    if (res.ok && d.email_sent) toast.success(`Code re-sent to ${twoFAState.email_hint}`);
+                    else toast.error(d.detail || 'Failed to re-send code');
+                  } catch {
+                    toast.error('Failed to re-send code');
+                  }
+                }}
+                data-testid="resend-2fa-btn"
+              >
+                Didn't get the code? Re-send
+              </button>
+
+              <button
+                className="w-full text-zinc-500 hover:text-zinc-300 text-sm mt-3 transition-colors"
                 onClick={() => { setTwoFAState(null); setOtpDigits(['', '', '', '', '', '']); }}
                 data-testid="back-to-login-btn"
               >

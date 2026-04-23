@@ -9,8 +9,61 @@ import random
 from database import db
 from models import User, RegisterRequest, LoginRequest, OnboardingData
 from dependencies import get_current_user
+from utils.email import send_email
 
 router = APIRouter()
+
+
+def _build_2fa_email_html(code: str, user_name: str) -> str:
+    return f"""
+<!DOCTYPE html>
+<html>
+<body style="margin:0;padding:0;background:#0a0a0b;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+  <table role="presentation" cellpadding="0" cellspacing="0" width="100%" style="background:#0a0a0b;padding:40px 20px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" cellpadding="0" cellspacing="0" width="480" style="background:#111113;border:1px solid #26262a;border-radius:16px;padding:40px;max-width:480px;">
+          <tr>
+            <td>
+              <div style="color:#818cf8;font-size:12px;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:24px;">InFlow · Verification</div>
+              <h1 style="color:#ffffff;font-size:22px;font-weight:700;margin:0 0 12px 0;line-height:1.2;">Hi {user_name}, here's your sign-in code</h1>
+              <p style="color:#a1a1aa;font-size:14px;line-height:1.6;margin:0 0 28px 0;">
+                Use this code to finish signing in. It expires in 10 minutes.
+              </p>
+              <div style="background:#18181b;border:1px solid #27272a;border-radius:12px;padding:22px;text-align:center;margin-bottom:24px;">
+                <div style="color:#ffffff;font-size:36px;font-weight:700;letter-spacing:0.4em;font-family:'SFMono-Regular',Consolas,monospace;">{code}</div>
+              </div>
+              <p style="color:#71717a;font-size:12px;line-height:1.5;margin:0;">
+                If you didn't request this, someone may be trying to access your account — change your password immediately.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
+"""
+
+
+async def _send_2fa_code(user_doc: dict) -> tuple:
+    """Generate an OTP, store it, email it. Returns (code, email_sent)."""
+    code = str(random.randint(100000, 999999))
+    await db.otp_codes.delete_many({"user_id": user_doc["user_id"]})
+    await db.otp_codes.insert_one({
+        "user_id": user_doc["user_id"],
+        "code": code,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "expires_at": (datetime.now(timezone.utc) + timedelta(minutes=10)).isoformat(),
+    })
+    result = await send_email(
+        to=user_doc["email"],
+        subject=f"Your InFlow verification code is {code}",
+        html=_build_2fa_email_html(code, user_doc.get("name", "there")),
+        text=f"Your InFlow verification code is {code}. It expires in 10 minutes.",
+    )
+    return code, result["sent"]
 
 # ============== GOOGLE SESSION AUTH ==============
 
@@ -232,20 +285,12 @@ async def login_with_email(req: LoginRequest, response: Response):
 
     # Check if 2FA is enabled
     if user_doc.get("two_fa_enabled"):
-        otp_code = str(random.randint(100000, 999999))
-        await db.otp_codes.delete_many({"user_id": user_doc["user_id"]})
-        await db.otp_codes.insert_one({
-            "user_id": user_doc["user_id"],
-            "code": otp_code,
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "expires_at": (datetime.now(timezone.utc) + timedelta(minutes=10)).isoformat(),
-        })
-        # Mock email: return code in response (swap for real email service later)
+        _, email_sent = await _send_2fa_code(user_doc)
         return {
             "requires_2fa": True,
             "user_id": user_doc["user_id"],
             "email_hint": user_doc["email"][:3] + "***" + user_doc["email"][user_doc["email"].index("@"):],
-            "otp_code_debug": otp_code,
+            "email_sent": email_sent,
         }
 
     # No 2FA — proceed with normal login
@@ -280,9 +325,37 @@ async def verify_2fa(request: Request, response: Response):
     return await _create_session_and_respond(user_doc, response)
 
 
-@router.post("/auth/2fa/enable")
-async def enable_2fa(current_user: User = Depends(get_current_user)):
-    """Enable 2FA for the current user"""
+@router.post("/auth/2fa/enable/request")
+async def request_2fa_enable(current_user: User = Depends(get_current_user)):
+    """Send a code to the user's email to confirm enabling 2FA."""
+    user_doc = await db.users.find_one({"user_id": current_user.user_id}, {"_id": 0})
+    _, email_sent = await _send_2fa_code(user_doc)
+    return {
+        "email_hint": user_doc["email"][:3] + "***" + user_doc["email"][user_doc["email"].index("@"):],
+        "email_sent": email_sent,
+    }
+
+
+@router.post("/auth/2fa/enable/confirm")
+async def confirm_2fa_enable(request: Request, current_user: User = Depends(get_current_user)):
+    """Confirm the emailed code and enable 2FA on the account."""
+    data = await request.json()
+    code = (data.get("code") or "").strip()
+    if not code:
+        raise HTTPException(status_code=400, detail="Code is required")
+
+    otp_doc = await db.otp_codes.find_one(
+        {"user_id": current_user.user_id, "code": code}, {"_id": 0}
+    )
+    if not otp_doc:
+        raise HTTPException(status_code=401, detail="Invalid verification code")
+
+    expires_at = datetime.fromisoformat(otp_doc["expires_at"].replace("Z", "+00:00"))
+    if datetime.now(timezone.utc) > expires_at:
+        await db.otp_codes.delete_many({"user_id": current_user.user_id})
+        raise HTTPException(status_code=401, detail="Code has expired. Please request a new one.")
+
+    await db.otp_codes.delete_many({"user_id": current_user.user_id})
     await db.users.update_one(
         {"user_id": current_user.user_id},
         {"$set": {"two_fa_enabled": True, "two_fa_method": "email"}}
@@ -298,6 +371,20 @@ async def disable_2fa(current_user: User = Depends(get_current_user)):
         {"$set": {"two_fa_enabled": False, "two_fa_method": None}}
     )
     return {"status": "disabled"}
+
+
+@router.post("/auth/2fa/resend")
+async def resend_2fa_code(request: Request):
+    """Re-send the OTP during login (public — needs only user_id from the prior /auth/login response)."""
+    data = await request.json()
+    user_id = data.get("user_id")
+    if not user_id:
+        raise HTTPException(status_code=400, detail="user_id is required")
+    user_doc = await db.users.find_one({"user_id": user_id}, {"_id": 0})
+    if not user_doc or not user_doc.get("two_fa_enabled"):
+        raise HTTPException(status_code=404, detail="2FA not enabled for this user")
+    _, email_sent = await _send_2fa_code(user_doc)
+    return {"email_sent": email_sent}
 
 
 @router.get("/auth/2fa/status")

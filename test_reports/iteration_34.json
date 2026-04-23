@@ -1,0 +1,52 @@
+{
+  "summary": "Tested Email 2FA via Resend end-to-end. Backend: 14/14 new 2FA tests PASS covering enable/request, enable/confirm (wrong/expired/correct), disable, status, login-returns-requires_2fa (no code leak), verify (invalid/expired/correct/missing), resend (valid/404/400). Regression: 23/23 test_enterprise_pricing + test_org_team still pass. Frontend: Settings toggle opens Enable2FADialog correctly, correct code enables + persists, disable is instant. Login page shows 2FA verify form with 6 OTP inputs + Re-send + Back buttons, and NO 'Verification code: XXXXXX' plaintext toast is shown anywhere.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "Enable2FADialog.js",
+        "issue": "React dev-mode runtime error overlay: 'Failed to execute json on Response: body stream already read' at handleVerify. Root cause: useEffect on [open, onOpenChange] double-invokes under React StrictMode causing 2 /2fa/enable/request calls; the second fetch re-triggers state updates and the handler path reads the body twice. Functionality still works (wrong-code toast shows, correct-code path enables 2FA), but the red error overlay is visible to users in dev. Fix: stabilise the effect (use a ref-guarded fetch or remove onOpenChange from deps) and/or clone the Response before reading json in error branch.",
+        "selector": "[data-testid=\"enable-2fa-dialog\"]",
+        "priority": "MEDIUM"
+      },
+      {
+        "component": "AuthPage.js (also Enable2FADialog)",
+        "issue": "When Resend returns email_sent=false (free-tier test mode), UI shows 'Email service not configured — contact support.' warning toast. This is technically correct per the implementation but may confuse users/testers since RESEND_API_KEY IS set — the reason is actually that Resend free tier only delivers to the account owner. Consider a gentler copy like 'Code was generated — delivery pending' when key is present but send fails.",
+        "selector": "n/a",
+        "priority": "LOW"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_2fa_email.py",
+    "/app/test_reports/pytest/pytest_2fa_email.xml"
+  ],
+  "action_items": [
+    "Stabilise Enable2FADialog useEffect to avoid double-fetch under React StrictMode and clear the 'body stream already read' dev-overlay error. Suggested: use a useRef guard or remove onOpenChange from useEffect deps; always clone() Response before reading json in catch/error branches.",
+    "(Optional) Soften the 'Email service not configured' warning copy when Resend is configured but deliverability is test-mode-limited."
+  ],
+  "critical_code_review_comments": [
+    "auth.py line 316-317 and 355-356: otp_codes are deleted when expired — good. But deleting inside an exception path is fine, no issue.",
+    "auth.py _send_2fa_code correctly isolates OTP generation and uses delete_many for idempotency. No code leaks in any response body (verified by asserting absence of keys 'code','otp','otp_code','otp_code_debug' in all responses).",
+    "auth.py /2fa/resend is public by design (needed during login) and correctly returns 404 when user has no 2FA — prevents user enumeration-by-success but a timing attack is possible; acceptable.",
+    "Enable2FADialog.js: useEffect dependency includes onOpenChange which is a new function identity on each Settings render → re-runs the request on every render. Should be removed from deps or memoized at parent."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_2fa_email.py (new)"
+  ],
+  "success_rate": {
+    "backend": "100% (14/14 new + 23/23 regression)",
+    "frontend": "90% (all functional flows pass; 1 dev-overlay runtime error on repeated dialog re-open due to StrictMode double-fetch)"
+  },
+  "test_credentials": "testpro@test.com / password (user_393ea5f333cb). Tests restore two_fa_enabled=False at teardown.",
+  "seed_data_creation": "None. Tests toggle two_fa_enabled on existing testpro account and restore state at end.",
+  "retest_needed": true,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend Email 2FA is solid — 14 tests in /app/backend/tests/test_2fa_email.py verify enable/confirm/verify/disable/resend/status + no code leakage in any response. Frontend mostly works. Known issue: Enable2FADialog double-fires its useEffect under React StrictMode causing a dev-mode 'body stream already read' overlay after clicking verify with wrong code. Functionality is unaffected but should be fixed before production. Resend is in free-tier test mode — email_sent will be false for non-owner addresses; do not assert on email_sent truthiness in tests.",
+  "rca of the issue": "Enable2FADialog.js useEffect: `useEffect(() => { ... }, [open, onOpenChange])` — onOpenChange is recreated on each Settings render, so the effect reruns. StrictMode in dev additionally double-invokes effects. Result: multiple concurrent /2fa/enable/request calls and the handleVerify json-read collides with one of them through shared response caching. Mitigation: (1) change deps to [open] only, (2) wrap onOpenChange in useCallback at parent, (3) add a hasRequestedRef guard, (4) await res.clone().json() in error branches as a defensive measure."
+}

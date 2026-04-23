@@ -20,6 +20,7 @@ import { Button } from '../components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../components/ui/alert-dialog';
 import TeamSection from '../components/TeamSection';
+import Enable2FADialog from '../components/Enable2FADialog';
 import { toast } from 'sonner';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
@@ -37,6 +38,7 @@ const Settings = () => {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [twoFAEnabled, setTwoFAEnabled] = useState(false);
   const [toggling2FA, setToggling2FA] = useState(false);
+  const [show2FADialog, setShow2FADialog] = useState(false);
   const [org, setOrg] = useState(null);
 
   useEffect(() => {
@@ -70,13 +72,18 @@ const Settings = () => {
   };
 
   const toggle2FA = async () => {
+    // Enabling 2FA requires the email-code confirmation flow
+    if (!twoFAEnabled) {
+      setShow2FADialog(true);
+      return;
+    }
+    // Disabling is instant
     setToggling2FA(true);
     try {
-      const endpoint = twoFAEnabled ? '/api/auth/2fa/disable' : '/api/auth/2fa/enable';
-      const res = await fetch(`${API_URL}${endpoint}`, { method: 'POST', credentials: 'include' });
+      const res = await fetch(`${API_URL}/api/auth/2fa/disable`, { method: 'POST', credentials: 'include' });
       if (res.ok) {
-        setTwoFAEnabled(!twoFAEnabled);
-        toast.success(twoFAEnabled ? 'Two-factor authentication disabled' : 'Two-factor authentication enabled');
+        setTwoFAEnabled(false);
+        toast.success('Two-factor authentication disabled');
       } else {
         toast.error('Failed to update 2FA settings');
       }
@@ -538,6 +545,11 @@ const Settings = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <Enable2FADialog
+        open={show2FADialog}
+        onOpenChange={setShow2FADialog}
+        onEnabled={() => setTwoFAEnabled(true)}
+      />
     </DashboardLayout>
   );
 };
