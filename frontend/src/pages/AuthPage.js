@@ -144,7 +144,7 @@ const AuthPage = () => {
           if (result.email_sent) {
             toast.success(`Code sent to ${result.email_hint}`);
           } else {
-            toast.warning('Email service not configured — contact support.', { duration: 6000 });
+            toast.info(`Code generated — check ${result.email_hint}. If it doesn't arrive, use "Re-send".`, { duration: 6000 });
           }
           return;
         }

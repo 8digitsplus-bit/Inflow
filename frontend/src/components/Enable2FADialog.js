@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from './ui/dialog';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -12,13 +12,17 @@ export default function Enable2FADialog({ open, onOpenChange, onEnabled }) {
   const [sending, setSending] = useState(false);
   const [emailHint, setEmailHint] = useState('');
   const [code, setCode] = useState('');
+  const hasRequestedRef = useRef(false);
 
   useEffect(() => {
     if (!open) {
       setCode('');
       setEmailHint('');
+      hasRequestedRef.current = false;
       return;
     }
+    if (hasRequestedRef.current) return;
+    hasRequestedRef.current = true;
     (async () => {
       setSending(true);
       try {
@@ -34,13 +38,14 @@ export default function Enable2FADialog({ open, onOpenChange, onEnabled }) {
         }
         setEmailHint(data.email_hint);
         if (!data.email_sent) {
-          toast.warning('Email service not configured — contact support.', { duration: 6000 });
+          toast.info('Code generated. If you don\'t receive the email, use the resend button or contact the team owner.', { duration: 6000 });
         }
       } finally {
         setSending(false);
       }
     })();
-  }, [open, onOpenChange]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open]);
 
   const handleVerify = async (e) => {
     e.preventDefault();

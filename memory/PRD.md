@@ -13,6 +13,13 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
+### Email 2FA via Resend (Feb 2026)
+- Real email delivery replaces the previous mocked toast.
+- Enable flow: toggle in Settings → dialog requests 6-digit code → user enters code → `/api/auth/2fa/enable/confirm` enables. Disabling is instant.
+- Login flow: when `two_fa_enabled=True`, `/api/auth/login` returns `requires_2fa` and emails the code (never leaks it in the response). Verify screen has 6-box OTP input + "Re-send code" button.
+- Backend helper `_send_2fa_code` in `/app/backend/routes/auth.py` centralises OTP generation + email.
+- **Tests**: `/app/backend/tests/test_2fa_email.py` (14 tests passing). No code-leak in any response body verified.
+
 ### Team / Organization Management (Phase 1 — Feb 2026)
 - Every user belongs to an **organization** (solo org by default; shared org for Enterprise teams).
 - Roles: **owner** (full CRUD + billing + member management) and **member** (read access to deals/pipeline/integrations + can run AI; cannot edit or manage billing).
