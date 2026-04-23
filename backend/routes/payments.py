@@ -36,14 +36,16 @@ SUBSCRIPTION_PLANS = {
         "features": ["15,000 usages/year", "Sales Performance", "Priority support", "Advanced analytics", "Revenue forecasting", "Churn prediction", "CRO tools"]
     },
     "enterprise_monthly": {
-        "price": 1300.0, "name": "Enterprise", "period": "monthly",
+        "price": 260.0, "name": "Enterprise", "period": "monthly",
         "deal_limit": 20000, "interval": "month",
+        "per_user": True,
         "features": ["20,000 usages/month", "Everything in Pro", "Sales Revenue", "Revenue Intelligence", "Custom integrations", "API access"]
     },
     "enterprise_yearly": {
-        "price": 10920.0, "name": "Enterprise", "period": "yearly",
+        "price": 2184.0, "name": "Enterprise", "period": "yearly",
         "deal_limit": 40000, "interval": "year",
-        "renewal_price": 15600.0, "first_year_discount": True,
+        "renewal_price": 3120.0, "first_year_discount": True,
+        "per_user": True,
         "features": ["40,000 usages/year", "Everything in Pro", "Sales Revenue", "Revenue Intelligence", "Custom integrations", "API access"]
     }
 }
@@ -116,7 +118,7 @@ async def get_or_create_coupon() -> str:
     return coupon.id
 
 
-async def create_subscription_checkout(plan_key: str, plan: dict, user: User, origin_url: str):
+async def create_subscription_checkout(plan_key: str, plan: dict, user: User, origin_url: str, quantity: int = 1):
     """Create a Stripe Checkout Session in subscription mode."""
     price_id = await get_or_create_stripe_price(plan_key, plan)
 
@@ -125,7 +127,7 @@ async def create_subscription_checkout(plan_key: str, plan: dict, user: User, or
 
     session_params = {
         "mode": "subscription",
-        "line_items": [{"price": price_id, "quantity": 1}],
+        "line_items": [{"price": price_id, "quantity": quantity}],
         "success_url": success_url,
         "cancel_url": cancel_url,
         "customer_email": user.email,
@@ -134,12 +136,14 @@ async def create_subscription_checkout(plan_key: str, plan: dict, user: User, or
             "metadata": {
                 "user_id": user.user_id,
                 "plan": plan_key,
+                "quantity": str(quantity),
             }
         },
         "metadata": {
             "user_id": user.user_id,
             "plan": plan_key,
-            "user_email": user.email
+            "user_email": user.email,
+            "quantity": str(quantity)
         }
     }
 
@@ -152,7 +156,7 @@ async def create_subscription_checkout(plan_key: str, plan: dict, user: User, or
     return session
 
 
-async def create_onetime_checkout(plan_key: str, plan: dict, user: User, origin_url: str, request: Request):
+async def create_onetime_checkout(plan_key: str, plan: dict, user: User, origin_url: str, request: Request, amount: float = None):
     """Fallback: one-time checkout via emergentintegrations for test key."""
     from emergentintegrations.payments.stripe.checkout import (
         StripeCheckout, CheckoutSessionRequest
@@ -168,7 +172,7 @@ async def create_onetime_checkout(plan_key: str, plan: dict, user: User, origin_
     cancel_url = f"{origin_url}/settings?cancelled=true"
 
     checkout_request = CheckoutSessionRequest(
-        amount=float(plan["price"]),
+        amount=float(amount if amount is not None else plan["price"]),
         currency="usd",
         success_url=success_url,
         cancel_url=cancel_url,
@@ -194,6 +198,8 @@ async def create_checkout_session(request: Request, user: User = Depends(get_cur
     plan_key = data.get("plan", "pro_monthly")
     origin_url = data.get("origin_url")
     users = int(data.get("users", 1))
+    if users < 1:
+        users = 1
 
     if not origin_url:
         raise HTTPException(status_code=400, detail="origin_url required")
@@ -201,10 +207,10 @@ async def create_checkout_session(request: Request, user: User = Depends(get_cur
         raise HTTPException(status_code=400, detail="Invalid plan")
 
     plan = SUBSCRIPTION_PLANS[plan_key]
-    is_enterprise = plan_key.startswith("enterprise")
-    final_price = plan["price"] * users if is_enterprise else plan["price"]
+    is_per_user = plan.get("per_user", False)
+    quantity = users if is_per_user else 1
+    final_price = plan["price"] * quantity
 
-    plan = SUBSCRIPTION_PLANS[plan_key]
     api_key = os.environ.get("STRIPE_API_KEY")
     if not api_key:
         raise HTTPException(status_code=500, detail="Payment service not configured")
@@ -212,12 +218,12 @@ async def create_checkout_session(request: Request, user: User = Depends(get_cur
     try:
         if is_real_stripe_key(api_key):
             stripe_sdk.api_key = api_key
-            session = await create_subscription_checkout(plan_key, plan, user, origin_url)
+            session = await create_subscription_checkout(plan_key, plan, user, origin_url, quantity=quantity)
             session_id = session.id
             session_url = session.url
             mode = "subscription"
         else:
-            session = await create_onetime_checkout(plan_key, plan, user, origin_url, request)
+            session = await create_onetime_checkout(plan_key, plan, user, origin_url, request, amount=final_price)
             session_id = session.session_id
             session_url = session.url
             mode = "one_time"
@@ -225,11 +231,11 @@ async def create_checkout_session(request: Request, user: User = Depends(get_cur
         txn = PaymentTransaction(
             user_id=user.user_id,
             session_id=session_id,
-            amount=plan["price"],
+            amount=final_price,
             currency="usd",
             plan=plan_key,
             payment_status="pending",
-            metadata={"plan": plan_key, "mode": mode}
+            metadata={"plan": plan_key, "mode": mode, "quantity": str(quantity)}
         )
         txn_dict = txn.model_dump()
         txn_dict["created_at"] = txn_dict["created_at"].isoformat()
