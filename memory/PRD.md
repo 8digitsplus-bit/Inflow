@@ -13,6 +13,18 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
+### Team / Organization Management (Phase 1 — Feb 2026)
+- Every user belongs to an **organization** (solo org by default; shared org for Enterprise teams).
+- Roles: **owner** (full CRUD + billing + member management) and **member** (read access to deals/pipeline/integrations + can run AI; cannot edit or manage billing).
+- Email invite flow via **Resend** (gracefully no-ops if RESEND_API_KEY not set — invite link returned in API response).
+- Invite page at `/accept-invite/:token` — signup flow for new users, accept flow for logged-in matching-email users.
+- Org-shared data: deals, business_connections, integrations, pricing_analyses.
+- Personal per-user data: auth, agent_memory, support, notifications.
+- Startup migration creates solo orgs for existing users and stamps their records with org_id.
+- Enterprise Stripe checkout updates org.subscription_tier + org.seat_count.
+- Endpoints: `/api/org/me`, `/members`, `/seats`, `/invites`, `/invite`, `/invite/{token}`, `/accept-invite/{token}`, `/signup-and-accept/{token}`, `/members/{user_id}` (DELETE), `/invites/{invite_id}/revoke`.
+- **Tests**: `/app/backend/tests/test_org_team.py` (12 tests, all passing) + `/app/backend/tests/test_enterprise_pricing.py` (11 tests, still passing).
+
 ### Core Features
 - Landing page with glassmorphism cards, dark theme
 - Authentication: Email/password + Google OAuth + account chooser

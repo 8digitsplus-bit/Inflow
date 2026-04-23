@@ -37,6 +37,14 @@ const Settings = () => {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [twoFAEnabled, setTwoFAEnabled] = useState(false);
   const [toggling2FA, setToggling2FA] = useState(false);
+  const [org, setOrg] = useState(null);
+
+  useEffect(() => {
+    fetch(`${API_URL}/api/org/me`, { credentials: 'include' })
+      .then(r => r.ok ? r.json() : null)
+      .then(setOrg)
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     fetchPlans();
@@ -267,9 +275,9 @@ const Settings = () => {
                 <h3 className="text-lg font-semibold text-white">{user?.name}</h3>
                 <p className="text-zinc-400">{user?.email}</p>
                 <div className="mt-2">
-                  <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${getTierColor(user?.subscription_tier)}`}>
+                  <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${getTierColor(org?.subscription_tier || user?.subscription_tier)}`}>
                     <Sparkles className="w-3 h-3" />
-                    {getTierDisplayName(user?.subscription_tier)} Plan
+                    {getTierDisplayName(org?.subscription_tier || user?.subscription_tier)} Plan
                   </span>
                 </div>
               </div>
