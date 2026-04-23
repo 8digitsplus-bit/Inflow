@@ -178,7 +178,7 @@ export default function TeamSection() {
             <div className="flex gap-2">
               <Input
                 type="email"
-                placeholder="teammate@company.com"
+                placeholder="Enter teammate's email address"
                 value={inviteEmail}
                 onChange={(e) => setInviteEmail(e.target.value)}
                 required
@@ -189,17 +189,19 @@ export default function TeamSection() {
               <Button
                 type="submit"
                 disabled={inviting || seats?.available <= 0 || !inviteEmail.trim()}
-                className="bg-indigo-600 hover:bg-indigo-500 shrink-0"
+                className="bg-indigo-600 hover:bg-indigo-500 shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
                 data-testid="send-invite-btn"
               >
                 {inviting ? <Loader2 className="w-4 h-4 animate-spin" /> : (
-                  <><UserPlus className="w-4 h-4 mr-1.5" />Invite</>
+                  <><UserPlus className="w-4 h-4 mr-1.5" />Send invite</>
                 )}
               </Button>
             </div>
-            {seats?.available <= 0 && (
+            {seats?.available <= 0 ? (
               <p className="text-xs text-amber-400">All seats are filled. Add more seats from the plan page to invite more teammates.</p>
-            )}
+            ) : !inviteEmail.trim() ? (
+              <p className="text-xs text-zinc-500">Type an email above, then click Send invite.</p>
+            ) : null}
           </form>
         )}
 
