@@ -16,8 +16,8 @@ const PLANS = {
   essential_yearly: { name: 'Essential', price: 2512, period: 'year', color: '#06B6D4', originalPrice: 3588, features: ['Sales Pipeline', 'Core Analytics', 'Churn Monitoring', 'Live Integration', '1,500 usages/mo'] },
   pro_monthly: { name: 'Pro', price: 699, period: 'month', color: '#6366F1', features: ['Everything in Essential', 'Sales Performance', 'AI Insights', 'Pricing Optimization', 'CRO Analysis', '7,500 usages/mo'] },
   pro_yearly: { name: 'Pro', price: 5872, period: 'year', color: '#6366F1', originalPrice: 8388, features: ['Everything in Essential', 'Sales Performance', 'AI Insights', 'Pricing Optimization', 'CRO Analysis', '7,500 usages/mo'] },
-  enterprise_monthly: { name: 'Enterprise', price: 1299, period: 'month', color: '#A855F7', features: ['Everything in Pro', 'Revenue Intelligence', 'Smart Assist AI', 'Custom Integrations', 'API Access', '20,000 usages/mo'] },
-  enterprise_yearly: { name: 'Enterprise', price: 10912, period: 'year', color: '#A855F7', originalPrice: 15588, features: ['Everything in Pro', 'Revenue Intelligence', 'Smart Assist AI', 'Custom Integrations', 'API Access', '20,000 usages/mo'] },
+  enterprise_monthly: { name: 'Enterprise', price: 1300, period: 'month', color: '#A855F7', features: ['Everything in Pro', 'Revenue Intelligence', 'Smart Assist AI', 'Custom Integrations', 'API Access', '20,000 usages/mo'] },
+  enterprise_yearly: { name: 'Enterprise', price: 10920, period: 'year', color: '#A855F7', originalPrice: 15600, features: ['Everything in Pro', 'Revenue Intelligence', 'Smart Assist AI', 'Custom Integrations', 'API Access', '20,000 usages/mo'] },
 };
 
 const Checkout = () => {

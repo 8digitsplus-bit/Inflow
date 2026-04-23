@@ -36,14 +36,14 @@ SUBSCRIPTION_PLANS = {
         "features": ["15,000 usages/year", "Sales Performance", "Priority support", "Advanced analytics", "Revenue forecasting", "Churn prediction", "CRO tools"]
     },
     "enterprise_monthly": {
-        "price": 1299.0, "name": "Enterprise", "period": "monthly",
+        "price": 1300.0, "name": "Enterprise", "period": "monthly",
         "deal_limit": 20000, "interval": "month",
         "features": ["20,000 usages/month", "Everything in Pro", "Sales Revenue", "Revenue Intelligence", "Custom integrations", "API access"]
     },
     "enterprise_yearly": {
-        "price": 10912.0, "name": "Enterprise", "period": "yearly",
+        "price": 10920.0, "name": "Enterprise", "period": "yearly",
         "deal_limit": 40000, "interval": "year",
-        "renewal_price": 15588.0, "first_year_discount": True,
+        "renewal_price": 15600.0, "first_year_discount": True,
         "features": ["40,000 usages/year", "Everything in Pro", "Sales Revenue", "Revenue Intelligence", "Custom integrations", "API access"]
     }
 }

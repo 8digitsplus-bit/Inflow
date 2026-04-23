@@ -49,9 +49,9 @@ const PLANS = [
   {
     key: 'enterprise',
     name: 'Enterprise',
-    monthlyPrice: 1299,
-    yearlyPrice: 10912,
-    yearlyOriginal: 15588,
+    monthlyPrice: 1300,
+    yearlyPrice: 10920,
+    yearlyOriginal: 15600,
     tagline: 'For scaling organizations',
     color: '#A855F7',
     features: [

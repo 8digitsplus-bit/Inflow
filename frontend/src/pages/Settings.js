@@ -212,12 +212,12 @@ const Settings = () => {
     monthly: [
       { key: 'essential_monthly', name: 'Essential', price: 299, deals: '1,500' },
       { key: 'pro_monthly', name: 'Pro', price: 699, deals: '7,500', featured: true },
-      { key: 'enterprise_monthly', name: 'Enterprise', price: 1299, deals: '20,000' }
+      { key: 'enterprise_monthly', name: 'Enterprise', price: 1300, deals: '20,000' }
     ],
     yearly: [
       { key: 'essential_yearly', name: 'Essential', price: 2512, originalPrice: 3588, deals: '3,000', savings: 1076 },
       { key: 'pro_yearly', name: 'Pro', price: 5872, originalPrice: 8388, deals: '15,000', featured: true, savings: 2516 },
-      { key: 'enterprise_yearly', name: 'Enterprise', price: 10912, originalPrice: 15588, deals: '40,000', savings: 4676 }
+      { key: 'enterprise_yearly', name: 'Enterprise', price: 10920, originalPrice: 15600, deals: '40,000', savings: 4680 }
     ]
   };
 
