@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Check, ChevronRight, Loader2 } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { Check, ChevronRight, Loader2, Users } from 'lucide-react';
 import { Button } from '../ui/button';
 import { toast } from 'sonner';
 
@@ -9,31 +10,37 @@ const plans = {
   monthly: [
     { name: 'Essential', price: '299', period: '/month', features: ['Sales Pipeline', 'Core analytics', 'Email support', 'Churn alerts'], cta: 'Unlock Access', featured: false, planId: 'essential_monthly' },
     { name: 'Pro', price: '699', period: '/month', features: ['Sales Performance', 'Priority support', 'Advanced analytics', 'Revenue forecasting', 'Churn prediction', 'CRO tools'], cta: 'Scale Up', featured: true, planId: 'pro_monthly' },
-    { name: 'Enterprise', price: '1,300', period: '/month', features: ['Everything in Pro', 'Sales Revenue', 'Revenue Intelligence', 'Custom integrations', 'API access'], cta: 'Maximise', featured: false, planId: 'enterprise_monthly' }
+    { name: 'Enterprise', price: '260', period: '/user/month', perUser: true, features: ['Everything in Pro', 'Sales Revenue', 'Revenue Intelligence', 'Custom integrations', 'API access'], cta: 'Choose Seats', featured: false, planId: 'enterprise_monthly' }
   ],
   yearly: [
     { name: 'Essential', price: '2,512', originalPrice: '3,588', period: '/year', features: ['Sales Pipeline', 'Core analytics', 'Email support', 'Churn alerts'], cta: 'Unlock Access', featured: false, planId: 'essential_yearly', savings: '30% off 1st year' },
     { name: 'Pro', price: '5,872', originalPrice: '8,388', period: '/year', features: ['Sales Performance', 'Priority support', 'Advanced analytics', 'Revenue forecasting', 'Churn prediction', 'CRO tools'], cta: 'Scale Up', featured: true, planId: 'pro_yearly', savings: '30% off 1st year' },
-    { name: 'Enterprise', price: '10,920', originalPrice: '15,600', period: '/year', features: ['Everything in Pro', 'Sales Revenue', 'Revenue Intelligence', 'Custom integrations', 'API access'], cta: 'Maximise', featured: false, planId: 'enterprise_yearly', savings: '30% off 1st year' }
+    { name: 'Enterprise', price: '2,184', originalPrice: '3,120', period: '/user/year', perUser: true, features: ['Everything in Pro', 'Sales Revenue', 'Revenue Intelligence', 'Custom integrations', 'API access'], cta: 'Choose Seats', featured: false, planId: 'enterprise_yearly', savings: '30% off 1st year' }
   ]
 };
 
 export const PricingSection = ({ handleGetStarted, isAuthenticated }) => {
+  const navigate = useNavigate();
   const [billingPeriod, setBillingPeriod] = useState('monthly');
   const [loadingPlan, setLoadingPlan] = useState(null);
 
-  const handlePlanClick = async (planId) => {
+  const handlePlanClick = async (plan) => {
     if (!isAuthenticated) {
       handleGetStarted();
       return;
     }
-    setLoadingPlan(planId);
+    // Enterprise = route to seat-selector page
+    if (plan.perUser) {
+      navigate(`/choose-plan`);
+      return;
+    }
+    setLoadingPlan(plan.planId);
     try {
       const response = await fetch(`${API_URL}/api/payments/create-checkout`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ plan: planId, origin_url: window.location.origin })
+        body: JSON.stringify({ plan: plan.planId, origin_url: window.location.origin })
       });
       if (response.ok) {
         const data = await response.json();
@@ -82,11 +89,17 @@ export const PricingSection = ({ handleGetStarted, isAuthenticated }) => {
                 </div>
               )}
               <h3 className="text-xl font-semibold text-white" style={{ fontFamily: 'Outfit' }}>{plan.name}</h3>
-              <div className="mt-4 flex items-baseline gap-2">
+              <div className="mt-4 flex items-baseline gap-2 flex-wrap">
                 <span className="text-4xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>${plan.price}</span>
                 {plan.originalPrice && <span className="text-lg text-zinc-500 line-through">${plan.originalPrice}</span>}
                 <span className="text-zinc-400">{plan.period}</span>
               </div>
+              {plan.perUser && (
+                <p className="mt-2 text-xs text-purple-400 flex items-center gap-1.5">
+                  <Users className="w-3.5 h-3.5" />
+                  Choose any number of seats
+                </p>
+              )}
               <ul className="mt-8 space-y-4">
                 {plan.features.map((feature, j) => (
                   <li key={j} className="flex items-center gap-3 text-zinc-300">
@@ -96,7 +109,7 @@ export const PricingSection = ({ handleGetStarted, isAuthenticated }) => {
                 ))}
               </ul>
               <Button className={`w-full mt-8 ${plan.featured ? 'bg-indigo-600 hover:bg-indigo-500 btn-glow' : 'bg-zinc-800 hover:bg-zinc-700 border border-zinc-700'}`}
-                onClick={() => handlePlanClick(plan.planId)} disabled={loadingPlan === plan.planId} data-testid={`pricing-cta-${plan.name.toLowerCase()}`}>
+                onClick={() => handlePlanClick(plan)} disabled={loadingPlan === plan.planId} data-testid={`pricing-cta-${plan.name.toLowerCase()}`}>
                 {loadingPlan === plan.planId ? <Loader2 className="w-4 h-4 animate-spin" /> : <>{plan.cta} <ChevronRight className="w-4 h-4 ml-1" /></>}
               </Button>
             </div>
