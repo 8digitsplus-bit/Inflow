@@ -210,14 +210,14 @@ const Settings = () => {
 
   const planConfig = {
     monthly: [
-      { key: 'essential_monthly', name: 'Essential', price: 59, deals: '1,500' },
-      { key: 'pro_monthly', name: 'Pro', price: 149, deals: '7,500', featured: true },
-      { key: 'enterprise_monthly', name: 'Enterprise', price: 249, deals: '20,000' }
+      { key: 'essential_monthly', name: 'Essential', price: 299, deals: '1,500' },
+      { key: 'pro_monthly', name: 'Pro', price: 699, deals: '7,500', featured: true },
+      { key: 'enterprise_monthly', name: 'Enterprise', price: 1299, deals: '20,000' }
     ],
     yearly: [
-      { key: 'essential_yearly', name: 'Essential', price: 664, originalPrice: 948, deals: '3,000', savings: 284 },
-      { key: 'pro_yearly', name: 'Pro', price: 2092, originalPrice: 2988, deals: '15,000', featured: true, savings: 896 },
-      { key: 'enterprise_yearly', name: 'Enterprise', price: 4200, originalPrice: 6000, deals: '40,000', savings: 1800 }
+      { key: 'essential_yearly', name: 'Essential', price: 2512, originalPrice: 3588, deals: '3,000', savings: 1076 },
+      { key: 'pro_yearly', name: 'Pro', price: 5872, originalPrice: 8388, deals: '15,000', featured: true, savings: 2516 },
+      { key: 'enterprise_yearly', name: 'Enterprise', price: 10912, originalPrice: 15588, deals: '40,000', savings: 4676 }
     ]
   };
 

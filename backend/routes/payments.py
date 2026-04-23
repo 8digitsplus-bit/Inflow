@@ -14,36 +14,36 @@ router = APIRouter()
 
 SUBSCRIPTION_PLANS = {
     "essential_monthly": {
-        "price": 59.0, "name": "Essential", "period": "monthly",
+        "price": 299.0, "name": "Essential", "period": "monthly",
         "deal_limit": 1500, "interval": "month",
         "features": ["1,500 usages/month", "Sales Pipeline", "Core analytics", "Email support", "Churn alerts"]
     },
     "essential_yearly": {
-        "price": 664.0, "name": "Essential", "period": "yearly",
+        "price": 2512.0, "name": "Essential", "period": "yearly",
         "deal_limit": 3000, "interval": "year",
-        "renewal_price": 948.0, "first_year_discount": True,
+        "renewal_price": 3588.0, "first_year_discount": True,
         "features": ["3,000 usages/year", "Sales Pipeline", "Core analytics", "Email support", "Churn alerts"]
     },
     "pro_monthly": {
-        "price": 149.0, "name": "Pro", "period": "monthly",
+        "price": 699.0, "name": "Pro", "period": "monthly",
         "deal_limit": 7500, "interval": "month",
         "features": ["7,500 usages/month", "Sales Performance", "Priority support", "Advanced analytics", "Revenue forecasting", "Churn prediction", "CRO tools"]
     },
     "pro_yearly": {
-        "price": 2092.0, "name": "Pro", "period": "yearly",
+        "price": 5872.0, "name": "Pro", "period": "yearly",
         "deal_limit": 15000, "interval": "year",
-        "renewal_price": 2988.0, "first_year_discount": True,
+        "renewal_price": 8388.0, "first_year_discount": True,
         "features": ["15,000 usages/year", "Sales Performance", "Priority support", "Advanced analytics", "Revenue forecasting", "Churn prediction", "CRO tools"]
     },
     "enterprise_monthly": {
-        "price": 249.0, "name": "Enterprise", "period": "monthly",
+        "price": 1299.0, "name": "Enterprise", "period": "monthly",
         "deal_limit": 20000, "interval": "month",
         "features": ["20,000 usages/month", "Everything in Pro", "Sales Revenue", "Revenue Intelligence", "Custom integrations", "API access"]
     },
     "enterprise_yearly": {
-        "price": 4200.0, "name": "Enterprise", "period": "yearly",
+        "price": 10912.0, "name": "Enterprise", "period": "yearly",
         "deal_limit": 40000, "interval": "year",
-        "renewal_price": 6000.0, "first_year_discount": True,
+        "renewal_price": 15588.0, "first_year_discount": True,
         "features": ["40,000 usages/year", "Everything in Pro", "Sales Revenue", "Revenue Intelligence", "Custom integrations", "API access"]
     }
 }

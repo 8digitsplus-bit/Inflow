@@ -12,9 +12,9 @@ const PLANS = [
   {
     key: 'essential',
     name: 'Essential',
-    monthlyPrice: 59,
-    yearlyPrice: 664,
-    yearlyOriginal: 948,
+    monthlyPrice: 299,
+    yearlyPrice: 2512,
+    yearlyOriginal: 3588,
     tagline: 'For small teams getting started',
     color: '#06B6D4',
     features: [
@@ -29,9 +29,9 @@ const PLANS = [
   {
     key: 'pro',
     name: 'Pro',
-    monthlyPrice: 149,
-    yearlyPrice: 2092,
-    yearlyOriginal: 2988,
+    monthlyPrice: 699,
+    yearlyPrice: 5872,
+    yearlyOriginal: 8388,
     popular: false,
     tagline: 'For growing businesses',
     color: '#6366F1',
@@ -49,9 +49,9 @@ const PLANS = [
   {
     key: 'enterprise',
     name: 'Enterprise',
-    monthlyPrice: 249,
-    yearlyPrice: 4200,
-    yearlyOriginal: 6000,
+    monthlyPrice: 1299,
+    yearlyPrice: 10912,
+    yearlyOriginal: 15588,
     tagline: 'For scaling organizations',
     color: '#A855F7',
     features: [
