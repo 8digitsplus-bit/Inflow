@@ -16,8 +16,8 @@ const PLANS = {
   essential_yearly: { name: 'Essential', price: 2512, period: 'year', color: '#06B6D4', originalPrice: 3588, features: ['Sales Pipeline', 'Core Analytics', 'Churn Monitoring', 'Live Integration', '1,500 usages/mo'] },
   pro_monthly: { name: 'Pro', price: 699, period: 'month', color: '#6366F1', features: ['Everything in Essential', 'Sales Performance', 'AI Insights', 'Pricing Optimization', 'CRO Analysis', '7,500 usages/mo'] },
   pro_yearly: { name: 'Pro', price: 5872, period: 'year', color: '#6366F1', originalPrice: 8388, features: ['Everything in Essential', 'Sales Performance', 'AI Insights', 'Pricing Optimization', 'CRO Analysis', '7,500 usages/mo'] },
-  enterprise_monthly: { name: 'Enterprise', price: 1300, period: 'month', color: '#A855F7', features: ['Everything in Pro', 'Revenue Intelligence', 'Smart Assist AI', 'Custom Integrations', 'API Access', '20,000 usages/mo'] },
-  enterprise_yearly: { name: 'Enterprise', price: 10920, period: 'year', color: '#A855F7', originalPrice: 15600, features: ['Everything in Pro', 'Revenue Intelligence', 'Smart Assist AI', 'Custom Integrations', 'API Access', '20,000 usages/mo'] },
+  enterprise_monthly: { name: 'Enterprise', price: 260, period: 'month', color: '#A855F7', perUser: true, features: ['Everything in Pro', 'Revenue Intelligence', 'Smart Assist AI', 'Custom Integrations', 'API Access', '20,000 usages/mo'] },
+  enterprise_yearly: { name: 'Enterprise', price: 2184, period: 'year', color: '#A855F7', originalPrice: 3120, perUser: true, features: ['Everything in Pro', 'Revenue Intelligence', 'Smart Assist AI', 'Custom Integrations', 'API Access', '20,000 usages/mo'] },
 };
 
 const Checkout = () => {
@@ -26,8 +26,12 @@ const Checkout = () => {
   const { user, refreshUser } = useAuth();
   const planKey = searchParams.get('plan') || 'pro_monthly';
   const plan = PLANS[planKey];
+  const usersParam = parseInt(searchParams.get('users')) || 5;
+  const userCount = plan?.perUser ? usersParam : 1;
+  const totalPrice = plan ? plan.price * userCount : 0;
+  const totalOriginal = plan?.originalPrice ? plan.originalPrice * userCount : null;
 
-  const [step, setStep] = useState('review'); // review | processing | success
+  const [step, setStep] = useState('review');
   const [processing, setProcessing] = useState(false);
   const [email, setEmail] = useState(user?.email || '');
   const [name, setName] = useState(user?.name || '');
@@ -49,7 +53,7 @@ const Checkout = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ plan: planKey, origin_url: window.location.origin }),
+        body: JSON.stringify({ plan: planKey, origin_url: window.location.origin, users: userCount }),
       });
 
       if (!response.ok) {
@@ -140,7 +144,7 @@ const Checkout = () => {
   }
 
   const tax = 0;
-  const total = plan.price;
+  const total = totalPrice;
 
   return (
     <div className="min-h-screen bg-[#050507] relative overflow-hidden">
@@ -277,9 +281,9 @@ const Checkout = () => {
                   <p className="text-zinc-500 text-xs capitalize">{plan.period}ly subscription</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-white font-bold">${plan.price.toLocaleString()}</p>
-                  {plan.originalPrice && (
-                    <p className="text-zinc-600 text-xs line-through">${plan.originalPrice.toLocaleString()}</p>
+                  <p className="text-white font-bold">${totalPrice.toLocaleString()}</p>
+                  {totalOriginal && (
+                    <p className="text-zinc-600 text-xs line-through">${totalOriginal.toLocaleString()}</p>
                   )}
                 </div>
               </div>
@@ -296,14 +300,20 @@ const Checkout = () => {
 
               {/* Totals */}
               <div className="space-y-2 mb-4">
+                {plan.perUser && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-zinc-500">${plan.price.toLocaleString()} × {userCount} users</span>
+                    <span className="text-zinc-300">${totalPrice.toLocaleString()}.00</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-sm">
                   <span className="text-zinc-500">Subtotal</span>
-                  <span className="text-zinc-300">${plan.price.toLocaleString()}.00</span>
+                  <span className="text-zinc-300">${(totalOriginal || totalPrice).toLocaleString()}.00</span>
                 </div>
-                {plan.originalPrice && (
+                {totalOriginal && (
                   <div className="flex justify-between text-sm">
-                    <span className="text-emerald-400">Savings</span>
-                    <span className="text-emerald-400">-${(plan.originalPrice - plan.price).toLocaleString()}.00</span>
+                    <span className="text-emerald-400">First year discount (30%)</span>
+                    <span className="text-emerald-400">-${(totalOriginal - totalPrice).toLocaleString()}.00</span>
                   </div>
                 )}
                 <div className="flex justify-between text-sm">

@@ -6,7 +6,7 @@ import pytest
 import requests
 import os
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://revenue-autopilot-13.preview.emergentagent.com')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://inflow-pricing.preview.emergentagent.com')
 
 class TestAnalyticsRefactor:
     """Test all analytics endpoints for the refactored pages"""

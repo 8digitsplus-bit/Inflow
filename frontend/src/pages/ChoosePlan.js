@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Check, ArrowLeft, Zap, Shield, Clock } from 'lucide-react';
+import { Check, ArrowLeft, Zap, Shield, Clock, Loader2, Minus, Plus, Users } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { toast } from 'sonner';
 import { Toaster } from '../components/ui/sonner';
@@ -49,11 +49,14 @@ const PLANS = [
   {
     key: 'enterprise',
     name: 'Enterprise',
-    monthlyPrice: 1300,
-    yearlyPrice: 10920,
-    yearlyOriginal: 15600,
+    perUserMonthly: 260,
+    perUserYearly: 2184,
+    perUserYearlyOriginal: 3120,
+    defaultUsers: 5,
+    minUsers: 1,
     tagline: 'For scaling organizations',
     color: '#A855F7',
+    perUser: true,
     features: [
       'Everything in Pro',
       'Sales Revenue Analytics',
@@ -72,10 +75,13 @@ const ChoosePlan = () => {
   const { user } = useAuth();
   const [billingPeriod, setBillingPeriod] = useState('monthly');
   const [processingPlan, setProcessingPlan] = useState(null);
+  const [enterpriseUsers, setEnterpriseUsers] = useState(5);
 
   const handleSelectPlan = (plan) => {
     const tierKey = `${plan.key}_${billingPeriod}`;
-    navigate(`/checkout?plan=${tierKey}`);
+    const params = new URLSearchParams({ plan: tierKey });
+    if (plan.perUser) params.set('users', enterpriseUsers);
+    navigate(`/checkout?${params.toString()}`);
   };
 
   const isCurrentPlan = (plan) => {
@@ -148,8 +154,13 @@ const ChoosePlan = () => {
         {/* Plans Grid */}
         <div className="grid md:grid-cols-3 gap-5">
           {PLANS.map((plan) => {
-            const price = billingPeriod === 'monthly' ? plan.monthlyPrice : plan.yearlyPrice;
-            const originalPrice = billingPeriod === 'yearly' ? plan.yearlyOriginal : null;
+            const isPerUser = plan.perUser;
+            const price = isPerUser
+              ? (billingPeriod === 'monthly' ? plan.perUserMonthly * enterpriseUsers : plan.perUserYearly * enterpriseUsers)
+              : (billingPeriod === 'monthly' ? plan.monthlyPrice : plan.yearlyPrice);
+            const originalPrice = billingPeriod === 'yearly'
+              ? (isPerUser ? plan.perUserYearlyOriginal * enterpriseUsers : plan.yearlyOriginal)
+              : null;
             const current = isCurrentPlan(plan);
             const tierKey = `${plan.key}_${billingPeriod}`;
             const isProcessing = processingPlan === tierKey;
@@ -198,10 +209,42 @@ const ChoosePlan = () => {
                     )}
                   </div>
                   <span className="text-zinc-500 text-sm">/{billingPeriod === 'monthly' ? 'month' : 'year'}</span>
-                  {billingPeriod === 'yearly' && (
+                  {isPerUser && (
+                    <p className="text-purple-400 text-xs mt-0.5">${plan.perUserMonthly}/user/month</p>
+                  )}
+                  {billingPeriod === 'yearly' && !isPerUser && (
                     <p className="text-emerald-400 text-xs mt-1">
                       Save ${(plan.yearlyOriginal - plan.yearlyPrice).toLocaleString()} first year
                     </p>
+                  )}
+                  {billingPeriod === 'yearly' && isPerUser && (
+                    <p className="text-emerald-400 text-xs mt-1">
+                      Save ${((plan.perUserYearlyOriginal - plan.perUserYearly) * enterpriseUsers).toLocaleString()} first year
+                    </p>
+                  )}
+
+                  {isPerUser && (
+                    <div className="mt-3 flex items-center gap-3 bg-zinc-900/80 rounded-lg px-3 py-2 border border-white/[0.06]">
+                      <Users className="w-4 h-4 text-purple-400 flex-shrink-0" />
+                      <span className="text-xs text-zinc-400 flex-shrink-0">Users</span>
+                      <div className="flex items-center gap-2 ml-auto">
+                        <button
+                          onClick={() => setEnterpriseUsers(Math.max(1, enterpriseUsers - 1))}
+                          className="w-7 h-7 rounded-md bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center text-zinc-300 transition-colors"
+                          data-testid="enterprise-users-minus"
+                        >
+                          <Minus className="w-3.5 h-3.5" />
+                        </button>
+                        <span className="text-white font-semibold text-sm w-8 text-center" data-testid="enterprise-users-count">{enterpriseUsers}</span>
+                        <button
+                          onClick={() => setEnterpriseUsers(enterpriseUsers + 1)}
+                          className="w-7 h-7 rounded-md bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center text-zinc-300 transition-colors"
+                          data-testid="enterprise-users-plus"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
                   )}
                 </div>
 

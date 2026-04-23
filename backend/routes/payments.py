@@ -193,11 +193,16 @@ async def create_checkout_session(request: Request, user: User = Depends(get_cur
 
     plan_key = data.get("plan", "pro_monthly")
     origin_url = data.get("origin_url")
+    users = int(data.get("users", 1))
 
     if not origin_url:
         raise HTTPException(status_code=400, detail="origin_url required")
     if plan_key not in SUBSCRIPTION_PLANS:
         raise HTTPException(status_code=400, detail="Invalid plan")
+
+    plan = SUBSCRIPTION_PLANS[plan_key]
+    is_enterprise = plan_key.startswith("enterprise")
+    final_price = plan["price"] * users if is_enterprise else plan["price"]
 
     plan = SUBSCRIPTION_PLANS[plan_key]
     api_key = os.environ.get("STRIPE_API_KEY")
