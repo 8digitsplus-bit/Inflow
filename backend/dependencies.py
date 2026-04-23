@@ -1,4 +1,4 @@
-from fastapi import HTTPException, Request
+from fastapi import HTTPException, Request, Depends
 from typing import Optional
 from datetime import datetime, timezone
 from database import db
@@ -50,3 +50,27 @@ async def get_optional_user(request: Request) -> Optional[User]:
         return await get_current_user(request)
     except HTTPException:
         return None
+
+
+async def require_owner(user: User = Depends(get_current_user)) -> User:
+    """Gate an endpoint to org owners only."""
+    if user.role != "owner":
+        raise HTTPException(status_code=403, detail="Only the organization owner can perform this action")
+    return user
+
+
+def org_filter(user: User) -> dict:
+    """MongoDB filter to scope a query to the user's organization.
+
+    Falls back to user_id for pre-migration users (should be rare).
+    """
+    if user.org_id:
+        return {"org_id": user.org_id}
+    return {"user_id": user.user_id}
+
+
+async def get_org_user_ids(org_id: str) -> list:
+    """All user_ids belonging to an organization (used for backward-compat queries)."""
+    members = await db.users.find({"org_id": org_id}, {"_id": 0, "user_id": 1}).to_list(1000)
+    return [m["user_id"] for m in members]
+

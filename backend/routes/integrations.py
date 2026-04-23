@@ -3,7 +3,7 @@ from datetime import datetime, timezone
 
 from database import db
 from models import User
-from dependencies import get_current_user
+from dependencies import get_current_user, require_owner, org_filter
 
 router = APIRouter()
 
@@ -87,7 +87,7 @@ AVAILABLE_INTEGRATIONS = [
 async def get_integrations(current_user: User = Depends(get_current_user)):
     """Get all integrations with user's connection status"""
     user_integrations = await db.integrations.find(
-        {"user_id": current_user.user_id},
+        org_filter(current_user),
         {"_id": 0}
     ).to_list(100)
 
@@ -106,14 +106,14 @@ async def get_integrations(current_user: User = Depends(get_current_user)):
 
 
 @router.post("/integrations/{integration_id}/connect")
-async def connect_integration(integration_id: str, current_user: User = Depends(get_current_user)):
-    """Connect an integration for the user"""
+async def connect_integration(integration_id: str, current_user: User = Depends(require_owner)):
+    """Connect an integration for the org (owner only)."""
     valid_ids = [i["integration_id"] for i in AVAILABLE_INTEGRATIONS]
     if integration_id not in valid_ids:
         raise HTTPException(status_code=404, detail="Integration not found")
 
     existing = await db.integrations.find_one(
-        {"user_id": current_user.user_id, "integration_id": integration_id},
+        {**org_filter(current_user), "integration_id": integration_id},
         {"_id": 0}
     )
     if existing:
@@ -121,6 +121,7 @@ async def connect_integration(integration_id: str, current_user: User = Depends(
 
     doc = {
         "user_id": current_user.user_id,
+        "org_id": current_user.org_id,
         "integration_id": integration_id,
         "connected_at": datetime.now(timezone.utc).isoformat(),
     }
@@ -129,10 +130,10 @@ async def connect_integration(integration_id: str, current_user: User = Depends(
 
 
 @router.post("/integrations/{integration_id}/disconnect")
-async def disconnect_integration(integration_id: str, current_user: User = Depends(get_current_user)):
-    """Disconnect an integration for the user"""
+async def disconnect_integration(integration_id: str, current_user: User = Depends(require_owner)):
+    """Disconnect an integration (owner only)."""
     result = await db.integrations.delete_one(
-        {"user_id": current_user.user_id, "integration_id": integration_id}
+        {**org_filter(current_user), "integration_id": integration_id}
     )
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Integration not found or not connected")

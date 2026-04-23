@@ -8,7 +8,7 @@ import re
 
 from database import db
 from models import User
-from dependencies import get_current_user
+from dependencies import get_current_user, require_owner, org_filter
 from utils.crypto import encrypt, decrypt
 
 router = APIRouter()
@@ -81,7 +81,7 @@ def _parse_value(raw):
         return 0
 
 
-def _build_deal(row, mapping, stage_map, user_id, source, source_name, now):
+def _build_deal(row, mapping, stage_map, user_id, source, source_name, now, org_id=None):
     name = str(row.get(mapping.get("name", ""), "")) if mapping.get("name") else ""
     name = name or "Imported Record"
     company = str(row.get(mapping.get("company", ""), "Unknown")) if mapping.get("company") else "Unknown"
@@ -106,6 +106,7 @@ def _build_deal(row, mapping, stage_map, user_id, source, source_name, now):
     return {
         "deal_id": f"deal_{uuid.uuid4().hex[:12]}",
         "user_id": user_id,
+        "org_id": org_id,
         "name": name[:200],
         "company": company[:200],
         "value": round(value, 2),
@@ -171,7 +172,7 @@ class CustomApiConnectRequest(BaseModel):
 # --- Endpoints ---
 
 @router.post("/business/import-csv")
-async def import_csv(body: CsvImportRequest, current_user: User = Depends(get_current_user)):
+async def import_csv(body: CsvImportRequest, current_user: User = Depends(require_owner)):
     if not body.data:
         raise HTTPException(status_code=400, detail="No data provided")
     if len(body.data) > 5000:
@@ -184,7 +185,7 @@ async def import_csv(body: CsvImportRequest, current_user: User = Depends(get_cu
 
     for row in body.data:
         try:
-            deal = _build_deal(row, body.mapping, stage_map, current_user.user_id, "csv_import", body.source_name, now)
+            deal = _build_deal(row, body.mapping, stage_map, current_user.user_id, "csv_import", body.source_name, now, org_id=current_user.org_id)
             if deal["value"] > 0 or deal["name"] != "Imported Record":
                 deals.append(deal)
             else:
@@ -283,7 +284,7 @@ async def test_custom_api(body: CustomApiTestRequest, current_user: User = Depen
         return {"success": False, "error": str(e), "fields": []}
 
 
-async def _fetch_custom_api_data(config, user_id):
+async def _fetch_custom_api_data(config, user_id, org_id=None):
     headers = dict(config.get("headers") or {})
     params = {}
     api_key = config.get("api_key_encrypted") or config.get("api_key")
@@ -324,12 +325,12 @@ async def _fetch_custom_api_data(config, user_id):
     for item in items[:5000]:
         if not isinstance(item, dict):
             continue
-        deals.append(_build_deal(item, mapping, stage_map, user_id, "custom_api", source_name, now))
+        deals.append(_build_deal(item, mapping, stage_map, user_id, "custom_api", source_name, now, org_id=org_id))
     return deals, items
 
 
 @router.post("/business/custom-api/connect")
-async def connect_custom_api(body: CustomApiConnectRequest, current_user: User = Depends(get_current_user)):
+async def connect_custom_api(body: CustomApiConnectRequest, current_user: User = Depends(require_owner)):
     _require_enterprise(current_user)
     config = {
         "name": body.name,
@@ -346,7 +347,7 @@ async def connect_custom_api(body: CustomApiConnectRequest, current_user: User =
     }
 
     try:
-        deals, raw_items = await _fetch_custom_api_data(config, current_user.user_id)
+        deals, raw_items = await _fetch_custom_api_data(config, current_user.user_id, org_id=current_user.org_id)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Failed to fetch data: {str(e)}")
 
@@ -389,7 +390,7 @@ async def connect_custom_api(body: CustomApiConnectRequest, current_user: User =
 @router.get("/business/custom-sources")
 async def get_custom_sources(current_user: User = Depends(get_current_user)):
     connections = await db.business_connections.find(
-        {"user_id": current_user.user_id, "platform": {"$in": ["csv_import", "custom_api"]}},
+        {**org_filter(current_user), "platform": {"$in": ["csv_import", "custom_api"]}},
         {"_id": 0}
     ).to_list(50)
 
@@ -409,9 +410,9 @@ async def get_custom_sources(current_user: User = Depends(get_current_user)):
 
 
 @router.post("/business/custom-sources/{connection_id}/sync")
-async def sync_custom_source(connection_id: str, current_user: User = Depends(get_current_user)):
+async def sync_custom_source(connection_id: str, current_user: User = Depends(require_owner)):
     connection = await db.business_connections.find_one(
-        {"user_id": current_user.user_id, "connection_id": connection_id, "platform": "custom_api"},
+        {**org_filter(current_user), "connection_id": connection_id, "platform": "custom_api"},
         {"_id": 0}
     )
     if not connection:
@@ -428,7 +429,7 @@ async def sync_custom_source(connection_id: str, current_user: User = Depends(ge
     })
 
     try:
-        deals, _ = await _fetch_custom_api_data(config, current_user.user_id)
+        deals, _ = await _fetch_custom_api_data(config, current_user.user_id, org_id=current_user.org_id)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Sync failed: {str(e)}")
 
@@ -437,16 +438,16 @@ async def sync_custom_source(connection_id: str, current_user: User = Depends(ge
         await db.deals.insert_many(deals)
 
     await db.business_connections.update_one(
-        {"user_id": current_user.user_id, "connection_id": connection_id},
+        {**org_filter(current_user), "connection_id": connection_id},
         {"$set": {"last_synced": now.isoformat(), "records_synced": len(deals), "sync_status": "synced"}}
     )
     return {"status": "synced", "records_synced": len(deals), "message": f"Synced {len(deals)} records."}
 
 
 @router.post("/business/custom-sources/{connection_id}/disconnect")
-async def disconnect_custom_source(connection_id: str, current_user: User = Depends(get_current_user)):
+async def disconnect_custom_source(connection_id: str, current_user: User = Depends(require_owner)):
     connection = await db.business_connections.find_one(
-        {"user_id": current_user.user_id, "connection_id": connection_id},
+        {**org_filter(current_user), "connection_id": connection_id},
         {"_id": 0}
     )
     if not connection:
@@ -456,7 +457,7 @@ async def disconnect_custom_source(connection_id: str, current_user: User = Depe
     platform = connection["platform"]
 
     await db.business_connections.delete_one(
-        {"user_id": current_user.user_id, "connection_id": connection_id}
+        {**org_filter(current_user), "connection_id": connection_id}
     )
     delete_result = await db.deals.delete_many({
         "user_id": current_user.user_id,
@@ -465,10 +466,10 @@ async def disconnect_custom_source(connection_id: str, current_user: User = Depe
         "synced": True,
     })
 
-    remaining = await db.business_connections.count_documents({"user_id": current_user.user_id})
+    remaining = await db.business_connections.count_documents(org_filter(current_user))
     if remaining == 0:
         await db.users.update_one(
-            {"user_id": current_user.user_id},
+        {"user_id": current_user.user_id},
             {"$set": {"has_business_connected": False}}
         )
 
@@ -479,7 +480,7 @@ async def disconnect_custom_source(connection_id: str, current_user: User = Depe
 async def get_detected_platforms(current_user: User = Depends(get_current_user)):
     # Aggregate stored detections from all connections
     connections = await db.business_connections.find(
-        {"user_id": current_user.user_id},
+        org_filter(current_user),
         {"_id": 0, "platform": 1, "detected_platforms": 1}
     ).to_list(50)
 

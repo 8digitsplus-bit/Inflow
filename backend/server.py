@@ -16,6 +16,8 @@ from routes.business import router as business_router
 from routes.support import router as support_router
 from routes.agent import router as agent_router
 from routes.custom_integration import router as custom_integration_router
+from routes.organizations import router as organizations_router
+from migrations.orgs import migrate_users_to_orgs
 
 # Configure logging
 logging.basicConfig(
@@ -41,6 +43,7 @@ api_router.include_router(business_router)
 api_router.include_router(support_router)
 api_router.include_router(agent_router)
 api_router.include_router(custom_integration_router)
+api_router.include_router(organizations_router)
 
 
 # Basic routes
@@ -70,6 +73,14 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.on_event("startup")
+async def startup_migrations():
+    try:
+        await migrate_users_to_orgs()
+    except Exception as e:
+        logging.error("Org migration failed: %s", e)
 
 
 @app.on_event("shutdown")

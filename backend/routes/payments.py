@@ -309,6 +309,21 @@ async def get_payment_status(session_id: str, request: Request, user: User = Dep
                 {"user_id": user.user_id}, {"$set": user_update}
             )
 
+            # Sync the organization's subscription + seat count
+            if user.org_id:
+                quantity = int(transaction.get("metadata", {}).get("quantity", 1))
+                org_update = {
+                    "subscription_tier": plan,
+                    "subscription_status": "active",
+                    "seat_count": quantity,
+                    "updated_at": datetime.now(timezone.utc).isoformat(),
+                }
+                if subscription_id:
+                    org_update["stripe_subscription_id"] = subscription_id
+                await db.organizations.update_one(
+                    {"org_id": user.org_id}, {"$set": org_update}
+                )
+
         return {
             "status": status,
             "payment_status": payment_status,
@@ -364,6 +379,23 @@ async def stripe_webhook(request: Request):
                     await db.users.update_one(
                         {"user_id": metadata["user_id"]}, {"$set": user_update}
                     )
+
+                    # Also sync the user's organization
+                    u_doc = await db.users.find_one(
+                        {"user_id": metadata["user_id"]}, {"_id": 0, "org_id": 1}
+                    )
+                    if u_doc and u_doc.get("org_id"):
+                        quantity = int(metadata.get("quantity", 1))
+                        org_update = {
+                            "subscription_tier": metadata.get("plan", "pro_monthly"),
+                            "subscription_status": "active",
+                            "seat_count": quantity,
+                        }
+                        if subscription_id:
+                            org_update["stripe_subscription_id"] = subscription_id
+                        await db.organizations.update_one(
+                            {"org_id": u_doc["org_id"]}, {"$set": org_update}
+                        )
 
             elif event_type == "customer.subscription.deleted":
                 sub_id = data_obj.get("id")

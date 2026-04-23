@@ -19,6 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../components/ui/alert-dialog';
+import TeamSection from '../components/TeamSection';
 import { toast } from 'sonner';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
@@ -342,6 +343,9 @@ const Settings = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Team section */}
+        <TeamSection />
 
         {/* Security — Two-Factor Authentication */}
         <Card className="bg-zinc-950/50 border-white/10" data-testid="security-2fa-card">

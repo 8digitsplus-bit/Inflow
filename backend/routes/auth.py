@@ -48,6 +48,17 @@ async def create_session(request: Request, response: Response):
             }}
         )
     else:
+        org_id = f"org_{uuid.uuid4().hex[:12]}"
+        now_iso = datetime.now(timezone.utc).isoformat()
+        await db.organizations.insert_one({
+            "org_id": org_id,
+            "name": f"{auth_data['name']}'s Team",
+            "owner_user_id": user_id,
+            "subscription_tier": "trial",
+            "subscription_status": "active",
+            "seat_count": 1,
+            "created_at": now_iso,
+        })
         await db.users.insert_one({
             "user_id": user_id,
             "email": auth_data["email"],
@@ -55,9 +66,11 @@ async def create_session(request: Request, response: Response):
             "picture": auth_data.get("picture"),
             "subscription_tier": "trial",
             "subscription_status": "active",
+            "org_id": org_id,
+            "role": "owner",
             "trial_start": datetime.now(timezone.utc).isoformat(),
             "trial_end": (datetime.now(timezone.utc) + timedelta(days=14)).isoformat(),
-            "created_at": datetime.now(timezone.utc).isoformat()
+            "created_at": now_iso
         })
 
     session_token = auth_data.get("session_token", f"session_{uuid.uuid4().hex}")
@@ -151,6 +164,18 @@ async def register_with_email(req: RegisterRequest, response: Response):
 
     hashed = bcrypt.hashpw(req.password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
     user_id = f"user_{uuid.uuid4().hex[:12]}"
+    org_id = f"org_{uuid.uuid4().hex[:12]}"
+    now_iso = datetime.now(timezone.utc).isoformat()
+
+    await db.organizations.insert_one({
+        "org_id": org_id,
+        "name": f"{req.name}'s Team",
+        "owner_user_id": user_id,
+        "subscription_tier": "trial",
+        "subscription_status": "active",
+        "seat_count": 1,
+        "created_at": now_iso,
+    })
 
     await db.users.insert_one({
         "user_id": user_id,
@@ -161,9 +186,11 @@ async def register_with_email(req: RegisterRequest, response: Response):
         "auth_provider": "email",
         "subscription_tier": "trial",
         "subscription_status": "active",
+        "org_id": org_id,
+        "role": "owner",
         "trial_start": datetime.now(timezone.utc).isoformat(),
         "trial_end": (datetime.now(timezone.utc) + timedelta(days=14)).isoformat(),
-        "created_at": datetime.now(timezone.utc).isoformat()
+        "created_at": now_iso
     })
 
     session_token = f"session_{uuid.uuid4().hex}"

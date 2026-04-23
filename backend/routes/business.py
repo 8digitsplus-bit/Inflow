@@ -6,7 +6,7 @@ import uuid
 
 from database import db
 from models import User
-from dependencies import get_current_user
+from dependencies import get_current_user, require_owner, org_filter
 from utils.crypto import encrypt, decrypt
 from routes.stripe_integration import validate_stripe_key, fetch_stripe_data
 from routes.shopify_integration import validate_shopify_key, fetch_shopify_data
@@ -231,7 +231,7 @@ CONNECT_HANDLERS = {
 @router.get("/business/platforms")
 async def get_platforms(current_user: User = Depends(get_current_user)):
     connections = await db.business_connections.find(
-        {"user_id": current_user.user_id}, {"_id": 0}
+        org_filter(current_user), {"_id": 0}
     ).to_list(20)
     connected_map = {c["platform"]: c for c in connections}
 
@@ -256,12 +256,12 @@ async def get_platforms(current_user: User = Depends(get_current_user)):
 
 
 @router.post("/business/connect/{platform}")
-async def connect_platform(platform: str, body: ConnectRequest = ConnectRequest(), current_user: User = Depends(get_current_user)):
+async def connect_platform(platform: str, body: ConnectRequest = ConnectRequest(), current_user: User = Depends(require_owner)):
     if platform not in PLATFORMS:
         raise HTTPException(status_code=404, detail="Platform not found")
 
     existing = await db.business_connections.find_one(
-        {"user_id": current_user.user_id, "platform": platform}, {"_id": 0}
+        {**org_filter(current_user), "platform": platform}, {"_id": 0}
     )
     if existing:
         raise HTTPException(status_code=400, detail="Platform already connected")
@@ -272,8 +272,11 @@ async def connect_platform(platform: str, body: ConnectRequest = ConnectRequest(
         raise HTTPException(status_code=400, detail="Integration not available")
 
     data, connection, account_name = await handler(body, current_user.user_id, now)
+    connection["org_id"] = current_user.org_id
 
     if data["deals"]:
+        for d in data["deals"]:
+            d["org_id"] = current_user.org_id
         await db.deals.insert_many(data["deals"])
 
     await db.business_connections.insert_one(connection)
@@ -301,21 +304,21 @@ async def connect_platform(platform: str, body: ConnectRequest = ConnectRequest(
 
 
 @router.post("/business/disconnect/{platform}")
-async def disconnect_platform(platform: str, current_user: User = Depends(get_current_user)):
+async def disconnect_platform(platform: str, current_user: User = Depends(require_owner)):
     if platform not in PLATFORMS:
         raise HTTPException(status_code=404, detail="Platform not found")
 
     result = await db.business_connections.delete_one(
-        {"user_id": current_user.user_id, "platform": platform}
+        {**org_filter(current_user), "platform": platform}
     )
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Platform not connected")
 
     delete_result = await db.deals.delete_many(
-        {"user_id": current_user.user_id, "source": platform, "synced": True}
+        {**org_filter(current_user), "source": platform, "synced": True}
     )
 
-    remaining = await db.business_connections.count_documents({"user_id": current_user.user_id})
+    remaining = await db.business_connections.count_documents(org_filter(current_user))
     if remaining == 0:
         await db.users.update_one(
             {"user_id": current_user.user_id},
@@ -326,12 +329,12 @@ async def disconnect_platform(platform: str, current_user: User = Depends(get_cu
 
 
 @router.post("/business/sync/{platform}")
-async def sync_platform(platform: str, current_user: User = Depends(get_current_user)):
+async def sync_platform(platform: str, current_user: User = Depends(require_owner)):
     if platform not in PLATFORMS:
         raise HTTPException(status_code=404, detail="Platform not found")
 
     connection = await db.business_connections.find_one(
-        {"user_id": current_user.user_id, "platform": platform}, {"_id": 0}
+        {**org_filter(current_user), "platform": platform}, {"_id": 0}
     )
     if not connection:
         raise HTTPException(status_code=404, detail="Platform not connected")
@@ -341,8 +344,8 @@ async def sync_platform(platform: str, current_user: User = Depends(get_current_
         raise HTTPException(status_code=400, detail="No API key found. Please reconnect.")
     api_key = decrypt(api_key)
 
-    # Remove old synced deals
-    await db.deals.delete_many({"user_id": current_user.user_id, "source": platform, "synced": True})
+    # Remove old synced deals for this org+platform
+    await db.deals.delete_many({**org_filter(current_user), "source": platform, "synced": True})
     now = datetime.now(timezone.utc).isoformat()
 
     try:
@@ -362,10 +365,12 @@ async def sync_platform(platform: str, current_user: User = Depends(get_current_
         raise HTTPException(status_code=400, detail=f"Sync failed: {str(e)}")
 
     if data["deals"]:
+        for d in data["deals"]:
+            d["org_id"] = current_user.org_id
         await db.deals.insert_many(data["deals"])
 
     await db.business_connections.update_one(
-        {"user_id": current_user.user_id, "platform": platform},
+        {**org_filter(current_user), "platform": platform},
         {"$set": {
             "last_synced": now,
             "records_synced": data["total_records"],
@@ -384,15 +389,15 @@ async def sync_platform(platform: str, current_user: User = Depends(get_current_
 @router.get("/business/summary")
 async def get_business_summary(current_user: User = Depends(get_current_user)):
     connections = await db.business_connections.find(
-        {"user_id": current_user.user_id}, {"_id": 0}
+        org_filter(current_user), {"_id": 0}
     ).to_list(20)
 
     total_records = sum(c.get("records_synced", 0) for c in connections)
 
     synced_deals = await db.deals.find(
-        {"user_id": current_user.user_id, "synced": True},
+        {**org_filter(current_user), "synced": True},
         {"_id": 0, "source": 1, "value": 1, "stage": 1}
-    ).to_list(1000)
+    ).to_list(2000)
 
     by_platform = {}
     for d in synced_deals:

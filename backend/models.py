@@ -12,6 +12,32 @@ class User(BaseModel):
     picture: Optional[str] = None
     subscription_tier: str = "free"
     subscription_status: str = "active"
+    org_id: Optional[str] = None
+    role: Optional[str] = None  # "owner" | "member"
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class Organization(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    org_id: str = Field(default_factory=lambda: f"org_{uuid.uuid4().hex[:12]}")
+    name: str
+    owner_user_id: str
+    subscription_tier: str = "trial"
+    subscription_status: str = "active"
+    seat_count: int = 1
+    stripe_subscription_id: Optional[str] = None
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+
+
+class OrgInvite(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+    invite_id: str = Field(default_factory=lambda: f"inv_{uuid.uuid4().hex[:12]}")
+    token: str = Field(default_factory=lambda: uuid.uuid4().hex + uuid.uuid4().hex)
+    org_id: str
+    email: str
+    invited_by: str  # user_id of inviter
+    status: str = "pending"  # "pending" | "accepted" | "revoked" | "expired"
+    expires_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc).replace(microsecond=0))
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
