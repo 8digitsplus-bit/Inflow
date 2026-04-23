@@ -37,12 +37,12 @@ async def call_llm_with_timeout(chat, message, timeout=AI_TIMEOUT):
             raise
 
 
-@router.post("/ai/pricing-analysis")
-async def analyze_pricing(
+@router.post("/ai/pricing-analysis-product")
+async def analyze_pricing_product(
     analysis_request: PricingAnalysisRequest,
     user: User = Depends(get_current_user)
 ):
-    """Get AI-powered pricing analysis"""
+    """Get AI-powered pricing analysis for a single product"""
     if user.subscription_tier == "free":
         raise HTTPException(
             status_code=403,
@@ -170,6 +170,59 @@ Provide a comprehensive analysis covering:
         raise
     except Exception as e:
         logger.error(f"AI analysis error: {str(e)}")
+        raise HTTPException(status_code=500, detail="AI analysis failed. Please try again.")
+
+
+@router.post("/ai/pricing-analysis")
+async def analyze_pricing_summary(request: Request, user: User = Depends(get_current_user)):
+    """AI pricing analysis from dashboard summary data."""
+    if user.subscription_tier == "free":
+        raise HTTPException(status_code=403, detail="Upgrade to Pro or Enterprise for AI pricing analysis")
+
+    try:
+        from emergentintegrations.llm.chat import LlmChat, UserMessage
+
+        api_key = os.environ.get("EMERGENT_LLM_KEY")
+        if not api_key:
+            raise HTTPException(status_code=500, detail="AI service not configured")
+
+        data = await request.json()
+        product_data = data.get("product_data", {})
+
+        summary_parts = [
+            f"Total products analyzed: {product_data.get('total_products', 0)}",
+            f"Average price: ${product_data.get('avg_price', 0):.2f}",
+            f"Price gap vs optimal: ${product_data.get('price_gap', 0):.2f}",
+            f"Potential revenue uplift: ${product_data.get('revenue_uplift', 0):.2f}",
+        ]
+
+        products = product_data.get("products", [])
+        if products:
+            summary_parts.append("\nProduct breakdown:")
+            for p in products:
+                summary_parts.append(f"  {p.get('name','?')}: current ${p.get('current',0)}, optimal ${p.get('optimal',0)}, segment: {p.get('segment','N/A')}")
+
+        chat = LlmChat(
+            api_key=api_key,
+            session_id=f"pricing_{user.user_id}_{uuid.uuid4().hex[:8]}",
+            system_message="""You are an expert pricing strategist for B2B SaaS.
+            Do NOT use emojis, hashtags, or markdown formatting symbols like # ## ** or *. Write in plain, professional English.
+            Keep your ENTIRE response under 150 words. Be direct and scannable."""
+        ).with_model("anthropic", "claude-sonnet-4-5-20250929")
+
+        prompt = f"""Give a brief pricing strategy summary for this portfolio:
+
+{chr(10).join(summary_parts)}
+
+Respond with: one sentence assessment, 3 specific recommendations (one line each), and the single highest-impact pricing change to make."""
+
+        ai_response = await call_llm_with_timeout(chat, prompt)
+        return {"analysis": ai_response}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"AI pricing analysis error: {str(e)}")
         raise HTTPException(status_code=500, detail="AI analysis failed. Please try again.")
 
 

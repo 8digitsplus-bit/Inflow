@@ -19,10 +19,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button';
 import {
   DollarSign, TrendingUp, Percent, Target, BarChart3, Loader2,
-  ArrowUpRight, ArrowDownRight, RefreshCw, Zap, Link2
+  ArrowUpRight, ArrowDownRight, Zap, Link2, Sparkles, RefreshCw
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
+import { AIResponseRenderer } from '../components/AIResponseRenderer';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -31,6 +32,8 @@ const PricingOptimizer = () => {
   const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [dashData, setDashData] = useState(null);
+  const [aiAnalysis, setAiAnalysis] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
 
   useEffect(() => { fetchDashboard(); }, []);
 
@@ -63,6 +66,38 @@ const PricingOptimizer = () => {
   };
 
   const fmt = (v) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(v);
+
+  const fetchAIAnalysis = async () => {
+    setAiLoading(true);
+    try {
+      const res = await fetch(`${API_URL}/api/ai/pricing-analysis`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          product_data: {
+            total_products: dashData?.total_analyses || 0,
+            avg_price: dashData?.avg_current_price || 0,
+            price_gap: dashData?.price_gap || 0,
+            revenue_uplift: dashData?.potential_revenue_uplift || 0,
+            products: (dashData?.recent_analyses || []).slice(0, 5).map(p => ({
+              name: p.product_name,
+              current: p.current_price,
+              optimal: p.optimal_price,
+              segment: p.market_segment
+            }))
+          }
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setAiAnalysis(data.analysis || data.recommendations);
+      } else {
+        toast.error('AI analysis failed. Try again.');
+      }
+    } catch { toast.error('AI analysis request failed.'); }
+    finally { setAiLoading(false); }
+  };
 
   if (loading && !dashData) {
     return (
@@ -264,6 +299,37 @@ const PricingOptimizer = () => {
                   </div>
                 ) : (
                   <div className="text-center py-12 text-zinc-500"><TrendingUp className="w-10 h-10 mx-auto mb-3 opacity-50" /><p className="text-sm">Sync integrations to see elasticity data</p></div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* AI Pricing Analysis */}
+            <Card className="bg-zinc-950/50 border-white/10" data-testid="ai-pricing-analysis-card">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
+                    <Sparkles className="w-5 h-5 text-indigo-400" /> AI Pricing Analysis
+                  </CardTitle>
+                  <Button
+                    onClick={fetchAIAnalysis}
+                    disabled={aiLoading || !dashData?.total_analyses}
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs gap-2"
+                    data-testid="get-ai-pricing-btn"
+                  >
+                    {aiLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+                    {aiLoading ? 'Analyzing...' : 'Get Analysis'}
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {aiAnalysis ? (
+                  <div className="max-h-[300px] overflow-y-auto">
+                    <AIResponseRenderer text={aiAnalysis} />
+                  </div>
+                ) : (
+                  <p className="text-zinc-500 text-sm text-center py-6">
+                    {dashData?.total_analyses ? 'Click "Get Analysis" for AI-powered pricing recommendations' : 'Sync your integrations first to enable AI analysis'}
+                  </p>
                 )}
               </CardContent>
             </Card>
