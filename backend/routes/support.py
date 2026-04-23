@@ -53,10 +53,10 @@ INFLOW FEATURES (only reference these):
 - Smart Assist: AI chat (this) + ticket system
 
 PRICING (exact values, do not modify):
-- Essential: $59/month or $496/year — Sales Pipeline, Core analytics, Email support, 1,500 usages/month
-- Pro: $149/month or $1,252/year — Everything in Essential + Sales Performance, Priority support, Advanced analytics, Revenue forecasting, Churn prediction, CRO tools, 7,500 usages/month
-- Enterprise: $249/month or $2,092/year — Everything in Pro + Sales Revenue, Revenue Intelligence, Custom integrations, API access, 20,000 usages/month
-- 14-Day Free Trial: Full access, no credit card required
+- Essential: $299/month or $2,512/year (30% off 1st year, renews $3,588/yr) — Sales Pipeline, Core analytics, Email support, Churn alerts
+- Pro: $699/month or $5,872/year (30% off 1st year, renews $8,388/yr) — Everything in Essential + Sales Performance, Priority support, Advanced analytics, Revenue forecasting, Churn prediction, CRO tools
+- Enterprise: $260/user/month or $2,184/user/year (30% off 1st year, renews $3,120/user/yr). Per-user billing — customer picks any number of seats on the /choose-plan page. Includes Everything in Pro + Sales Revenue, Revenue Intelligence, Custom integrations, API access
+- 14-Day Free Trial: Full access, no credit card required, unlimited usage on all plans
 
 ACTIONS YOU CAN PERFORM:
 When the user wants to perform one of these actions, include an ACTION block at the END of your response in this exact format:

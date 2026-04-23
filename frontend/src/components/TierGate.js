@@ -28,7 +28,6 @@ const TIERS = [
       'Sales Pipeline Management',
       'Basic Analytics Dashboard',
       'Churn Monitoring',
-      '1,500 monthly actions',
     ],
   },
   {
@@ -44,7 +43,6 @@ const TIERS = [
       'AI-Powered Insights',
       'Pricing Optimization',
       'CRO Analysis',
-      '7,500 monthly actions',
     ],
   },
   {
@@ -59,7 +57,6 @@ const TIERS = [
       'Revenue Intelligence',
       'Smart Assist',
       'Custom Integrations',
-      '20,000 monthly actions',
     ],
   },
 ];

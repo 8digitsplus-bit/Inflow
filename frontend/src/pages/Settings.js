@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import DashboardLayout from '../components/DashboardLayout';
 import { 
@@ -26,6 +26,7 @@ const API_URL = process.env.REACT_APP_BACKEND_URL;
 const Settings = () => {
   const { user, logout, refreshUser } = useAuth();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [plans, setPlans] = useState({});
   const [processingPayment, setProcessingPayment] = useState(false);
   const [checkingStatus, setCheckingStatus] = useState(false);
@@ -133,6 +134,11 @@ const Settings = () => {
 
   const handleUpgrade = async (planId) => {
     if (planId === user?.subscription_tier) return;
+    // Per-user (Enterprise) tiers need the seat selector on /choose-plan
+    if (planId.startsWith('enterprise_')) {
+      navigate('/choose-plan');
+      return;
+    }
     
     setProcessingPayment(true);
     try {
@@ -210,14 +216,14 @@ const Settings = () => {
 
   const planConfig = {
     monthly: [
-      { key: 'essential_monthly', name: 'Essential', price: 299, deals: '1,500' },
-      { key: 'pro_monthly', name: 'Pro', price: 699, deals: '7,500', featured: true },
-      { key: 'enterprise_monthly', name: 'Enterprise', price: 1300, deals: '20,000' }
+      { key: 'essential_monthly', name: 'Essential', price: 299 },
+      { key: 'pro_monthly', name: 'Pro', price: 699, featured: true },
+      { key: 'enterprise_monthly', name: 'Enterprise', price: 260, perUser: true }
     ],
     yearly: [
-      { key: 'essential_yearly', name: 'Essential', price: 2512, originalPrice: 3588, deals: '3,000', savings: 1076 },
-      { key: 'pro_yearly', name: 'Pro', price: 5872, originalPrice: 8388, deals: '15,000', featured: true, savings: 2516 },
-      { key: 'enterprise_yearly', name: 'Enterprise', price: 10920, originalPrice: 15600, deals: '40,000', savings: 4680 }
+      { key: 'essential_yearly', name: 'Essential', price: 2512, originalPrice: 3588, savings: 1076 },
+      { key: 'pro_yearly', name: 'Pro', price: 5872, originalPrice: 8388, featured: true, savings: 2516 },
+      { key: 'enterprise_yearly', name: 'Enterprise', price: 2184, originalPrice: 3120, perUser: true, savings: 936 }
     ]
   };
 
@@ -451,15 +457,13 @@ const Settings = () => {
                         </span>
                       )}
                       <span className="text-zinc-400 text-sm">
-                        /{billingPeriod === 'monthly' ? 'mo' : 'yr'}
+                        {plan.perUser ? '/user' : `/${billingPeriod === 'monthly' ? 'mo' : 'yr'}`}
                       </span>
                     </div>
 
                     {plan.savings && (
                       <p className="text-emerald-400 text-xs mt-1">30% off 1st year (save ${plan.savings})</p>
                     )}
-                    
-                    <p className="text-indigo-400 text-sm mt-2">{plan.deals} usages</p>
                     
                     <ul className="mt-4 space-y-2">
                       {planData?.features?.slice(0, 4).map((feature, i) => (
