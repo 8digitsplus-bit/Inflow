@@ -16,7 +16,9 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 ### Core Features
 - Landing page with glassmorphism cards, dark theme
 - Authentication: Email/password + Google OAuth + account chooser
-- Subscription tiers: Essential ($79/mo), Pro ($249/mo), Enterprise ($500/mo) with Monthly/Yearly toggle
+- Subscription tiers: Essential ($299/mo), Pro ($699/mo), Enterprise ($260/user/month, min 1 user) with Monthly/Yearly toggle (yearly = 30% off first year)
+- Stripe native SDK for recurring subscriptions with 14-day trial (falls back to one-time checkout for sk_test_emergent sandbox key)
+- Enterprise per-user checkout: dynamic stepper (Minus/Plus) → ?users=N → backend multiplies plan.price × quantity (verified 11/11 pytest tests — Feb 2026)
 - Privacy Policy page (/privacy)
 - Favicon setup (32x32, 180x180, 192x192)
 
