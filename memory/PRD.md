@@ -13,6 +13,16 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
+### 5 New Live Integrations (Feb 2026)
+- **PayPal** (Payments) — client_credentials OAuth2 → Orders/Transactions API → synced as deals
+- **Square** (Payments) — Personal Access Token → /v2/payments → completed payments as deals
+- **Mixpanel** (Analytics) — API Secret basic auth → events + conversion events (Purchase/Order Completed/Subscription Started) summarised as deals
+- **Zoho CRM** (CRM) — refresh_token OAuth2 flow (supports all data centers: com/eu/in/com.au/jp) → /crm/v6/Deals
+- **Xero** (Finance) — refresh_token OAuth2 flow → /api.xro/2.0/Invoices (ACCREC only) → invoices as deals
+- Total of 10 live integrations. Frontend generic modal renders dynamic fields (text/password/checkbox) based on backend `key_fields` — no platform-specific UI code needed.
+- Owner-only writes (members blocked from connecting/disconnecting/syncing).
+- Tests: `/app/backend/tests/test_new_integrations.py` (7 tests). **Full suite: 50/50 passing.**
+
 ### Stripe Seat-Sync on Member Changes (Feb 2026)
 - New helper `sync_stripe_seat_count(org_id)` in `/app/backend/routes/payments.py` aligns the org's Stripe subscription quantity to its current member count.
 - `proration_behavior='none'` — changes apply at next renewal so owners keep paid seats through the current billing period.

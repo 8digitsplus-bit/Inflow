@@ -13,6 +13,11 @@ from routes.shopify_integration import validate_shopify_key, fetch_shopify_data
 from routes.hubspot_integration import validate_hubspot_key, fetch_hubspot_data
 from routes.salesforce_integration import validate_salesforce_key, fetch_salesforce_data
 from routes.quickbooks_integration import validate_quickbooks_key, fetch_quickbooks_data
+from routes.paypal_integration import validate_paypal_credentials, fetch_paypal_data
+from routes.square_integration import validate_square_token, fetch_square_data
+from routes.mixpanel_integration import validate_mixpanel_creds, fetch_mixpanel_data
+from routes.zoho_integration import validate_zoho_credentials, fetch_zoho_data
+from routes.xero_integration import validate_xero_credentials, fetch_xero_data
 
 router = APIRouter()
 
@@ -97,6 +102,92 @@ PLATFORMS = {
         "key_help_text": "Use the Intuit Developer OAuth Playground to get an access token and Company ID. Note: tokens expire after ~1 hour.",
         "token_expires": True,
     },
+    "paypal": {
+        "platform_id": "paypal",
+        "name": "PayPal",
+        "description": "Import PayPal transactions and revenue from your PayPal Business account.",
+        "icon": "DollarSign",
+        "color": "#0070BA",
+        "category": "Payments",
+        "data_types": ["transactions", "revenue", "customers"],
+        "requires_key": True,
+        "key_fields": [
+            {"name": "client_id", "label": "Client ID", "placeholder": "PayPal app client_id", "type": "text"},
+            {"name": "client_secret", "label": "Client Secret", "placeholder": "PayPal app secret", "type": "password"},
+            {"name": "sandbox", "label": "Use Sandbox", "type": "checkbox"},
+        ],
+        "key_help_url": "https://developer.paypal.com/dashboard/applications",
+        "key_help_text": "Create a REST app in PayPal Developer Dashboard. Copy the Client ID and Secret for your Live (or Sandbox) app.",
+    },
+    "square": {
+        "platform_id": "square",
+        "name": "Square",
+        "description": "Sync Square payments and orders for unified revenue analytics.",
+        "icon": "CreditCard",
+        "color": "#006AFF",
+        "category": "Payments",
+        "data_types": ["payments", "revenue", "customers"],
+        "requires_key": True,
+        "key_fields": [
+            {"name": "api_key", "label": "Personal Access Token", "placeholder": "EAAAl...", "type": "password"},
+            {"name": "sandbox", "label": "Use Sandbox", "type": "checkbox"},
+        ],
+        "key_help_url": "https://developer.squareup.com/apps",
+        "key_help_text": "In the Square Developer Dashboard, open your app and copy the Personal Access Token (Production or Sandbox).",
+    },
+    "mixpanel": {
+        "platform_id": "mixpanel",
+        "name": "Mixpanel",
+        "description": "Ingest product analytics events to correlate user behavior with revenue.",
+        "icon": "BarChart3",
+        "color": "#7856FF",
+        "category": "Analytics",
+        "data_types": ["events", "funnels", "cohorts"],
+        "requires_key": True,
+        "key_fields": [
+            {"name": "company_id", "label": "Project ID", "placeholder": "12345", "type": "text"},
+            {"name": "api_key", "label": "Project API Secret", "placeholder": "a1b2c3...", "type": "password"},
+            {"name": "instance_url", "label": "Region", "placeholder": "us or eu", "type": "text"},
+        ],
+        "key_help_url": "https://mixpanel.com/report",
+        "key_help_text": "Find your Project ID in Project Settings > Overview. Generate a Service Account (or legacy API Secret) in Project Settings > Service Accounts.",
+    },
+    "zoho": {
+        "platform_id": "zoho",
+        "name": "Zoho CRM",
+        "description": "Pull deals, pipeline, and contacts from your Zoho CRM.",
+        "icon": "Users",
+        "color": "#C82127",
+        "category": "CRM",
+        "data_types": ["deals", "contacts", "pipeline"],
+        "requires_key": True,
+        "key_fields": [
+            {"name": "client_id", "label": "Client ID", "placeholder": "1000.XXXXX", "type": "text"},
+            {"name": "client_secret", "label": "Client Secret", "placeholder": "Zoho app secret", "type": "password"},
+            {"name": "api_key", "label": "Refresh Token", "placeholder": "1000.xxx.xxx", "type": "password"},
+            {"name": "instance_url", "label": "Data Center", "placeholder": "com, eu, in, com.au, jp", "type": "text"},
+        ],
+        "key_help_url": "https://api-console.zoho.com/",
+        "key_help_text": "Create a Self-Client in Zoho API Console. Generate a grant token with scope ZohoCRM.modules.deals.READ ZohoCRM.users.READ and exchange it for a refresh_token.",
+    },
+    "xero": {
+        "platform_id": "xero",
+        "name": "Xero",
+        "description": "Sync accounts-receivable invoices and revenue from your Xero organisation.",
+        "icon": "Calculator",
+        "color": "#13B5EA",
+        "category": "Finance",
+        "data_types": ["invoices", "revenue", "customers"],
+        "requires_key": True,
+        "key_fields": [
+            {"name": "client_id", "label": "Client ID", "placeholder": "Xero app client_id", "type": "text"},
+            {"name": "client_secret", "label": "Client Secret", "placeholder": "Xero app secret", "type": "password"},
+            {"name": "api_key", "label": "Refresh Token", "placeholder": "Xero refresh_token", "type": "password"},
+            {"name": "company_id", "label": "Tenant ID", "placeholder": "Xero tenantId (organisation)", "type": "text"},
+        ],
+        "key_help_url": "https://developer.xero.com/app/manage",
+        "key_help_text": "In the Xero Developer portal, create a Web/Mobile app, complete OAuth2 once to obtain a refresh_token and the Tenant ID of the organisation you want to sync.",
+    },
 }
 
 
@@ -106,6 +197,8 @@ class ConnectRequest(BaseModel):
     instance_url: Optional[str] = None
     company_id: Optional[str] = None
     sandbox: Optional[bool] = False
+    client_id: Optional[str] = None
+    client_secret: Optional[str] = None
 
 
 async def _connect_stripe(body: ConnectRequest, user_id: str, now: str):
@@ -219,12 +312,130 @@ async def _connect_quickbooks(body: ConnectRequest, user_id: str, now: str):
     return data, connection, validation.get("account_name")
 
 
+async def _connect_paypal(body: ConnectRequest, user_id: str, now: str):
+    if not body.client_id or not body.client_secret:
+        raise HTTPException(status_code=400, detail="PayPal Client ID and Secret are required")
+    validation = await validate_paypal_credentials(body.client_id, body.client_secret, body.sandbox or False)
+    if not validation["valid"]:
+        raise HTTPException(status_code=400, detail=validation.get("error", "Invalid PayPal credentials"))
+    data = await fetch_paypal_data(body.client_id, body.client_secret, body.sandbox or False, user_id)
+    connection = {
+        "connection_id": f"conn_{uuid.uuid4().hex[:12]}",
+        "user_id": user_id, "platform": "paypal",
+        "connected_at": now, "last_synced": now,
+        "records_synced": data["total_records"], "sync_status": "synced",
+        "account_name": validation.get("account_name", "PayPal Account"),
+        "api_key_last4": body.client_secret[-4:],
+        "api_key_encrypted": encrypt(body.client_secret),
+        "client_id": body.client_id,
+        "sandbox": body.sandbox or False,
+        "stats": data["stats"], "is_live": True,
+    }
+    return data, connection, validation.get("account_name")
+
+
+async def _connect_square(body: ConnectRequest, user_id: str, now: str):
+    if not body.api_key:
+        raise HTTPException(status_code=400, detail="Square Personal Access Token is required")
+    validation = await validate_square_token(body.api_key, body.sandbox or False)
+    if not validation["valid"]:
+        raise HTTPException(status_code=400, detail=validation.get("error", "Invalid Square token"))
+    data = await fetch_square_data(body.api_key, body.sandbox or False, user_id)
+    connection = {
+        "connection_id": f"conn_{uuid.uuid4().hex[:12]}",
+        "user_id": user_id, "platform": "square",
+        "connected_at": now, "last_synced": now,
+        "records_synced": data["total_records"], "sync_status": "synced",
+        "account_name": validation.get("account_name", "Square Account"),
+        "api_key_last4": body.api_key[-4:],
+        "api_key_encrypted": encrypt(body.api_key),
+        "sandbox": body.sandbox or False,
+        "stats": data["stats"], "is_live": True,
+    }
+    return data, connection, validation.get("account_name")
+
+
+async def _connect_mixpanel(body: ConnectRequest, user_id: str, now: str):
+    if not body.company_id or not body.api_key:
+        raise HTTPException(status_code=400, detail="Mixpanel Project ID and API Secret are required")
+    region = (body.instance_url or "us").strip().lower() or "us"
+    validation = await validate_mixpanel_creds(body.company_id, body.api_key, region)
+    if not validation["valid"]:
+        raise HTTPException(status_code=400, detail=validation.get("error", "Invalid Mixpanel credentials"))
+    data = await fetch_mixpanel_data(body.company_id, body.api_key, region, user_id)
+    connection = {
+        "connection_id": f"conn_{uuid.uuid4().hex[:12]}",
+        "user_id": user_id, "platform": "mixpanel",
+        "connected_at": now, "last_synced": now,
+        "records_synced": data["total_records"], "sync_status": "synced",
+        "account_name": validation.get("account_name", "Mixpanel Project"),
+        "api_key_last4": body.api_key[-4:],
+        "api_key_encrypted": encrypt(body.api_key),
+        "company_id": body.company_id,
+        "instance_url": region,
+        "stats": data["stats"], "is_live": True,
+    }
+    return data, connection, validation.get("account_name")
+
+
+async def _connect_zoho(body: ConnectRequest, user_id: str, now: str):
+    if not body.api_key or not body.client_id or not body.client_secret:
+        raise HTTPException(status_code=400, detail="Zoho Refresh Token, Client ID, and Client Secret are required")
+    dc = (body.instance_url or "com").strip().lower() or "com"
+    validation = await validate_zoho_credentials(body.api_key, body.client_id, body.client_secret, dc)
+    if not validation["valid"]:
+        raise HTTPException(status_code=400, detail=validation.get("error", "Invalid Zoho credentials"))
+    data = await fetch_zoho_data(body.api_key, body.client_id, body.client_secret, dc, user_id)
+    connection = {
+        "connection_id": f"conn_{uuid.uuid4().hex[:12]}",
+        "user_id": user_id, "platform": "zoho",
+        "connected_at": now, "last_synced": now,
+        "records_synced": data["total_records"], "sync_status": "synced",
+        "account_name": validation.get("account_name", "Zoho CRM"),
+        "api_key_last4": body.api_key[-4:],
+        "api_key_encrypted": encrypt(body.api_key),
+        "client_id": body.client_id,
+        "client_secret_encrypted": encrypt(body.client_secret),
+        "instance_url": dc,
+        "stats": data["stats"], "is_live": True,
+    }
+    return data, connection, validation.get("account_name")
+
+
+async def _connect_xero(body: ConnectRequest, user_id: str, now: str):
+    if not body.api_key or not body.client_id or not body.client_secret or not body.company_id:
+        raise HTTPException(status_code=400, detail="Xero Refresh Token, Client ID, Client Secret, and Tenant ID are required")
+    validation = await validate_xero_credentials(body.api_key, body.client_id, body.client_secret, body.company_id)
+    if not validation["valid"]:
+        raise HTTPException(status_code=400, detail=validation.get("error", "Invalid Xero credentials"))
+    data = await fetch_xero_data(body.api_key, body.client_id, body.client_secret, body.company_id, user_id)
+    connection = {
+        "connection_id": f"conn_{uuid.uuid4().hex[:12]}",
+        "user_id": user_id, "platform": "xero",
+        "connected_at": now, "last_synced": now,
+        "records_synced": data["total_records"], "sync_status": "synced",
+        "account_name": validation.get("account_name", "Xero Organisation"),
+        "api_key_last4": body.api_key[-4:],
+        "api_key_encrypted": encrypt(body.api_key),
+        "client_id": body.client_id,
+        "client_secret_encrypted": encrypt(body.client_secret),
+        "company_id": body.company_id,
+        "stats": data["stats"], "is_live": True,
+    }
+    return data, connection, validation.get("account_name")
+
+
 CONNECT_HANDLERS = {
     "stripe": _connect_stripe,
     "shopify": _connect_shopify,
     "hubspot": _connect_hubspot,
     "salesforce": _connect_salesforce,
     "quickbooks": _connect_quickbooks,
+    "paypal": _connect_paypal,
+    "square": _connect_square,
+    "mixpanel": _connect_mixpanel,
+    "zoho": _connect_zoho,
+    "xero": _connect_xero,
 }
 
 
@@ -359,6 +570,40 @@ async def sync_platform(platform: str, current_user: User = Depends(require_owne
             data = await fetch_salesforce_data(api_key, connection.get("instance_url", ""), current_user.user_id)
         elif platform == "quickbooks":
             data = await fetch_quickbooks_data(api_key, connection.get("company_id", ""), current_user.user_id, connection.get("sandbox", False))
+        elif platform == "paypal":
+            data = await fetch_paypal_data(
+                connection.get("client_id", ""),
+                api_key,  # client_secret stored in api_key slot
+                connection.get("sandbox", False),
+                current_user.user_id,
+            )
+        elif platform == "square":
+            data = await fetch_square_data(api_key, connection.get("sandbox", False), current_user.user_id)
+        elif platform == "mixpanel":
+            data = await fetch_mixpanel_data(
+                connection.get("company_id", ""),
+                api_key,
+                connection.get("instance_url", "us"),
+                current_user.user_id,
+            )
+        elif platform == "zoho":
+            client_secret = decrypt(connection.get("client_secret_encrypted", ""))
+            data = await fetch_zoho_data(
+                api_key,  # refresh_token
+                connection.get("client_id", ""),
+                client_secret,
+                connection.get("instance_url", "com"),
+                current_user.user_id,
+            )
+        elif platform == "xero":
+            client_secret = decrypt(connection.get("client_secret_encrypted", ""))
+            data = await fetch_xero_data(
+                api_key,  # refresh_token
+                connection.get("client_id", ""),
+                client_secret,
+                connection.get("company_id", ""),
+                current_user.user_id,
+            )
         else:
             raise HTTPException(status_code=400, detail="Sync not supported for this platform")
     except Exception as e:

@@ -6,14 +6,14 @@ import { useAuth } from '../contexts/AuthContext';
 import {
   CreditCard, ShoppingBag, Users, Cloud, Calculator, Check, Loader2, RefreshCw, Unplug,
   ArrowRight, Zap, Database, TrendingUp, Clock, Key, ExternalLink, Shield, X,
-  FileSpreadsheet, Globe, Sparkles, Upload, AlertTriangle, Lock,
+  FileSpreadsheet, Globe, Sparkles, Upload, AlertTriangle, Lock, DollarSign, BarChart3,
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { toast } from 'sonner';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
-const ICON_MAP = { CreditCard, ShoppingBag, Users, Cloud, Calculator };
+const ICON_MAP = { CreditCard, ShoppingBag, Users, Cloud, Calculator, DollarSign, BarChart3 };
 
 const ConnectBusiness = () => {
   const { user } = useAuth();
@@ -68,9 +68,11 @@ const ConnectBusiness = () => {
     if (!connectModal) return;
     const platform = connectModal;
 
-    // Validate required fields
+    // Validate required fields (skip checkboxes — they're optional booleans)
     for (const field of (platform.key_fields || [])) {
-      if (!connectFields[field.name]?.trim()) {
+      if (field.type === 'checkbox') continue;
+      const val = connectFields[field.name];
+      if (typeof val !== 'string' || !val.trim()) {
         toast.error(`${field.label} is required`);
         return;
       }
@@ -519,15 +521,30 @@ const ConnectBusiness = () => {
             <div className="space-y-4">
               {(connectModal.key_fields || []).map(field => (
                 <div key={field.name}>
-                  <label className="text-xs font-medium text-zinc-400 block mb-1.5">{field.label}</label>
-                  <input
-                    type={field.type || 'text'}
-                    value={connectFields[field.name] || ''}
-                    onChange={(e) => setConnectFields(f => ({ ...f, [field.name]: e.target.value }))}
-                    placeholder={field.placeholder}
-                    className="w-full px-3 py-2.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm placeholder:text-zinc-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
-                    data-testid={`connect-field-${field.name}`}
-                  />
+                  {field.type === 'checkbox' ? (
+                    <label className="flex items-center gap-2 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={!!connectFields[field.name]}
+                        onChange={(e) => setConnectFields(f => ({ ...f, [field.name]: e.target.checked }))}
+                        className="w-4 h-4 rounded border-zinc-700 bg-zinc-800 text-indigo-500 focus:ring-indigo-500/30"
+                        data-testid={`connect-field-${field.name}`}
+                      />
+                      <span className="text-xs text-zinc-400">{field.label}</span>
+                    </label>
+                  ) : (
+                    <>
+                      <label className="text-xs font-medium text-zinc-400 block mb-1.5">{field.label}</label>
+                      <input
+                        type={field.type || 'text'}
+                        value={connectFields[field.name] || ''}
+                        onChange={(e) => setConnectFields(f => ({ ...f, [field.name]: e.target.value }))}
+                        placeholder={field.placeholder}
+                        className="w-full px-3 py-2.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm placeholder:text-zinc-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
+                        data-testid={`connect-field-${field.name}`}
+                      />
+                    </>
+                  )}
                 </div>
               ))}
 
