@@ -58,6 +58,75 @@ def is_real_stripe_key(key: str) -> bool:
     return key and (key.startswith("sk_live_") or key.startswith("sk_test_")) and key != "sk_test_emergent"
 
 
+async def sync_stripe_seat_count(org_id: str) -> dict:
+    """Align the org's Stripe subscription quantity to its current member count.
+    The change is deferred to the next renewal cycle (proration_behavior='none'),
+    so the owner keeps paid-for seats through the end of the current period.
+
+    Returns a dict describing what happened. Never raises — any failure is logged
+    so business flows (member removal, invite accept) complete regardless.
+    """
+    result = {"synced": False, "reason": None, "new_quantity": None, "sub_id": None}
+
+    org = await db.organizations.find_one({"org_id": org_id}, {"_id": 0})
+    if not org:
+        result["reason"] = "org_not_found"
+        return result
+
+    sub_id = org.get("stripe_subscription_id")
+    if not sub_id:
+        result["reason"] = "no_subscription"
+        return result
+
+    tier = org.get("subscription_tier", "")
+    if not tier.startswith("enterprise_"):
+        # Non-enterprise plans are flat-rate, quantity is always 1
+        result["reason"] = "not_per_user"
+        return result
+
+    api_key = os.environ.get("STRIPE_API_KEY")
+    if not is_real_stripe_key(api_key):
+        result["reason"] = "sandbox_mode"
+        return result
+
+    member_count = await db.users.count_documents({"org_id": org_id})
+    new_quantity = max(1, member_count)
+
+    try:
+        stripe_sdk.api_key = api_key
+        subscription = stripe_sdk.Subscription.retrieve(sub_id)
+        items = subscription.get("items", {}).get("data", [])
+        if not items:
+            result["reason"] = "no_items"
+            return result
+        item_id = items[0]["id"]
+        current_qty = items[0].get("quantity", 1)
+
+        if current_qty == new_quantity:
+            result["reason"] = "already_synced"
+            result["new_quantity"] = new_quantity
+            result["sub_id"] = sub_id
+            return result
+
+        stripe_sdk.Subscription.modify(
+            sub_id,
+            items=[{"id": item_id, "quantity": new_quantity}],
+            proration_behavior="none",
+        )
+        result.update({
+            "synced": True,
+            "new_quantity": new_quantity,
+            "previous_quantity": current_qty,
+            "sub_id": sub_id,
+        })
+        logger.info("Stripe seat sync for %s: %d → %d (effective at renewal)", org_id, current_qty, new_quantity)
+    except Exception as e:
+        result["reason"] = f"stripe_error: {e}"
+        logger.error("Stripe seat sync failed for %s: %s", org_id, e)
+
+    return result
+
+
 async def get_or_create_stripe_price(plan_key: str, plan: dict) -> str:
     """Get or create a Stripe Price for subscription billing."""
     if plan_key in _stripe_price_cache:

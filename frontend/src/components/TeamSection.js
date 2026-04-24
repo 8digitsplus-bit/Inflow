@@ -85,7 +85,14 @@ export default function TeamSection() {
       toast.error(data.detail || 'Remove failed');
       return;
     }
-    toast.success(`${name} removed from the team`);
+    if (data.stripe_sync?.synced) {
+      toast.success(
+        `${name} removed. Subscription will decrease to ${data.stripe_sync.new_quantity} seats at next renewal.`,
+        { duration: 6000 }
+      );
+    } else {
+      toast.success(`${name} removed from the team`);
+    }
     loadAll();
   };
 

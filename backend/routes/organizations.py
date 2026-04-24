@@ -11,6 +11,7 @@ from database import db
 from models import User
 from dependencies import get_current_user, require_owner, get_org_user_ids
 from utils.email import send_email, build_invite_email_html
+from routes.payments import sync_stripe_seat_count
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -258,6 +259,10 @@ async def accept_invite(token: str, user: User = Depends(get_current_user)):
     )
 
     org = await _get_org(invite["org_id"])
+
+    # Re-sync Stripe quantity (ensure scheduled decrease is reversed when a new member joins)
+    await sync_stripe_seat_count(invite["org_id"])
+
     return {
         "status": "joined",
         "org_id": invite["org_id"],
@@ -303,10 +308,19 @@ async def remove_member(user_id: str, owner: User = Depends(require_owner)):
         }}
     )
 
+    # Schedule Stripe quantity decrease at next renewal (no-op for sandbox)
+    sync_result = await sync_stripe_seat_count(owner.org_id)
+
     return {
         "status": "removed",
         "removed_user_id": user_id,
-        "note": "Seat will be released at next billing renewal.",
+        "stripe_sync": sync_result,
+        "note": (
+            f"Member removed. Seat will be released at next billing renewal "
+            f"(new quantity: {sync_result['new_quantity']})."
+            if sync_result.get("synced")
+            else "Member removed. The seat remains paid until the end of the current billing period."
+        ),
     }
 
 
@@ -396,6 +410,10 @@ async def signup_and_accept(token: str, body: SignupAndAcceptRequest):
     })
 
     org = await _get_org(invite["org_id"])
+
+    # Re-sync Stripe quantity to current member count
+    await sync_stripe_seat_count(invite["org_id"])
+
     resp = JSONResponse(content={
         "status": "joined",
         "org_id": invite["org_id"],
