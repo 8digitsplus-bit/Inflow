@@ -201,6 +201,25 @@ class ConnectRequest(BaseModel):
     client_secret: Optional[str] = None
 
 
+# Integration slot limits by subscription tier
+INTEGRATION_LIMITS = {
+    "trial": 2,
+    "essential_monthly": 2,
+    "essential_yearly": 2,
+    "pro_monthly": 4,
+    "pro_yearly": 4,
+    "enterprise_monthly": None,  # unlimited
+    "enterprise_yearly": None,
+    "expired": 0,
+    "cancelled": 0,
+}
+
+
+def get_integration_limit(tier: str):
+    """Returns max integration count or None for unlimited."""
+    return INTEGRATION_LIMITS.get(tier, 2)
+
+
 async def _connect_stripe(body: ConnectRequest, user_id: str, now: str):
     if not body.api_key:
         raise HTTPException(status_code=400, detail="Stripe API key is required")
@@ -466,6 +485,22 @@ async def get_platforms(current_user: User = Depends(get_current_user)):
     return result
 
 
+@router.get("/business/integration-usage")
+async def get_integration_usage(current_user: User = Depends(get_current_user)):
+    """Returns integration quota + usage for the user's org tier."""
+    org = await db.organizations.find_one({"org_id": current_user.org_id}, {"_id": 0}) if current_user.org_id else None
+    tier = (org or {}).get("subscription_tier") or current_user.subscription_tier or "trial"
+    limit = get_integration_limit(tier)
+    used = await db.business_connections.count_documents(org_filter(current_user))
+    return {
+        "tier": tier,
+        "used": used,
+        "limit": limit,  # None == unlimited
+        "available": (None if limit is None else max(0, limit - used)),
+        "at_limit": (False if limit is None else used >= limit),
+    }
+
+
 @router.post("/business/connect/{platform}")
 async def connect_platform(platform: str, body: ConnectRequest = ConnectRequest(), current_user: User = Depends(require_owner)):
     if platform not in PLATFORMS:
@@ -476,6 +511,19 @@ async def connect_platform(platform: str, body: ConnectRequest = ConnectRequest(
     )
     if existing:
         raise HTTPException(status_code=400, detail="Platform already connected")
+
+    # Tier gate — count-based integration limit
+    org = await db.organizations.find_one({"org_id": current_user.org_id}, {"_id": 0}) if current_user.org_id else None
+    tier = (org or {}).get("subscription_tier") or current_user.subscription_tier or "trial"
+    limit = get_integration_limit(tier)
+    if limit is not None:
+        used = await db.business_connections.count_documents(org_filter(current_user))
+        if used >= limit:
+            tier_name = tier.replace("_monthly", "").replace("_yearly", "").title()
+            raise HTTPException(
+                status_code=403,
+                detail=f"Your {tier_name} plan allows {limit} integration{'s' if limit != 1 else ''}. Upgrade to connect more platforms."
+            )
 
     now = datetime.now(timezone.utc).isoformat()
     handler = CONNECT_HANDLERS.get(platform)

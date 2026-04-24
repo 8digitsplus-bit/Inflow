@@ -21,6 +21,7 @@ const ConnectBusiness = () => {
   const [summary, setSummary] = useState(null);
   const [customSources, setCustomSources] = useState([]);
   const [detectedPlatforms, setDetectedPlatforms] = useState([]);
+  const [usage, setUsage] = useState(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(null);
   const [connectModal, setConnectModal] = useState(null); // platform object or null
@@ -35,11 +36,12 @@ const ConnectBusiness = () => {
 
   const fetchData = useCallback(async () => {
     try {
-      const [platRes, sumRes, customRes, detectRes] = await Promise.all([
+      const [platRes, sumRes, customRes, detectRes, usageRes] = await Promise.all([
         fetch(`${API_URL}/api/business/platforms`, { credentials: 'include' }),
         fetch(`${API_URL}/api/business/summary`, { credentials: 'include' }),
         fetch(`${API_URL}/api/business/custom-sources`, { credentials: 'include' }),
         fetch(`${API_URL}/api/business/detect-platforms`, { credentials: 'include' }),
+        fetch(`${API_URL}/api/business/integration-usage`, { credentials: 'include' }),
       ]);
       if (platRes.ok) setPlatforms(await platRes.json());
       if (sumRes.ok) setSummary(await sumRes.json());
@@ -48,6 +50,7 @@ const ConnectBusiness = () => {
         const d = await detectRes.json();
         setDetectedPlatforms(d.detected_platforms || []);
       }
+      if (usageRes.ok) setUsage(await usageRes.json());
     } catch (err) {
       console.error('Failed to fetch business data:', err);
     } finally {
@@ -292,8 +295,8 @@ const ConnectBusiness = () => {
                   onClick={() => isEnterprise ? setApiModal(true) : toast.error('Custom API is available on the Enterprise plan. Upgrade to unlock.')} data-testid="custom-api-card">
                   <CardContent className="p-5">
                     <div className="flex items-start gap-3 mb-3">
-                      <div className="w-11 h-11 rounded-xl bg-blue-500/10 flex items-center justify-center shrink-0">
-                        <Globe className="w-5 h-5 text-blue-400" />
+                      <div className="w-11 h-11 rounded-xl bg-indigo-500/10 flex items-center justify-center shrink-0">
+                        <Globe className="w-5 h-5 text-indigo-400" />
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
@@ -314,7 +317,7 @@ const ConnectBusiness = () => {
                       ))}
                     </div>
                     {isEnterprise ? (
-                      <Button className="w-full bg-blue-600 hover:bg-blue-500 text-xs h-9 group-hover:bg-blue-500 transition-colors"
+                      <Button className="w-full bg-indigo-600 hover:bg-indigo-500 text-xs h-9 group-hover:bg-indigo-500 transition-colors"
                         onClick={(e) => { e.stopPropagation(); setApiModal(true); }} data-testid="custom-api-btn">
                         <Globe className="w-3.5 h-3.5 mr-2" /> Connect API
                       </Button>
@@ -345,8 +348,8 @@ const ConnectBusiness = () => {
                         <CardContent className="p-5">
                           <div className="flex items-start justify-between mb-3">
                             <div className="flex items-center gap-3">
-                              <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${isCsv ? 'bg-emerald-500/10' : 'bg-blue-500/10'}`}>
-                                {isCsv ? <FileSpreadsheet className="w-5 h-5 text-emerald-400" /> : <Globe className="w-5 h-5 text-blue-400" />}
+                              <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${isCsv ? 'bg-emerald-500/10' : 'bg-indigo-500/10'}`}>
+                                {isCsv ? <FileSpreadsheet className="w-5 h-5 text-emerald-400" /> : <Globe className="w-5 h-5 text-indigo-400" />}
                               </div>
                               <div>
                                 <h3 className="text-white font-semibold text-sm" style={{ fontFamily: 'Outfit' }}>{source.source_name}</h3>
@@ -389,7 +392,39 @@ const ConnectBusiness = () => {
 
             {/* Platform Grid */}
             <div className="space-y-4">
-              <h2 className="text-sm font-medium text-zinc-500 uppercase tracking-wider">Available Platforms</h2>
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <h2 className="text-sm font-medium text-zinc-500 uppercase tracking-wider">Available Platforms</h2>
+                {usage && (
+                  <div className="flex items-center gap-2 text-xs" data-testid="integration-usage">
+                    {usage.limit === null ? (
+                      <span className="px-2.5 py-1 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/20 font-medium">
+                        {usage.used} connected · Unlimited
+                      </span>
+                    ) : (
+                      <>
+                        <div className="w-28 h-1.5 bg-zinc-900 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full transition-all ${usage.at_limit ? 'bg-amber-500' : 'bg-gradient-to-r from-indigo-500 to-purple-500'}`}
+                            style={{ width: `${Math.min(100, (usage.used / usage.limit) * 100)}%` }}
+                          />
+                        </div>
+                        <span className={`font-medium ${usage.at_limit ? 'text-amber-400' : 'text-zinc-400'}`}>
+                          {usage.used} / {usage.limit} integrations
+                        </span>
+                        {usage.at_limit && (
+                          <button
+                            onClick={() => window.location.assign('/settings')}
+                            className="px-2.5 py-1 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-medium transition-colors"
+                            data-testid="upgrade-for-integrations-btn"
+                          >
+                            Upgrade for more
+                          </button>
+                        )}
+                      </>
+                    )}
+                  </div>
+                )}
+              </div>
               <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
                 {platforms.map((platform) => {
                   const Icon = ICON_MAP[platform.icon] || Database;
@@ -464,11 +499,13 @@ const ConnectBusiness = () => {
                             </div>
                           </div>
                         ) : (
-                          <Button className="w-full bg-indigo-600 hover:bg-indigo-500 text-xs h-9"
-                            onClick={() => openConnectModal(platform)} disabled={isConnecting}
+                          <Button className="w-full bg-indigo-600 hover:bg-indigo-500 text-xs h-9 disabled:opacity-40 disabled:cursor-not-allowed"
+                            onClick={() => openConnectModal(platform)} disabled={isConnecting || (usage?.at_limit)}
                             data-testid={`connect-${platform.platform_id}`}>
                             {isConnecting ? (
                               <><Loader2 className="w-3.5 h-3.5 animate-spin mr-2" />Connecting...</>
+                            ) : usage?.at_limit ? (
+                              <><Lock className="w-3 h-3 mr-1.5" />Limit reached</>
                             ) : (
                               <><Key className="w-3.5 h-3.5 mr-2" />Connect with API Key</>
                             )}

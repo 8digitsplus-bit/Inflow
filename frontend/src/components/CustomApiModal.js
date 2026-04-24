@@ -114,8 +114,8 @@ const CustomApiModal = ({ onClose, onSuccess }) => {
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-zinc-800 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-blue-500/15 flex items-center justify-center">
-              <Globe className="w-5 h-5 text-blue-400" />
+            <div className="w-10 h-10 rounded-xl bg-indigo-500/15 flex items-center justify-center">
+              <Globe className="w-5 h-5 text-indigo-400" />
             </div>
             <div>
               <h3 className="text-lg font-semibold text-white" style={{ fontFamily: 'Outfit' }}>Connect Custom API</h3>
@@ -274,7 +274,7 @@ const CustomApiModal = ({ onClose, onSuccess }) => {
                 <p className="text-xs text-zinc-500">Field Mapping:</p>
                 <div className="mt-1 flex flex-wrap gap-2">
                   {INFLOW_FIELDS.filter(f => mapping[f.key]).map(f => (
-                    <span key={f.key} className="px-2 py-0.5 rounded-full text-[11px] bg-blue-500/10 text-blue-400">
+                    <span key={f.key} className="px-2 py-0.5 rounded-full text-[11px] bg-indigo-500/10 text-indigo-400">
                       {f.label} → {mapping[f.key]}
                     </span>
                   ))}
@@ -307,7 +307,7 @@ const CustomApiModal = ({ onClose, onSuccess }) => {
               </Button>
             )}
             {step === 3 && (
-              <Button onClick={handleConnect} disabled={connecting} className="bg-blue-600 hover:bg-blue-500" data-testid="api-connect-btn">
+              <Button onClick={handleConnect} disabled={connecting} className="bg-indigo-600 hover:bg-indigo-500" data-testid="api-connect-btn">
                 {connecting ? <><Loader2 className="w-4 h-4 animate-spin mr-1.5" />Connecting...</> : <><Check className="w-4 h-4 mr-1.5" />Connect & Sync</>}
               </Button>
             )}
