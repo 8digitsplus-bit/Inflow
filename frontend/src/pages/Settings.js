@@ -205,7 +205,8 @@ const Settings = () => {
     }
   };
 
-  const canCancel = user?.subscription_tier && !['expired', 'cancelled'].includes(user.subscription_tier);
+  const canCancel = user?.subscription_tier && !['expired', 'cancelled'].includes(user.subscription_tier) && org?.role === 'owner';
+  const canChangePlan = org?.role === 'owner';
 
   const getInitials = (name) => {
     if (!name) return 'U';
@@ -407,6 +408,14 @@ const Settings = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
+            {!canChangePlan && org?.role === 'member' && (
+              <div className="mb-4 flex items-start gap-2 p-3 rounded-lg bg-indigo-500/5 border border-indigo-500/15">
+                <ShieldCheck className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" />
+                <p className="text-xs text-zinc-400">
+                  You're a <span className="text-indigo-400 font-medium">member</span> of this team. Only the team owner can change the plan or cancel the subscription.
+                </p>
+              </div>
+            )}
             {/* Billing Toggle */}
             <div className="mb-6 flex flex-col items-center">
               <div className="inline-flex items-center p-1 bg-zinc-900 rounded-full border border-zinc-800 relative">
@@ -497,9 +506,9 @@ const Settings = () => {
                       className={`w-full mt-4 ${
                         isCurrentPlan
                           ? 'bg-zinc-800 text-zinc-400 cursor-not-allowed'
-                          : 'bg-indigo-600 hover:bg-indigo-500 btn-glow'
+                          : 'bg-indigo-600 hover:bg-indigo-500 btn-glow disabled:opacity-40'
                       }`}
-                      disabled={isCurrentPlan || processingPayment}
+                      disabled={isCurrentPlan || processingPayment || !canChangePlan}
                       onClick={() => handleUpgrade(plan.key)}
                       data-testid={`upgrade-${plan.key}-btn`}
                     >
@@ -507,6 +516,8 @@ const Settings = () => {
                         <Loader2 className="w-4 h-4 animate-spin" />
                       ) : isCurrentPlan ? (
                         'Current Plan'
+                      ) : !canChangePlan ? (
+                        'Owner only'
                       ) : (
                         <>
                           Upgrade <ChevronRight className="w-4 h-4 ml-1" />

@@ -6,7 +6,7 @@ import stripe as stripe_sdk
 
 from database import db
 from models import User, PaymentTransaction
-from dependencies import get_current_user
+from dependencies import get_current_user, require_owner
 
 logger = logging.getLogger(__name__)
 
@@ -257,7 +257,7 @@ async def create_onetime_checkout(plan_key: str, plan: dict, user: User, origin_
 
 
 @router.post("/payments/create-checkout")
-async def create_checkout_session(request: Request, user: User = Depends(get_current_user)):
+async def create_checkout_session(request: Request, user: User = Depends(require_owner)):
     """Create Stripe checkout session — subscription mode for real keys, one-time for test."""
     try:
         data = await request.json()
@@ -532,7 +532,7 @@ async def get_subscription_plans():
 
 
 @router.post("/subscription/cancel")
-async def cancel_subscription(current_user: User = Depends(get_current_user)):
+async def cancel_subscription(current_user: User = Depends(require_owner)):
     """Cancel the current subscription."""
     user_doc = await db.users.find_one(
         {"user_id": current_user.user_id},
