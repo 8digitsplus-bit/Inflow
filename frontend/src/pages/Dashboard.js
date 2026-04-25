@@ -16,12 +16,23 @@ import {
   Zap,
   PieChart,
   Clock,
-  Lock
+  Lock,
+  Filter,
+  ChevronDown,
+  Check
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { STAGE_COLORS } from '../constants/colors';
 import { Button } from '../components/ui/button';
 import { Progress } from '../components/ui/progress';
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuCheckboxItem,
+} from '../components/ui/dropdown-menu';
 import { 
   AreaChart, 
   Area, 
@@ -231,57 +242,102 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Source Filter Pills — visible only when integrations exist */}
-        {connectedSources.length > 0 && (
-          <div className="flex flex-wrap items-center gap-2 pb-1 border-b border-white/[0.04]" data-testid="source-filter">
-            <span className="text-[11px] uppercase tracking-wider text-zinc-500 mr-1">Filter</span>
-            <button
-              onClick={() => setSelectedSources([])}
-              className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
-                selectedSources.length === 0
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-zinc-900 text-zinc-400 hover:bg-zinc-800 border border-zinc-800'
-              }`}
-              data-testid="source-filter-all"
-            >
-              All sources
-            </button>
-            {connectedSources.map(s => {
-              const active = selectedSources.includes(s.platform_id);
-              const role = s.revenue_role || s.default_revenue_role || 'revenue';
-              const dotClass = role === 'revenue' ? 'bg-emerald-400' : role === 'pipeline' ? 'bg-indigo-400' : 'bg-amber-400';
-              return (
-                <button
-                  key={s.platform_id}
-                  onClick={() => setSelectedSources(prev =>
-                    active ? prev.filter(p => p !== s.platform_id) : [...prev.filter(p => p !== 'manual'), s.platform_id]
-                  )}
-                  className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-all flex items-center gap-1.5 ${
-                    active
-                      ? 'bg-indigo-600 text-white border-indigo-500'
-                      : 'bg-zinc-900 text-zinc-400 hover:bg-zinc-800 border-zinc-800 hover:border-zinc-700'
-                  }`}
-                  data-testid={`source-filter-${s.platform_id}`}
-                  title={`Role: ${role}`}
+        {/* Source Filter Dropdown — visible only when integrations exist */}
+        {connectedSources.length > 0 && (() => {
+          const manualOnly = selectedSources.length === 1 && selectedSources[0] === 'manual';
+          const allActive = selectedSources.length === 0;
+          const triggerLabel = allActive
+            ? 'All sources'
+            : manualOnly
+              ? 'Manual only'
+              : selectedSources.length === 1
+                ? (connectedSources.find(c => c.platform_id === selectedSources[0])?.name || selectedSources[0])
+                : `${selectedSources.length} sources`;
+          const togglePlatform = (pid) => {
+            setSelectedSources(prev => {
+              const withoutManual = prev.filter(p => p !== 'manual');
+              return withoutManual.includes(pid)
+                ? withoutManual.filter(p => p !== pid)
+                : [...withoutManual, pid];
+            });
+          };
+          return (
+            <div className="flex items-center gap-2 pb-1 border-b border-white/[0.04]" data-testid="source-filter">
+              <span className="text-[11px] uppercase tracking-wider text-zinc-500">Filter</span>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium bg-zinc-900 text-zinc-200 border border-zinc-800 hover:border-indigo-500/50 hover:bg-zinc-800 transition-colors"
+                    data-testid="source-filter-trigger"
+                  >
+                    <Filter className="w-3.5 h-3.5 text-indigo-400" />
+                    <span>{triggerLabel}</span>
+                    <ChevronDown className="w-3.5 h-3.5 text-zinc-500" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="start"
+                  className="w-60 bg-zinc-950 border-zinc-800 text-zinc-200"
+                  data-testid="source-filter-menu"
                 >
-                  {s.name}
-                  <span className={`w-1.5 h-1.5 rounded-full ${dotClass}`} />
+                  <DropdownMenuLabel className="text-[11px] uppercase tracking-wider text-zinc-500 font-medium">
+                    Data sources
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator className="bg-zinc-800" />
+                  <button
+                    type="button"
+                    onClick={() => setSelectedSources([])}
+                    className={`w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-sm hover:bg-zinc-900 ${allActive ? 'text-indigo-400' : 'text-zinc-200'}`}
+                    data-testid="source-filter-all"
+                  >
+                    <Check className={`w-3.5 h-3.5 ${allActive ? 'opacity-100' : 'opacity-0'}`} />
+                    All sources
+                  </button>
+                  <DropdownMenuSeparator className="bg-zinc-800" />
+                  {connectedSources.map(s => {
+                    const active = selectedSources.includes(s.platform_id);
+                    const role = s.revenue_role || s.default_revenue_role || 'revenue';
+                    const dotClass = role === 'revenue' ? 'bg-emerald-400' : role === 'pipeline' ? 'bg-indigo-400' : 'bg-amber-400';
+                    return (
+                      <DropdownMenuCheckboxItem
+                        key={s.platform_id}
+                        checked={active}
+                        onCheckedChange={() => togglePlatform(s.platform_id)}
+                        className="text-sm focus:bg-zinc-900 focus:text-white data-[state=checked]:text-indigo-400"
+                        data-testid={`source-filter-${s.platform_id}`}
+                      >
+                        <span className={`w-1.5 h-1.5 rounded-full mr-2 ${dotClass}`} />
+                        <span className="flex-1">{s.name}</span>
+                        <span className="text-[10px] uppercase text-zinc-500 ml-2">{role}</span>
+                      </DropdownMenuCheckboxItem>
+                    );
+                  })}
+                  <DropdownMenuSeparator className="bg-zinc-800" />
+                  <button
+                    type="button"
+                    onClick={() => setSelectedSources(manualOnly ? [] : ['manual'])}
+                    className={`w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-sm hover:bg-zinc-900 ${manualOnly ? 'text-indigo-400' : 'text-zinc-200'}`}
+                    data-testid="source-filter-manual"
+                  >
+                    <Check className={`w-3.5 h-3.5 ${manualOnly ? 'opacity-100' : 'opacity-0'}`} />
+                    Manual deals only
+                  </button>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              {!allActive && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedSources([])}
+                  className="text-[11px] text-zinc-500 hover:text-zinc-300 underline-offset-2 hover:underline"
+                  data-testid="source-filter-clear"
+                >
+                  Clear
                 </button>
-              );
-            })}
-            <button
-              onClick={() => setSelectedSources(['manual'])}
-              className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
-                selectedSources.length === 1 && selectedSources[0] === 'manual'
-                  ? 'bg-indigo-600 text-white'
-                  : 'bg-zinc-900 text-zinc-400 hover:bg-zinc-800 border border-zinc-800'
-              }`}
-              data-testid="source-filter-manual"
-            >
-              Manual
-            </button>
-          </div>
-        )}
+              )}
+            </div>
+          );
+        })()}
 
         {/* Key Metrics - Available to all */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">

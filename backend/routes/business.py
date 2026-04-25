@@ -14,7 +14,7 @@ from routes.hubspot_integration import validate_hubspot_key, fetch_hubspot_data
 from routes.salesforce_integration import validate_salesforce_key, fetch_salesforce_data
 from routes.quickbooks_integration import validate_quickbooks_key, fetch_quickbooks_data
 from routes.paypal_integration import validate_paypal_credentials, fetch_paypal_data
-from routes.square_integration import validate_square_token, fetch_square_data
+from routes.amplitude_integration import validate_amplitude_creds, fetch_amplitude_data
 from routes.mixpanel_integration import validate_mixpanel_creds, fetch_mixpanel_data
 from routes.zoho_integration import validate_zoho_credentials, fetch_zoho_data
 from routes.xero_integration import validate_xero_credentials, fetch_xero_data
@@ -125,22 +125,23 @@ PLATFORMS = {
         "key_help_url": "https://developer.paypal.com/dashboard/applications",
         "key_help_text": "Create a REST app in PayPal Developer Dashboard. Copy the Client ID and Secret for your Live (or Sandbox) app.",
     },
-    "square": {
-        "default_revenue_role": "revenue",
-        "platform_id": "square",
-        "name": "Square",
-        "description": "Sync Square payments and orders for unified revenue analytics.",
-        "icon": "CreditCard",
-        "color": "#006AFF",
-        "category": "Payments",
-        "data_types": ["payments", "revenue", "customers"],
+    "amplitude": {
+        "default_revenue_role": "signal",
+        "platform_id": "amplitude",
+        "name": "Amplitude",
+        "description": "Sync product analytics events and conversion metrics from your Amplitude project.",
+        "icon": "BarChart3",
+        "color": "#1E61F0",
+        "category": "Analytics",
+        "data_types": ["events", "active_users", "conversions"],
         "requires_key": True,
         "key_fields": [
-            {"name": "api_key", "label": "Personal Access Token", "placeholder": "EAAAl...", "type": "password"},
-            {"name": "sandbox", "label": "Use Sandbox", "type": "checkbox"},
+            {"name": "client_id", "label": "API Key", "placeholder": "Amplitude project API Key", "type": "text"},
+            {"name": "api_key", "label": "Secret Key", "placeholder": "Amplitude project Secret Key", "type": "password"},
+            {"name": "instance_url", "label": "Region", "placeholder": "us or eu", "type": "text"},
         ],
-        "key_help_url": "https://developer.squareup.com/apps",
-        "key_help_text": "In the Square Developer Dashboard, open your app and copy the Personal Access Token (Production or Sandbox).",
+        "key_help_url": "https://app.amplitude.com/analytics/settings/projects",
+        "key_help_text": "Open Amplitude > Settings > Projects > select your project. Copy the API Key and Secret Key from the project's General tab. Use 'eu' for EU data residency, otherwise 'us'.",
     },
     "mixpanel": {
         "default_revenue_role": "signal",
@@ -363,22 +364,24 @@ async def _connect_paypal(body: ConnectRequest, user_id: str, now: str):
     return data, connection, validation.get("account_name")
 
 
-async def _connect_square(body: ConnectRequest, user_id: str, now: str):
-    if not body.api_key:
-        raise HTTPException(status_code=400, detail="Square Personal Access Token is required")
-    validation = await validate_square_token(body.api_key, body.sandbox or False)
+async def _connect_amplitude(body: ConnectRequest, user_id: str, now: str):
+    if not body.client_id or not body.api_key:
+        raise HTTPException(status_code=400, detail="Amplitude API Key and Secret Key are required")
+    region = (body.instance_url or "us").strip().lower() or "us"
+    validation = await validate_amplitude_creds(body.client_id, body.api_key, region)
     if not validation["valid"]:
-        raise HTTPException(status_code=400, detail=validation.get("error", "Invalid Square token"))
-    data = await fetch_square_data(body.api_key, body.sandbox or False, user_id)
+        raise HTTPException(status_code=400, detail=validation.get("error", "Invalid Amplitude credentials"))
+    data = await fetch_amplitude_data(body.client_id, body.api_key, region, user_id)
     connection = {
         "connection_id": f"conn_{uuid.uuid4().hex[:12]}",
-        "user_id": user_id, "platform": "square",
+        "user_id": user_id, "platform": "amplitude",
         "connected_at": now, "last_synced": now,
         "records_synced": data["total_records"], "sync_status": "synced",
-        "account_name": validation.get("account_name", "Square Account"),
+        "account_name": validation.get("account_name", "Amplitude Project"),
         "api_key_last4": body.api_key[-4:],
         "api_key_encrypted": encrypt(body.api_key),
-        "sandbox": body.sandbox or False,
+        "client_id": body.client_id,
+        "instance_url": region,
         "stats": data["stats"], "is_live": True,
     }
     return data, connection, validation.get("account_name")
@@ -461,7 +464,7 @@ CONNECT_HANDLERS = {
     "salesforce": _connect_salesforce,
     "quickbooks": _connect_quickbooks,
     "paypal": _connect_paypal,
-    "square": _connect_square,
+    "amplitude": _connect_amplitude,
     "mixpanel": _connect_mixpanel,
     "zoho": _connect_zoho,
     "xero": _connect_xero,
@@ -655,8 +658,13 @@ async def sync_platform(platform: str, current_user: User = Depends(require_owne
                 connection.get("sandbox", False),
                 current_user.user_id,
             )
-        elif platform == "square":
-            data = await fetch_square_data(api_key, connection.get("sandbox", False), current_user.user_id)
+        elif platform == "amplitude":
+            data = await fetch_amplitude_data(
+                connection.get("client_id", ""),
+                api_key,
+                connection.get("instance_url", "us"),
+                current_user.user_id,
+            )
         elif platform == "mixpanel":
             data = await fetch_mixpanel_data(
                 connection.get("company_id", ""),

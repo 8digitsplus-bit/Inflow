@@ -9,7 +9,7 @@ import requests
 import pytest
 
 BASE_URL = os.environ.get("BASE_URL", "https://inflow-pricing.preview.emergentagent.com")
-NEW_PLATFORMS = ["paypal", "square", "mixpanel", "zoho", "xero"]
+NEW_PLATFORMS = ["paypal", "amplitude", "mixpanel", "zoho", "xero"]
 
 
 @pytest.fixture(scope="module")
@@ -37,14 +37,14 @@ class TestNewIntegrations:
         assert r.status_code == 400
         assert "paypal" in r.json()["detail"].lower() or "client" in r.json()["detail"].lower()
 
-    def test_square_rejects_bad_token(self, owner_session):
+    def test_amplitude_rejects_bad_creds(self, owner_session):
         r = owner_session.post(
-            f"{BASE_URL}/api/business/connect/square",
-            json={"api_key": "EAAAlFakeToken123", "sandbox": True},
+            f"{BASE_URL}/api/business/connect/amplitude",
+            json={"client_id": "fake_api_key", "api_key": "fake_secret_key", "instance_url": "us"},
             timeout=15,
         )
         assert r.status_code == 400
-        assert "square" in r.json()["detail"].lower() or "api" in r.json()["detail"].lower()
+        assert "amplitude" in r.json()["detail"].lower() or "api" in r.json()["detail"].lower()
 
     def test_mixpanel_missing_fields(self, owner_session):
         r = owner_session.post(

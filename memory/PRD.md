@@ -15,10 +15,10 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ### Source Roles + Dashboard Filtering (Feb 2026)
 - Each integration tagged with a `revenue_role`: **Revenue** (counted in revenue KPIs), **Pipeline** (open opportunities), or **Signal** (analytics-only, never in totals).
-- Smart defaults: Stripe/PayPal/Square/Xero/Shopify/QuickBooks → Revenue. HubSpot/Salesforce/Zoho → Pipeline. Mixpanel → Signal. Owner can override per-connection via dropdown on the integration card.
+- Smart defaults: Stripe/PayPal/Xero/Shopify/QuickBooks → Revenue. HubSpot/Salesforce/Zoho → Pipeline. Mixpanel/Amplitude → Signal. Owner can override per-connection via dropdown on the integration card.
 - Backend: new `PUT /api/business/connection/{platform}/role` endpoint. `GET /api/business/platforms` exposes role per connected platform.
 - Analytics endpoints accept `?sources=stripe,hubspot,manual` query param — multi-select source filtering with `manual` as a sentinel for user-created deals.
-- Frontend: Dashboard top has a filter pill bar (color-coded dots = role); each pill is a one-click toggle. "All sources" returns the unified view. Connected sources only shown.
+- Frontend: Dashboard top has a filter **dropdown** (Filter icon + "All sources" trigger) — opens a menu with checkbox-style multi-select per connected platform (color-coded role dots), an "All sources" reset row, and a "Manual deals only" toggle. A "Clear" link appears when a filter is active. Replaced the previous pill bar (Feb 2026). Connected sources only shown.
 - Backfill script applied to all existing connections.
 
 ### Integration Tier Gating + Color Consistency (Feb 2026)
@@ -30,7 +30,7 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ### 5 New Live Integrations (Feb 2026)
 - **PayPal** (Payments) — client_credentials OAuth2 → Orders/Transactions API → synced as deals
-- **Square** (Payments) — Personal Access Token → /v2/payments → completed payments as deals
+- **Amplitude** (Analytics) — API Key + Secret Key (Basic auth) → /api/2/users + /api/2/events/segmentation → conversion events as deals (US + EU regions). Replaced Square (Feb 2026 swap).
 - **Mixpanel** (Analytics) — API Secret basic auth → events + conversion events (Purchase/Order Completed/Subscription Started) summarised as deals
 - **Zoho CRM** (CRM) — refresh_token OAuth2 flow (supports all data centers: com/eu/in/com.au/jp) → /crm/v6/Deals
 - **Xero** (Finance) — refresh_token OAuth2 flow → /api.xro/2.0/Invoices (ACCREC only) → invoices as deals
