@@ -520,25 +520,6 @@ const ConnectBusiness = () => {
           </>
         )}
 
-        {/* Info section */}
-        <div className="bg-zinc-900/30 border border-white/5 rounded-xl p-5" data-testid="info-section">
-          <div className="flex gap-3">
-            <div className="w-9 h-9 rounded-lg bg-indigo-500/10 flex items-center justify-center shrink-0">
-              <Database className="w-4 h-4 text-indigo-400" />
-            </div>
-            <div className="flex-1 space-y-2.5">
-              <h4 className="text-sm font-medium text-white" style={{ fontFamily: 'Outfit' }}>How it works</h4>
-              <p className="text-xs text-zinc-400 leading-relaxed">
-                Pick a platform, authenticate with your API key, and InFlow syncs your data into a unified pipeline. Re-sync any time.
-              </p>
-              <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-[11px] text-zinc-500 pt-1">
-                <span className="flex items-center gap-1.5"><Lock className="w-3 h-3 text-emerald-400" />Encrypted at rest</span>
-                <span className="flex items-center gap-1.5"><Shield className="w-3 h-3 text-emerald-400" />Read-only</span>
-                <span className="flex items-center gap-1.5"><Sparkles className="w-3 h-3 text-indigo-400" />{usage?.limit === null ? 'Unlimited slots' : `${usage?.limit ?? 2} slots on your plan`}</span>
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
 
       {/* Generic Platform Connect Modal */}
