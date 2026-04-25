@@ -526,12 +526,34 @@ const ConnectBusiness = () => {
             <div className="w-9 h-9 rounded-lg bg-indigo-500/10 flex items-center justify-center shrink-0">
               <Database className="w-4 h-4 text-indigo-400" />
             </div>
-            <div>
-              <h4 className="text-sm font-medium text-white mb-1" style={{ fontFamily: 'Outfit' }}>How it works</h4>
-              <p className="text-xs text-zinc-400 leading-relaxed">
-                All 5 platforms use your real API credentials to fetch live data from your business accounts.
-                Stripe, Shopify, and HubSpot tokens don't expire. Salesforce and QuickBooks tokens are temporary and may need refreshing.
-                You can also upload CSVs or connect any custom API. InFlow detects known platforms in your data and suggests direct integrations.
+            <div className="space-y-3">
+              <h4 className="text-sm font-medium text-white" style={{ fontFamily: 'Outfit' }}>How it works</h4>
+              <ol className="text-xs text-zinc-400 leading-relaxed space-y-1.5 list-decimal list-inside marker:text-indigo-400">
+                <li><span className="text-zinc-300">Pick a platform</span> from the 10 live integrations or import a CSV / connect a custom REST API.</li>
+                <li><span className="text-zinc-300">Authenticate</span> with your API credentials. We validate them on connect and reject anything invalid before storing.</li>
+                <li><span className="text-zinc-300">Initial sync</span> pulls recent transactions, deals, invoices, or events into your unified pipeline.</li>
+                <li><span className="text-zinc-300">Auto-refresh</span> keeps data current — hit Re-sync any time to fetch the latest.</li>
+              </ol>
+              <div className="pt-2 border-t border-white/[0.04] grid sm:grid-cols-2 gap-x-6 gap-y-2 text-[11px]">
+                <div className="flex items-start gap-2">
+                  <Lock className="w-3 h-3 text-emerald-400 shrink-0 mt-0.5" />
+                  <span className="text-zinc-400"><span className="text-zinc-300 font-medium">Encrypted at rest.</span> All API keys, tokens & secrets are encrypted before storing.</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <Shield className="w-3 h-3 text-emerald-400 shrink-0 mt-0.5" />
+                  <span className="text-zinc-400"><span className="text-zinc-300 font-medium">Read-only access.</span> InFlow never writes back to your platforms — only pulls data.</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <Sparkles className="w-3 h-3 text-indigo-400 shrink-0 mt-0.5" />
+                  <span className="text-zinc-400"><span className="text-zinc-300 font-medium">{usage?.limit === null ? 'Unlimited integrations' : `${usage?.limit ?? 2} integration slots`}</span> on your plan{usage?.limit !== null && '. Upgrade for more.'}</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <Clock className="w-3 h-3 text-amber-400 shrink-0 mt-0.5" />
+                  <span className="text-zinc-400"><span className="text-zinc-300 font-medium">Token expiry:</span> Salesforce & QuickBooks tokens are short-lived; reconnect when prompted.</span>
+                </div>
+              </div>
+              <p className="text-[11px] text-zinc-500 pt-1">
+                Don't see your platform? <button onClick={() => setApiModal(true)} className="text-indigo-400 hover:text-indigo-300 underline-offset-2 hover:underline">Connect any REST API</button> with our Custom API connector (Enterprise only).
               </p>
             </div>
           </div>
