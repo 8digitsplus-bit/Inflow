@@ -526,35 +526,16 @@ const ConnectBusiness = () => {
             <div className="w-9 h-9 rounded-lg bg-indigo-500/10 flex items-center justify-center shrink-0">
               <Database className="w-4 h-4 text-indigo-400" />
             </div>
-            <div className="space-y-3">
+            <div className="flex-1 space-y-2.5">
               <h4 className="text-sm font-medium text-white" style={{ fontFamily: 'Outfit' }}>How it works</h4>
-              <ol className="text-xs text-zinc-400 leading-relaxed space-y-1.5 list-decimal list-inside marker:text-indigo-400">
-                <li><span className="text-zinc-300">Pick a platform</span> from the 10 live integrations or import a CSV / connect a custom REST API.</li>
-                <li><span className="text-zinc-300">Authenticate</span> with your API credentials. We validate them on connect and reject anything invalid before storing.</li>
-                <li><span className="text-zinc-300">Initial sync</span> pulls recent transactions, deals, invoices, or events into your unified pipeline.</li>
-                <li><span className="text-zinc-300">Auto-refresh</span> keeps data current — hit Re-sync any time to fetch the latest.</li>
-              </ol>
-              <div className="pt-2 border-t border-white/[0.04] grid sm:grid-cols-2 gap-x-6 gap-y-2 text-[11px]">
-                <div className="flex items-start gap-2">
-                  <Lock className="w-3 h-3 text-emerald-400 shrink-0 mt-0.5" />
-                  <span className="text-zinc-400"><span className="text-zinc-300 font-medium">Encrypted at rest.</span> All API keys, tokens & secrets are encrypted before storing.</span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <Shield className="w-3 h-3 text-emerald-400 shrink-0 mt-0.5" />
-                  <span className="text-zinc-400"><span className="text-zinc-300 font-medium">Read-only access.</span> InFlow never writes back to your platforms — only pulls data.</span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <Sparkles className="w-3 h-3 text-indigo-400 shrink-0 mt-0.5" />
-                  <span className="text-zinc-400"><span className="text-zinc-300 font-medium">{usage?.limit === null ? 'Unlimited integrations' : `${usage?.limit ?? 2} integration slots`}</span> on your plan{usage?.limit !== null && '. Upgrade for more.'}</span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <Clock className="w-3 h-3 text-amber-400 shrink-0 mt-0.5" />
-                  <span className="text-zinc-400"><span className="text-zinc-300 font-medium">Token expiry:</span> Salesforce & QuickBooks tokens are short-lived; reconnect when prompted.</span>
-                </div>
-              </div>
-              <p className="text-[11px] text-zinc-500 pt-1">
-                Don't see your platform? <button onClick={() => setApiModal(true)} className="text-indigo-400 hover:text-indigo-300 underline-offset-2 hover:underline">Connect any REST API</button> with our Custom API connector (Enterprise only).
+              <p className="text-xs text-zinc-400 leading-relaxed">
+                Pick a platform, authenticate with your API key, and InFlow syncs your data into a unified pipeline. Re-sync any time.
               </p>
+              <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-[11px] text-zinc-500 pt-1">
+                <span className="flex items-center gap-1.5"><Lock className="w-3 h-3 text-emerald-400" />Encrypted at rest</span>
+                <span className="flex items-center gap-1.5"><Shield className="w-3 h-3 text-emerald-400" />Read-only</span>
+                <span className="flex items-center gap-1.5"><Sparkles className="w-3 h-3 text-indigo-400" />{usage?.limit === null ? 'Unlimited slots' : `${usage?.limit ?? 2} slots on your plan`}</span>
+              </div>
             </div>
           </div>
         </div>
