@@ -13,6 +13,14 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
+### Source Roles + Dashboard Filtering (Feb 2026)
+- Each integration tagged with a `revenue_role`: **Revenue** (counted in revenue KPIs), **Pipeline** (open opportunities), or **Signal** (analytics-only, never in totals).
+- Smart defaults: Stripe/PayPal/Square/Xero/Shopify/QuickBooks → Revenue. HubSpot/Salesforce/Zoho → Pipeline. Mixpanel → Signal. Owner can override per-connection via dropdown on the integration card.
+- Backend: new `PUT /api/business/connection/{platform}/role` endpoint. `GET /api/business/platforms` exposes role per connected platform.
+- Analytics endpoints accept `?sources=stripe,hubspot,manual` query param — multi-select source filtering with `manual` as a sentinel for user-created deals.
+- Frontend: Dashboard top has a filter pill bar (color-coded dots = role); each pill is a one-click toggle. "All sources" returns the unified view. Connected sources only shown.
+- Backfill script applied to all existing connections.
+
 ### Integration Tier Gating + Color Consistency (Feb 2026)
 - **Integration count limits**: Essential=2, Pro=4, Enterprise=unlimited. Users pick any integrations they want (no per-platform restrictions). Custom API remains Enterprise-only.
 - Backend: `get_integration_limit(tier)` helper + `/api/business/integration-usage` endpoint + 403 with upgrade message on connect at limit.

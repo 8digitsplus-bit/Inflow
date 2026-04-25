@@ -479,9 +479,32 @@ const ConnectBusiness = () => {
                         </div>
                         {platform.connected ? (
                           <div className="space-y-3">
-                            <div className="flex items-center gap-4 text-[11px] text-zinc-500">
-                              <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{formatDate(platform.last_synced)}</span>
-                              <span>{platform.records_synced} records</span>
+                            <div className="flex items-center justify-between gap-2 flex-wrap">
+                              <div className="flex items-center gap-3 text-[11px] text-zinc-500">
+                                <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{formatDate(platform.last_synced)}</span>
+                                <span>{platform.records_synced} records</span>
+                              </div>
+                              <select
+                                value={platform.revenue_role || platform.default_revenue_role || 'revenue'}
+                                onChange={async (e) => {
+                                  const role = e.target.value;
+                                  const r = await fetch(`${API_URL}/api/business/connection/${platform.platform_id}/role`, {
+                                    method: 'PUT',
+                                    credentials: 'include',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ role }),
+                                  });
+                                  if (r.ok) { toast.success(`Role updated to ${role}`); fetchData(); }
+                                  else { const d = await r.json(); toast.error(d.detail || 'Failed to update role'); }
+                                }}
+                                className="text-[11px] px-2 py-0.5 rounded-md bg-zinc-900 border border-zinc-700 text-zinc-300 focus:outline-none focus:border-indigo-500"
+                                data-testid={`role-select-${platform.platform_id}`}
+                                title="Defines whether this source counts toward Revenue, Pipeline, or is treated as Signal-only"
+                              >
+                                <option value="revenue">Revenue</option>
+                                <option value="pipeline">Pipeline</option>
+                                <option value="signal">Signal only</option>
+                              </select>
                             </div>
                             <div className="flex items-center gap-2">
                               <Button size="sm" variant="outline"

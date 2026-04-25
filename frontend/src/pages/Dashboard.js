@@ -69,6 +69,8 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [aiInsight, setAiInsight] = useState(null);
   const [loadingInsight, setLoadingInsight] = useState(false);
+  const [connectedSources, setConnectedSources] = useState([]);
+  const [selectedSources, setSelectedSources] = useState([]); // empty = all sources
 
   const tier = user?.subscription_tier || 'trial';
   const userGoals = user?.goals || [];
@@ -86,14 +88,26 @@ const Dashboard = () => {
 
   useEffect(() => {
     fetchAllData();
-  }, []);
+    fetchConnectedSources();
+  }, [selectedSources]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const fetchConnectedSources = async () => {
+    try {
+      const r = await fetch(`${API_URL}/api/business/platforms`, { credentials: 'include' });
+      if (r.ok) {
+        const platforms = await r.json();
+        setConnectedSources(platforms.filter(p => p.connected));
+      }
+    } catch { /* noop */ }
+  };
 
   const fetchAllData = async () => {
     try {
+      const q = selectedSources.length ? `?sources=${encodeURIComponent(selectedSources.join(','))}` : '';
       const [analyticsRes, churnRes, croRes, dealsRes] = await Promise.all([
-        fetch(`${API_URL}/api/analytics/revenue`, { credentials: 'include' }),
-        fetch(`${API_URL}/api/analytics/churn`, { credentials: 'include' }),
-        fetch(`${API_URL}/api/analytics/cro`, { credentials: 'include' }),
+        fetch(`${API_URL}/api/analytics/revenue${q}`, { credentials: 'include' }),
+        fetch(`${API_URL}/api/analytics/churn${q}`, { credentials: 'include' }),
+        fetch(`${API_URL}/api/analytics/cro${q}`, { credentials: 'include' }),
         fetch(`${API_URL}/api/deals`, { credentials: 'include' })
       ]);
       if (analyticsRes.ok) setAnalytics(await analyticsRes.json());
@@ -216,6 +230,58 @@ const Dashboard = () => {
             </span>
           </div>
         </div>
+
+        {/* Source Filter Pills — visible only when integrations exist */}
+        {connectedSources.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 pb-1 border-b border-white/[0.04]" data-testid="source-filter">
+            <span className="text-[11px] uppercase tracking-wider text-zinc-500 mr-1">Filter</span>
+            <button
+              onClick={() => setSelectedSources([])}
+              className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                selectedSources.length === 0
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-zinc-900 text-zinc-400 hover:bg-zinc-800 border border-zinc-800'
+              }`}
+              data-testid="source-filter-all"
+            >
+              All sources
+            </button>
+            {connectedSources.map(s => {
+              const active = selectedSources.includes(s.platform_id);
+              const role = s.revenue_role || s.default_revenue_role || 'revenue';
+              const dotClass = role === 'revenue' ? 'bg-emerald-400' : role === 'pipeline' ? 'bg-indigo-400' : 'bg-amber-400';
+              return (
+                <button
+                  key={s.platform_id}
+                  onClick={() => setSelectedSources(prev =>
+                    active ? prev.filter(p => p !== s.platform_id) : [...prev.filter(p => p !== 'manual'), s.platform_id]
+                  )}
+                  className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-all flex items-center gap-1.5 ${
+                    active
+                      ? 'bg-indigo-600 text-white border-indigo-500'
+                      : 'bg-zinc-900 text-zinc-400 hover:bg-zinc-800 border-zinc-800 hover:border-zinc-700'
+                  }`}
+                  data-testid={`source-filter-${s.platform_id}`}
+                  title={`Role: ${role}`}
+                >
+                  {s.name}
+                  <span className={`w-1.5 h-1.5 rounded-full ${dotClass}`} />
+                </button>
+              );
+            })}
+            <button
+              onClick={() => setSelectedSources(['manual'])}
+              className={`px-2.5 py-1 rounded-full text-xs font-medium transition-colors ${
+                selectedSources.length === 1 && selectedSources[0] === 'manual'
+                  ? 'bg-indigo-600 text-white'
+                  : 'bg-zinc-900 text-zinc-400 hover:bg-zinc-800 border border-zinc-800'
+              }`}
+              data-testid="source-filter-manual"
+            >
+              Manual
+            </button>
+          </div>
+        )}
 
         {/* Key Metrics - Available to all */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">

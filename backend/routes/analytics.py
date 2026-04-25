@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from datetime import datetime, timezone, timedelta
+from typing import Optional
 
 from database import db
 from models import User
@@ -8,10 +9,33 @@ from dependencies import get_current_user, org_filter
 router = APIRouter()
 
 
+def _source_filter(sources: Optional[str]) -> dict:
+    """Build a MongoDB filter for deals based on a comma-separated sources param.
+    Empty/None means no filter (all sources included).
+    Sentinel value 'manual' includes deals that have no source field (user-created).
+    """
+    if not sources:
+        return {}
+    items = [s.strip() for s in sources.split(",") if s.strip()]
+    if not items:
+        return {}
+    has_manual = "manual" in items
+    real_sources = [s for s in items if s != "manual"]
+    if has_manual and real_sources:
+        return {"$or": [{"source": {"$in": real_sources}}, {"source": {"$exists": False}}, {"source": None}]}
+    if has_manual:
+        return {"$or": [{"source": {"$exists": False}}, {"source": None}]}
+    return {"source": {"$in": real_sources}}
+
+
+def _scoped(user: User, sources: Optional[str]) -> dict:
+    return {**org_filter(user), **_source_filter(sources)}
+
+
 @router.get("/analytics/revenue")
-async def get_revenue_analytics(user: User = Depends(get_current_user)):
+async def get_revenue_analytics(user: User = Depends(get_current_user), sources: Optional[str] = Query(None)):
     """Get revenue analytics for dashboard"""
-    deals = await db.deals.find(org_filter(user), {"_id": 0}).to_list(1000)
+    deals = await db.deals.find(_scoped(user, sources), {"_id": 0}).to_list(1000)
 
     total_pipeline = sum(d.get("value", 0) for d in deals)
     closed_won = [d for d in deals if d.get("stage") == "closed_won"]
@@ -51,9 +75,9 @@ async def get_revenue_analytics(user: User = Depends(get_current_user)):
 
 
 @router.get("/analytics/pipeline")
-async def get_pipeline_analytics(user: User = Depends(get_current_user)):
+async def get_pipeline_analytics(user: User = Depends(get_current_user), sources: Optional[str] = Query(None)):
     """Pipeline analytics: velocity, conversion rates, bottleneck detection"""
-    deals = await db.deals.find(org_filter(user), {"_id": 0}).to_list(1000)
+    deals = await db.deals.find(_scoped(user, sources), {"_id": 0}).to_list(1000)
     now = datetime.now(timezone.utc)
 
     stage_probabilities = {
@@ -132,9 +156,9 @@ async def get_pipeline_analytics(user: User = Depends(get_current_user)):
 
 
 @router.get("/analytics/churn")
-async def get_churn_analytics(user: User = Depends(get_current_user)):
+async def get_churn_analytics(user: User = Depends(get_current_user), sources: Optional[str] = Query(None)):
     """Get comprehensive churn and retention analytics"""
-    deals = await db.deals.find(org_filter(user), {"_id": 0}).to_list(1000)
+    deals = await db.deals.find(_scoped(user, sources), {"_id": 0}).to_list(1000)
 
     total_deals = len(deals)
     closed_won = [d for d in deals if d.get("stage") == "closed_won"]
@@ -294,9 +318,9 @@ async def get_churn_analytics(user: User = Depends(get_current_user)):
 
 
 @router.get("/analytics/cro")
-async def get_cro_analytics(user: User = Depends(get_current_user)):
+async def get_cro_analytics(user: User = Depends(get_current_user), sources: Optional[str] = Query(None)):
     """Get conversion rate optimization analytics"""
-    deals = await db.deals.find(org_filter(user), {"_id": 0}).to_list(1000)
+    deals = await db.deals.find(_scoped(user, sources), {"_id": 0}).to_list(1000)
 
     stages = ["lead", "qualified", "proposal", "negotiation", "closed_won", "closed_lost"]
     stage_counts = {stage: len([d for d in deals if d.get("stage") == stage]) for stage in stages}
@@ -361,9 +385,9 @@ async def get_cro_analytics(user: User = Depends(get_current_user)):
 
 
 @router.get("/analytics/sales-performance")
-async def get_sales_performance(user: User = Depends(get_current_user)):
+async def get_sales_performance(user: User = Depends(get_current_user), sources: Optional[str] = Query(None)):
     """Sales Performance: cycle length, deal aging, close rate by size, activity-to-close"""
-    deals = await db.deals.find(org_filter(user), {"_id": 0}).to_list(1000)
+    deals = await db.deals.find(_scoped(user, sources), {"_id": 0}).to_list(1000)
     now = datetime.now(timezone.utc)
 
     closed_won = [d for d in deals if d.get("stage") == "closed_won"]
@@ -483,9 +507,9 @@ async def get_sales_performance(user: User = Depends(get_current_user)):
 
 
 @router.get("/analytics/sales-revenue")
-async def get_sales_revenue(user: User = Depends(get_current_user)):
+async def get_sales_revenue(user: User = Depends(get_current_user), sources: Optional[str] = Query(None)):
     """Revenue Analytics: concentration risk, ARPU, expansion revenue, NRR"""
-    deals = await db.deals.find(org_filter(user), {"_id": 0}).to_list(1000)
+    deals = await db.deals.find(_scoped(user, sources), {"_id": 0}).to_list(1000)
 
     closed_won = [d for d in deals if d.get("stage") == "closed_won"]
     active_deals = [d for d in deals if d.get("stage") not in ["closed_won", "closed_lost"]]
@@ -547,9 +571,9 @@ async def get_sales_revenue(user: User = Depends(get_current_user)):
 
 
 @router.get("/analytics/revenue-intelligence")
-async def get_revenue_intelligence(user: User = Depends(get_current_user)):
+async def get_revenue_intelligence(user: User = Depends(get_current_user), sources: Optional[str] = Query(None)):
     """Get unified revenue intelligence overview combining pipeline, performance and revenue data"""
-    deals = await db.deals.find(org_filter(user), {"_id": 0}).to_list(1000)
+    deals = await db.deals.find(_scoped(user, sources), {"_id": 0}).to_list(1000)
 
     total_deals = len(deals)
     closed_won = [d for d in deals if d.get("stage") == "closed_won"]
@@ -653,13 +677,13 @@ async def get_revenue_intelligence(user: User = Depends(get_current_user)):
 
 
 @router.get("/analytics/pricing")
-async def get_pricing_analytics(user: User = Depends(get_current_user)):
+async def get_pricing_analytics(user: User = Depends(get_current_user), sources: Optional[str] = Query(None)):
     """Get pricing optimization analytics from synced integration data and deals"""
     analyses = await db.pricing_analyses.find(
         org_filter(user), {"_id": 0}
     ).sort("created_at", -1).to_list(50)
 
-    deals = await db.deals.find(org_filter(user), {"_id": 0}).to_list(1000)
+    deals = await db.deals.find(_scoped(user, sources), {"_id": 0}).to_list(1000)
     closed_won = [d for d in deals if d.get("stage") == "closed_won"]
 
     total_revenue = sum(d.get("value", 0) for d in closed_won)
@@ -754,7 +778,7 @@ async def get_pricing_analytics(user: User = Depends(get_current_user)):
 
 
 @router.post("/analytics/pricing/sync")
-async def sync_pricing_from_integrations(user: User = Depends(get_current_user)):
+async def sync_pricing_from_integrations(user: User = Depends(get_current_user), sources: Optional[str] = Query(None)):
     """Sync product/pricing data from all connected integrations"""
     import random
     import uuid
@@ -836,9 +860,9 @@ async def sync_pricing_from_integrations(user: User = Depends(get_current_user))
 
 
 @router.get("/analytics/forecasting")
-async def get_forecasting(user: User = Depends(get_current_user)):
+async def get_forecasting(user: User = Depends(get_current_user), sources: Optional[str] = Query(None)):
     """Revenue forecasting with weighted pipeline and scenario modeling."""
-    deals = await db.deals.find(org_filter(user), {"_id": 0}).to_list(1000)
+    deals = await db.deals.find(_scoped(user, sources), {"_id": 0}).to_list(1000)
 
     stage_prob = {"lead": 10, "qualified": 25, "proposal": 50, "negotiation": 75, "closed_won": 100, "closed_lost": 0}
     open_stages = ["lead", "qualified", "proposal", "negotiation"]

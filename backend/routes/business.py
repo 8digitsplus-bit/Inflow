@@ -1,4 +1,4 @@
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, Request
 from pydantic import BaseModel
 from datetime import datetime, timezone
 from typing import Optional
@@ -23,6 +23,7 @@ router = APIRouter()
 
 PLATFORMS = {
     "stripe": {
+        "default_revenue_role": "revenue",
         "platform_id": "stripe",
         "name": "Stripe",
         "description": "Sync payment data, subscriptions, and revenue metrics directly from your Stripe account.",
@@ -38,6 +39,7 @@ PLATFORMS = {
         "key_help_text": "Find your API key on the Stripe Dashboard under Developers > API Keys.",
     },
     "shopify": {
+        "default_revenue_role": "revenue",
         "platform_id": "shopify",
         "name": "Shopify",
         "description": "Import e-commerce orders, customer data, and product performance from your Shopify store.",
@@ -54,6 +56,7 @@ PLATFORMS = {
         "key_help_text": "Go to Shopify Admin > Settings > Apps > Develop apps > Create app > Configure Admin API scopes (read_orders, read_customers) > Install > Get Access Token.",
     },
     "hubspot": {
+        "default_revenue_role": "pipeline",
         "platform_id": "hubspot",
         "name": "HubSpot",
         "description": "Sync your CRM deals, contacts, and pipeline data from HubSpot for unified insights.",
@@ -69,6 +72,7 @@ PLATFORMS = {
         "key_help_text": "Go to HubSpot > Settings > Integrations > Private Apps > Create > Grant CRM scopes (crm.objects.deals.read, crm.objects.contacts.read) > Create app > Copy access token.",
     },
     "salesforce": {
+        "default_revenue_role": "pipeline",
         "platform_id": "salesforce",
         "name": "Salesforce",
         "description": "Two-way sync with Salesforce for complete pipeline visibility and deal tracking.",
@@ -86,6 +90,7 @@ PLATFORMS = {
         "token_expires": True,
     },
     "quickbooks": {
+        "default_revenue_role": "revenue",
         "platform_id": "quickbooks",
         "name": "QuickBooks",
         "description": "Pull financial data, invoices, and expense reports for comprehensive revenue analysis.",
@@ -103,6 +108,7 @@ PLATFORMS = {
         "token_expires": True,
     },
     "paypal": {
+        "default_revenue_role": "revenue",
         "platform_id": "paypal",
         "name": "PayPal",
         "description": "Import PayPal transactions and revenue from your PayPal Business account.",
@@ -120,6 +126,7 @@ PLATFORMS = {
         "key_help_text": "Create a REST app in PayPal Developer Dashboard. Copy the Client ID and Secret for your Live (or Sandbox) app.",
     },
     "square": {
+        "default_revenue_role": "revenue",
         "platform_id": "square",
         "name": "Square",
         "description": "Sync Square payments and orders for unified revenue analytics.",
@@ -136,6 +143,7 @@ PLATFORMS = {
         "key_help_text": "In the Square Developer Dashboard, open your app and copy the Personal Access Token (Production or Sandbox).",
     },
     "mixpanel": {
+        "default_revenue_role": "signal",
         "platform_id": "mixpanel",
         "name": "Mixpanel",
         "description": "Ingest product analytics events to correlate user behavior with revenue.",
@@ -153,6 +161,7 @@ PLATFORMS = {
         "key_help_text": "Find your Project ID in Project Settings > Overview. Generate a Service Account (or legacy API Secret) in Project Settings > Service Accounts.",
     },
     "zoho": {
+        "default_revenue_role": "pipeline",
         "platform_id": "zoho",
         "name": "Zoho CRM",
         "description": "Pull deals, pipeline, and contacts from your Zoho CRM.",
@@ -171,6 +180,7 @@ PLATFORMS = {
         "key_help_text": "Create a Self-Client in Zoho API Console. Generate a grant token with scope ZohoCRM.modules.deals.READ ZohoCRM.users.READ and exchange it for a refresh_token.",
     },
     "xero": {
+        "default_revenue_role": "revenue",
         "platform_id": "xero",
         "name": "Xero",
         "description": "Sync accounts-receivable invoices and revenue from your Xero organisation.",
@@ -481,8 +491,26 @@ async def get_platforms(current_user: User = Depends(get_current_user)):
             platform_data["account_name"] = conn["account_name"]
         if conn and conn.get("stats"):
             platform_data["stats"] = conn["stats"]
+        if conn and conn.get("revenue_role"):
+            platform_data["revenue_role"] = conn["revenue_role"]
         result.append(platform_data)
     return result
+
+
+@router.put("/business/connection/{platform}/role")
+async def set_connection_role(platform: str, request: Request, current_user: User = Depends(require_owner)):
+    """Update the revenue_role for a connected platform (revenue / pipeline / signal)."""
+    data = await request.json()
+    role = (data.get("role") or "").lower().strip()
+    if role not in ("revenue", "pipeline", "signal"):
+        raise HTTPException(status_code=400, detail="role must be one of: revenue, pipeline, signal")
+    result = await db.business_connections.update_one(
+        {**org_filter(current_user), "platform": platform},
+        {"$set": {"revenue_role": role}}
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Platform not connected")
+    return {"status": "updated", "platform": platform, "revenue_role": role}
 
 
 @router.get("/business/integration-usage")
@@ -532,6 +560,8 @@ async def connect_platform(platform: str, body: ConnectRequest = ConnectRequest(
 
     data, connection, account_name = await handler(body, current_user.user_id, now)
     connection["org_id"] = current_user.org_id
+    # Default revenue role from PLATFORMS dict (revenue/pipeline/signal); user can override later
+    connection["revenue_role"] = PLATFORMS[platform].get("default_revenue_role", "revenue")
 
     if data["deals"]:
         for d in data["deals"]:
