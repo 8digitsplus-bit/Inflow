@@ -1,13 +1,13 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { ArrowLeft, Mail, Loader2, Eye, EyeOff, ShieldCheck, User, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Mail, Loader2, Eye, EyeOff, ShieldCheck, User, ChevronRight, CheckCircle2 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
 import { toast } from 'sonner';
 import { Toaster } from '../components/ui/sonner';
 
-const AccountChooser = ({ savedAccount, onSelectAccount, onUseAnother }) => {
+const AccountChooser = ({ savedAccount, onSelectAccount, onUseAnother, isActiveSession }) => {
   const initials = savedAccount.name
     ? savedAccount.name.split(' ').map(w => w[0]).join('').toUpperCase().slice(0, 2)
     : savedAccount.email[0].toUpperCase();
@@ -26,12 +26,20 @@ const AccountChooser = ({ savedAccount, onSelectAccount, onUseAnother }) => {
         className="w-full flex items-center gap-3 p-4 rounded-xl bg-white/[0.03] border border-white/[0.08] backdrop-blur-xl hover:bg-white/[0.06] hover:border-indigo-500/30 transition-all duration-200 group"
         data-testid="saved-account-card"
       >
-        <div className="w-10 h-10 rounded-full bg-indigo-500/20 flex items-center justify-center shrink-0">
+        <div className="w-10 h-10 rounded-full bg-indigo-500/20 flex items-center justify-center shrink-0 relative">
           <span className="text-sm font-semibold text-indigo-300">{initials}</span>
+          {isActiveSession && (
+            <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-zinc-900 flex items-center justify-center" data-testid="active-session-dot">
+              <CheckCircle2 className="w-2 h-2 text-white" strokeWidth={3} />
+            </span>
+          )}
         </div>
         <div className="flex-1 text-left min-w-0">
           <p className="text-sm font-medium text-white truncate">{savedAccount.name || 'User'}</p>
           <p className="text-xs text-zinc-500 truncate">{savedAccount.email}</p>
+          {isActiveSession && (
+            <p className="text-[10px] text-emerald-400 mt-0.5 font-medium">Signed in · click to continue</p>
+          )}
         </div>
         <ChevronRight className="w-4 h-4 text-zinc-600 group-hover:text-zinc-400 transition-colors shrink-0" />
       </button>
@@ -55,7 +63,7 @@ const AuthPage = () => {
   const [searchParams] = useSearchParams();
   const isTrial = searchParams.get('trial') === 'true';
   const isLoginMode = searchParams.get('mode') === 'login';
-  const { loginWithGoogle, loginWithEmail, registerWithEmail, verify2FA, isAuthenticated } = useAuth();
+  const { loginWithGoogle, loginWithEmail, registerWithEmail, verify2FA, isAuthenticated, user, loading: authLoading } = useAuth();
   const [mode, setMode] = useState(isLoginMode || localStorage.getItem('inflow_last_account') ? 'login' : 'register');
   const [showEmailForm, setShowEmailForm] = useState(false);
   const [loading, setLoading] = useState(null);
@@ -71,10 +79,20 @@ const AuthPage = () => {
   const savedAccount = savedAccountRaw ? JSON.parse(savedAccountRaw) : null;
   const [showAccountChooser, setShowAccountChooser] = useState(!!savedAccount);
 
-  if (isAuthenticated && !isRegistering) {
+  // True when the saved account matches the currently authenticated user (one-click sign-in possible)
+  const isActiveSession = !!(isAuthenticated && user && savedAccount && user.email === savedAccount.email);
+
+  // Redirect if already authenticated AND the user did NOT come here for a fresh-login from chooser
+  // (Side-effect must run in effect, not during render.)
+  useEffect(() => {
+    if (authLoading) return;
+    if (!isAuthenticated || isRegistering) return;
+    // If a chooser is being shown for the same logged-in user, let them click to continue.
+    if (showAccountChooser && isActiveSession) return;
+    // If chooser was dismissed (Use another account / Sign in form open), don't auto-redirect either.
+    if (showEmailForm || !showAccountChooser) return;
     navigate('/dashboard');
-    return null;
-  }
+  }, [authLoading, isAuthenticated, isRegistering, showAccountChooser, isActiveSession, showEmailForm, navigate]);
 
   const handleGoogle = () => {
     setLoading('google');
@@ -178,7 +196,11 @@ const AuthPage = () => {
         </div>
 
         <div className="bg-zinc-900/60 border border-white/10 rounded-2xl p-8 backdrop-blur-xl">
-          {twoFAState ? (
+          {authLoading ? (
+            <div className="flex items-center justify-center py-12" data-testid="auth-loading">
+              <Loader2 className="w-6 h-6 animate-spin text-indigo-400" />
+            </div>
+          ) : twoFAState ? (
             /* 2FA Verification Step */
             <div data-testid="2fa-verify-form">
               <div className="flex justify-center mb-4">
@@ -254,7 +276,13 @@ const AuthPage = () => {
             /* Account Chooser (Google-style) */
             <AccountChooser
               savedAccount={savedAccount}
+              isActiveSession={isActiveSession}
               onSelectAccount={() => {
+                if (isActiveSession) {
+                  // One-click sign-in: session cookie still valid, go straight to dashboard.
+                  navigate('/dashboard');
+                  return;
+                }
                 setShowAccountChooser(false);
                 setMode('login');
                 setForm({ ...form, email: savedAccount.email });
