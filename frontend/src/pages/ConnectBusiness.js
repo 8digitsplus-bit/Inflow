@@ -32,6 +32,7 @@ const ConnectBusiness = () => {
   const TIER_LEVEL = { trial: 0, expired: -1, cancelled: -1, free: 0, essential_monthly: 1, essential_yearly: 1, pro_monthly: 2, pro_yearly: 2, enterprise_monthly: 3, enterprise_yearly: 3 };
   const userTier = user?.subscription_tier || 'trial';
   const userLevel = TIER_LEVEL[userTier] ?? 0;
+  const isProPlus = userLevel >= 2;
   const isEnterprise = userLevel >= 3;
 
   const fetchData = useCallback(async () => {
@@ -266,15 +267,22 @@ const ConnectBusiness = () => {
             <div className="space-y-4">
               <h2 className="text-sm font-medium text-zinc-500 uppercase tracking-wider">Import Your Data</h2>
               <div className="grid md:grid-cols-2 gap-4">
-                <Card className="bg-zinc-950/50 border border-white/10 hover:border-emerald-500/30 transition-all duration-300 cursor-pointer group"
-                  onClick={() => setCsvModal(true)} data-testid="csv-import-card">
+                <Card className={`bg-zinc-950/50 border transition-all duration-300 ${isProPlus ? 'border-white/10 hover:border-emerald-500/30 cursor-pointer group' : 'border-white/5 opacity-80'}`}
+                  onClick={() => isProPlus ? setCsvModal(true) : toast.error('CSV import is available on the Pro and Enterprise plans. Upgrade to unlock.')} data-testid="csv-import-card">
                   <CardContent className="p-5">
                     <div className="flex items-start gap-3 mb-3">
                       <div className="w-11 h-11 rounded-xl bg-emerald-500/10 flex items-center justify-center shrink-0">
                         <FileSpreadsheet className="w-5 h-5 text-emerald-400" />
                       </div>
-                      <div>
-                        <h3 className="text-white font-semibold text-sm" style={{ fontFamily: 'Outfit' }}>Import CSV</h3>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className="text-white font-semibold text-sm" style={{ fontFamily: 'Outfit' }}>Import CSV</h3>
+                          {!isProPlus && (
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-indigo-500/15 text-indigo-300 flex items-center gap-1" data-testid="csv-import-pro-badge">
+                              <Lock className="w-2.5 h-2.5" /> Pro
+                            </span>
+                          )}
+                        </div>
                         <span className="text-[11px] text-zinc-500 font-medium">Spreadsheet Upload</span>
                       </div>
                     </div>
@@ -284,10 +292,17 @@ const ConnectBusiness = () => {
                         <span key={dt} className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-zinc-800 text-zinc-400 capitalize">{dt}</span>
                       ))}
                     </div>
-                    <Button className="w-full bg-emerald-600 hover:bg-emerald-500 text-xs h-9 group-hover:bg-emerald-500 transition-colors"
-                      onClick={(e) => { e.stopPropagation(); setCsvModal(true); }} data-testid="csv-import-btn">
-                      <Upload className="w-3.5 h-3.5 mr-2" /> Upload CSV File
-                    </Button>
+                    {isProPlus ? (
+                      <Button className="w-full bg-emerald-600 hover:bg-emerald-500 text-xs h-9 group-hover:bg-emerald-500 transition-colors"
+                        onClick={(e) => { e.stopPropagation(); setCsvModal(true); }} data-testid="csv-import-btn">
+                        <Upload className="w-3.5 h-3.5 mr-2" /> Upload CSV File
+                      </Button>
+                    ) : (
+                      <Button className="w-full bg-zinc-800 hover:bg-zinc-700 text-zinc-400 text-xs h-9"
+                        onClick={(e) => { e.stopPropagation(); toast.error('CSV import is available on the Pro and Enterprise plans. Upgrade to unlock.'); }} data-testid="csv-import-locked-btn">
+                        <Lock className="w-3.5 h-3.5 mr-2" /> Pro &amp; Enterprise Only
+                      </Button>
+                    )}
                   </CardContent>
                 </Card>
 

@@ -14,6 +14,7 @@ from utils.crypto import encrypt, decrypt
 router = APIRouter()
 
 ENTERPRISE_TIERS = {"enterprise_monthly", "enterprise_yearly"}
+PRO_PLUS_TIERS = {"pro_monthly", "pro_yearly", "enterprise_monthly", "enterprise_yearly"}
 
 STAGES = ["lead", "qualified", "proposal", "negotiation", "closed_won", "closed_lost"]
 PROB_MAP = {"lead": 15, "qualified": 35, "proposal": 55, "negotiation": 75, "closed_won": 100, "closed_lost": 0}
@@ -173,6 +174,9 @@ class CustomApiConnectRequest(BaseModel):
 
 @router.post("/business/import-csv")
 async def import_csv(body: CsvImportRequest, current_user: User = Depends(require_owner)):
+    tier = getattr(current_user, "subscription_tier", "trial") or "trial"
+    if tier not in PRO_PLUS_TIERS:
+        raise HTTPException(status_code=403, detail="CSV import requires a Pro or Enterprise plan.")
     if not body.data:
         raise HTTPException(status_code=400, detail="No data provided")
     if len(body.data) > 5000:
