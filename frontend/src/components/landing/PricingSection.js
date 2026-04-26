@@ -8,14 +8,14 @@ const API_URL = process.env.REACT_APP_BACKEND_URL;
 
 const plans = {
   monthly: [
-    { name: 'Essential', price: '299', period: '/month', features: ['Sales Pipeline', 'Core analytics', 'Email support', 'Churn alerts'], cta: 'Unlock Access', featured: false, planId: 'essential_monthly' },
-    { name: 'Pro', price: '699', period: '/month', features: ['Sales Performance', 'Priority support', 'Advanced analytics', 'Revenue forecasting', 'Churn prediction', 'CRO tools'], cta: 'Scale Up', featured: true, planId: 'pro_monthly' },
-    { name: 'Enterprise', price: '260', period: '/user', perUser: true, features: ['Everything in Pro', 'Sales Revenue', 'Revenue Intelligence', 'Custom integrations', 'API access'], cta: 'Maximise', featured: false, planId: 'enterprise_monthly' }
+    { name: 'Essential', price: '299', period: '/month', features: ['Sales Pipeline', 'Core analytics', '2 live integrations', 'Churn alerts', 'Email support'], cta: 'Unlock Access', featured: false, planId: 'essential_monthly' },
+    { name: 'Pro', price: '699', period: '/month', features: ['Everything in Essential', '4 live integrations', 'CSV import', 'Advanced analytics', 'Revenue forecasting', 'Churn prediction', 'CRO tools', 'Priority support'], cta: 'Scale Up', featured: true, planId: 'pro_monthly' },
+    { name: 'Enterprise', price: '260', period: '/user', perUser: true, features: ['Everything in Pro', 'Unlimited integrations', 'Custom API access', 'Sales Revenue analytics', 'Revenue Intelligence', 'Dedicated support'], cta: 'Maximise', featured: false, planId: 'enterprise_monthly' }
   ],
   yearly: [
-    { name: 'Essential', price: '2,512', originalPrice: '3,588', period: '/year', features: ['Sales Pipeline', 'Core analytics', 'Email support', 'Churn alerts'], cta: 'Unlock Access', featured: false, planId: 'essential_yearly', savings: '30% off 1st year' },
-    { name: 'Pro', price: '5,872', originalPrice: '8,388', period: '/year', features: ['Sales Performance', 'Priority support', 'Advanced analytics', 'Revenue forecasting', 'Churn prediction', 'CRO tools'], cta: 'Scale Up', featured: true, planId: 'pro_yearly', savings: '30% off 1st year' },
-    { name: 'Enterprise', price: '2,184', originalPrice: '3,120', period: '/user', perUser: true, features: ['Everything in Pro', 'Sales Revenue', 'Revenue Intelligence', 'Custom integrations', 'API access'], cta: 'Maximise', featured: false, planId: 'enterprise_yearly', savings: '30% off 1st year' }
+    { name: 'Essential', price: '2,512', originalPrice: '3,588', period: '/year', features: ['Sales Pipeline', 'Core analytics', '2 live integrations', 'Churn alerts', 'Email support'], cta: 'Unlock Access', featured: false, planId: 'essential_yearly', savings: '30% off 1st year' },
+    { name: 'Pro', price: '5,872', originalPrice: '8,388', period: '/year', features: ['Everything in Essential', '4 live integrations', 'CSV import', 'Advanced analytics', 'Revenue forecasting', 'Churn prediction', 'CRO tools', 'Priority support'], cta: 'Scale Up', featured: true, planId: 'pro_yearly', savings: '30% off 1st year' },
+    { name: 'Enterprise', price: '2,184', originalPrice: '3,120', period: '/user', perUser: true, features: ['Everything in Pro', 'Unlimited integrations', 'Custom API access', 'Sales Revenue analytics', 'Revenue Intelligence', 'Dedicated support'], cta: 'Maximise', featured: false, planId: 'enterprise_yearly', savings: '30% off 1st year' }
   ]
 };
 
