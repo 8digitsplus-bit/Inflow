@@ -7,7 +7,6 @@ import { FeaturesSection } from '../components/landing/FeaturesSection';
 import { ConnectBusinessSection, CustomIntegrationSection } from '../components/landing/HowItWorks';
 import { PricingSection } from '../components/landing/PricingSection';
 import { FAQSection } from '../components/landing/FAQSection';
-import { AboutSection } from '../components/landing/AboutSection';
 import { CTASection, Footer } from '../components/landing/CTAFooter';
 import { Toaster } from '../components/ui/sonner';
 
@@ -62,7 +61,6 @@ const Landing = () => {
       <CustomIntegrationSection />
       <PricingSection handleGetStarted={handleGetStarted} isAuthenticated={isAuthenticated} />
       <FAQSection />
-      <AboutSection />
       <CTASection handleGetStarted={handleGetStarted} />
       <Footer />
     </div>
