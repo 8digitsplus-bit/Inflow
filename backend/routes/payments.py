@@ -199,7 +199,7 @@ async def create_subscription_checkout(plan_key: str, plan: dict, user: User, or
 
     # Preserve plan + users in the return URL so the post-payment screen can
     # render the correct order summary even after the redirect.
-    return_url = f"{origin_url}/checkout?plan={plan_key}&users={quantity}&session_id={{CHECKOUT_SESSION_ID}}"
+    return_url = f"{origin_url}/checkout/return?session_id={{CHECKOUT_SESSION_ID}}"
 
     session_params = {
         "mode": "subscription",
@@ -331,6 +331,89 @@ async def create_checkout_session(request: Request, user: User = Depends(require
     except Exception as e:
         logger.error(f"Checkout error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Payment failed: {str(e)}")
+
+
+@router.get("/payments/session-status/{session_id}")
+async def get_session_status(session_id: str, user: User = Depends(get_current_user)):
+    """Stripe-canonical endpoint for the embedded-checkout return flow.
+
+    Retrieves the Checkout Session from Stripe and returns its status so the
+    frontend's /checkout/return page can branch:
+      - status == 'complete' → show success screen
+      - status == 'open'     → user closed the iframe early; redirect back to /checkout
+      - status == 'expired'  → session expired
+
+    Idempotently syncs the DB (payment_transactions + user.subscription_tier +
+    org.subscription_tier) when the session is complete, so this single call
+    covers both the read and the side-effect Stripe's pattern expects.
+    """
+    api_key = os.environ.get("STRIPE_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="Payment service not configured")
+
+    transaction = await db.payment_transactions.find_one(
+        {"session_id": session_id, "user_id": user.user_id}, {"_id": 0}
+    )
+    if not transaction:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+
+    if not is_real_stripe_key(api_key):
+        # Sandbox fallback — emergentintegrations doesn't expose embedded mode.
+        return {"status": "complete", "payment_status": "paid", "customer_email": user.email}
+
+    stripe_sdk.api_key = api_key
+    try:
+        session = stripe_sdk.checkout.Session.retrieve(session_id)
+    except Exception as e:
+        logger.error(f"Stripe session retrieve failed: {e}")
+        raise HTTPException(status_code=502, detail="Could not retrieve session from Stripe")
+
+    status = session.status                      # 'complete' | 'open' | 'expired'
+    payment_status = session.payment_status      # 'paid' | 'unpaid' | 'no_payment_required'
+    customer_email = (session.customer_details or {}).get("email") if session.customer_details else user.email
+
+    # Idempotent DB sync — only flip if not already paid
+    if (status == "complete" or payment_status == "paid") and transaction.get("payment_status") != "paid":
+        plan = transaction.get("plan", "pro_monthly")
+        subscription_id = session.subscription
+        now = datetime.now(timezone.utc).isoformat()
+
+        await db.payment_transactions.update_one(
+            {"session_id": session_id},
+            {"$set": {
+                "payment_status": "paid",
+                "stripe_subscription_id": subscription_id,
+                "updated_at": now,
+            }}
+        )
+        await db.users.update_one(
+            {"user_id": user.user_id},
+            {"$set": {
+                "subscription_tier": plan,
+                "subscription_status": "active",
+                "stripe_subscription_id": subscription_id,
+                "updated_at": now,
+            }}
+        )
+        if user.org_id:
+            quantity = int(transaction.get("metadata", {}).get("quantity", 1))
+            await db.organizations.update_one(
+                {"org_id": user.org_id},
+                {"$set": {
+                    "subscription_tier": plan,
+                    "subscription_status": "active",
+                    "seat_count": quantity,
+                    "stripe_subscription_id": subscription_id,
+                    "updated_at": now,
+                }}
+            )
+
+    return {
+        "status": status,
+        "payment_status": payment_status,
+        "customer_email": customer_email,
+        "plan": transaction.get("plan"),
+    }
 
 
 @router.get("/payments/status/{session_id}")

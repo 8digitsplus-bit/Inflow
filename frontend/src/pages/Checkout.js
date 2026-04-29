@@ -1,9 +1,7 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
 import {
-  Check, Loader2, ArrowLeft, Shield, Lock, Clock,
-  Zap, ChevronRight, CheckCircle2,
+  Check, ArrowLeft, Shield, Lock, Clock, Zap,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Toaster } from '../components/ui/sonner';
@@ -32,7 +30,6 @@ const PLANS = {
 const Checkout = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { refreshUser } = useAuth();
 
   const planKey = searchParams.get('plan') || 'pro_monthly';
   const plan = PLANS[planKey];
@@ -40,12 +37,6 @@ const Checkout = () => {
   const userCount = plan?.perUser ? Math.max(1, usersParam) : 1;
   const totalPrice = plan ? plan.price * userCount : 0;
   const totalOriginal = plan?.originalPrice ? plan.originalPrice * userCount : null;
-
-  // Detect post-payment return from Stripe (Stripe appends ?session_id=cs_test_...)
-  const returnSessionId = searchParams.get('session_id');
-  const [step, setStep] = useState(returnSessionId ? 'verifying' : 'paying');
-  const [paymentStatus, setPaymentStatus] = useState(null);
-  const pollRef = useRef(null);
 
   // Embedded Checkout fetches its client_secret via this callback every mount.
   const fetchClientSecret = useCallback(async () => {
@@ -67,35 +58,6 @@ const Checkout = () => {
     if (!data.client_secret) throw new Error('No client_secret returned');
     return data.client_secret;
   }, [planKey, userCount]);
-
-  // After Stripe redirects back with ?session_id=..., poll status until paid.
-  useEffect(() => {
-    if (!returnSessionId) return;
-    let attempts = 0;
-    const poll = async () => {
-      attempts += 1;
-      try {
-        const r = await fetch(`${API_URL}/api/payments/status/${returnSessionId}`, { credentials: 'include' });
-        if (r.ok) {
-          const d = await r.json();
-          setPaymentStatus(d);
-          if (d.payment_status === 'paid' || d.status === 'complete') {
-            clearInterval(pollRef.current);
-            setStep('success');
-            if (refreshUser) refreshUser();
-            return;
-          }
-        }
-      } catch { /* keep polling */ }
-      if (attempts >= 20) {
-        clearInterval(pollRef.current);
-        setStep('failed');
-      }
-    };
-    poll();
-    pollRef.current = setInterval(poll, 2500);
-    return () => { if (pollRef.current) clearInterval(pollRef.current); };
-  }, [returnSessionId, refreshUser]);
 
   if (!plan) {
     return (
@@ -121,55 +83,10 @@ const Checkout = () => {
     );
   }
 
-  // Success state — Stripe payment confirmed
-  if (step === 'success') {
-    return (
-      <div className="min-h-screen bg-[#050507] flex items-center justify-center px-4">
-        <Toaster position="top-center" richColors />
-        <div className="text-center max-w-md">
-          <div className="w-20 h-20 rounded-full bg-emerald-500/10 flex items-center justify-center mx-auto mb-6 animate-in zoom-in duration-500">
-            <CheckCircle2 className="w-10 h-10 text-emerald-400" />
-          </div>
-          <h1 className="text-3xl font-bold text-white mb-3" style={{ fontFamily: 'Outfit' }}>
-            Welcome to {plan.name}!
-          </h1>
-          <p className="text-zinc-400 mb-8">
-            Your subscription is now active. All {plan.name} features have been unlocked.
-          </p>
-          <Button
-            onClick={() => navigate('/dashboard')}
-            className="bg-indigo-600 hover:bg-indigo-500 px-8 h-11"
-            data-testid="go-to-dashboard-btn"
-          >
-            Go to Dashboard <ChevronRight className="w-4 h-4 ml-1" />
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
-  // Failed / timed-out polling state
-  if (step === 'failed') {
-    return (
-      <div className="min-h-screen bg-[#050507] flex items-center justify-center px-4">
-        <div className="text-center max-w-md">
-          <p className="text-amber-400 font-semibold mb-2">Payment status unconfirmed</p>
-          <p className="text-zinc-500 text-sm mb-6">
-            We couldn't confirm payment in time. If your card was charged, your subscription will activate within a few minutes — or check your email.
-          </p>
-          <Button onClick={() => navigate('/settings')} className="bg-indigo-600 hover:bg-indigo-500" data-testid="checkout-go-settings-btn">
-            Go to Settings
-          </Button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-[#050507] relative overflow-hidden">
       <Toaster position="top-center" richColors />
 
-      {/* Header */}
       <div className="border-b border-white/[0.06] bg-[#050507]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <button onClick={() => navigate('/choose-plan')} className="flex items-center gap-2 text-zinc-500 hover:text-white text-sm transition-colors" data-testid="back-btn">
@@ -185,7 +102,6 @@ const Checkout = () => {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
         <div className="grid lg:grid-cols-5 gap-8 lg:gap-12">
 
-          {/* Left: Embedded Stripe Checkout */}
           <div className="lg:col-span-3 order-2 lg:order-1">
             <div className="space-y-4">
               <div>
@@ -193,25 +109,14 @@ const Checkout = () => {
                 <p className="text-zinc-500 text-sm">Complete your subscription to InFlow {plan.name}</p>
               </div>
 
-              {step === 'verifying' ? (
-                <div className="bg-zinc-900/50 border border-white/[0.06] rounded-xl p-8 text-center" data-testid="checkout-verifying">
-                  <Loader2 className="w-10 h-10 animate-spin text-indigo-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-semibold text-white mb-2" style={{ fontFamily: 'Outfit' }}>Verifying your payment…</h3>
-                  <p className="text-zinc-400 text-sm">This usually takes a few seconds. Please don't close this page.</p>
-                  {paymentStatus?.payment_status && (
-                    <p className="text-zinc-600 text-xs mt-4">Status: {paymentStatus.payment_status}</p>
-                  )}
-                </div>
-              ) : (
-                <div className="bg-white rounded-xl overflow-hidden" data-testid="embedded-checkout-wrapper">
-                  <EmbeddedCheckoutProvider
-                    stripe={stripePromise}
-                    options={{ fetchClientSecret }}
-                  >
-                    <EmbeddedCheckout />
-                  </EmbeddedCheckoutProvider>
-                </div>
-              )}
+              <div className="bg-white rounded-xl overflow-hidden" data-testid="embedded-checkout-wrapper">
+                <EmbeddedCheckoutProvider
+                  stripe={stripePromise}
+                  options={{ fetchClientSecret }}
+                >
+                  <EmbeddedCheckout />
+                </EmbeddedCheckoutProvider>
+              </div>
 
               <div className="flex items-center justify-center gap-5 text-zinc-600 text-[11px]">
                 <span className="flex items-center gap-1"><Shield className="w-3 h-3" />SSL Encrypted</span>
@@ -221,7 +126,6 @@ const Checkout = () => {
             </div>
           </div>
 
-          {/* Right: Order Summary */}
           <div className="lg:col-span-2 order-1 lg:order-2">
             <div className="bg-zinc-900/50 border border-white/[0.06] rounded-xl p-5 lg:sticky lg:top-8" data-testid="order-summary">
               <h3 className="text-sm font-semibold text-zinc-300 mb-4">Order Summary</h3>

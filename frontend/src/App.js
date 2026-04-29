@@ -16,6 +16,7 @@ import AuthPage from './pages/AuthPage';
 import Onboarding from './pages/Onboarding';
 import ChoosePlan from './pages/ChoosePlan';
 import Checkout from './pages/Checkout';
+import CheckoutReturn from './pages/CheckoutReturn';
 import Support from './pages/Support';
 import RevenueForecast from './pages/RevenueForecast';
 import AuthCallback from './pages/AuthCallback';
@@ -55,6 +56,11 @@ const AppRouter = () => {
       <Route path="/checkout" element={
         <ProtectedRoute>
           <Checkout />
+        </ProtectedRoute>
+      } />
+      <Route path="/checkout/return" element={
+        <ProtectedRoute>
+          <CheckoutReturn />
         </ProtectedRoute>
       } />
       <Route 
