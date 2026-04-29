@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
-  Check, ArrowLeft, Shield, Lock, Clock, Zap,
+  Check, ArrowLeft, Lock, Zap, ShieldCheck, Sparkles,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Toaster } from '../components/ui/sonner';
@@ -19,12 +19,12 @@ const STRIPE_PUBLISHABLE_KEY = process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY;
 const stripePromise = STRIPE_PUBLISHABLE_KEY ? loadStripe(STRIPE_PUBLISHABLE_KEY) : null;
 
 const PLANS = {
-  essential_monthly: { name: 'Essential', price: 299, period: 'month', color: '#06B6D4', features: ['Sales Pipeline', 'Core Analytics', 'Churn Monitoring', '2 live integrations'] },
-  essential_yearly: { name: 'Essential', price: 2512, period: 'year', color: '#06B6D4', originalPrice: 3588, features: ['Sales Pipeline', 'Core Analytics', 'Churn Monitoring', '2 live integrations'] },
-  pro_monthly: { name: 'Pro', price: 699, period: 'month', color: '#6366F1', features: ['Everything in Essential', '4 live integrations', 'CSV import', 'AI Insights', 'CRO Analysis'] },
-  pro_yearly: { name: 'Pro', price: 5872, period: 'year', color: '#6366F1', originalPrice: 8388, features: ['Everything in Essential', '4 live integrations', 'CSV import', 'AI Insights', 'CRO Analysis'] },
-  enterprise_monthly: { name: 'Enterprise', price: 260, period: 'month', color: '#A855F7', perUser: true, features: ['Everything in Pro', 'Unlimited integrations', 'Custom API access', 'Smart Assist AI'] },
-  enterprise_yearly: { name: 'Enterprise', price: 2184, period: 'year', color: '#A855F7', originalPrice: 3120, perUser: true, features: ['Everything in Pro', 'Unlimited integrations', 'Custom API access', 'Smart Assist AI'] },
+  essential_monthly: { name: 'Essential', price: 299, period: 'month', color: '#06B6D4', features: ['Sales Pipeline', 'Core Analytics', '2 live integrations'] },
+  essential_yearly: { name: 'Essential', price: 2512, period: 'year', color: '#06B6D4', originalPrice: 3588, features: ['Sales Pipeline', 'Core Analytics', '2 live integrations'] },
+  pro_monthly: { name: 'Pro', price: 699, period: 'month', color: '#6366F1', features: ['4 live integrations', 'CSV import', 'AI Insights', 'CRO Analysis'] },
+  pro_yearly: { name: 'Pro', price: 5872, period: 'year', color: '#6366F1', originalPrice: 8388, features: ['4 live integrations', 'CSV import', 'AI Insights', 'CRO Analysis'] },
+  enterprise_monthly: { name: 'Enterprise', price: 260, period: 'month', color: '#A855F7', perUser: true, features: ['Unlimited integrations', 'Custom API access', 'Smart Assist AI'] },
+  enterprise_yearly: { name: 'Enterprise', price: 2184, period: 'year', color: '#A855F7', originalPrice: 3120, perUser: true, features: ['Unlimited integrations', 'Custom API access', 'Smart Assist AI'] },
 };
 
 const Checkout = () => {
@@ -38,7 +38,6 @@ const Checkout = () => {
   const totalPrice = plan ? plan.price * userCount : 0;
   const totalOriginal = plan?.originalPrice ? plan.originalPrice * userCount : null;
 
-  // Embedded Checkout fetches its client_secret via this callback every mount.
   const fetchClientSecret = useCallback(async () => {
     const response = await fetch(`${API_URL}/api/payments/create-checkout`, {
       method: 'POST',
@@ -87,117 +86,120 @@ const Checkout = () => {
     <div className="min-h-screen bg-[#050507] relative overflow-hidden">
       <Toaster position="top-center" richColors />
 
-      <div className="border-b border-white/[0.06] bg-[#050507]">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
+      {/* Ambient radial glow background */}
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] rounded-full opacity-[0.18] blur-[120px]"
+          style={{ background: `radial-gradient(circle, ${plan.color} 0%, transparent 70%)` }}
+        />
+        <div className="absolute bottom-0 right-0 w-[600px] h-[600px] rounded-full opacity-[0.10] blur-[100px] bg-purple-600" />
+      </div>
+
+      {/* Header */}
+      <div className="relative border-b border-white/[0.04] bg-[#050507]/80 backdrop-blur-xl z-10">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
           <button onClick={() => navigate('/choose-plan')} className="flex items-center gap-2 text-zinc-500 hover:text-white text-sm transition-colors" data-testid="back-btn">
             <ArrowLeft className="w-4 h-4" /> Back to plans
           </button>
           <img src="/inflow-logo.png?v=3" alt="InFlow" className="h-5 w-auto" />
           <div className="flex items-center gap-1.5 text-zinc-600 text-xs">
-            <Lock className="w-3 h-3" /> Secure checkout
+            <Lock className="w-3 h-3" /> Secure
           </div>
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
-        <div className="grid lg:grid-cols-5 gap-8 lg:gap-12">
+      {/* Centered card container */}
+      <div className="relative z-10 max-w-2xl mx-auto px-4 sm:px-6 py-10 sm:py-14">
 
-          <div className="lg:col-span-3 order-2 lg:order-1">
-            <div className="space-y-4">
-              <div>
-                <h2 className="text-xl font-bold text-white mb-1" style={{ fontFamily: 'Outfit' }}>Checkout</h2>
-                <p className="text-zinc-500 text-sm">Complete your subscription to InFlow {plan.name}</p>
-              </div>
-
-              <div className="relative" data-testid="embedded-checkout-wrapper">
-                {/* Indigo glow halo behind the iframe — softens the dark→light seam */}
-                <div className="pointer-events-none absolute -inset-px rounded-2xl bg-gradient-to-br from-indigo-500/40 via-purple-500/20 to-indigo-500/40 blur-md opacity-60" />
-                <div className="relative bg-white rounded-2xl overflow-hidden ring-1 ring-indigo-500/30 shadow-[0_0_60px_-15px_rgba(99,102,241,0.45)]">
-                  <EmbeddedCheckoutProvider
-                    stripe={stripePromise}
-                    options={{ fetchClientSecret }}
-                  >
-                    <EmbeddedCheckout />
-                  </EmbeddedCheckoutProvider>
-                </div>
-                {/* Powered by Stripe trust line — dark theme palette */}
-                <div className="flex items-center justify-center gap-1.5 mt-3 text-[10px] text-zinc-600">
-                  <Lock className="w-2.5 h-2.5" />
-                  <span>Payments processed securely by</span>
-                  <span className="text-zinc-400 font-semibold tracking-tight">Stripe</span>
-                </div>
-              </div>
-
-              <div className="flex items-center justify-center gap-5 text-zinc-600 text-[11px]">
-                <span className="flex items-center gap-1"><Shield className="w-3 h-3" />SSL Encrypted</span>
-                <span className="flex items-center gap-1"><Clock className="w-3 h-3" />Cancel anytime</span>
-                <span className="flex items-center gap-1"><Zap className="w-3 h-3" />Instant access</span>
-              </div>
-            </div>
+        {/* Heading */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/[0.04] border border-white/[0.06] mb-4" data-testid="checkout-plan-badge">
+            <Sparkles className="w-3 h-3" style={{ color: plan.color }} />
+            <span className="text-[11px] font-medium uppercase tracking-wider text-zinc-300">
+              InFlow {plan.name}
+            </span>
           </div>
+          <h1 className="text-3xl sm:text-4xl font-bold text-white mb-2 tracking-tight" style={{ fontFamily: 'Outfit' }}>
+            Complete your subscription
+          </h1>
+          <p className="text-zinc-500 text-sm">
+            14 days free · No charge today · Cancel anytime
+          </p>
+        </div>
 
-          <div className="lg:col-span-2 order-1 lg:order-2">
-            <div className="bg-zinc-900/50 border border-white/[0.06] rounded-xl p-5 lg:sticky lg:top-8" data-testid="order-summary">
-              <h3 className="text-sm font-semibold text-zinc-300 mb-4">Order Summary</h3>
+        {/* Glowing wrapper around the card */}
+        <div className="relative" data-testid="checkout-card-wrapper">
+          {/* Halo */}
+          <div
+            className="pointer-events-none absolute -inset-1 rounded-3xl opacity-40 blur-2xl"
+            style={{ background: `linear-gradient(135deg, ${plan.color}80, #A855F740, ${plan.color}80)` }}
+          />
 
-              <div className="flex items-center gap-3 mb-4 pb-4 border-b border-white/[0.04]">
-                <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${plan.color}15` }}>
+          {/* Card */}
+          <div className="relative bg-zinc-950/80 backdrop-blur-xl border border-white/[0.08] rounded-3xl overflow-hidden shadow-2xl">
+
+            {/* Compact summary strip (top of card) */}
+            <div className="px-6 sm:px-8 py-5 border-b border-white/[0.06] bg-gradient-to-b from-white/[0.03] to-transparent" data-testid="order-summary">
+              <div className="flex items-center gap-4 mb-3">
+                <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${plan.color}20` }}>
                   <Zap className="w-5 h-5" style={{ color: plan.color }} />
                 </div>
-                <div className="flex-1">
-                  <p className="text-white font-semibold text-sm" style={{ fontFamily: 'Outfit' }}>InFlow {plan.name}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-white font-semibold text-sm" style={{ fontFamily: 'Outfit' }}>
+                    InFlow {plan.name} {plan.perUser && userCount > 1 && <span className="text-zinc-500 font-normal">· {userCount} seats</span>}
+                  </p>
                   <p className="text-zinc-500 text-xs capitalize">{plan.period}ly subscription</p>
                 </div>
-                <div className="text-right">
-                  <p className="text-white font-bold">${totalPrice.toLocaleString()}</p>
+                <div className="text-right shrink-0">
+                  <p className="text-white font-bold text-lg leading-none" style={{ fontFamily: 'Outfit' }}>
+                    ${totalPrice.toLocaleString()}
+                    <span className="text-zinc-500 text-xs font-normal ml-0.5">/{plan.period}</span>
+                  </p>
                   {totalOriginal && (
-                    <p className="text-zinc-600 text-xs line-through">${totalOriginal.toLocaleString()}</p>
+                    <p className="text-zinc-600 text-[11px] line-through mt-0.5">${totalOriginal.toLocaleString()}</p>
                   )}
                 </div>
               </div>
 
-              <div className="space-y-2 mb-4 pb-4 border-b border-white/[0.04]">
+              {/* Feature pills */}
+              <div className="flex flex-wrap gap-1.5">
                 {plan.features.map((f, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <Check className="w-3.5 h-3.5 text-emerald-400 flex-shrink-0" />
-                    <span className="text-zinc-400 text-xs">{f}</span>
-                  </div>
+                  <span key={i} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/[0.04] border border-white/[0.06] text-[10px] text-zinc-400">
+                    <Check className="w-2.5 h-2.5 text-emerald-400" />
+                    {f}
+                  </span>
                 ))}
               </div>
 
-              <div className="space-y-2 mb-4">
-                {plan.perUser && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-zinc-500">${plan.price.toLocaleString()} × {userCount} users</span>
-                    <span className="text-zinc-300">${totalPrice.toLocaleString()}.00</span>
-                  </div>
-                )}
-                <div className="flex justify-between text-sm">
-                  <span className="text-zinc-500">Subtotal</span>
-                  <span className="text-zinc-300">${(totalOriginal || totalPrice).toLocaleString()}.00</span>
-                </div>
-                {totalOriginal && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-emerald-400">First year discount (30%)</span>
-                    <span className="text-emerald-400">-${(totalOriginal - totalPrice).toLocaleString()}.00</span>
-                  </div>
-                )}
-                <div className="flex justify-between text-sm">
-                  <span className="text-zinc-500">Trial</span>
-                  <span className="text-emerald-400">14 days free</span>
+              {/* Trial line */}
+              <div className="flex items-center justify-between mt-4 pt-3 border-t border-white/[0.04]">
+                <span className="text-xs text-zinc-500">Total today</span>
+                <div className="text-right">
+                  <span className="text-white font-bold text-base" style={{ fontFamily: 'Outfit' }}>$0.00</span>
+                  <span className="text-emerald-400 text-[10px] ml-2 font-medium">14 days free</span>
                 </div>
               </div>
+            </div>
 
-              <div className="flex justify-between pt-3 border-t border-white/[0.06]">
-                <span className="text-white font-semibold">Total today</span>
-                <span className="text-white font-bold text-lg" style={{ fontFamily: 'Outfit' }}>$0.00</span>
-              </div>
-
-              <p className="text-[10px] text-zinc-600 mt-3">
-                After your 14-day free trial: ${totalPrice.toLocaleString()}/{plan.period}. Cancel anytime from Settings.
-              </p>
+            {/* Embedded Stripe iframe */}
+            <div className="bg-white" data-testid="embedded-checkout-wrapper">
+              <EmbeddedCheckoutProvider
+                stripe={stripePromise}
+                options={{ fetchClientSecret }}
+              >
+                <EmbeddedCheckout />
+              </EmbeddedCheckoutProvider>
             </div>
           </div>
+        </div>
+
+        {/* Trust strip below card */}
+        <div className="flex items-center justify-center gap-6 mt-6 text-zinc-600 text-[11px]">
+          <span className="flex items-center gap-1.5"><ShieldCheck className="w-3.5 h-3.5" />SSL encrypted</span>
+          <span className="flex items-center gap-1.5"><Lock className="w-3.5 h-3.5" />PCI compliant</span>
+          <span className="flex items-center gap-1.5">
+            Powered by <span className="text-zinc-400 font-semibold tracking-tight">Stripe</span>
+          </span>
         </div>
       </div>
     </div>
