@@ -109,13 +109,23 @@ const Checkout = () => {
                 <p className="text-zinc-500 text-sm">Complete your subscription to InFlow {plan.name}</p>
               </div>
 
-              <div className="bg-white rounded-xl overflow-hidden" data-testid="embedded-checkout-wrapper">
-                <EmbeddedCheckoutProvider
-                  stripe={stripePromise}
-                  options={{ fetchClientSecret }}
-                >
-                  <EmbeddedCheckout />
-                </EmbeddedCheckoutProvider>
+              <div className="relative" data-testid="embedded-checkout-wrapper">
+                {/* Indigo glow halo behind the iframe — softens the dark→light seam */}
+                <div className="pointer-events-none absolute -inset-px rounded-2xl bg-gradient-to-br from-indigo-500/40 via-purple-500/20 to-indigo-500/40 blur-md opacity-60" />
+                <div className="relative bg-white rounded-2xl overflow-hidden ring-1 ring-indigo-500/30 shadow-[0_0_60px_-15px_rgba(99,102,241,0.45)]">
+                  <EmbeddedCheckoutProvider
+                    stripe={stripePromise}
+                    options={{ fetchClientSecret }}
+                  >
+                    <EmbeddedCheckout />
+                  </EmbeddedCheckoutProvider>
+                </div>
+                {/* Powered by Stripe trust line — dark theme palette */}
+                <div className="flex items-center justify-center gap-1.5 mt-3 text-[10px] text-zinc-600">
+                  <Lock className="w-2.5 h-2.5" />
+                  <span>Payments processed securely by</span>
+                  <span className="text-zinc-400 font-semibold tracking-tight">Stripe</span>
+                </div>
               </div>
 
               <div className="flex items-center justify-center gap-5 text-zinc-600 text-[11px]">
