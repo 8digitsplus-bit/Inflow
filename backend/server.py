@@ -60,11 +60,20 @@ async def health_check():
 # Include the router in the main app
 app.include_router(api_router)
 
-ALLOWED_ORIGINS = os.environ.get("ALLOWED_ORIGINS", "*")
-if ALLOWED_ORIGINS == "*":
-    origins = ["*"]
+# Read allowed origins from env. Accept either CORS_ORIGINS (the canonical name)
+# or ALLOWED_ORIGINS for backwards compatibility. In production this MUST be a
+# comma-separated list of explicit origins because allow_credentials=True is
+# incompatible with allow_origins=["*"] under the CORS spec.
+_cors_env = os.environ.get("CORS_ORIGINS") or os.environ.get("ALLOWED_ORIGINS") or ""
+if _cors_env.strip() in ("", "*"):
+    # Local-dev fallback — preview + localhost so credentialed cookie flows still work.
+    origins = [
+        "http://localhost:3000",
+        "http://localhost:8001",
+        "https://inflow-pricing.preview.emergentagent.com",
+    ]
 else:
-    origins = [o.strip() for o in ALLOWED_ORIGINS.split(",")]
+    origins = [o.strip() for o in _cors_env.split(",") if o.strip()]
 
 app.add_middleware(
     CORSMiddleware,

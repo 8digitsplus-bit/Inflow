@@ -1,11 +1,14 @@
 """Seed rich sample data for the testpro@test.com user."""
 import asyncio
+import os
 import uuid
 from datetime import datetime, timezone, timedelta
+from dotenv import load_dotenv
 from motor.motor_asyncio import AsyncIOMotorClient
 
-MONGO_URL = "mongodb://localhost:27017"
-DB_NAME = "test_database"
+load_dotenv()
+MONGO_URL = os.environ.get("MONGO_URL", "mongodb://localhost:27017")
+DB_NAME = os.environ.get("DB_NAME", "test_database")
 
 async def seed():
     client = AsyncIOMotorClient(MONGO_URL)
