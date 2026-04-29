@@ -156,7 +156,6 @@ const Checkout = () => {
                   <div className="text-right shrink-0">
                     <p className="text-white font-bold leading-none" style={{ fontFamily: 'Outfit' }}>
                       ${totalPrice.toLocaleString()}
-                      <span className="text-zinc-500 text-[11px] font-normal ml-0.5">/{plan.period}</span>
                     </p>
                     {totalOriginal && (
                       <p className="text-zinc-600 text-[10px] line-through mt-0.5">${totalOriginal.toLocaleString()}</p>
@@ -207,7 +206,7 @@ const Checkout = () => {
                 </div>
 
                 <p className="text-[10px] text-zinc-600 mt-3 leading-relaxed">
-                  After your 14-day trial: <span className="text-zinc-400">${totalPrice.toLocaleString()}/{plan.period}</span>. Cancel anytime from Settings — no charge during the trial.
+                  After your 14-day trial: <span className="text-zinc-400">${totalPrice.toLocaleString()}</span>. Cancel anytime from Settings — no charge during the trial.
                 </p>
               </div>
             </div>

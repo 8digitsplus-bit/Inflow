@@ -231,8 +231,7 @@ const ChoosePlan = () => {
                       <span className="text-sm text-zinc-600 line-through">${originalPrice.toLocaleString()}</span>
                     )}
                   </div>
-                  <span className="text-zinc-500 text-sm">/{billingPeriod === 'monthly' ? 'month' : 'year'}</span>
-                  <p className="text-indigo-400 text-xs mt-0.5">
+                  <p className="text-indigo-400 text-xs mt-1">
                     ${perUser.toLocaleString()}/user · {enterpriseUsers} {enterpriseUsers === 1 ? 'seat' : 'seats'}
                   </p>
                   {billingPeriod === 'yearly' && (
