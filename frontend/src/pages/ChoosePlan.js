@@ -12,11 +12,13 @@ const PLANS = [
   {
     key: 'essential',
     name: 'Essential',
-    monthlyPrice: 299,
-    yearlyPrice: 2512,
-    yearlyOriginal: 3588,
+    perUserMonthly: 59,
+    perUserYearly: 499,
+    perUserYearlyOriginal: 708,
+    defaultUsers: 1,
+    minUsers: 1,
     tagline: 'For small teams getting started',
-    color: '#06B6D4',
+    perUser: true,
     features: [
       'Sales Pipeline Management',
       'Core Analytics Dashboard',
@@ -28,17 +30,18 @@ const PLANS = [
   {
     key: 'pro',
     name: 'Pro',
-    monthlyPrice: 699,
-    yearlyPrice: 5872,
-    yearlyOriginal: 8388,
-    popular: false,
+    perUserMonthly: 139,
+    perUserYearly: 1170,
+    perUserYearlyOriginal: 1668,
+    defaultUsers: 1,
+    minUsers: 1,
+    popular: true,
     tagline: 'For growing businesses',
-    color: '#6366F1',
+    perUser: true,
     features: [
       'Everything in Essential',
       '4 live integrations',
       'CSV import',
-      'Sales Performance Analytics',
       'AI-Powered Insights',
       'Pricing Optimization',
       'CRO Analysis',
@@ -52,18 +55,16 @@ const PLANS = [
     perUserMonthly: 260,
     perUserYearly: 2184,
     perUserYearlyOriginal: 3120,
-    defaultUsers: 5,
+    defaultUsers: 1,
     minUsers: 1,
     tagline: 'For scaling organizations',
-    color: '#A855F7',
     perUser: true,
     features: [
       'Everything in Pro',
       'Unlimited integrations',
       'Custom API access',
-      'Sales Revenue Analytics',
-      'Revenue Intelligence',
       'Smart Assist (AI)',
+      'Revenue Intelligence',
       'Dedicated support',
     ],
   },
@@ -74,12 +75,11 @@ const ChoosePlan = () => {
   const { user } = useAuth();
   const [billingPeriod, setBillingPeriod] = useState('monthly');
   const [processingPlan, setProcessingPlan] = useState(null);
-  const [enterpriseUsers, setEnterpriseUsers] = useState(5);
+  const [enterpriseUsers, setEnterpriseUsers] = useState(1);
 
   const handleSelectPlan = (plan) => {
     const tierKey = `${plan.key}_${billingPeriod}`;
-    const params = new URLSearchParams({ plan: tierKey });
-    if (plan.perUser) params.set('users', enterpriseUsers);
+    const params = new URLSearchParams({ plan: tierKey, users: String(enterpriseUsers) });
     navigate(`/checkout?${params.toString()}`);
   };
 
@@ -150,16 +150,40 @@ const ChoosePlan = () => {
           )}
         </div>
 
+        {/* Global seats stepper — applies to every tier */}
+        <div className="flex justify-center mb-8">
+          <div className="inline-flex items-center gap-3 bg-zinc-900/80 rounded-xl px-4 py-2.5 border border-white/[0.06]" data-testid="seats-stepper">
+            <Users className="w-4 h-4 text-indigo-400" />
+            <span className="text-zinc-400 text-sm">Seats</span>
+            <div className="flex items-center gap-2 ml-1">
+              <button
+                onClick={() => setEnterpriseUsers(Math.max(1, enterpriseUsers - 1))}
+                className="w-7 h-7 rounded-md bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center text-zinc-300 transition-colors"
+                data-testid="seats-minus"
+                aria-label="Decrease seats"
+              >
+                <Minus className="w-3.5 h-3.5" />
+              </button>
+              <span className="text-white font-semibold text-sm w-8 text-center" data-testid="seats-count">{enterpriseUsers}</span>
+              <button
+                onClick={() => setEnterpriseUsers(enterpriseUsers + 1)}
+                className="w-7 h-7 rounded-md bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center text-zinc-300 transition-colors"
+                data-testid="seats-plus"
+                aria-label="Increase seats"
+              >
+                <Plus className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        </div>
+
         {/* Plans Grid */}
         <div className="grid md:grid-cols-3 gap-5">
           {PLANS.map((plan) => {
-            const isPerUser = plan.perUser;
-            const price = isPerUser
-              ? (billingPeriod === 'monthly' ? plan.perUserMonthly * enterpriseUsers : plan.perUserYearly * enterpriseUsers)
-              : (billingPeriod === 'monthly' ? plan.monthlyPrice : plan.yearlyPrice);
-            const originalPrice = billingPeriod === 'yearly'
-              ? (isPerUser ? plan.perUserYearlyOriginal * enterpriseUsers : plan.yearlyOriginal)
-              : null;
+            const perUser = billingPeriod === 'monthly' ? plan.perUserMonthly : plan.perUserYearly;
+            const perUserOriginal = billingPeriod === 'yearly' ? plan.perUserYearlyOriginal : null;
+            const price = perUser * enterpriseUsers;
+            const originalPrice = perUserOriginal ? perUserOriginal * enterpriseUsers : null;
             const current = isCurrentPlan(plan);
             const tierKey = `${plan.key}_${billingPeriod}`;
             const isProcessing = processingPlan === tierKey;
@@ -192,7 +216,7 @@ const ChoosePlan = () => {
 
                 <div className="mb-5">
                   <div className="flex items-center gap-2 mb-1">
-                    <div className="w-2 h-2 rounded-full" style={{ backgroundColor: plan.color }} />
+                    <div className="w-2 h-2 rounded-full bg-indigo-500" />
                     <h3 className="text-lg font-bold text-white" style={{ fontFamily: 'Outfit' }}>{plan.name}</h3>
                   </div>
                   <p className="text-xs text-zinc-500">{plan.tagline}</p>
@@ -208,42 +232,13 @@ const ChoosePlan = () => {
                     )}
                   </div>
                   <span className="text-zinc-500 text-sm">/{billingPeriod === 'monthly' ? 'month' : 'year'}</span>
-                  {isPerUser && (
-                    <p className="text-purple-400 text-xs mt-0.5">${plan.perUserMonthly}/user/month</p>
-                  )}
-                  {billingPeriod === 'yearly' && !isPerUser && (
-                    <p className="text-emerald-400 text-xs mt-1">
-                      Save ${(plan.yearlyOriginal - plan.yearlyPrice).toLocaleString()} first year
-                    </p>
-                  )}
-                  {billingPeriod === 'yearly' && isPerUser && (
+                  <p className="text-indigo-400 text-xs mt-0.5">
+                    ${perUser.toLocaleString()}/user · {enterpriseUsers} {enterpriseUsers === 1 ? 'seat' : 'seats'}
+                  </p>
+                  {billingPeriod === 'yearly' && (
                     <p className="text-emerald-400 text-xs mt-1">
                       Save ${((plan.perUserYearlyOriginal - plan.perUserYearly) * enterpriseUsers).toLocaleString()} first year
                     </p>
-                  )}
-
-                  {isPerUser && (
-                    <div className="mt-3 flex items-center gap-3 bg-zinc-900/80 rounded-lg px-3 py-2 border border-white/[0.06]">
-                      <Users className="w-4 h-4 text-purple-400 flex-shrink-0" />
-                      <span className="text-xs text-zinc-400 flex-shrink-0">Users</span>
-                      <div className="flex items-center gap-2 ml-auto">
-                        <button
-                          onClick={() => setEnterpriseUsers(Math.max(1, enterpriseUsers - 1))}
-                          className="w-7 h-7 rounded-md bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center text-zinc-300 transition-colors"
-                          data-testid="enterprise-users-minus"
-                        >
-                          <Minus className="w-3.5 h-3.5" />
-                        </button>
-                        <span className="text-white font-semibold text-sm w-8 text-center" data-testid="enterprise-users-count">{enterpriseUsers}</span>
-                        <button
-                          onClick={() => setEnterpriseUsers(enterpriseUsers + 1)}
-                          className="w-7 h-7 rounded-md bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center text-zinc-300 transition-colors"
-                          data-testid="enterprise-users-plus"
-                        >
-                          <Plus className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
                   )}
                 </div>
 

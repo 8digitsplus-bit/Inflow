@@ -5,14 +5,14 @@ import { Button } from '../ui/button';
 
 const plans = {
   monthly: [
-    { name: 'Essential', price: '299', period: '/month', features: ['Sales Pipeline', 'Core analytics', '2 live integrations', 'Churn alerts', 'Email support'], cta: 'Unlock Access', featured: false, planId: 'essential_monthly' },
-    { name: 'Pro', price: '699', period: '/month', features: ['Everything in Essential', '4 live integrations', 'CSV import', 'Advanced analytics', 'Revenue forecasting', 'Churn prediction', 'CRO tools', 'Priority support'], cta: 'Scale Up', featured: true, planId: 'pro_monthly' },
-    { name: 'Enterprise', price: '260', period: '/user', perUser: true, features: ['Everything in Pro', 'Unlimited integrations', 'Custom API access', 'Sales Revenue analytics', 'Revenue Intelligence', 'Dedicated support'], cta: 'Maximise', featured: false, planId: 'enterprise_monthly' }
+    { name: 'Essential', price: '59', period: '/user/month', perUser: true, features: ['Sales Pipeline', 'Core analytics', '2 live integrations', 'Churn monitoring', 'Email support'], cta: 'Unlock Access', featured: false, planId: 'essential_monthly' },
+    { name: 'Pro', price: '139', period: '/user/month', perUser: true, features: ['Everything in Essential', '4 live integrations', 'CSV import', 'AI insights', 'CRO analysis', 'Revenue forecasting', 'Priority support'], cta: 'Scale Up', featured: true, planId: 'pro_monthly' },
+    { name: 'Enterprise', price: '260', period: '/user/month', perUser: true, features: ['Everything in Pro', 'Unlimited integrations', 'Custom API access', 'Smart Assist AI', 'Revenue Intelligence', 'Dedicated support'], cta: 'Maximise', featured: false, planId: 'enterprise_monthly' }
   ],
   yearly: [
-    { name: 'Essential', price: '2,512', originalPrice: '3,588', period: '/year', features: ['Sales Pipeline', 'Core analytics', '2 live integrations', 'Churn alerts', 'Email support'], cta: 'Unlock Access', featured: false, planId: 'essential_yearly', savings: '30% off 1st year' },
-    { name: 'Pro', price: '5,872', originalPrice: '8,388', period: '/year', features: ['Everything in Essential', '4 live integrations', 'CSV import', 'Advanced analytics', 'Revenue forecasting', 'Churn prediction', 'CRO tools', 'Priority support'], cta: 'Scale Up', featured: true, planId: 'pro_yearly', savings: '30% off 1st year' },
-    { name: 'Enterprise', price: '2,184', originalPrice: '3,120', period: '/user', perUser: true, features: ['Everything in Pro', 'Unlimited integrations', 'Custom API access', 'Sales Revenue analytics', 'Revenue Intelligence', 'Dedicated support'], cta: 'Maximise', featured: false, planId: 'enterprise_yearly', savings: '30% off 1st year' }
+    { name: 'Essential', price: '499', originalPrice: '708', period: '/user/year', perUser: true, features: ['Sales Pipeline', 'Core analytics', '2 live integrations', 'Churn monitoring', 'Email support'], cta: 'Unlock Access', featured: false, planId: 'essential_yearly', savings: '30% off 1st year' },
+    { name: 'Pro', price: '1,170', originalPrice: '1,668', period: '/user/year', perUser: true, features: ['Everything in Essential', '4 live integrations', 'CSV import', 'AI insights', 'CRO analysis', 'Revenue forecasting', 'Priority support'], cta: 'Scale Up', featured: true, planId: 'pro_yearly', savings: '30% off 1st year' },
+    { name: 'Enterprise', price: '2,184', originalPrice: '3,120', period: '/user/year', perUser: true, features: ['Everything in Pro', 'Unlimited integrations', 'Custom API access', 'Smart Assist AI', 'Revenue Intelligence', 'Dedicated support'], cta: 'Maximise', featured: false, planId: 'enterprise_yearly', savings: '30% off 1st year' }
   ]
 };
 
@@ -29,13 +29,8 @@ export const PricingSection = ({ handleGetStarted, isAuthenticated }) => {
       handleGetStarted();
       return;
     }
-    // Enterprise = route to seat-selector page
-    if (plan.perUser) {
-      navigate(`/choose-plan`);
-      return;
-    }
-    // All other plans → embedded Checkout page
-    navigate(`/checkout?plan=${plan.planId}`);
+    // Every tier is per-user now → seat selector lives on /choose-plan
+    navigate(`/choose-plan`);
   };
 
   return (

@@ -20,7 +20,7 @@ const faqs = [
   },
   {
     q: "What's the difference between Essential, Pro & Enterprise?",
-    a: 'Essential ($299/mo) — 2 integrations + core analytics. Pro ($699/mo) — 4 integrations, AI insights, CSV import, forecasting. Enterprise ($260/user/mo) — unlimited integrations, Custom API, Smart Assist AI. Yearly = 30% off year one.',
+    a: 'Essential ($59/user/mo) — 2 integrations + core analytics. Pro ($139/user/mo) — 4 integrations, AI insights, CSV import, forecasting. Enterprise ($260/user/mo) — unlimited integrations, Custom API, Smart Assist AI. Yearly = 30% off year one.',
   },
   {
     q: 'Can I cancel or change my plan at any time?',

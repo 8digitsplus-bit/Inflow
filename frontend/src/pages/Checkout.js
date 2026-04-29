@@ -21,12 +21,12 @@ const stripePromise = STRIPE_PUBLISHABLE_KEY ? loadStripe(STRIPE_PUBLISHABLE_KEY
 const INDIGO = '#6366F1';
 
 const PLANS = {
-  essential_monthly: { name: 'Essential', price: 299, period: 'month', features: ['Sales Pipeline', 'Core Analytics', '2 live integrations', 'Churn Monitoring'] },
-  essential_yearly: { name: 'Essential', price: 2512, period: 'year', originalPrice: 3588, features: ['Sales Pipeline', 'Core Analytics', '2 live integrations', 'Churn Monitoring'] },
-  pro_monthly: { name: 'Pro', price: 699, period: 'month', features: ['4 live integrations', 'CSV import', 'AI Insights', 'CRO Analysis'] },
-  pro_yearly: { name: 'Pro', price: 5872, period: 'year', originalPrice: 8388, features: ['4 live integrations', 'CSV import', 'AI Insights', 'CRO Analysis'] },
+  essential_monthly: { name: 'Essential', price: 59, period: 'month', perUser: true, features: ['Sales Pipeline', 'Core Analytics', '2 live integrations', 'Churn Monitoring'] },
+  essential_yearly: { name: 'Essential', price: 499, period: 'year', perUser: true, originalPrice: 708, features: ['Sales Pipeline', 'Core Analytics', '2 live integrations', 'Churn Monitoring'] },
+  pro_monthly: { name: 'Pro', price: 139, period: 'month', perUser: true, features: ['4 live integrations', 'CSV import', 'AI Insights', 'CRO Analysis'] },
+  pro_yearly: { name: 'Pro', price: 1170, period: 'year', perUser: true, originalPrice: 1668, features: ['4 live integrations', 'CSV import', 'AI Insights', 'CRO Analysis'] },
   enterprise_monthly: { name: 'Enterprise', price: 260, period: 'month', perUser: true, features: ['Unlimited integrations', 'Custom API access', 'Smart Assist AI'] },
-  enterprise_yearly: { name: 'Enterprise', price: 2184, period: 'year', originalPrice: 3120, perUser: true, features: ['Unlimited integrations', 'Custom API access', 'Smart Assist AI'] },
+  enterprise_yearly: { name: 'Enterprise', price: 2184, period: 'year', perUser: true, originalPrice: 3120, features: ['Unlimited integrations', 'Custom API access', 'Smart Assist AI'] },
 };
 
 const Checkout = () => {

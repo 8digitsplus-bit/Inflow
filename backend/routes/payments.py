@@ -14,39 +14,43 @@ router = APIRouter()
 
 SUBSCRIPTION_PLANS = {
     "essential_monthly": {
-        "price": 299.0, "name": "Essential", "period": "monthly",
+        "price": 59.0, "name": "Essential", "period": "monthly",
         "interval": "month",
-        "features": ["Sales Pipeline", "Core analytics", "Email support", "Churn alerts"]
+        "per_user": True,
+        "features": ["Sales Pipeline", "Core analytics", "2 live integrations", "Churn monitoring", "Email support"]
     },
     "essential_yearly": {
-        "price": 2512.0, "name": "Essential", "period": "yearly",
+        "price": 499.0, "name": "Essential", "period": "yearly",
         "interval": "year",
-        "renewal_price": 3588.0, "first_year_discount": True,
-        "features": ["Sales Pipeline", "Core analytics", "Email support", "Churn alerts"]
+        "renewal_price": 708.0, "first_year_discount": True,
+        "per_user": True,
+        "features": ["Sales Pipeline", "Core analytics", "2 live integrations", "Churn monitoring", "Email support"]
     },
     "pro_monthly": {
-        "price": 699.0, "name": "Pro", "period": "monthly",
+        "price": 139.0, "name": "Pro", "period": "monthly",
         "interval": "month",
-        "features": ["Sales Performance", "Priority support", "Advanced analytics", "Revenue forecasting", "Churn prediction", "CRO tools"]
+        "per_user": True,
+        "features": ["4 live integrations", "CSV import", "AI insights", "CRO analysis", "Revenue forecasting", "Priority support"]
     },
     "pro_yearly": {
-        "price": 5872.0, "name": "Pro", "period": "yearly",
+        "price": 1170.0, "name": "Pro", "period": "yearly",
         "interval": "year",
-        "renewal_price": 8388.0, "first_year_discount": True,
-        "features": ["Sales Performance", "Priority support", "Advanced analytics", "Revenue forecasting", "Churn prediction", "CRO tools"]
+        "renewal_price": 1668.0, "first_year_discount": True,
+        "per_user": True,
+        "features": ["4 live integrations", "CSV import", "AI insights", "CRO analysis", "Revenue forecasting", "Priority support"]
     },
     "enterprise_monthly": {
         "price": 260.0, "name": "Enterprise", "period": "monthly",
         "interval": "month",
         "per_user": True,
-        "features": ["Everything in Pro", "Sales Revenue", "Revenue Intelligence", "Custom integrations", "API access"]
+        "features": ["Unlimited integrations", "Custom API access", "Smart Assist AI", "Revenue Intelligence", "Dedicated support"]
     },
     "enterprise_yearly": {
         "price": 2184.0, "name": "Enterprise", "period": "yearly",
         "interval": "year",
         "renewal_price": 3120.0, "first_year_discount": True,
         "per_user": True,
-        "features": ["Everything in Pro", "Sales Revenue", "Revenue Intelligence", "Custom integrations", "API access"]
+        "features": ["Unlimited integrations", "Custom API access", "Smart Assist AI", "Revenue Intelligence", "Dedicated support"]
     }
 }
 
