@@ -82,6 +82,19 @@ const AuthPage = () => {
   // True when the saved account matches the currently authenticated user (one-click sign-in possible)
   const isActiveSession = !!(isAuthenticated && user && savedAccount && user.email === savedAccount.email);
 
+  // Consume any pending checkout intent the user expressed before being asked to log in.
+  // Set by PricingSection when an unauthenticated visitor clicks a tier's CTA.
+  const getPostAuthDestination = (defaultPath = '/dashboard') => {
+    try {
+      const raw = localStorage.getItem('inflow_pending_checkout');
+      if (!raw) return defaultPath;
+      const intent = JSON.parse(raw);
+      localStorage.removeItem('inflow_pending_checkout');
+      if (intent?.plan) return `/checkout?plan=${encodeURIComponent(intent.plan)}`;
+    } catch { /* fall through */ }
+    return defaultPath;
+  };
+
   // Redirect if already authenticated AND the user did NOT come here for a fresh-login from chooser
   // (Side-effect must run in effect, not during render.)
   useEffect(() => {
@@ -91,7 +104,7 @@ const AuthPage = () => {
     if (showAccountChooser && isActiveSession) return;
     // If chooser was dismissed (Use another account / Sign in form open), don't auto-redirect either.
     if (showEmailForm || !showAccountChooser) return;
-    navigate('/dashboard');
+    navigate(getPostAuthDestination('/dashboard'));
   }, [authLoading, isAuthenticated, isRegistering, showAccountChooser, isActiveSession, showEmailForm, navigate]);
 
   const handleGoogle = () => {
@@ -131,7 +144,7 @@ const AuthPage = () => {
     setLoading('2fa');
     try {
       await verify2FA(twoFAState.user_id, code);
-      navigate('/dashboard');
+      navigate(getPostAuthDestination('/dashboard'));
     } catch (err) {
       toast.error(err.message);
       setOtpDigits(['', '', '', '', '', '']);
@@ -153,7 +166,13 @@ const AuthPage = () => {
         setIsRegistering(true);
         await registerWithEmail(form.name, form.email, form.password);
         toast.success('Account created!');
-        navigate(isTrial ? '/onboarding' : '/choose-plan');
+        // If user came from a pricing CTA, honor that intent instead of choose-plan/onboarding.
+        const pending = getPostAuthDestination(null);
+        if (pending) {
+          navigate(pending);
+        } else {
+          navigate(isTrial ? '/onboarding' : '/choose-plan');
+        }
         return;
       } else {
         const result = await loginWithEmail(form.email, form.password);
@@ -166,7 +185,7 @@ const AuthPage = () => {
           }
           return;
         }
-        navigate('/dashboard');
+        navigate(getPostAuthDestination('/dashboard'));
       }
     } catch (err) {
       toast.error(err.message);
@@ -279,8 +298,9 @@ const AuthPage = () => {
               isActiveSession={isActiveSession}
               onSelectAccount={() => {
                 if (isActiveSession) {
-                  // One-click sign-in: session cookie still valid, go straight to dashboard.
-                  navigate('/dashboard');
+                  // One-click sign-in: session cookie still valid, go straight to dashboard
+                  // (or to a pending checkout if the user was mid-purchase before login).
+                  navigate(getPostAuthDestination('/dashboard'));
                   return;
                 }
                 setShowAccountChooser(false);

@@ -22,6 +22,10 @@ export const PricingSection = ({ handleGetStarted, isAuthenticated }) => {
 
   const handlePlanClick = (plan) => {
     if (!isAuthenticated) {
+      // Remember the user's intent so post-login lands on the correct checkout page.
+      try {
+        localStorage.setItem('inflow_pending_checkout', JSON.stringify({ plan: plan.planId }));
+      } catch { /* localStorage disabled — fall through */ }
       handleGetStarted();
       return;
     }
