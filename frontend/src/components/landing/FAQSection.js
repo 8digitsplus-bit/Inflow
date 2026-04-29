@@ -4,35 +4,35 @@ import { ChevronDown } from 'lucide-react';
 const faqs = [
   {
     q: 'What is InFlow and who is it for?',
-    a: 'InFlow is a revenue intelligence platform for B2B SaaS, e-commerce, and service businesses. Founders, RevOps, and finance teams use it to unify pipeline + revenue data, optimize pricing, predict churn, and track growth — all from a single dashboard powered by AI.',
+    a: 'A revenue intelligence platform for B2B SaaS, e-commerce, and service teams. Founders, RevOps, and finance use it to unify pipeline + revenue data and run AI-powered analytics from one dashboard.',
   },
   {
     q: 'How does the 14-day free trial work?',
-    a: 'Pick a plan, enter your card, and get full access to that tier for 14 days. We don\'t charge anything during the trial — Stripe holds your payment method on file and billing only starts on day 14. You can cancel anytime from Settings → Manage Billing and you won\'t be charged a cent.',
+    a: 'Pick a plan, enter your card, get full access for 14 days. We don\'t charge anything during the trial — billing only starts on day 14, and you can cancel anytime from Settings → Manage Billing.',
   },
   {
     q: 'What data sources can I connect?',
-    a: 'InFlow has 10 live integrations: Stripe, PayPal, Shopify, Xero, and QuickBooks for revenue; HubSpot, Salesforce, and Zoho CRM for pipeline; Mixpanel and Amplitude for product analytics. Each integration auto-syncs deals, customers, payments, or events. Pro and Enterprise plans can also bulk-import via CSV; Enterprise can build a Custom API connector for any system we don\'t support out of the box.',
+    a: '10 live integrations: Stripe, PayPal, Shopify, Xero, QuickBooks, HubSpot, Salesforce, Zoho CRM, Mixpanel, and Amplitude. Pro adds CSV import; Enterprise adds Custom API access.',
   },
   {
     q: 'How does AI-powered pricing optimization work?',
-    a: 'The Pricing Optimizer reads your historical revenue, deal sizes, and conversion data, then uses Claude to recommend a price point for each product. You get a written rationale, projected revenue impact, and a competitive positioning summary you can share with stakeholders. It runs on demand — no surprise re-pricing.',
+    a: 'Claude analyses your historical revenue and conversion data, then recommends an optimal price with a written rationale and projected revenue impact. It runs on demand — no surprise re-pricing.',
   },
   {
     q: "What's the difference between Essential, Pro & Enterprise?",
-    a: 'Essential ($299/mo) — Sales Pipeline, core analytics, churn monitoring, and 2 live integrations. Pro ($699/mo) — adds AI insights, CRO analysis, revenue forecasting, CSV import, 4 live integrations, and priority support. Enterprise ($260/user/mo, min 1 seat) — adds unlimited integrations, Custom API access, Smart Assist AI, advanced revenue intelligence, and dedicated support. Yearly plans get 30% off the first year.',
+    a: 'Essential ($299/mo) — 2 integrations + core analytics. Pro ($699/mo) — 4 integrations, AI insights, CSV import, forecasting. Enterprise ($260/user/mo) — unlimited integrations, Custom API, Smart Assist AI. Yearly = 30% off year one.',
   },
   {
     q: 'Can I cancel or change my plan at any time?',
-    a: 'Yes. From Settings → Manage Billing you can update your card, switch plans, view past invoices, download VAT-compliant PDFs, or cancel — all self-serve. Cancellations take effect at the end of your current billing period and there are no lock-in contracts.',
+    a: 'Yes. Settings → Manage Billing lets you update your card, switch plans, view invoices, or cancel — all self-serve. No lock-in contracts.',
   },
   {
     q: 'Is my data secure?',
-    a: 'Yes. All data is encrypted in transit (TLS 1.3) and at rest. Integration credentials are stored encrypted with AES, never logged. Payments are processed by Stripe — InFlow never sees your card details. Optional two-factor authentication via email is available on every plan, and your business data is never shared between accounts or used to train AI models.',
+    a: 'Encrypted in transit (TLS 1.3) and at rest. Integration credentials encrypted with AES, payments handled by Stripe (we never see your card), optional 2FA on every plan, and your data is never used to train AI models.',
   },
   {
     q: 'What kind of support do you offer?',
-    a: 'Email support on Essential, priority response on Pro, and dedicated account support on Enterprise. The Smart Assist AI sidebar is available across the app to help you investigate metrics, summarize integrations, and answer questions about your own data — without needing to wait on a human.',
+    a: 'Email support on Essential, priority on Pro, dedicated account support on Enterprise. Smart Assist AI is built into the app on every tier to answer questions about your data instantly.',
   },
 ];
 
