@@ -188,17 +188,24 @@ async def get_or_create_coupon() -> str:
 
 
 async def create_subscription_checkout(plan_key: str, plan: dict, user: User, origin_url: str, quantity: int = 1):
-    """Create a Stripe Checkout Session in subscription mode."""
+    """Create a Stripe Checkout Session in subscription + embedded mode.
+
+    Embedded mode renders Stripe's hosted checkout form inside an iframe on our
+    own page. Returns a `client_secret` (instead of a redirect URL) which the
+    frontend passes to <EmbeddedCheckoutProvider>. After payment, Stripe redirects
+    the user's browser to `return_url` with `session_id={CHECKOUT_SESSION_ID}`.
+    """
     price_id = await get_or_create_stripe_price(plan_key, plan)
 
-    success_url = f"{origin_url}/settings?session_id={{CHECKOUT_SESSION_ID}}&success=true"
-    cancel_url = f"{origin_url}/settings?cancelled=true"
+    # Preserve plan + users in the return URL so the post-payment screen can
+    # render the correct order summary even after the redirect.
+    return_url = f"{origin_url}/checkout?plan={plan_key}&users={quantity}&session_id={{CHECKOUT_SESSION_ID}}"
 
     session_params = {
         "mode": "subscription",
+        "ui_mode": "embedded",
+        "return_url": return_url,
         "line_items": [{"price": price_id, "quantity": quantity}],
-        "success_url": success_url,
-        "cancel_url": cancel_url,
         "customer_email": user.email,
         "subscription_data": {
             "trial_period_days": 14,
@@ -289,12 +296,14 @@ async def create_checkout_session(request: Request, user: User = Depends(require
             stripe_sdk.api_key = api_key
             session = await create_subscription_checkout(plan_key, plan, user, origin_url, quantity=quantity)
             session_id = session.id
-            session_url = session.url
+            session_url = None
+            client_secret = session.client_secret  # embedded mode
             mode = "subscription"
         else:
             session = await create_onetime_checkout(plan_key, plan, user, origin_url, request, amount=final_price)
             session_id = session.session_id
             session_url = session.url
+            client_secret = None  # sandbox fallback uses redirect
             mode = "one_time"
 
         txn = PaymentTransaction(
@@ -311,7 +320,11 @@ async def create_checkout_session(request: Request, user: User = Depends(require
         txn_dict["updated_at"] = txn_dict["updated_at"].isoformat()
         await db.payment_transactions.insert_one(txn_dict)
 
-        return {"url": session_url, "session_id": session_id}
+        return {
+            "session_id": session_id,
+            "client_secret": client_secret,  # embedded mode (real key)
+            "url": session_url,              # redirect mode (sandbox fallback)
+        }
 
     except HTTPException:
         raise

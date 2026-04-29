@@ -1,10 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, ChevronRight, Loader2, Users } from 'lucide-react';
+import { Check, ChevronRight, Users } from 'lucide-react';
 import { Button } from '../ui/button';
-import { toast } from 'sonner';
-
-const API_URL = process.env.REACT_APP_BACKEND_URL;
 
 const plans = {
   monthly: [
@@ -22,9 +19,8 @@ const plans = {
 export const PricingSection = ({ handleGetStarted, isAuthenticated }) => {
   const navigate = useNavigate();
   const [billingPeriod, setBillingPeriod] = useState('monthly');
-  const [loadingPlan, setLoadingPlan] = useState(null);
 
-  const handlePlanClick = async (plan) => {
+  const handlePlanClick = (plan) => {
     if (!isAuthenticated) {
       handleGetStarted();
       return;
@@ -34,26 +30,8 @@ export const PricingSection = ({ handleGetStarted, isAuthenticated }) => {
       navigate(`/choose-plan`);
       return;
     }
-    setLoadingPlan(plan.planId);
-    try {
-      const response = await fetch(`${API_URL}/api/payments/create-checkout`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ plan: plan.planId, origin_url: window.location.origin })
-      });
-      if (response.ok) {
-        const data = await response.json();
-        window.location.href = data.url;
-      } else {
-        const error = await response.json();
-        toast.error(error.detail || 'Failed to start checkout');
-      }
-    } catch {
-      toast.error('Failed to start checkout');
-    } finally {
-      setLoadingPlan(null);
-    }
+    // All other plans → embedded Checkout page
+    navigate(`/checkout?plan=${plan.planId}`);
   };
 
   return (
@@ -109,8 +87,8 @@ export const PricingSection = ({ handleGetStarted, isAuthenticated }) => {
                 ))}
               </ul>
               <Button className={`w-full mt-8 ${plan.featured ? 'bg-indigo-600 hover:bg-indigo-500 btn-glow' : 'bg-zinc-800 hover:bg-zinc-700 border border-zinc-700'}`}
-                onClick={() => handlePlanClick(plan)} disabled={loadingPlan === plan.planId} data-testid={`pricing-cta-${plan.name.toLowerCase()}`}>
-                {loadingPlan === plan.planId ? <Loader2 className="w-4 h-4 animate-spin" /> : <>{plan.cta} <ChevronRight className="w-4 h-4 ml-1" /></>}
+                onClick={() => handlePlanClick(plan)} data-testid={`pricing-cta-${plan.name.toLowerCase()}`}>
+                {plan.cta} <ChevronRight className="w-4 h-4 ml-1" />
               </Button>
             </div>
           ))}

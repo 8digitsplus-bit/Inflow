@@ -1,122 +1,127 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { 
-  Check, Loader2, ArrowLeft, Shield, Lock, Clock, 
-  CreditCard, Zap, ChevronRight, PartyPopper, CheckCircle2
+import {
+  Check, Loader2, ArrowLeft, Shield, Lock, Clock,
+  Zap, ChevronRight, CheckCircle2,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
-import { toast } from 'sonner';
 import { Toaster } from '../components/ui/sonner';
+import { loadStripe } from '@stripe/stripe-js';
+import {
+  EmbeddedCheckoutProvider,
+  EmbeddedCheckout,
+} from '@stripe/react-stripe-js';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
+// Stripe recommends calling loadStripe() at module level (NOT inside the component
+// render loop) so their fraud detection can monitor the page from first paint.
+const STRIPE_PUBLISHABLE_KEY = process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY;
+const stripePromise = STRIPE_PUBLISHABLE_KEY ? loadStripe(STRIPE_PUBLISHABLE_KEY) : null;
+
 const PLANS = {
-  essential_monthly: { name: 'Essential', price: 299, period: 'month', color: '#06B6D4', features: ['Sales Pipeline', 'Core Analytics', 'Churn Monitoring', 'Live Integration'] },
-  essential_yearly: { name: 'Essential', price: 2512, period: 'year', color: '#06B6D4', originalPrice: 3588, features: ['Sales Pipeline', 'Core Analytics', 'Churn Monitoring', 'Live Integration'] },
-  pro_monthly: { name: 'Pro', price: 699, period: 'month', color: '#6366F1', features: ['Everything in Essential', 'Sales Performance', 'AI Insights', 'Pricing Optimization', 'CRO Analysis'] },
-  pro_yearly: { name: 'Pro', price: 5872, period: 'year', color: '#6366F1', originalPrice: 8388, features: ['Everything in Essential', 'Sales Performance', 'AI Insights', 'Pricing Optimization', 'CRO Analysis'] },
-  enterprise_monthly: { name: 'Enterprise', price: 260, period: 'month', color: '#A855F7', perUser: true, features: ['Everything in Pro', 'Revenue Intelligence', 'Smart Assist AI', 'Custom Integrations', 'API Access'] },
-  enterprise_yearly: { name: 'Enterprise', price: 2184, period: 'year', color: '#A855F7', originalPrice: 3120, perUser: true, features: ['Everything in Pro', 'Revenue Intelligence', 'Smart Assist AI', 'Custom Integrations', 'API Access'] },
+  essential_monthly: { name: 'Essential', price: 299, period: 'month', color: '#06B6D4', features: ['Sales Pipeline', 'Core Analytics', 'Churn Monitoring', '2 live integrations'] },
+  essential_yearly: { name: 'Essential', price: 2512, period: 'year', color: '#06B6D4', originalPrice: 3588, features: ['Sales Pipeline', 'Core Analytics', 'Churn Monitoring', '2 live integrations'] },
+  pro_monthly: { name: 'Pro', price: 699, period: 'month', color: '#6366F1', features: ['Everything in Essential', '4 live integrations', 'CSV import', 'AI Insights', 'CRO Analysis'] },
+  pro_yearly: { name: 'Pro', price: 5872, period: 'year', color: '#6366F1', originalPrice: 8388, features: ['Everything in Essential', '4 live integrations', 'CSV import', 'AI Insights', 'CRO Analysis'] },
+  enterprise_monthly: { name: 'Enterprise', price: 260, period: 'month', color: '#A855F7', perUser: true, features: ['Everything in Pro', 'Unlimited integrations', 'Custom API access', 'Smart Assist AI'] },
+  enterprise_yearly: { name: 'Enterprise', price: 2184, period: 'year', color: '#A855F7', originalPrice: 3120, perUser: true, features: ['Everything in Pro', 'Unlimited integrations', 'Custom API access', 'Smart Assist AI'] },
 };
 
 const Checkout = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user, refreshUser } = useAuth();
+  const { refreshUser } = useAuth();
+
   const planKey = searchParams.get('plan') || 'pro_monthly';
   const plan = PLANS[planKey];
-  const usersParam = parseInt(searchParams.get('users')) || 5;
-  const userCount = plan?.perUser ? usersParam : 1;
+  const usersParam = parseInt(searchParams.get('users')) || 1;
+  const userCount = plan?.perUser ? Math.max(1, usersParam) : 1;
   const totalPrice = plan ? plan.price * userCount : 0;
   const totalOriginal = plan?.originalPrice ? plan.originalPrice * userCount : null;
 
-  const [step, setStep] = useState('review');
-  const [processing, setProcessing] = useState(false);
-  const [email, setEmail] = useState(user?.email || '');
-  const [name, setName] = useState(user?.name || '');
+  // Detect post-payment return from Stripe (Stripe appends ?session_id=cs_test_...)
+  const returnSessionId = searchParams.get('session_id');
+  const [step, setStep] = useState(returnSessionId ? 'verifying' : 'paying');
+  const [paymentStatus, setPaymentStatus] = useState(null);
   const pollRef = useRef(null);
-  const popupRef = useRef(null);
 
+  // Embedded Checkout fetches its client_secret via this callback every mount.
+  const fetchClientSecret = useCallback(async () => {
+    const response = await fetch(`${API_URL}/api/payments/create-checkout`, {
+      method: 'POST',
+      credentials: 'include',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        plan: planKey,
+        origin_url: window.location.origin,
+        users: userCount,
+      }),
+    });
+    if (!response.ok) {
+      const err = await response.json().catch(() => ({}));
+      throw new Error(err.detail || 'Failed to create checkout session');
+    }
+    const data = await response.json();
+    if (!data.client_secret) throw new Error('No client_secret returned');
+    return data.client_secret;
+  }, [planKey, userCount]);
+
+  // After Stripe redirects back with ?session_id=..., poll status until paid.
   useEffect(() => {
-    return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
-    };
-  }, []);
-
-  const handlePayment = async () => {
-    if (!email.trim()) { toast.error('Please enter your email'); return; }
-    setProcessing(true);
-
-    try {
-      const response = await fetch(`${API_URL}/api/payments/create-checkout`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ plan: planKey, origin_url: window.location.origin, users: userCount }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        toast.error(data.detail || 'Failed to create payment session');
-        setProcessing(false);
-        return;
-      }
-
-      const { url, session_id } = await response.json();
-      setStep('processing');
-
-      // Open Stripe in popup
-      const w = 500, h = 700;
-      const left = (window.innerWidth - w) / 2 + window.screenX;
-      const top = (window.innerHeight - h) / 2 + window.screenY;
-      popupRef.current = window.open(url, 'stripe_checkout', `width=${w},height=${h},left=${left},top=${top},toolbar=no,menubar=no`);
-
-      // Poll for payment status
-      pollRef.current = setInterval(async () => {
-        try {
-          const statusRes = await fetch(`${API_URL}/api/payments/status/${session_id}`, { credentials: 'include' });
-          if (statusRes.ok) {
-            const statusData = await statusRes.json();
-            if (statusData.status === 'paid' || statusData.status === 'complete') {
-              clearInterval(pollRef.current);
-              if (popupRef.current && !popupRef.current.closed) popupRef.current.close();
-              setStep('success');
-              if (refreshUser) refreshUser();
-            }
-          }
-        } catch {}
-      }, 3000);
-
-      // Also detect popup close
-      const popupCheck = setInterval(() => {
-        if (popupRef.current && popupRef.current.closed) {
-          clearInterval(popupCheck);
-          if (step !== 'success') {
-            setProcessing(false);
-            setStep('review');
+    if (!returnSessionId) return;
+    let attempts = 0;
+    const poll = async () => {
+      attempts += 1;
+      try {
+        const r = await fetch(`${API_URL}/api/payments/status/${returnSessionId}`, { credentials: 'include' });
+        if (r.ok) {
+          const d = await r.json();
+          setPaymentStatus(d);
+          if (d.payment_status === 'paid' || d.status === 'complete') {
+            clearInterval(pollRef.current);
+            setStep('success');
+            if (refreshUser) refreshUser();
+            return;
           }
         }
-      }, 1000);
-
-    } catch {
-      toast.error('Something went wrong');
-      setProcessing(false);
-    }
-  };
+      } catch { /* keep polling */ }
+      if (attempts >= 20) {
+        clearInterval(pollRef.current);
+        setStep('failed');
+      }
+    };
+    poll();
+    pollRef.current = setInterval(poll, 2500);
+    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+  }, [returnSessionId, refreshUser]);
 
   if (!plan) {
     return (
       <div className="min-h-screen bg-[#050507] flex items-center justify-center">
         <div className="text-center">
           <p className="text-zinc-400 mb-4">Invalid plan selected</p>
-          <Button onClick={() => navigate('/choose-plan')} className="bg-indigo-600 hover:bg-indigo-500">View Plans</Button>
+          <Button onClick={() => navigate('/choose-plan')} className="bg-indigo-600 hover:bg-indigo-500" data-testid="checkout-view-plans-btn">
+            View Plans
+          </Button>
         </div>
       </div>
     );
   }
 
-  // Success state
+  if (!stripePromise) {
+    return (
+      <div className="min-h-screen bg-[#050507] flex items-center justify-center px-4">
+        <div className="text-center max-w-sm">
+          <p className="text-amber-400 mb-2 font-semibold">Payments unavailable</p>
+          <p className="text-zinc-500 text-sm">REACT_APP_STRIPE_PUBLISHABLE_KEY is not configured.</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Success state — Stripe payment confirmed
   if (step === 'success') {
     return (
       <div className="min-h-screen bg-[#050507] flex items-center justify-center px-4">
@@ -131,8 +136,8 @@ const Checkout = () => {
           <p className="text-zinc-400 mb-8">
             Your subscription is now active. All {plan.name} features have been unlocked.
           </p>
-          <Button 
-            onClick={() => navigate('/dashboard')} 
+          <Button
+            onClick={() => navigate('/dashboard')}
             className="bg-indigo-600 hover:bg-indigo-500 px-8 h-11"
             data-testid="go-to-dashboard-btn"
           >
@@ -143,8 +148,22 @@ const Checkout = () => {
     );
   }
 
-  const tax = 0;
-  const total = totalPrice;
+  // Failed / timed-out polling state
+  if (step === 'failed') {
+    return (
+      <div className="min-h-screen bg-[#050507] flex items-center justify-center px-4">
+        <div className="text-center max-w-md">
+          <p className="text-amber-400 font-semibold mb-2">Payment status unconfirmed</p>
+          <p className="text-zinc-500 text-sm mb-6">
+            We couldn't confirm payment in time. If your card was charged, your subscription will activate within a few minutes — or check your email.
+          </p>
+          <Button onClick={() => navigate('/settings')} className="bg-indigo-600 hover:bg-indigo-500" data-testid="checkout-go-settings-btn">
+            Go to Settings
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#050507] relative overflow-hidden">
@@ -166,112 +185,47 @@ const Checkout = () => {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
         <div className="grid lg:grid-cols-5 gap-8 lg:gap-12">
 
-          {/* Left: Payment Form */}
+          {/* Left: Embedded Stripe Checkout */}
           <div className="lg:col-span-3 order-2 lg:order-1">
-            {step === 'processing' ? (
-              <div className="bg-zinc-900/50 border border-white/[0.06] rounded-2xl p-8 text-center">
-                <Loader2 className="w-10 h-10 animate-spin text-indigo-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-white mb-2" style={{ fontFamily: 'Outfit' }}>Completing your payment...</h3>
-                <p className="text-zinc-400 text-sm mb-6">A secure payment window has opened. Complete your payment there.</p>
-                <p className="text-zinc-600 text-xs">If the window didn't open, check your popup blocker.</p>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="mt-4 border-zinc-700 text-zinc-400 hover:bg-indigo-500/10 hover:text-indigo-400 hover:border-indigo-500/30"
-                  onClick={() => { if (popupRef.current && !popupRef.current.closed) popupRef.current.focus(); }}
-                >
-                  Bring payment window to front
-                </Button>
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-xl font-bold text-white mb-1" style={{ fontFamily: 'Outfit' }}>Checkout</h2>
+                <p className="text-zinc-500 text-sm">Complete your subscription to InFlow {plan.name}</p>
               </div>
-            ) : (
-              <div className="space-y-6">
-                <div>
-                  <h2 className="text-xl font-bold text-white mb-1" style={{ fontFamily: 'Outfit' }}>Checkout</h2>
-                  <p className="text-zinc-500 text-sm">Complete your subscription to InFlow {plan.name}</p>
-                </div>
 
-                {/* Account Info */}
-                <div className="bg-zinc-900/50 border border-white/[0.06] rounded-xl p-5 space-y-4">
-                  <h3 className="text-sm font-semibold text-zinc-300 flex items-center gap-2">
-                    <div className="w-5 h-5 rounded-full bg-indigo-600 flex items-center justify-center text-[10px] font-bold text-white">1</div>
-                    Account Information
-                  </h3>
-                  <div className="grid sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="text-xs font-medium text-zinc-500 block mb-1.5">Full Name</label>
-                      <input
-                        type="text" value={name} onChange={(e) => setName(e.target.value)}
-                        className="w-full px-3 py-2.5 bg-zinc-800/50 border border-zinc-700/50 rounded-lg text-white text-sm placeholder:text-zinc-600 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/20"
-                        data-testid="checkout-name-input"
-                      />
-                    </div>
-                    <div>
-                      <label className="text-xs font-medium text-zinc-500 block mb-1.5">Email</label>
-                      <input
-                        type="email" value={email} onChange={(e) => setEmail(e.target.value)}
-                        className="w-full px-3 py-2.5 bg-zinc-800/50 border border-zinc-700/50 rounded-lg text-white text-sm placeholder:text-zinc-600 focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/20"
-                        data-testid="checkout-email-input"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Payment Method */}
-                <div className="bg-zinc-900/50 border border-white/[0.06] rounded-xl p-5 space-y-3">
-                  <h3 className="text-sm font-semibold text-zinc-300 flex items-center gap-2">
-                    <div className="w-5 h-5 rounded-full bg-indigo-600 flex items-center justify-center text-[10px] font-bold text-white">2</div>
-                    Payment Method
-                  </h3>
-                  <div className="p-3 bg-zinc-800/30 border border-zinc-700/30 rounded-lg space-y-3">
-                    <div className="flex items-center gap-3">
-                      <CreditCard className="w-5 h-5 text-zinc-400 flex-shrink-0" />
-                      <div className="flex-1">
-                        <p className="text-sm text-zinc-300">Credit or Debit Card</p>
-                        <p className="text-[11px] text-zinc-600">Powered by Stripe — your card details are never stored on our servers</p>
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap gap-1.5">
-                      {['Visa', 'Mastercard', 'Amex', 'PayPal', 'Apple Pay', 'Google Pay', 'Samsung Pay', 'Monzo', 'Revolut', 'Tide', 'Wise'].map(c => (
-                        <span key={c} className="px-2 py-0.5 bg-zinc-700/40 rounded text-[10px] font-medium text-zinc-400">{c}</span>
-                      ))}
-                    </div>
-                  </div>
-                  <p className="text-[10px] text-zinc-600 px-1">All payments are processed securely through Stripe.</p>
-                </div>
-
-                {/* Pay Button */}
-                <Button
-                  className="w-full h-12 text-sm font-semibold bg-indigo-600 hover:bg-indigo-500 shadow-lg shadow-indigo-500/20 transition-all"
-                  onClick={handlePayment}
-                  disabled={processing}
-                  data-testid="pay-now-btn"
-                >
-                  {processing ? (
-                    <><Loader2 className="w-4 h-4 animate-spin mr-2" />Processing...</>
-                  ) : (
-                    <>
-                      <Lock className="w-4 h-4 mr-2" />
-                      Pay ${total.toLocaleString()}.00
-                    </>
+              {step === 'verifying' ? (
+                <div className="bg-zinc-900/50 border border-white/[0.06] rounded-xl p-8 text-center" data-testid="checkout-verifying">
+                  <Loader2 className="w-10 h-10 animate-spin text-indigo-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-semibold text-white mb-2" style={{ fontFamily: 'Outfit' }}>Verifying your payment…</h3>
+                  <p className="text-zinc-400 text-sm">This usually takes a few seconds. Please don't close this page.</p>
+                  {paymentStatus?.payment_status && (
+                    <p className="text-zinc-600 text-xs mt-4">Status: {paymentStatus.payment_status}</p>
                   )}
-                </Button>
-
-                {/* Trust */}
-                <div className="flex items-center justify-center gap-5 text-zinc-600 text-[11px]">
-                  <span className="flex items-center gap-1"><Shield className="w-3 h-3" />SSL Encrypted</span>
-                  <span className="flex items-center gap-1"><Clock className="w-3 h-3" />Cancel anytime</span>
-                  <span className="flex items-center gap-1"><Zap className="w-3 h-3" />Instant access</span>
                 </div>
+              ) : (
+                <div className="bg-white rounded-xl overflow-hidden" data-testid="embedded-checkout-wrapper">
+                  <EmbeddedCheckoutProvider
+                    stripe={stripePromise}
+                    options={{ fetchClientSecret }}
+                  >
+                    <EmbeddedCheckout />
+                  </EmbeddedCheckoutProvider>
+                </div>
+              )}
+
+              <div className="flex items-center justify-center gap-5 text-zinc-600 text-[11px]">
+                <span className="flex items-center gap-1"><Shield className="w-3 h-3" />SSL Encrypted</span>
+                <span className="flex items-center gap-1"><Clock className="w-3 h-3" />Cancel anytime</span>
+                <span className="flex items-center gap-1"><Zap className="w-3 h-3" />Instant access</span>
               </div>
-            )}
+            </div>
           </div>
 
           {/* Right: Order Summary */}
           <div className="lg:col-span-2 order-1 lg:order-2">
-            <div className="bg-zinc-900/50 border border-white/[0.06] rounded-xl p-5 lg:sticky lg:top-8">
+            <div className="bg-zinc-900/50 border border-white/[0.06] rounded-xl p-5 lg:sticky lg:top-8" data-testid="order-summary">
               <h3 className="text-sm font-semibold text-zinc-300 mb-4">Order Summary</h3>
-              
-              {/* Plan */}
+
               <div className="flex items-center gap-3 mb-4 pb-4 border-b border-white/[0.04]">
                 <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ backgroundColor: `${plan.color}15` }}>
                   <Zap className="w-5 h-5" style={{ color: plan.color }} />
@@ -288,7 +242,6 @@ const Checkout = () => {
                 </div>
               </div>
 
-              {/* Features */}
               <div className="space-y-2 mb-4 pb-4 border-b border-white/[0.04]">
                 {plan.features.map((f, i) => (
                   <div key={i} className="flex items-center gap-2">
@@ -298,7 +251,6 @@ const Checkout = () => {
                 ))}
               </div>
 
-              {/* Totals */}
               <div className="space-y-2 mb-4">
                 {plan.perUser && (
                   <div className="flex justify-between text-sm">
@@ -317,19 +269,18 @@ const Checkout = () => {
                   </div>
                 )}
                 <div className="flex justify-between text-sm">
-                  <span className="text-zinc-500">Tax</span>
-                  <span className="text-zinc-300">$0.00</span>
+                  <span className="text-zinc-500">Trial</span>
+                  <span className="text-emerald-400">14 days free</span>
                 </div>
               </div>
 
               <div className="flex justify-between pt-3 border-t border-white/[0.06]">
-                <span className="text-white font-semibold">Total</span>
-                <span className="text-white font-bold text-lg" style={{ fontFamily: 'Outfit' }}>${total.toLocaleString()}.00</span>
+                <span className="text-white font-semibold">Total today</span>
+                <span className="text-white font-bold text-lg" style={{ fontFamily: 'Outfit' }}>$0.00</span>
               </div>
 
-              {/* Billing cycle note */}
               <p className="text-[10px] text-zinc-600 mt-3">
-                Billed {plan.period}ly. You can cancel or change your plan anytime from Settings.
+                After your 14-day free trial: ${totalPrice.toLocaleString()}/{plan.period}. Cancel anytime from Settings.
               </p>
             </div>
           </div>
