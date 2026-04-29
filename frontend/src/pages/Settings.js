@@ -205,6 +205,31 @@ const Settings = () => {
     }
   };
 
+  const [loadingPortal, setLoadingPortal] = useState(false);
+  const handleOpenBillingPortal = async () => {
+    setLoadingPortal(true);
+    try {
+      const response = await fetch(`${API_URL}/api/billing/portal-session`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ return_url: window.location.origin }),
+      });
+      const data = await response.json();
+      if (response.ok && data.url) {
+        window.location.href = data.url;
+      } else {
+        toast.error(data.detail || 'Could not open billing portal');
+      }
+    } catch {
+      toast.error('Could not open billing portal');
+    } finally {
+      setLoadingPortal(false);
+    }
+  };
+
+  const hasActivePaidSub = user?.subscription_tier && !['trial', 'expired', 'cancelled', 'free', null, undefined].includes(user.subscription_tier);
+
   const canCancel = user?.subscription_tier && !['expired', 'cancelled'].includes(user.subscription_tier) && org?.role === 'owner';
   const canChangePlan = org?.role === 'owner';
 
@@ -301,6 +326,18 @@ const Settings = () => {
                 <LogOut className="w-4 h-4 mr-2" />
                 Sign Out
               </Button>
+              {hasActivePaidSub && org?.role === 'owner' && (
+                <Button
+                  variant="outline"
+                  className="border-indigo-500/40 text-indigo-300 hover:bg-indigo-500/10 hover:border-indigo-400"
+                  onClick={handleOpenBillingPortal}
+                  disabled={loadingPortal}
+                  data-testid="manage-billing-btn"
+                >
+                  {loadingPortal ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CreditCard className="w-4 h-4 mr-2" />}
+                  Manage Billing
+                </Button>
+              )}
               {canCancel && (
                 <Button
                   variant="outline"

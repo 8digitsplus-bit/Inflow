@@ -376,6 +376,7 @@ async def get_session_status(session_id: str, user: User = Depends(get_current_u
     if (status == "complete" or payment_status == "paid") and transaction.get("payment_status") != "paid":
         plan = transaction.get("plan", "pro_monthly")
         subscription_id = session.subscription
+        customer_id = session.customer
         now = datetime.now(timezone.utc).isoformat()
 
         await db.payment_transactions.update_one(
@@ -383,6 +384,7 @@ async def get_session_status(session_id: str, user: User = Depends(get_current_u
             {"$set": {
                 "payment_status": "paid",
                 "stripe_subscription_id": subscription_id,
+                "stripe_customer_id": customer_id,
                 "updated_at": now,
             }}
         )
@@ -392,6 +394,7 @@ async def get_session_status(session_id: str, user: User = Depends(get_current_u
                 "subscription_tier": plan,
                 "subscription_status": "active",
                 "stripe_subscription_id": subscription_id,
+                "stripe_customer_id": customer_id,
                 "updated_at": now,
             }}
         )
@@ -404,6 +407,7 @@ async def get_session_status(session_id: str, user: User = Depends(get_current_u
                     "subscription_status": "active",
                     "seat_count": quantity,
                     "stripe_subscription_id": subscription_id,
+                    "stripe_customer_id": customer_id,
                     "updated_at": now,
                 }}
             )
@@ -414,6 +418,83 @@ async def get_session_status(session_id: str, user: User = Depends(get_current_u
         "customer_email": customer_email,
         "plan": transaction.get("plan"),
     }
+
+
+async def _resolve_stripe_customer_id(user: User) -> str | None:
+    """Look up the user's Stripe customer ID from cache or via their last paid txn."""
+    user_doc = await db.users.find_one({"user_id": user.user_id}, {"_id": 0, "stripe_customer_id": 1})
+    cached = (user_doc or {}).get("stripe_customer_id")
+    if cached:
+        return cached
+    # Fall back: pull it from the latest paid payment_transaction for this user
+    txn = await db.payment_transactions.find_one(
+        {"user_id": user.user_id, "payment_status": "paid"},
+        sort=[("updated_at", -1)],
+        projection={"_id": 0, "stripe_customer_id": 1, "session_id": 1},
+    )
+    if not txn:
+        return None
+    if txn.get("stripe_customer_id"):
+        return txn["stripe_customer_id"]
+    # Last resort: ask Stripe directly using the session_id (legacy txns from before we cached)
+    sid = txn.get("session_id")
+    if not sid:
+        return None
+    try:
+        session = stripe_sdk.checkout.Session.retrieve(sid)
+        cust_id = session.customer
+        if cust_id:
+            await db.users.update_one(
+                {"user_id": user.user_id},
+                {"$set": {"stripe_customer_id": cust_id}},
+            )
+        return cust_id
+    except Exception:
+        return None
+
+
+@router.post("/billing/portal-session")
+async def create_billing_portal_session(request: Request, user: User = Depends(require_owner)):
+    """Create a Stripe Customer Portal session.
+
+    The portal lets the subscriber self-serve: update card, view + download
+    invoice PDFs, see payment history, change plan, cancel/reactivate, and
+    update billing address. Stripe hosts and maintains the entire UI.
+    """
+    api_key = os.environ.get("STRIPE_API_KEY")
+    if not api_key or not is_real_stripe_key(api_key):
+        raise HTTPException(status_code=503, detail="Billing portal is not available in sandbox mode")
+
+    customer_id = await _resolve_stripe_customer_id(user)
+    if not customer_id:
+        raise HTTPException(
+            status_code=400,
+            detail="No active subscription found for this account. Subscribe first before opening the billing portal.",
+        )
+
+    body = await request.json() if (await request.body()) else {}
+    return_url = body.get("return_url") or os.environ.get("FRONTEND_URL") or "https://app.local"
+
+    stripe_sdk.api_key = api_key
+    try:
+        session = stripe_sdk.billing_portal.Session.create(
+            customer=customer_id,
+            return_url=f"{return_url}/settings",
+        )
+    except stripe_sdk.error.InvalidRequestError as e:
+        # Most common cause: portal not configured yet in the Stripe Dashboard.
+        msg = str(e)
+        if "configuration" in msg.lower() or "no configuration" in msg.lower():
+            raise HTTPException(
+                status_code=503,
+                detail="Stripe Customer Portal is not configured yet. Open Stripe Dashboard → Settings → Billing → Customer portal and click Save to activate it.",
+            )
+        raise HTTPException(status_code=400, detail=msg)
+    except Exception as e:
+        logger.error(f"Billing portal session create failed: {e}")
+        raise HTTPException(status_code=502, detail="Could not create billing portal session")
+
+    return {"url": session.url}
 
 
 @router.get("/payments/status/{session_id}")
