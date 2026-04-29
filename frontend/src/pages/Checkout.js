@@ -18,13 +18,15 @@ const API_URL = process.env.REACT_APP_BACKEND_URL;
 const STRIPE_PUBLISHABLE_KEY = process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY;
 const stripePromise = STRIPE_PUBLISHABLE_KEY ? loadStripe(STRIPE_PUBLISHABLE_KEY) : null;
 
+const INDIGO = '#6366F1';
+
 const PLANS = {
-  essential_monthly: { name: 'Essential', price: 299, period: 'month', color: '#06B6D4', features: ['Sales Pipeline', 'Core Analytics', '2 live integrations', 'Churn Monitoring'] },
-  essential_yearly: { name: 'Essential', price: 2512, period: 'year', color: '#06B6D4', originalPrice: 3588, features: ['Sales Pipeline', 'Core Analytics', '2 live integrations', 'Churn Monitoring'] },
-  pro_monthly: { name: 'Pro', price: 699, period: 'month', color: '#6366F1', features: ['4 live integrations', 'CSV import', 'AI Insights', 'CRO Analysis'] },
-  pro_yearly: { name: 'Pro', price: 5872, period: 'year', color: '#6366F1', originalPrice: 8388, features: ['4 live integrations', 'CSV import', 'AI Insights', 'CRO Analysis'] },
-  enterprise_monthly: { name: 'Enterprise', price: 260, period: 'month', color: '#A855F7', perUser: true, features: ['Unlimited integrations', 'Custom API access', 'Smart Assist AI'] },
-  enterprise_yearly: { name: 'Enterprise', price: 2184, period: 'year', color: '#A855F7', originalPrice: 3120, perUser: true, features: ['Unlimited integrations', 'Custom API access', 'Smart Assist AI'] },
+  essential_monthly: { name: 'Essential', price: 299, period: 'month', features: ['Sales Pipeline', 'Core Analytics', '2 live integrations', 'Churn Monitoring'] },
+  essential_yearly: { name: 'Essential', price: 2512, period: 'year', originalPrice: 3588, features: ['Sales Pipeline', 'Core Analytics', '2 live integrations', 'Churn Monitoring'] },
+  pro_monthly: { name: 'Pro', price: 699, period: 'month', features: ['4 live integrations', 'CSV import', 'AI Insights', 'CRO Analysis'] },
+  pro_yearly: { name: 'Pro', price: 5872, period: 'year', originalPrice: 8388, features: ['4 live integrations', 'CSV import', 'AI Insights', 'CRO Analysis'] },
+  enterprise_monthly: { name: 'Enterprise', price: 260, period: 'month', perUser: true, features: ['Unlimited integrations', 'Custom API access', 'Smart Assist AI'] },
+  enterprise_yearly: { name: 'Enterprise', price: 2184, period: 'year', originalPrice: 3120, perUser: true, features: ['Unlimited integrations', 'Custom API access', 'Smart Assist AI'] },
 };
 
 const Checkout = () => {
@@ -90,9 +92,9 @@ const Checkout = () => {
       <div className="pointer-events-none absolute inset-0 overflow-hidden">
         <div
           className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] rounded-full opacity-[0.18] blur-[120px]"
-          style={{ background: `radial-gradient(circle, ${plan.color} 0%, transparent 70%)` }}
+          style={{ background: `radial-gradient(circle, ${INDIGO} 0%, transparent 70%)` }}
         />
-        <div className="absolute bottom-0 right-0 w-[600px] h-[600px] rounded-full opacity-[0.10] blur-[100px] bg-purple-600" />
+        <div className="absolute bottom-0 right-0 w-[600px] h-[600px] rounded-full opacity-[0.10] blur-[100px] bg-indigo-600" />
       </div>
 
       {/* Header */}
@@ -113,7 +115,7 @@ const Checkout = () => {
         {/* Compact heading */}
         <div className="text-center mb-5">
           <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/[0.04] border border-white/[0.06] mb-2" data-testid="checkout-plan-badge">
-            <Sparkles className="w-3 h-3" style={{ color: plan.color }} />
+            <Sparkles className="w-3 h-3" style={{ color: INDIGO }} />
             <span className="text-[10px] font-medium uppercase tracking-wider text-zinc-300">
               InFlow {plan.name}
             </span>
@@ -124,23 +126,23 @@ const Checkout = () => {
           <p className="text-zinc-500 text-xs mt-1">14 days free · No charge today · Cancel anytime</p>
         </div>
 
-        {/* Two-column: Summary (left) + Stripe iframe (right) */}
+        {/* Two-column: Summary (left) + Stripe iframe (right) — even 6/6 split */}
         <div className="grid lg:grid-cols-12 gap-5 items-start">
 
           {/* Left: Summary card */}
-          <div className="lg:col-span-5 order-2 lg:order-1">
+          <div className="lg:col-span-6 order-2 lg:order-1">
             <div className="relative" data-testid="order-summary">
               {/* Halo */}
               <div
                 className="pointer-events-none absolute -inset-px rounded-2xl opacity-50 blur-xl"
-                style={{ background: `linear-gradient(135deg, ${plan.color}60, #A855F730, ${plan.color}60)` }}
+                style={{ background: `linear-gradient(135deg, ${INDIGO}60, ${INDIGO}30, ${INDIGO}60)` }}
               />
               {/* Card */}
               <div className="relative bg-zinc-950/80 backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
 
                 <div className="flex items-center gap-3 mb-4 pb-4 border-b border-white/[0.06]">
-                  <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${plan.color}20` }}>
-                    <Zap className="w-5 h-5" style={{ color: plan.color }} />
+                  <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${INDIGO}20` }}>
+                    <Zap className="w-5 h-5" style={{ color: INDIGO }} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-white font-semibold text-sm" style={{ fontFamily: 'Outfit' }}>
@@ -221,10 +223,10 @@ const Checkout = () => {
           </div>
 
           {/* Right: Stripe iframe */}
-          <div className="lg:col-span-7 order-1 lg:order-2">
+          <div className="lg:col-span-6 order-1 lg:order-2">
             <div className="relative" data-testid="embedded-checkout-wrapper">
               {/* Halo */}
-              <div className="pointer-events-none absolute -inset-px rounded-2xl bg-gradient-to-br from-indigo-500/30 via-purple-500/15 to-indigo-500/30 blur-xl opacity-60" />
+              <div className="pointer-events-none absolute -inset-px rounded-2xl bg-gradient-to-br from-indigo-500/30 via-indigo-500/15 to-indigo-500/30 blur-xl opacity-60" />
               {/* Card */}
               <div className="relative bg-white rounded-2xl overflow-hidden ring-1 ring-white/10 shadow-[0_0_60px_-15px_rgba(99,102,241,0.5)]">
                 <EmbeddedCheckoutProvider
