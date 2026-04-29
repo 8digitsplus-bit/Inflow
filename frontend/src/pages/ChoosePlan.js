@@ -112,7 +112,7 @@ const ChoosePlan = () => {
             Choose your plan
           </h1>
           <p className="text-zinc-400 text-sm max-w-md mx-auto">
-            Start with a 14-day free trial on any plan. No credit card required to start.
+            Start with a 14-day free trial on any plan. No charge until day 15 — cancel anytime.
           </p>
         </div>
 
@@ -150,12 +150,12 @@ const ChoosePlan = () => {
           )}
         </div>
 
-        {/* Global seats stepper — applies to every tier */}
-        <div className="flex justify-center mb-8">
+        {/* Global seats control — quick presets + stepper + free input — applies to every tier */}
+        <div className="flex flex-col items-center gap-3 mb-8">
           <div className="inline-flex items-center gap-3 bg-zinc-900/80 rounded-xl px-4 py-2.5 border border-white/[0.06]" data-testid="seats-stepper">
             <Users className="w-4 h-4 text-indigo-400" />
             <span className="text-zinc-400 text-sm">Seats</span>
-            <div className="flex items-center gap-2 ml-1">
+            <div className="flex items-center gap-1.5 ml-1">
               <button
                 onClick={() => setEnterpriseUsers(Math.max(1, enterpriseUsers - 1))}
                 className="w-7 h-7 rounded-md bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center text-zinc-300 transition-colors"
@@ -164,7 +164,23 @@ const ChoosePlan = () => {
               >
                 <Minus className="w-3.5 h-3.5" />
               </button>
-              <span className="text-white font-semibold text-sm w-8 text-center" data-testid="seats-count">{enterpriseUsers}</span>
+              <input
+                type="number"
+                min="1"
+                value={enterpriseUsers}
+                onChange={(e) => {
+                  const n = parseInt(e.target.value, 10);
+                  if (!Number.isNaN(n) && n >= 1) setEnterpriseUsers(n);
+                  else if (e.target.value === '') setEnterpriseUsers(1);
+                }}
+                onBlur={(e) => {
+                  const n = parseInt(e.target.value, 10);
+                  if (Number.isNaN(n) || n < 1) setEnterpriseUsers(1);
+                }}
+                className="w-14 h-7 rounded-md bg-zinc-950 border border-zinc-800 text-white text-sm font-semibold text-center focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                data-testid="seats-input"
+                aria-label="Number of seats"
+              />
               <button
                 onClick={() => setEnterpriseUsers(enterpriseUsers + 1)}
                 className="w-7 h-7 rounded-md bg-zinc-800 hover:bg-zinc-700 flex items-center justify-center text-zinc-300 transition-colors"
@@ -174,6 +190,23 @@ const ChoosePlan = () => {
                 <Plus className="w-3.5 h-3.5" />
               </button>
             </div>
+          </div>
+          <div className="flex items-center gap-1.5" data-testid="seats-presets">
+            <span className="text-[11px] text-zinc-500 mr-1 uppercase tracking-wider">Quick</span>
+            {[1, 3, 5, 10, 25].map((n) => (
+              <button
+                key={n}
+                onClick={() => setEnterpriseUsers(n)}
+                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
+                  enterpriseUsers === n
+                    ? 'bg-indigo-600 text-white'
+                    : 'bg-zinc-900 text-zinc-400 hover:bg-zinc-800 border border-zinc-800'
+                }`}
+                data-testid={`seats-preset-${n}`}
+              >
+                {n}
+              </button>
+            ))}
           </div>
         </div>
 
