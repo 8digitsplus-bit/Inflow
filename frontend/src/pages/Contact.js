@@ -355,8 +355,8 @@ const Contact = () => {
               <h1 className="text-3xl sm:text-4xl font-semibold tracking-tight mb-3" style={{ fontFamily: 'Outfit' }}>
                 Hi, I'm <span className="bg-gradient-to-r from-indigo-300 to-violet-300 bg-clip-text text-transparent">Flow AI</span>
               </h1>
-              <p className="text-zinc-400 text-base sm:text-lg leading-relaxed mb-10 max-w-lg mx-auto">
-                Ask me anything about InFlow — plans, integrations, how the product works. I'll always check with you before sending an email or escalating to a human.
+              <p className="text-zinc-400 text-base sm:text-lg leading-relaxed mb-10 max-w-md mx-auto">
+                Plans, integrations, or anything else — I'll confirm before acting.
               </p>
 
               <div className="grid sm:grid-cols-2 gap-3 max-w-xl mx-auto text-left">
