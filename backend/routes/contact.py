@@ -1,19 +1,20 @@
-"""Public contact endpoint.
+"""Public contact agent — multi-step conversational AI.
 
 Flow:
-  1. Visitor submits {name, email, message} on /contact.
-  2. Claude classifies intent into {sales, support, refund, billing, other}.
-  3. If intent is sales/support → Claude drafts a reply, Resend sends it directly
-     to the visitor. Fire-and-forget.
-  4. If intent is refund/billing → escalate to ESCALATION_EMAIL (default
-     hello@inflow.io) with the original message; visitor receives a short ack.
-  5. Every inquiry is persisted to db.contact_messages for audit.
+  1. Visitor opens /contact and starts a chat (POST /api/contact/agent/start).
+  2. Agent (Claude) chats with them, classifies intent, gathers context, and
+     proposes an action (send_reply or escalate) — never executes autonomously.
+  3. Visitor clicks Approve / Edit / Cancel on the proposed action.
+  4. On approve: backend executes via Resend, agent confirms in the chat.
 
-No auth required — the endpoint is public but lightly rate-limited per IP.
+Two actions only (per product decision): send_reply, escalate. No refunds,
+no account creation, no magic links. The agent persists its memory in
+db.contact_chat_sessions so context is preserved across turns.
 """
 from fastapi import APIRouter, HTTPException, Request
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, Field
 from datetime import datetime, timezone, timedelta
+from typing import Optional, Literal
 import os
 import uuid
 import asyncio
@@ -27,19 +28,31 @@ logger = logging.getLogger(__name__)
 router = APIRouter()
 
 ESCALATION_EMAIL = os.environ.get("CONTACT_ESCALATION_EMAIL", "hello@inflow.io")
-AUTO_REPLY_CATEGORIES = {"sales", "support"}
-ESCALATE_CATEGORIES = {"refund", "billing"}
-VALID_CATEGORIES = AUTO_REPLY_CATEGORIES | ESCALATE_CATEGORIES | {"other"}
-
-RATE_LIMIT_PER_IP_PER_HOUR = 5
+RATE_LIMIT_PER_IP_PER_HOUR = 30  # higher than form because chat is multi-turn
 AI_TIMEOUT = 30
+MAX_HISTORY_TURNS = 12
+VALID_CATEGORIES = {"sales", "support", "refund", "billing", "other"}
+VALID_ACTIONS = {"send_reply", "escalate"}
 
 
-class ContactRequest(BaseModel):
-    name: str = Field(..., min_length=1, max_length=120)
-    email: EmailStr
-    message: str = Field(..., min_length=10, max_length=4000)
-    company: str | None = Field(None, max_length=120)
+class StartRequest(BaseModel):
+    pass
+
+
+class ChatRequest(BaseModel):
+    session_id: str
+    message: str = Field(..., min_length=1, max_length=4000)
+
+
+class ApproveRequest(BaseModel):
+    session_id: str
+    action_id: str
+    edits: Optional[dict] = None  # {subject?, body?, to?}
+
+
+class CancelRequest(BaseModel):
+    session_id: str
+    action_id: str
 
 
 def _client_ip(request: Request) -> str:
@@ -49,44 +62,75 @@ def _client_ip(request: Request) -> str:
     return request.client.host if request.client else "unknown"
 
 
-async def _classify_and_draft(name: str, email: str, message: str, company: str | None) -> dict:
-    """Single Claude call that returns {category, confidence, reply}."""
+SYSTEM_PROMPT = """You are the contact assistant for InFlow, a B2B SaaS platform for pricing optimization, sales pipeline management, and revenue intelligence.
+
+Plans (per user / month, billed monthly or yearly with 30% off year one):
+- Essential ($59) — Sales pipeline, core analytics, 2 integrations, churn monitoring, email support
+- Pro ($139) — Everything in Essential + 4 integrations, CSV import, AI insights, CRO analysis, revenue forecasting, priority support
+- Enterprise ($260) — Everything in Pro + unlimited integrations, Custom API, Smart Assist AI, dedicated support
+
+14-day free trial: email signup only, no card required. After day 14 the user picks a plan to keep using InFlow.
+
+Live integrations: Stripe, PayPal, Shopify, Xero, QuickBooks, HubSpot, Salesforce, Zoho CRM, Mixpanel, Amplitude.
+
+YOUR JOB
+You chat with website visitors. Have a natural multi-turn conversation. Once you understand their question and have their email, propose ONE of these actions:
+
+1. send_reply — for sales or support questions you can answer well. Draft a clear, accurate, personable reply (120–220 words) that the system will email to them.
+2. escalate — for refund / billing / press / partnership / legal / anything you cannot answer accurately. The system forwards their full message to a human, and they get a brief acknowledgement.
+
+CRITICAL RULES
+- NEVER execute an action yourself. You can only PROPOSE actions; the visitor must approve them.
+- Get the visitor's email before proposing send_reply (escalation can use whatever email they share when they share it).
+- Ask clarifying questions only if the request is genuinely ambiguous. Don't interrogate them.
+- Keep your chat replies short and friendly (1–3 sentences). The full answer goes in the action's body, not the chat.
+- Never invent features, prices, or integrations not listed above.
+- Don't use markdown, emojis, or hashtags in the email body.
+
+OUTPUT FORMAT — return ONLY valid JSON, nothing else:
+{
+  "message": "your short conversational chat reply",
+  "category": "sales" | "support" | "refund" | "billing" | "other" | null,
+  "needs": ["email"] | ["clarification"] | null,
+  "proposed_action": null | {
+    "type": "send_reply" | "escalate",
+    "to": "visitor@example.com",
+    "subject": "Re: your question to InFlow",
+    "body": "the full email body in plain text",
+    "reason": "one-sentence why this action"
+  }
+}"""
+
+
+async def _ask_agent(history: list, user_message: str) -> dict:
+    """Call Claude with the full conversation and parse JSON response."""
     from emergentintegrations.llm.chat import LlmChat, UserMessage
 
     api_key = os.environ.get("EMERGENT_LLM_KEY")
     if not api_key:
-        logger.warning("EMERGENT_LLM_KEY missing — skipping AI classification")
-        return {"category": "other", "confidence": 0.0, "reply": None}
+        return {
+            "message": "I'm temporarily unavailable. Please email hello@inflow.io and we'll get back to you.",
+            "category": "other",
+            "needs": None,
+            "proposed_action": None,
+            "_error": "no_llm_key",
+        }
 
-    system = """You are the customer contact triage assistant for InFlow, a B2B SaaS platform for pricing optimization, sales pipeline management, and revenue intelligence. InFlow offers three plans (Essential $59/user/mo, Pro $139/user/mo, Enterprise $260/user/mo) with a 14-day no-card free trial. Integrations: Stripe, PayPal, Shopify, Xero, QuickBooks, HubSpot, Salesforce, Zoho CRM, Mixpanel, Amplitude.
-
-Your job:
-1. Classify the incoming message into exactly one of: sales, support, refund, billing, other.
-   - sales: pre-sale interest, pricing questions, demo requests, plan comparisons
-   - support: how-to questions, product feature questions, integration setup help
-   - refund: refund requests, cancellation complaints, chargebacks
-   - billing: invoice disputes, subscription management issues, payment failures (for existing paying users)
-   - other: press, partnership, legal, recruiting, or anything unclear
-2. If category is sales or support, draft a concise reply (120-220 words) that:
-   - Opens with "Hi {first_name},"
-   - Answers the question directly using accurate InFlow facts above
-   - Ends with: "— The InFlow Team"
-   - Plain text only. No markdown, no emojis, no hashtags.
-3. If category is refund, billing, or other, set reply to null — a human will take over.
-
-Return ONLY valid JSON:
-{"category": "sales|support|refund|billing|other", "confidence": 0.0-1.0, "reply": "text or null"}"""
-
-    prompt = f"""Sender: {name} <{email}>
-Company: {company or "(not provided)"}
-
-Message:
-{message}"""
+    # Build history string. emergentintegrations LlmChat is per-call; pass
+    # prior turns as plain text context so Claude can stay coherent.
+    context_lines = []
+    for turn in history[-MAX_HISTORY_TURNS:]:
+        role = "Visitor" if turn["role"] == "user" else "Assistant"
+        context_lines.append(f"{role}: {turn['content']}")
+    if context_lines:
+        prompt = "Conversation so far:\n" + "\n".join(context_lines) + f"\n\nVisitor: {user_message}\n\nReply with JSON only."
+    else:
+        prompt = f"Visitor: {user_message}\n\nReply with JSON only."
 
     chat = LlmChat(
         api_key=api_key,
-        session_id=f"contact_{uuid.uuid4().hex[:8]}",
-        system_message=system,
+        session_id=f"contact_agent_{uuid.uuid4().hex[:8]}",
+        system_message=SYSTEM_PROMPT,
     ).with_model("anthropic", "claude-sonnet-4-5-20250929")
 
     try:
@@ -95,13 +139,23 @@ Message:
             timeout=AI_TIMEOUT,
         )
     except asyncio.TimeoutError:
-        logger.warning("Claude classification timed out for %s", email)
-        return {"category": "other", "confidence": 0.0, "reply": None}
+        return {
+            "message": "Sorry, that took longer than expected. Could you rephrase?",
+            "category": None,
+            "needs": None,
+            "proposed_action": None,
+            "_error": "timeout",
+        }
     except Exception as e:
-        logger.error("Claude classification failed: %s", e)
-        return {"category": "other", "confidence": 0.0, "reply": None}
+        logger.error("Claude contact agent failed: %s", e)
+        return {
+            "message": "Something went wrong on my end. You can email hello@inflow.io directly and we'll respond there.",
+            "category": "other",
+            "needs": None,
+            "proposed_action": None,
+            "_error": str(e)[:200],
+        }
 
-    # Strip code fences if Claude added any
     text = raw.strip()
     if text.startswith("```"):
         text = text.split("```")[1]
@@ -112,18 +166,34 @@ Message:
     try:
         data = json.loads(text)
     except json.JSONDecodeError:
-        logger.warning("Claude returned non-JSON for contact classification: %s", text[:200])
-        return {"category": "other", "confidence": 0.0, "reply": None}
+        logger.warning("Agent returned non-JSON: %s", text[:200])
+        return {
+            "message": text[:500] if text else "Could you tell me a bit more about what you need?",
+            "category": None,
+            "needs": None,
+            "proposed_action": None,
+        }
 
-    category = data.get("category", "other").lower().strip()
-    if category not in VALID_CATEGORIES:
-        category = "other"
-
-    return {
-        "category": category,
-        "confidence": float(data.get("confidence", 0.0) or 0.0),
-        "reply": data.get("reply") if category in AUTO_REPLY_CATEGORIES else None,
+    # Sanitize
+    out = {
+        "message": str(data.get("message", "")).strip()[:1200] or "Tell me more about what you need.",
+        "category": data.get("category") if data.get("category") in VALID_CATEGORIES else None,
+        "needs": data.get("needs") if isinstance(data.get("needs"), list) else None,
+        "proposed_action": None,
     }
+
+    pa = data.get("proposed_action")
+    if isinstance(pa, dict) and pa.get("type") in VALID_ACTIONS:
+        out["proposed_action"] = {
+            "id": uuid.uuid4().hex[:12],
+            "type": pa["type"],
+            "to": str(pa.get("to", ""))[:200],
+            "subject": str(pa.get("subject", "Re: your message to InFlow"))[:200],
+            "body": str(pa.get("body", ""))[:6000],
+            "reason": str(pa.get("reason", ""))[:300],
+        }
+
+    return out
 
 
 def _wrap_reply_html(plain_reply: str) -> str:
@@ -142,133 +212,241 @@ def _wrap_reply_html(plain_reply: str) -> str:
           {body}
         </td></tr>
       </table>
-      <p style="color:#71717a;font-size:11px;margin-top:20px;">This reply was sent automatically. If it didn't answer your question, just reply and a human will follow up.</p>
     </td></tr>
   </table>
 </body></html>"""
 
 
-def _escalation_html(name: str, email: str, company: str | None, message: str, category: str) -> str:
-    safe_msg = message.replace("<", "&lt;").replace(">", "&gt;").replace("\n", "<br/>")
+def _escalation_html(visitor_email: str, body: str, category: str | None) -> str:
+    safe = body.replace("<", "&lt;").replace(">", "&gt;").replace("\n", "<br/>")
     return f"""<!DOCTYPE html>
 <html><body style="font-family:-apple-system,BlinkMacSystemFont,sans-serif;color:#18181b;">
-  <p><strong>Category:</strong> {category}</p>
-  <p><strong>From:</strong> {name} &lt;{email}&gt;</p>
-  <p><strong>Company:</strong> {company or "—"}</p>
+  <p><strong>Category:</strong> {category or "other"}</p>
+  <p><strong>From:</strong> {visitor_email}</p>
   <hr style="border:none;border-top:1px solid #e4e4e7;margin:16px 0;"/>
-  <p>{safe_msg}</p>
+  <p>{safe}</p>
 </body></html>"""
 
 
-def _ack_html(first_name: str) -> str:
-    return f"""<!DOCTYPE html>
-<html><body style="margin:0;padding:0;background:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="padding:40px 20px;">
-    <tr><td align="center">
-      <table width="520" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;padding:36px;max-width:520px;">
-        <tr><td>
-          <div style="color:#6366f1;font-size:12px;font-weight:600;letter-spacing:0.15em;text-transform:uppercase;margin-bottom:20px;">InFlow</div>
-          <p style="color:#3f3f46;font-size:15px;line-height:1.65;margin:0 0 14px 0;">Hi {first_name},</p>
-          <p style="color:#3f3f46;font-size:15px;line-height:1.65;margin:0 0 14px 0;">Thanks for reaching out — we received your message and a member of our team will review it and get back to you within one business day.</p>
-          <p style="color:#3f3f46;font-size:15px;line-height:1.65;margin:0;">— The InFlow Team</p>
-        </td></tr>
-      </table>
-    </td></tr>
-  </table>
-</body></html>"""
-
-
-async def _process_inquiry(message_id: str, payload: ContactRequest):
-    """Background: classify → send reply or escalate → update DB."""
-    try:
-        result = await _classify_and_draft(payload.name, payload.email, payload.message, payload.company)
-        category = result["category"]
-        reply = result.get("reply")
-
-        first_name = payload.name.split()[0] if payload.name.strip() else "there"
-
-        auto_replied = False
-        escalated = False
-        send_result = {"sent": False, "reason": None, "id": None}
-
-        if category in AUTO_REPLY_CATEGORIES and reply:
-            send_result = await send_email(
-                to=payload.email,
-                subject="Re: your message to InFlow",
-                html=_wrap_reply_html(reply),
-                text=reply,
-            )
-            auto_replied = send_result.get("sent", False)
-
-        if category in ESCALATE_CATEGORIES or category == "other":
-            # Forward to escalation inbox
-            esc = await send_email(
-                to=ESCALATION_EMAIL,
-                subject=f"[InFlow contact · {category}] {payload.name}",
-                html=_escalation_html(payload.name, payload.email, payload.company, payload.message, category),
-                text=f"From: {payload.name} <{payload.email}>\nCategory: {category}\n\n{payload.message}",
-            )
-            escalated = esc.get("sent", False)
-            # And send a brief ack to the visitor so they know it landed
-            await send_email(
-                to=payload.email,
-                subject="We got your message",
-                html=_ack_html(first_name),
-                text=f"Hi {first_name},\n\nThanks for reaching out — we'll review and reply within one business day.\n\n— The InFlow Team",
-            )
-
-        await db.contact_messages.update_one(
-            {"message_id": message_id},
-            {"$set": {
-                "category": category,
-                "confidence": result.get("confidence", 0.0),
-                "auto_replied": auto_replied,
-                "escalated": escalated,
-                "reply_text": reply if auto_replied else None,
-                "email_send_result": send_result.get("reason"),
-                "processed_at": datetime.now(timezone.utc).isoformat(),
-            }},
-        )
-    except Exception as e:
-        logger.exception("Contact processing failed for %s: %s", message_id, e)
-        await db.contact_messages.update_one(
-            {"message_id": message_id},
-            {"$set": {"category": "error", "error": str(e)[:500], "processed_at": datetime.now(timezone.utc).isoformat()}},
-        )
-
-
-@router.post("/contact")
-async def submit_contact(payload: ContactRequest, request: Request):
-    """Public endpoint — accept a contact message and process it asynchronously."""
-    ip = _client_ip(request)
-    now = datetime.now(timezone.utc)
-    hour_ago = now - timedelta(hours=1)
-
-    recent = await db.contact_messages.count_documents(
-        {"ip": ip, "created_at": {"$gte": hour_ago.isoformat()}}
+async def _check_rate_limit(ip: str):
+    hour_ago = datetime.now(timezone.utc) - timedelta(hours=1)
+    recent = await db.contact_chat_messages.count_documents(
+        {"ip": ip, "created_at": {"$gte": hour_ago.isoformat()}, "role": "user"}
     )
     if recent >= RATE_LIMIT_PER_IP_PER_HOUR:
         raise HTTPException(status_code=429, detail="Too many messages — please try again later.")
 
-    message_id = uuid.uuid4().hex
-    doc = {
-        "message_id": message_id,
-        "name": payload.name,
-        "email": payload.email,
-        "company": payload.company,
-        "message": payload.message,
+
+@router.post("/contact/agent/start")
+async def start_chat(request: Request):
+    """Begin a new chat session. Returns session_id + opening greeting."""
+    ip = _client_ip(request)
+    session_id = uuid.uuid4().hex
+    now = datetime.now(timezone.utc).isoformat()
+
+    greeting = (
+        "Hi! I'm InFlow's contact assistant. I can answer questions about our plans, "
+        "integrations, or how the product works — and I can route bigger requests to a human. "
+        "What can I help you with?"
+    )
+
+    await db.contact_chat_sessions.insert_one({
+        "session_id": session_id,
         "ip": ip,
-        "created_at": now.isoformat(),
+        "created_at": now,
+        "updated_at": now,
+        "visitor_email": None,
         "category": None,
-        "confidence": None,
-        "auto_replied": False,
-        "escalated": False,
-        "reply_text": None,
-        "processed_at": None,
+        "pending_action": None,
+        "completed_actions": [],
+    })
+    await db.contact_chat_messages.insert_one({
+        "session_id": session_id,
+        "ip": ip,
+        "role": "assistant",
+        "content": greeting,
+        "created_at": now,
+    })
+
+    return {"session_id": session_id, "greeting": greeting}
+
+
+@router.post("/contact/agent/chat")
+async def chat(req: ChatRequest, request: Request):
+    """Send a visitor message; agent responds, optionally with a proposed action."""
+    ip = _client_ip(request)
+    await _check_rate_limit(ip)
+
+    session = await db.contact_chat_sessions.find_one({"session_id": req.session_id}, {"_id": 0})
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    now = datetime.now(timezone.utc).isoformat()
+
+    # Persist user message
+    await db.contact_chat_messages.insert_one({
+        "session_id": req.session_id,
+        "ip": ip,
+        "role": "user",
+        "content": req.message,
+        "created_at": now,
+    })
+
+    # Pull last N messages for context
+    cursor = db.contact_chat_messages.find(
+        {"session_id": req.session_id},
+        {"_id": 0, "role": 1, "content": 1},
+    ).sort("created_at", 1).limit(MAX_HISTORY_TURNS * 2)
+    history = await cursor.to_list(length=MAX_HISTORY_TURNS * 2)
+    # Exclude the just-inserted user message — _ask_agent appends it
+    history = history[:-1] if history and history[-1]["role"] == "user" else history
+
+    agent_out = await _ask_agent(history, req.message)
+
+    # Persist assistant message + pending action
+    update = {"updated_at": now}
+    if agent_out.get("category"):
+        update["category"] = agent_out["category"]
+    if agent_out.get("proposed_action"):
+        update["pending_action"] = agent_out["proposed_action"]
+
+    await db.contact_chat_sessions.update_one(
+        {"session_id": req.session_id},
+        {"$set": update},
+    )
+
+    await db.contact_chat_messages.insert_one({
+        "session_id": req.session_id,
+        "ip": ip,
+        "role": "assistant",
+        "content": agent_out["message"],
+        "proposed_action": agent_out.get("proposed_action"),
+        "created_at": now,
+    })
+
+    return {
+        "message": agent_out["message"],
+        "category": agent_out.get("category"),
+        "proposed_action": agent_out.get("proposed_action"),
     }
-    await db.contact_messages.insert_one(doc)
 
-    # Fire-and-forget — don't block the user on AI + email latency
-    asyncio.create_task(_process_inquiry(message_id, payload))
 
-    return {"message_id": message_id, "status": "received"}
+@router.post("/contact/agent/approve")
+async def approve_action(req: ApproveRequest, request: Request):
+    """Visitor approves the pending action (with optional edits) → execute it."""
+    session = await db.contact_chat_sessions.find_one({"session_id": req.session_id}, {"_id": 0})
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    pending = session.get("pending_action")
+    if not pending or pending.get("id") != req.action_id:
+        raise HTTPException(status_code=400, detail="No matching pending action.")
+
+    # Apply edits (visitor can tweak email body or recipient before sending)
+    edits = req.edits or {}
+    to = (edits.get("to") or pending["to"]).strip()
+    subject = (edits.get("subject") or pending["subject"]).strip()
+    body = (edits.get("body") or pending["body"]).strip()
+
+    if not to or "@" not in to:
+        raise HTTPException(status_code=400, detail="A valid email is required.")
+
+    action_type = pending["type"]
+    send_result = {"sent": False, "reason": None}
+    confirmation_msg = ""
+
+    if action_type == "send_reply":
+        send_result = await send_email(
+            to=to, subject=subject, html=_wrap_reply_html(body), text=body,
+        )
+        if send_result.get("sent"):
+            confirmation_msg = f"Sent to {to}. Check your inbox in a minute or two — anything else I can help with?"
+        else:
+            confirmation_msg = (
+                "I tried to send that, but our email provider blocked it (likely a domain "
+                "verification issue on our side). I'll forward the message to a human instead."
+            )
+            # Fall back to escalation so the message isn't lost
+            await send_email(
+                to=ESCALATION_EMAIL,
+                subject=f"[InFlow contact · send_reply fallback] {to}",
+                html=_escalation_html(to, body, session.get("category")),
+                text=f"From: {to}\n\n{body}",
+            )
+
+    elif action_type == "escalate":
+        send_result = await send_email(
+            to=ESCALATION_EMAIL,
+            subject=f"[InFlow contact · {session.get('category') or 'other'}] {to}",
+            html=_escalation_html(to, body, session.get("category")),
+            text=f"From: {to}\n\n{body}",
+        )
+        # Also send the visitor a brief ack
+        await send_email(
+            to=to,
+            subject="We got your message",
+            html=_wrap_reply_html("Thanks for reaching out — a member of our team will reply within one business day.\n\n— The InFlow Team"),
+            text="Thanks for reaching out — a member of our team will reply within one business day.\n\n— The InFlow Team",
+        )
+        confirmation_msg = f"I've passed your request along to a human. They'll reply to {to} within one business day."
+
+    now = datetime.now(timezone.utc).isoformat()
+
+    completed = {
+        **pending,
+        "to": to,
+        "subject": subject,
+        "body": body,
+        "executed_at": now,
+        "send_result": send_result,
+    }
+
+    await db.contact_chat_sessions.update_one(
+        {"session_id": req.session_id},
+        {
+            "$set": {"pending_action": None, "updated_at": now, "visitor_email": to},
+            "$push": {"completed_actions": completed},
+        },
+    )
+
+    await db.contact_chat_messages.insert_one({
+        "session_id": req.session_id,
+        "ip": _client_ip(request),
+        "role": "assistant",
+        "content": confirmation_msg,
+        "system_event": "action_executed",
+        "executed_action": {"type": action_type, "to": to, "sent": send_result.get("sent", False)},
+        "created_at": now,
+    })
+
+    return {
+        "ok": True,
+        "message": confirmation_msg,
+        "executed": {"type": action_type, "to": to, "sent": send_result.get("sent", False)},
+    }
+
+
+@router.post("/contact/agent/cancel")
+async def cancel_action(req: CancelRequest):
+    """Visitor cancels the pending action."""
+    session = await db.contact_chat_sessions.find_one({"session_id": req.session_id}, {"_id": 0})
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    pending = session.get("pending_action")
+    if not pending or pending.get("id") != req.action_id:
+        return {"ok": True}  # idempotent
+
+    now = datetime.now(timezone.utc).isoformat()
+    await db.contact_chat_sessions.update_one(
+        {"session_id": req.session_id},
+        {"$set": {"pending_action": None, "updated_at": now}},
+    )
+    await db.contact_chat_messages.insert_one({
+        "session_id": req.session_id,
+        "ip": "system",
+        "role": "assistant",
+        "content": "No problem — what would you like to do instead?",
+        "system_event": "action_cancelled",
+        "created_at": now,
+    })
+    return {"ok": True, "message": "No problem — what would you like to do instead?"}
