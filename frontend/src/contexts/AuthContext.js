@@ -90,6 +90,7 @@ export const AuthProvider = ({ children }) => {
 
     const userData = await response.json();
     setUser(userData);
+    localStorage.setItem('inflow_last_account', JSON.stringify({ name: userData.name, email: userData.email }));
     return userData;
   };
 
