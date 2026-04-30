@@ -23,6 +23,7 @@ import AuthCallback from './pages/AuthCallback';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import AcceptInvite from './pages/AcceptInvite';
 import Contact from './pages/Contact';
+import CustomerCenter from './pages/CustomerCenter';
 import TrialNotification from './components/TrialNotification';
 import ProtectedRoute from './components/ProtectedRoute';
 import TierGate from './components/TierGate';
@@ -178,6 +179,14 @@ const AppRouter = () => {
             <Support />
           </ProtectedRoute>
         } 
+      />
+      <Route
+        path="/customer-centre"
+        element={
+          <ProtectedRoute>
+            <CustomerCenter />
+          </ProtectedRoute>
+        }
       />
     </Routes>
   );

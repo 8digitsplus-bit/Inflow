@@ -1,0 +1,30 @@
+{
+  "summary": "Full E2E test of the authenticated Customer Centre agent at /api/customer/agent/* + /customer-centre UI. All 13 pytest cases pass (incl. real cancel_subscription DB mutation with restore, invite_member creating db.org_invites row, escalate persisting completed_action with email_sent flag, navigate executor, 401 on unauthed calls, 403 on member attempting cancel). All frontend flows pass: Welcome state with 'Hi Test' greeting + 4 starter prompts, sidebar 'Customer Centre' nav item active, plan question returns factual Enterprise answer with NO action card, invite composer triggers ActionCard with editable email prefilled, Cancel button removes card + shows 'No problem' + re-enables composer, New Chat returns to Welcome, Settings button navigates to /settings, and /contact visitor agent still works (regression-free).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_customer_agent.py",
+    "/app/test_reports/pytest/pytest_customer_agent.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "routes/customer_agent.py _execute_cancel_subscription mutates users.subscription_tier but does NOT update organizations.subscription_tier — for an org-scoped cancel, the org doc should also flip to cancelled so seat/plan gating in other endpoints reflects reality. Currently only the individual user's tier flips.",
+    "_execute_invite_member hard-gates on ctx['tier'].startswith('enterprise') — if a user's tier is stored on the org only and user.subscription_tier is stale, this could false-negative. _build_user_context already prefers org tier (good), but worth a unit check.",
+    "On approve failure path (HTTPException raised), pending_action is cleared BEFORE re-raising — this means a transient 503 from Stripe billing portal drops the pending state and the user must re-ask the agent to propose it again. Consider keeping pending on 5xx so retry is possible.",
+    "ActionCard in CustomerCenter.js uses local useState(action.params) — if the same action id stays mounted and params change server-side (e.g. agent updates body on a follow-up turn), the UI won't reflect it. Minor since the flow creates a new action id each proposal.",
+    "approveAction() opens window.open(url) AFTER setState; if the user's browser blocks popups for non-user-gesture calls (React async handler), billing portal link could silently fail. Consider handling it synchronously inside the onClick before the await.",
+    "Greeting text hardcodes Flow AI capabilities ('change plan or seats') but cancel-subscription is the only plan action exposed — copy is slightly over-promising vs actual executors."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_customer_agent.py",
+    "/app/test_reports/pytest/pytest_customer_agent.xml",
+    "/app/test_reports/iteration_37.json"
+  ],
+  "success_rate": {"backend": "100% (13/13)", "frontend": "100% (all spec'd flows)"},
+  "test_credentials": "testpro@test.com / password (owner, enterprise_monthly). Confirmed state restored to enterprise_monthly + active after all tests.",
+  "seed_data_creation": "Each test class creates and cleans up its own session + messages. Non-owner test creates a temporary TEST_member_* user in the same org, then deletes user + user_sessions + agent sessions/messages. Invite test cleans org_invites afterwards. Cancel_subscription uses snapshot-restore pattern so user & org tier are returned to enterprise_monthly/active in finally block.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend collections: db.customer_agent_sessions (per-user, unique session_id) and db.customer_agent_messages (history with proposed_action + executed_action embedded on assistant msgs). Cancel real-mutates users.subscription_tier → restore in finally. Invite executor delegates to routes.organizations.invite_member (writes db.org_invites with lowercased email). Login via fetch('/api/auth/login') sets session_token cookie on same origin — use page.evaluate() in Playwright since the /login route renders landing page and /auth?mode=login has a separate two-step 'Continue with Email' flow.",
+  "rca of the issue": "N/A — no issues found. One initial test assertion mismatch on invite email case (fixed by lowercasing lookup since backend normalizes emails to lowercase before insert)."
+}
