@@ -13,6 +13,16 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
+### Agentic Contact Assistant on /contact (Feb 2026)
+- Replaced the static contact form with a chat-first agentic AI on `/contact`. Visitor chats with Claude Sonnet 4.5; the agent classifies intent (`sales` / `support` / `refund` / `billing` / `other`), holds multi-turn memory, drafts replies, and proposes one of two actions: `send_reply` (Resend email reply) or `escalate` (forward to `hello@inflow.io`).
+- **Human-in-the-loop**: agent NEVER auto-executes. Every action is proposed to the visitor inline; visitor clicks Approve / Edit / Cancel. Composer is disabled while a pending action exists.
+- Endpoints: `POST /api/contact/agent/{start,chat,approve,cancel}` (public, rate-limited 30 user messages/IP/hour).
+- Persistence: `db.contact_chat_sessions` (session metadata + pending_action + completed_actions[]), `db.contact_chat_messages` (full chat log).
+- Graceful Resend fallback: if email send fails (e.g., free-tier domain restriction), the backend auto-forwards the draft to the escalation inbox so no message is lost.
+- Frontend: Tailwind chat UI with bot avatar, typing dots, ActionCard with editable To/Subject/Body, success/cancel chips. Hamburger menu + footer link both route to `/contact`.
+- Tests: `/app/backend/tests/test_contact_agent.py` (8 tests pass).
+
+
 ### No-Card Free Trial Model (Feb 2026)
 - 14-day free trial = email signup only, **no credit card required**. User lands on `/dashboard` immediately after signup with `subscription_tier='trial'` and `trial_ends_at = now + 14 days`.
 - When trial expires, `subscription_tier` auto-flips to `'expired'` on next `/api/auth/me` call. Blocking upgrade popup appears (non-dismissible, forces plan selection or logout).
