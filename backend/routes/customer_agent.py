@@ -250,6 +250,18 @@ async def _execute_cancel_subscription(user: User, params: dict, ctx: dict) -> d
             "subscription_status": "cancelled",
         }},
     )
+    # Also flip the org so tier-gated endpoints (seats, integrations) see the
+    # cancellation. Without this, member-facing checks read stale tier.
+    if user.org_id:
+        await db.organizations.update_one(
+            {"org_id": user.org_id},
+            {"$set": {
+                "subscription_tier": "cancelled",
+                "previous_tier": tier,
+                "subscription_status": "cancelled",
+                "cancelled_at": now,
+            }},
+        )
     return {
         "summary": f"Cancelled your {tier.replace('_', ' ')} subscription. You'll retain access until the end of your billing period.",
         "previous_tier": tier,
@@ -364,8 +376,8 @@ async def start_chat(user: User = Depends(get_current_user)):
 
     first_name = user.name.split()[0] if user.name else "there"
     greeting = (
-        f"Hi {first_name} — I'm Flow AI. I can show you account details, change your plan or seats, "
-        f"invite teammates, or hand things over to a human. What would you like to do?"
+        f"Hi {first_name} — I'm Flow AI. I can answer account questions, invite teammates, "
+        f"open the billing portal, cancel your plan, or pass anything else to a human. What would you like to do?"
     )
 
     await db.customer_agent_sessions.insert_one({

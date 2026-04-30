@@ -13,6 +13,21 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
+### Authenticated Customer Centre Agent (Feb 2026)
+- New protected page at `/customer-centre` powered by Claude Sonnet 4.5: logged-in customers chat with **Flow AI** to manage their account.
+- Endpoints (auth required): `POST /api/customer/agent/{start,chat,approve,cancel}` — multi-step with explicit Approve/Cancel before any action executes.
+- 5 action types wired to existing APIs:
+  - `cancel_subscription` → flips both `users.subscription_tier` and `organizations.subscription_tier` to cancelled, calls Stripe Subscription.cancel
+  - `open_billing_portal` → returns one-shot Stripe Customer Portal URL (owner-only)
+  - `invite_member` → delegates to existing `routes.organizations.invite_member` (Enterprise-only)
+  - `escalate` → forwards typed `{subject, body}` to `hello@inflow.io`
+  - `navigate` → soft action; agent recommends an existing app page (e.g. `/connect-business`)
+- Account context (tier, seats used, pending invites, integrations connected, owner role) is computed each turn and injected into Claude's system prompt, so the agent answers factually without hallucinating.
+- Frontend: `/app/frontend/src/pages/CustomerCenter.js` (chat UI inside `DashboardLayout`), sidebar entry "Customer Centre" added to Tools group.
+- `/contact` (visitor agent) is unchanged. `/settings` UI remains as the canonical clickable interface.
+- Tests: `/app/backend/tests/test_customer_agent.py` (13 tests pass — incl. real cancel mutation w/ restore, 401 unauth, 403 non-owner cancel, escalate persistence).
+
+
 ### Agentic Contact Assistant on /contact (Feb 2026)
 - Replaced the static contact form with a chat-first agentic AI on `/contact`. Visitor chats with Claude Sonnet 4.5; the agent classifies intent (`sales` / `support` / `refund` / `billing` / `other`), holds multi-turn memory, drafts replies, and proposes one of two actions: `send_reply` (Resend email reply) or `escalate` (forward to `hello@inflow.io`).
 - **Human-in-the-loop**: agent NEVER auto-executes. Every action is proposed to the visitor inline; visitor clicks Approve / Edit / Cancel. Composer is disabled while a pending action exists.
