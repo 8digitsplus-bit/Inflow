@@ -13,6 +13,16 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
+### No-Card Free Trial Model (Feb 2026)
+- 14-day free trial = email signup only, **no credit card required**. User lands on `/dashboard` immediately after signup with `subscription_tier='trial'` and `trial_ends_at = now + 14 days`.
+- When trial expires, `subscription_tier` auto-flips to `'expired'` on next `/api/auth/me` call. Blocking upgrade popup appears (non-dismissible, forces plan selection or logout).
+- **Stripe paid trial removed**: `trial_period_days=14` stripped from `create_subscription_checkout` in `payments.py`. Paid plans now charge immediately on checkout.
+- Landing page CTAs (Hero, Header, Pricing cards) no longer pre-select a plan for unauthenticated visitors — they all route to `/auth` for a free-trial signup. Paid-plan selection happens from inside the app.
+- `TrialNotification` popup shows at 7/3/1/0 day milestones with progress bar and "View Plans & Upgrade" CTA.
+- Copy updated: FAQ, ChoosePlan header, CheckoutReturn success page.
+- Tests: `/app/backend/tests/test_no_card_trial.py` (3 tests pass).
+
+
 ### Source Roles + Dashboard Filtering (Feb 2026)
 - Each integration tagged with a `revenue_role`: **Revenue** (counted in revenue KPIs), **Pipeline** (open opportunities), or **Signal** (analytics-only, never in totals).
 - Smart defaults: Stripe/PayPal/Xero/Shopify/QuickBooks → Revenue. HubSpot/Salesforce/Zoho → Pipeline. Mixpanel/Amplitude → Signal. Owner can override per-connection via dropdown on the integration card.
