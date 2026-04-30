@@ -1,0 +1,37 @@
+{
+  "summary": "Tested the no-card free-trial model changes end-to-end. Backend: 3/3 new tests PASS (/app/backend/tests/test_no_card_trial.py) — register creates trial user with trial_days_left=14 (no payment), /auth/me returns trial tier+days_left and flips to 'expired' when trial_end is past, and payments.py no longer contains trial_period_days anywhere. Frontend: Hero CTA routes to /auth?trial=true with NO localStorage.inflow_pending_checkout; pricing card CTA (Essential) routes to /auth with NO pending checkout; /choose-plan shows new copy 'Pick the plan that fits your team. Billing starts today — cancel anytime.' (old 14-day copy gone); FAQ shows 'Sign up with just your email — no credit card required.'; new-user register lands on /dashboard (not /choose-plan); TrialNotification popup renders for trial tier at 1-day milestone ('Your trial expires tomorrow', View Plans & Upgrade + Remind me later) and for 'expired' tier shows 'Your free trial has expired' with 'Upgrade Now' + 'Return to homepage' and NO close button (non-dismissible).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_no_card_trial.py",
+    "/app/test_reports/pytest/pytest_no_card_trial.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "auth.py register: trial_days_left hard-coded to 14 in response, but /auth/me computes it dynamically from trial_end — consistent, both correct.",
+    "payments.py create_subscription_checkout: no trial_period_days in session_params. Static source-scan assertion added to test to guard against regression.",
+    "Landing.js: handleStartTrial correctly routes unauthenticated users to /auth?trial=true and authenticated users to /dashboard.",
+    "PricingSection.js handlePlanClick: calls handleGetStarted (which routes to /auth) when unauth — no longer sets inflow_pending_checkout. Clean.",
+    "TrialNotification.js: for expired tier the dialog hides its close button (onOpenChange ignored) and shows Upgrade Now + Return to homepage. Verified in DOM."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_no_card_trial.py (new)"
+  ],
+  "success_rate": {
+    "backend": "100% (3/3)",
+    "frontend": "100% (all 7 flows verified)"
+  },
+  "test_credentials": "testpro@test.com / password (temporarily flipped to tier='trial' with 1d-left then 'expired' for UI tests, fully restored to enterprise_monthly afterwards).",
+  "seed_data_creation": "Created + cleaned up 2 transient users: one from backend register test, one from frontend register test. No lingering data.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "No-card trial model is fully working. Backend: POST /api/auth/register creates trial user (trial_days_left=14, no payment); GET /api/auth/me flips tier to 'expired' when trial_end is past; POST /api/payments/create-checkout has NO trial_period_days. Frontend: Hero → /auth?trial=true, Pricing → /auth (no pending-checkout leak), register → /dashboard, TrialNotification shows milestone popup at 7/3/1/0 days and blocks dismissal when tier='expired'. To re-test TrialNotification UI, temporarily set `subscription_tier='trial'` and `trial_end=now+1d` (or `now-1h` for expired) on any user via db.users.update_one and refresh the dashboard. Existing test testpro account is enterprise_monthly — preserve by using `_backup_tier`/`_backup_trial_end` fields pattern used in this iteration.",
+  "rca of the issue": "N/A — no bugs found. All 9 requested behaviours verified."
+}

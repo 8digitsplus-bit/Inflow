@@ -22,14 +22,12 @@ export const PricingSection = ({ handleGetStarted, isAuthenticated }) => {
 
   const handlePlanClick = (plan) => {
     if (!isAuthenticated) {
-      // Remember the user's intent so post-login lands on the correct checkout page.
-      try {
-        localStorage.setItem('inflow_pending_checkout', JSON.stringify({ plan: plan.planId }));
-      } catch { /* localStorage disabled — fall through */ }
+      // Unauthenticated → start a free trial (no card). User picks a paid plan
+      // later from inside the app when ready to upgrade.
       handleGetStarted();
       return;
     }
-    // Every tier is per-user now → seat selector lives on /choose-plan
+    // Logged-in user wants to upgrade → seat selector on /choose-plan
     navigate(`/choose-plan`);
   };
 

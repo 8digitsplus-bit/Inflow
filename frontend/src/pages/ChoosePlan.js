@@ -112,7 +112,7 @@ const ChoosePlan = () => {
             Choose your plan
           </h1>
           <p className="text-zinc-400 text-sm max-w-md mx-auto">
-            Start with a 14-day free trial on any plan. No charge until day 15 — cancel anytime.
+            Pick the plan that fits your team. Billing starts today — cancel anytime.
           </p>
         </div>
 

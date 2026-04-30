@@ -8,7 +8,7 @@ const faqs = [
   },
   {
     q: 'How does the 14-day free trial work?',
-    a: 'Pick a plan, enter your card, get full access for 14 days. We don\'t charge anything during the trial — billing only starts on day 14, and you can cancel anytime from Settings → Manage Billing.',
+    a: 'Sign up with just your email — no credit card required. You get 14 days of full access to explore InFlow. When the trial ends, you choose a plan to continue using the service. Your data stays safe either way.',
   },
   {
     q: 'What data sources can I connect?',

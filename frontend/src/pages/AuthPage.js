@@ -165,14 +165,10 @@ const AuthPage = () => {
       if (mode === 'register') {
         setIsRegistering(true);
         await registerWithEmail(form.name, form.email, form.password);
-        toast.success('Account created!');
-        // If user came from a pricing CTA, honor that intent instead of choose-plan/onboarding.
-        const pending = getPostAuthDestination(null);
-        if (pending) {
-          navigate(pending);
-        } else {
-          navigate(isTrial ? '/onboarding' : '/choose-plan');
-        }
+        toast.success('Account created! Your 14-day free trial has started.');
+        // Fresh signup → land on dashboard to start using the free trial.
+        // (Paid-plan selection now happens from inside the app.)
+        navigate('/dashboard');
         return;
       } else {
         const result = await loginWithEmail(form.email, form.password);

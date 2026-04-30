@@ -212,7 +212,6 @@ async def create_subscription_checkout(plan_key: str, plan: dict, user: User, or
         "line_items": [{"price": price_id, "quantity": quantity}],
         "customer_email": user.email,
         "subscription_data": {
-            "trial_period_days": 14,
             "metadata": {
                 "user_id": user.user_id,
                 "plan": plan_key,

@@ -112,7 +112,7 @@ const CheckoutReturn = () => {
           You're all set!
         </h1>
         <p className="text-zinc-400 mb-2">
-          Your subscription is active and your 14-day free trial has begun.
+          Your subscription is active. You now have full access to all features.
         </p>
         {customer_email && (
           <p className="text-zinc-600 text-xs mb-8">
