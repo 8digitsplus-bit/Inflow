@@ -17,6 +17,7 @@ from routes.support import router as support_router
 from routes.agent import router as agent_router
 from routes.custom_integration import router as custom_integration_router
 from routes.organizations import router as organizations_router
+from routes.contact import router as contact_router
 from migrations.orgs import migrate_users_to_orgs
 
 # Configure logging
@@ -44,6 +45,7 @@ api_router.include_router(support_router)
 api_router.include_router(agent_router)
 api_router.include_router(custom_integration_router)
 api_router.include_router(organizations_router)
+api_router.include_router(contact_router)
 
 
 # Basic routes

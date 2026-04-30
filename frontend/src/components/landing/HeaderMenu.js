@@ -16,7 +16,7 @@ export const FullScreenMenu = ({ menuOpen, setMenuOpen, handleMenuClick, handleG
           { label: 'Features', action: '#features', delay: '100ms' },
           { label: 'Pricing', action: '#pricing', delay: '150ms' },
           { label: 'FAQs', action: '#faq', delay: '200ms' },
-          { label: 'Contact', action: '#contact', delay: '250ms' },
+          { label: 'Contact', action: '/contact', delay: '250ms' },
         ].map((item) => (
           <button key={item.label} onClick={() => handleMenuClick(item.action)}
             className={`group px-8 py-5 rounded-2xl transition-all duration-300 hover:bg-white/5 hover:shadow-[0_0_40px_rgba(255,255,255,0.25)] ${menuOpen ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}

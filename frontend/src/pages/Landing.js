@@ -47,6 +47,8 @@ const Landing = () => {
   const handleMenuClick = (target) => {
     setMenuOpen(false);
     if (target === 'signin') { navigate(isAuthenticated ? '/dashboard' : '/auth'); return; }
+    // Route paths (start with "/") use react-router; anchors scroll on the landing page.
+    if (typeof target === 'string' && target.startsWith('/')) { navigate(target); return; }
     setTimeout(() => document.querySelector(target)?.scrollIntoView({ behavior: 'smooth' }), 200);
   };
 

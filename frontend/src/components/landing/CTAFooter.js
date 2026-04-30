@@ -70,9 +70,11 @@ export const Footer = () => (
         <div className="hidden lg:block" id="contact">
           <h4 className="text-xs font-semibold text-zinc-400 uppercase tracking-widest mb-5" style={{ fontFamily: 'Outfit' }}>Contact</h4>
           <ul className="space-y-4">
-            <li className="flex items-center gap-2.5 text-sm text-zinc-500">
-              <Mail className="w-4 h-4 text-zinc-600 flex-shrink-0" />
-              hello@inflow.io
+            <li>
+              <a href="/contact" className="flex items-center gap-2.5 text-sm text-zinc-500 hover:text-white transition-colors" data-testid="footer-contact-link">
+                <Mail className="w-4 h-4 text-zinc-600 flex-shrink-0" />
+                Send us a message
+              </a>
             </li>
             <li className="flex items-center gap-2.5 text-sm text-zinc-500">
               <Phone className="w-4 h-4 text-zinc-600 flex-shrink-0" />
