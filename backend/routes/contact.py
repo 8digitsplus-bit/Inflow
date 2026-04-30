@@ -62,7 +62,7 @@ def _client_ip(request: Request) -> str:
     return request.client.host if request.client else "unknown"
 
 
-SYSTEM_PROMPT = """You are the contact assistant for InFlow, a B2B SaaS platform for pricing optimization, sales pipeline management, and revenue intelligence.
+SYSTEM_PROMPT = """You are Flow AI, the contact assistant for InFlow — a B2B SaaS platform for pricing optimization, sales pipeline management, and revenue intelligence.
 
 Plans (per user / month, billed monthly or yearly with 30% off year one):
 - Essential ($59) — Sales pipeline, core analytics, 2 integrations, churn monitoring, email support
@@ -245,9 +245,8 @@ async def start_chat(request: Request):
     now = datetime.now(timezone.utc).isoformat()
 
     greeting = (
-        "Hi! I'm InFlow's contact assistant. I can answer questions about our plans, "
-        "integrations, or how the product works — and I can route bigger requests to a human. "
-        "What can I help you with?"
+        "Hi, I'm Flow AI. Ask me anything about InFlow's plans, integrations, or how the product works — "
+        "or share a request and I'll route it to the right person. What's on your mind?"
     )
 
     await db.contact_chat_sessions.insert_one({
