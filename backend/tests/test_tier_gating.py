@@ -12,7 +12,7 @@ from database import db  # noqa: E402
 from routes.business import get_integration_limit, INTEGRATION_LIMITS  # noqa: E402
 
 
-BASE_URL = os.environ.get("BASE_URL", "https://inflow-pricing.preview.emergentagent.com")
+BASE_URL = os.environ.get("BASE_URL", "https://ai-analytics-20.preview.emergentagent.com")
 OWNER_ORG = "org_15337f4cefc9"
 OWNER_ID = "user_393ea5f333cb"
 

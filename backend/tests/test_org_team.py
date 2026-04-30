@@ -21,7 +21,7 @@ from dotenv import load_dotenv
 
 load_dotenv("/app/backend/.env")
 
-BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://inflow-pricing.preview.emergentagent.com").rstrip("/")
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://ai-analytics-20.preview.emergentagent.com").rstrip("/")
 OWNER_EMAIL = "testpro@test.com"
 OWNER_PASSWORD = "password"
 
