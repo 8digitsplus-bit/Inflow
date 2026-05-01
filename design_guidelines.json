@@ -1,209 +1,129 @@
 {
-  "identity": {
-    "name": "E1",
-    "persona": "The Anti-AI Designer",
-    "principles": [
-      "Fusion over Imitation: Mix disparate disciplines.",
-      "Emotion First: Design for feeling, not trend.",
-      "Content is King: Direct the user's emotion.",
-      "Zoom In: Bold focus on details.",
-      "Negative Space: Value empty areas.",
-      "Contrast: High contrast for pop."
-    ],
-    "anti_patterns": [
-      "No generic purple/teal CTAs.",
-      "No 'Inter' for Headings.",
-      "No Center-Everything layouts.",
-      "No Gradient Overload."
-    ]
-  },
-  "context": {
-    "app_type": "B2B SaaS Revenue Intelligence & Pricing Optimization",
-    "target_audience": "Sales Leaders, RevOps, Pricing Managers",
-    "emotional_tone": "Premium, Intelligent, Precise, Trustworthy, High-Velocity",
-    "theme_strategy": "Hybrid: Dark Mode default for Dashboard (Data Density), Dark/High-Contrast for Landing (Premium Tech)."
-  },
-  "typography": {
-    "font_strategy": "The 'Editorial Future' - Wide Display Sans + Geometric Body",
-    "fonts": {
-      "headings": {
-        "family": "Outfit",
-        "weights": ["400", "600", "700"],
-        "usage": "Landing page headers, Dashboard section titles",
-        "fallback": "sans-serif"
-      },
-      "body": {
-        "family": "DM Sans",
-        "weights": ["400", "500"],
-        "usage": "General text, paragraphs, descriptions",
-        "fallback": "sans-serif"
-      },
-      "mono": {
-        "family": "JetBrains Mono",
-        "weights": ["400"],
-        "usage": "Financial data, pricing figures, code snippets, API keys",
-        "fallback": "monospace"
-      }
+  "theme": "Dark",
+  "archetype": "Archetype 4: Swiss & High-Contrast",
+  "fonts": {
+    "headings": {
+      "family": "Cabinet Grotesk",
+      "fallbacks": ["sans-serif"],
+      "usage": "Hero title, card titles",
+      "style": "tracking-tight, bold/black weights"
     },
-    "rules": [
-      "Headings > 32px must use tracking-tight.",
-      "Overlines must be Uppercase + tracking-widest.",
-      "Line height: leading-none for headers, leading-relaxed for body."
-    ]
+    "body": {
+      "family": "IBM Plex Sans",
+      "fallbacks": ["Inter", "sans-serif"],
+      "usage": "Chat messages, descriptions",
+      "style": "leading-relaxed"
+    },
+    "mono": {
+      "family": "JetBrains Mono",
+      "fallbacks": ["monospace"],
+      "usage": "Labels, overlines, technical metadata",
+      "style": "tracking-widest, uppercase"
+    }
   },
   "colors": {
-    "palette_name": "Electric Intelligence",
-    "backgrounds": {
-      "default": "#09090B",
-      "surface": "#121214",
-      "surface_highlight": "#18181B",
-      "overlay": "rgba(9, 9, 11, 0.8)"
+    "background": {
+      "base": "#050507",
+      "surface": "#0C0C0F",
+      "surface_hover": "rgba(255,255,255,0.04)"
+    },
+    "border": {
+      "subtle": "rgba(255,255,255,0.1)",
+      "strong": "rgba(255,255,255,0.25)",
+      "glow": "rgba(255,255,255,0.4)"
     },
     "text": {
-      "primary": "#FAFAFA",
+      "primary": "#FFFFFF",
       "secondary": "#A1A1AA",
-      "muted": "#52525B",
-      "inverse": "#09090B"
+      "muted": "#71717A",
+      "inverted": "#000000"
     },
-    "brand": {
-      "primary": "#6366F1",
-      "primary_foreground": "#FFFFFF",
-      "secondary": "#10B981",
-      "accent": "#06B6D4"
+    "accent": {
+      "primary": "#0057FF",
+      "primary_hover": "#004CE6",
+      "alert": "#FF3B30",
+      "warning": "#FFCC00",
+      "success": "#34C759"
     },
-    "semantic": {
-      "success": "#10B981",
-      "warning": "#F59E0B",
-      "error": "#EF4444",
-      "info": "#3B82F6",
-      "ai_insight": "#8B5CF6"
-    },
-    "gradients": {
-      "hero_glow": "radial-gradient(circle at center, rgba(99, 102, 241, 0.15) 0%, transparent 70%)",
-      "card_shimmer": "linear-gradient(110deg, #121214 8%, #1c1c1f 18%, #121214 33%)"
+    "sentiment": {
+      "positive": "#34C759",
+      "neutral": "rgba(255,255,255,0.4)",
+      "frustrated": "#FF3B30",
+      "anxious": "#FFCC00",
+      "confused": "#0057FF"
     }
   },
-  "layout_strategies": {
-    "dashboard_grid": {
-      "type": "Bento Grid - High Density (Mode B)",
-      "columns": "grid-cols-1 md:grid-cols-3 lg:grid-cols-4",
-      "gap": "gap-4",
-      "rules": [
-        "Use col-span-2 row-span-2 for primary charts.",
-        "Use col-span-1 for summary metrics.",
-        "Every pixel must be utilized. Use h-full on children."
-      ]
-    },
-    "landing_grid": {
-      "type": "Tetris Grid (Mode A)",
-      "columns": "grid-cols-1 md:grid-cols-12",
-      "gap": "gap-8",
-      "rules": [
-        "Asymmetry is key.",
-        "Hero visual: col-span-12 md:col-span-8.",
-        "Leave empty cells for breathing room."
-      ]
-    },
-    "spacing": {
-      "scale": "Generous (2-3x standard)",
-      "container_padding": "p-6 or p-8 for bordered containers"
+  "layout_and_spacing": {
+    "container": "max-w-3xl mx-auto px-4 sm:px-6",
+    "section_gap": "gap-8",
+    "border_radius": {
+      "card": "rounded-sm",
+      "pill": "rounded-full",
+      "bubble": "rounded-2xl rounded-br-sm"
     }
   },
-  "components": {
-    "cards": {
-      "style": "Grid Borders (Technical Look)",
-      "border": "border border-white/10",
-      "background": "bg-zinc-950/50",
-      "hover": "hover:border-indigo-500/30 transition-colors duration-300"
+  "components_design": {
+    "top_bar": {
+      "style": "sticky top-0 z-50 border-b border-white/10 bg-[#050507]/80 backdrop-blur-xl py-3",
+      "brand_mark": "Crisp white square with black text '[ F ]', no gradients. Font: JetBrains Mono.",
+      "new_chat_btn": "Ghost button, px-3 py-1.5 hover:bg-white/5, text-sm rounded-md transition-colors text-zinc-400 hover:text-white"
     },
-    "buttons": {
-      "primary": "bg-indigo-600 hover:bg-indigo-500 text-white rounded-md px-6 py-2.5 font-medium transition-all shadow-[0_0_15px_rgba(99,102,241,0.3)]",
-      "secondary": "bg-zinc-800 hover:bg-zinc-700 text-white rounded-md px-6 py-2.5 font-medium border border-zinc-700",
-      "ghost": "text-zinc-400 hover:text-white hover:bg-white/5"
+    "welcome_hero": {
+      "layout": "Flex column, centered, generous negative space (py-20 md:py-32)",
+      "title": "text-4xl md:text-5xl font-black text-white tracking-tighter. NO GRADIENTS. Solid white.",
+      "subtitle": "text-base md:text-lg text-zinc-400 font-body max-w-md mx-auto mt-4",
+      "prompt_cards_grid": "grid grid-cols-1 md:grid-cols-2 gap-4 mt-12 w-full max-w-2xl",
+      "prompt_card": "p-5 border border-white/10 bg-transparent hover:border-white/40 hover:bg-white/[0.02] transition-all duration-200 text-left flex flex-col gap-2 rounded-sm cursor-pointer group",
+      "prompt_card_category": "text-[10px] font-mono text-zinc-500 uppercase tracking-widest group-hover:text-zinc-300 transition-colors",
+      "prompt_card_text": "text-sm text-zinc-200 font-medium"
     },
-    "inputs": {
-      "style": "bg-zinc-900 border-zinc-800 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-md text-sm"
+    "chat_interface": {
+      "user_bubble": "max-w-[85%] sm:max-w-[75%] bg-white text-black px-5 py-3 rounded-2xl rounded-br-sm text-[15px] font-medium shadow-sm",
+      "ai_message_container": "flex gap-4 mt-6",
+      "ai_mark": "w-7 h-7 flex-shrink-0 bg-[#0057FF] text-white flex items-center justify-center rounded-sm text-xs font-mono shadow-[0_0_15px_rgba(0,87,255,0.3)]",
+      "ai_text": "text-[15px] text-zinc-100 leading-[1.7] font-body",
+      "typing_indicator": "A sleek blinking block cursor (██) or monospace 'Decrypting...' text loader. No bouncing dots."
     },
-    "visual_enhancers": {
-      "tracing_beam": "Use for Pricing Tables and Key Feature cards.",
-      "glassmorphism": "Use for Sticky Header (backdrop-blur-xl, bg-black/50, border-b border-white/10).",
-      "noise_texture": "Overlay subtle noise on solid dark backgrounds to prevent banding."
+    "action_card": {
+      "container": "mt-5 border border-white/20 bg-[#0C0C0F] rounded-sm overflow-hidden shadow-2xl",
+      "header": "px-4 py-3 border-b border-white/10 flex justify-between items-center bg-white/[0.02]",
+      "header_title": "text-xs font-mono uppercase tracking-widest flex items-center gap-2 text-zinc-300",
+      "fields_container": "px-5 py-4 space-y-4",
+      "field_row": "flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-4 border-b border-white/5 pb-3 last:border-0 last:pb-0",
+      "field_label": "text-[11px] font-mono text-zinc-500 w-20 shrink-0 uppercase tracking-wider",
+      "field_value": "text-sm text-zinc-200",
+      "footer": "px-4 py-3 bg-[#050507] border-t border-white/10 flex justify-end gap-3",
+      "approve_btn": "bg-[#0057FF] text-white hover:bg-[#004CE6] px-5 py-2 text-sm font-medium rounded-sm transition-colors flex items-center gap-2",
+      "cancel_btn": "text-zinc-400 hover:text-white px-4 py-2 text-sm transition-colors font-medium rounded-sm hover:bg-white/5"
+    },
+    "composer": {
+      "container": "relative z-20 border-t border-white/10 bg-[#050507]/90 backdrop-blur-2xl pb-6 pt-4 px-4 sm:px-6",
+      "input_wrapper": "relative flex items-end gap-2 rounded-full border border-white/20 bg-[#0C0C0F] focus-within:border-white/50 focus-within:bg-[#0F0F12] transition-all max-w-3xl mx-auto pl-5 pr-2 py-2 shadow-lg",
+      "textarea": "bg-transparent border-0 text-white text-[15px] min-h-[40px] max-h-32 py-2.5 focus:ring-0 resize-none w-full font-body placeholder:text-zinc-600",
+      "send_btn": "bg-white text-black hover:bg-zinc-200 h-10 w-10 rounded-full flex-shrink-0 flex items-center justify-center transition-colors disabled:opacity-50 disabled:bg-zinc-800 disabled:text-zinc-500",
+      "helper_text": "text-[11px] font-mono text-zinc-500 text-center mt-3 tracking-wide flex items-center justify-center gap-1.5"
     }
   },
-  "visual_assets": {
-    "icons": {
-      "library": "lucide-react",
-      "style": "Stroke width 1.5px (Thin/Elegant)",
-      "color": "text-zinc-400 group-hover:text-indigo-400"
-    },
-    "images": [
-      {
-        "category": "hero_background",
-        "url": "https://images.unsplash.com/photo-1772050138768-2107c6e62a03?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxNzV8MHwxfHNlYXJjaHwxfHxhYnN0cmFjdCUyMGRpZ2l0YWwlMjBkYXRhJTIwZmxvdyUyMGRhcmslMjBiYWNrZ3JvdW5kfGVufDB8fHx8MTc3MjExODk1N3ww&ixlib=rb-4.1.0&q=85",
-        "description": "Abstract green light trails, implying high-speed data flow and revenue growth.",
-        "usage": "Hero section background with heavy overlay/gradient fade."
-      },
-      {
-        "category": "feature_abstract",
-        "url": "https://images.unsplash.com/photo-1762279388956-1c098163a2a8?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxNzV8MHwxfHNlYXJjaHwyfHxhYnN0cmFjdCUyMGRpZ2l0YWwlMjBkYXRhJTIwZmxvdyUyMGRhcmslMjBiYWNrZ3JvdW5kfGVufDB8fHx8MTc3MjExODk1N3ww&ixlib=rb-4.1.0&q=85",
-        "description": "Neon lines forming a digital landscape.",
-        "usage": "Background for 'How it Works' or 'Intelligence' section."
-      },
-      {
-        "category": "team_meeting",
-        "url": "https://images.unsplash.com/photo-1758518729685-f88df7890776?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NDQ2NDF8MHwxfHNlYXJjaHwzfHxtb2Rlcm4lMjBjb3Jwb3JhdGUlMjB0ZWFtJTIwc3RyYXRlZ3klMjBtZWV0aW5nfGVufDB8fHx8MTc3MjExODk1OHww&ixlib=rb-4.1.0&q=85",
-        "description": "Professional team in a meeting.",
-        "usage": "About Us or Team section."
-      },
-      {
-        "category": "data_visualization_3d",
-        "url": "https://images.unsplash.com/photo-1668854249302-4ab414ca4d57?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjAzMzN8MHwxfHNlYXJjaHwzfHxmdXR1cmlzdGljJTIwZmluYW5jaWFsJTIwZ3Jvd3RoJTIwZ3JhcGglMjAzZHxlbnwwfHx8fDE3NzIxMTg5Njl8MA&ixlib=rb-4.1.0&q=85",
-        "description": "3D diagram abstract.",
-        "usage": "Feature card for 'Revenue Forecasting'."
-      }
-    ],
-    "3d_libraries": {
-      "primary": "Recharts (2D Charts)",
-      "decorative": "Framer Motion (for layout transitions)",
-      "instructions": "Use Recharts for all data. Style them with custom Tooltips (dark bg, border) and Gradients (AreaChart fill). Do not use heavy 3D libraries (Three.js) inside the dashboard to maintain performance."
-    }
+  "micro_interactions": {
+    "hover_states": "All interactive elements must change color explicitly. Borders lighten from white/10 to white/40.",
+    "focus_states": "Visible focus rings (focus:ring-2 focus:ring-[#0057FF] focus:outline-none) for accessibility.",
+    "animation": "Use subtle Tailwind utility animations (animate-in fade-in slide-in-from-bottom-2 duration-300). No exaggerated bouncing."
   },
-  "motion": {
-    "philosophy": "Micro-interactions over macro-animations.",
-    "definitions": {
-      "hover_lift": "hover:-translate-y-1 transition-transform duration-200",
-      "fade_in": "opacity-0 animate-in fade-in duration-500",
-      "slide_up": "translate-y-4 animate-in slide-in-from-bottom-4 fade-in duration-500",
-      "chart_grow": "Use Recharts animationDuration={1000}."
-    }
+  "sentiment_cue": {
+    "description": "Implicitly show sentiment via a small status dot next to the brand name in the header.",
+    "implementation": "A 6px rounded-full dot in the header next to 'Flow AI'. Use the sentiment colors: Green for positive/neutral, Red for frustrated, Yellow for confused. Add a subtle animate-pulse effect."
   },
-  "accessibility": {
-    "contrast": "Ensure text-zinc-400 or lighter is used on dark backgrounds. Avoid text-zinc-600.",
-    "focus": "Visible ring-2 ring-indigo-500 on all interactive elements.",
-    "aria": "Charts must have description labels."
+  "trust_signals": {
+    "privacy_badge": "Include a small lock icon (🔒 or Shield) in the composer helper text: '🔒 Flow AI confirms with you before acting.'"
   },
   "instructions_to_main_agent": [
-    "Install 'lucide-react' for icons.",
-    "Install 'recharts' for data visualization.",
-    "Install 'framer-motion' for smooth layout transitions.",
-    "Use 'clsx' and 'tailwind-merge' for class handling (standard in shadcn).",
-    "For the Dashboard, use a Sidebar Layout (Left fixed nav, Right scrollable content).",
-    "For the Landing Page, use a Sticky Header + Single Page Scroll layout.",
-    "Implement a 'Pricing Optimizer' view that uses a slider or input to simulate pricing changes and updates charts in real-time.",
-    "Ensure 'Revenue Intelligence' charts use the defined semantic colors (Success for revenue, Accent for projections)."
-  ],
-  "universal_guidelines": [
-    "Avoid 'AI slop' aesthetic (generic centered layouts, uniform styling).",
-    "Do NOT use gradients for dark colors (muddy look).",
-    "Create depth with z-index and layered elements.",
-    "Glassmorphism needs backdrop-blur-xl (12-24px).",
-    "No 'transition: all'. Target specific properties.",
-    "No '.App { text-align: center }'.",
-    "Buttons should be pill-shaped or sharp, not default rounded-md (unless customized).",
-    "NEVER use emojis as icons.",
-    "Use 'sonner' for toasts.",
-    "Export components as named exports.",
-    "Export pages as default exports.",
-    "Use 'data-testid' on all interactive elements."
+    "Replace generic sans fonts with 'IBM Plex Sans' for body and 'Cabinet Grotesk' for headings in the CSS/Tailwind config.",
+    "Remove all indigo-to-violet gradient classes (e.g., from-indigo-500 to-violet-600). The aesthetic is strict monochrome with a single electric blue accent.",
+    "Implement the bento grid for the 4 prompt cards using 'gap-4', 'rounded-sm', and hard 'border-white/10' classes.",
+    "Update the User message bubble to be solid white background with black text for maximum high-contrast.",
+    "Redesign the ActionCard to be a technical, hard-edged table layout (use rounded-sm instead of rounded-2xl). Separate fields with subtle border bottoms.",
+    "Refactor the typing indicator from 3 bouncing dots to a blinking terminal block cursor or linear pulse.",
+    "Add the sentiment status dot in the header next to the brand name.",
+    "Ensure all 'data-testid' attributes are preserved and correctly placed exactly as they were in the original file."
   ]
 }
