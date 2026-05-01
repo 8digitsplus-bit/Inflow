@@ -199,6 +199,9 @@ const Contact = () => {
     setLatestSentiment('neutral');
     setInput('');
     setThinking(false);
+    setScrolled(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (scrollRef.current) scrollRef.current.scrollTop = 0;
     try {
       const r = await fetch(`${API_URL}/api/contact/agent/start`, {
         method: 'POST',
