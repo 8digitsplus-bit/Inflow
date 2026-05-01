@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  ArrowLeft, Send, Loader2, Check, X, Pencil,
+  Send, Loader2, Check, X, Pencil,
   AlertTriangle, Plus, Lock, ArrowRight
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
@@ -345,22 +345,11 @@ const Contact = () => {
       {/* Sticky top bar — Swiss minimal, dynamic shrink on scroll */}
       <header className={`sticky top-0 z-50 border-b border-white/10 bg-[#050507]/80 backdrop-blur-xl transition-all duration-300 ${scrolled ? 'py-1.5' : 'py-3'}`}>
         <div className="max-w-3xl mx-auto px-4 sm:px-6 flex items-center justify-between">
-          <button
-            onClick={() => navigate('/')}
-            className="flex items-center gap-2 text-zinc-500 hover:text-white transition-colors text-sm"
-            data-testid="contact-back-home-btn"
-            style={{ fontFamily: FONT_BODY }}
-          >
-            <ArrowLeft className="w-4 h-4" />
-            <span className={`transition-opacity duration-300 ${scrolled ? 'opacity-0 sm:opacity-100' : 'opacity-100'}`}>Home</span>
-          </button>
-
-          <div className="flex items-center gap-2.5">
-            <a href="/" className="flex items-center group" data-testid="contact-logo">
-              <div className={`overflow-hidden flex items-center justify-center transition-all duration-500 group-hover:scale-105 ${scrolled ? 'h-5' : 'h-6'}`}>
-                <img src="/inflow-logo.png?v=3" alt="InFlow" className="h-full w-auto object-contain" />
-              </div>
-            </a>
+          {/* Brand block (left) — logo doubles as Home link */}
+          <a href="/" className="flex items-center gap-2.5 group" data-testid="contact-logo">
+            <div className={`overflow-hidden flex items-center justify-center transition-all duration-500 group-hover:scale-105 ${scrolled ? 'h-5' : 'h-6'}`}>
+              <img src="/inflow-logo.png?v=3" alt="InFlow" className="h-full w-auto object-contain" />
+            </div>
             <span
               className="text-zinc-700 text-sm leading-none"
               aria-hidden
@@ -369,7 +358,7 @@ const Contact = () => {
               ·
             </span>
             <span
-              className={`font-medium tracking-tight transition-all duration-300 ${scrolled ? 'text-[12px]' : 'text-[13px]'}`}
+              className={`font-medium tracking-tight text-white transition-all duration-300 ${scrolled ? 'text-[12px]' : 'text-[13px]'}`}
               style={{ fontFamily: FONT_BODY }}
               data-testid="contact-brand-name"
             >
@@ -385,7 +374,7 @@ const Contact = () => {
               title={`Tone: ${latestSentiment}`}
               data-testid="contact-sentiment-dot"
             />
-          </div>
+          </a>
 
           <button
             onClick={startSession}
