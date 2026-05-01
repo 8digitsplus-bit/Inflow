@@ -23,10 +23,10 @@ const STARTER_PROMPTS = [
   { category: 'Custom',        label: 'I want to talk to your team about a custom request.' },
 ];
 
-// Sentiment dot mapping
+// Sentiment dot mapping — green by default (online indicator), shifts only when non-neutral
 const SENTIMENT_COLOR = {
   positive:   '#34C759',
-  neutral:    'rgba(255,255,255,0.4)',
+  neutral:    '#34C759',
   frustrated: '#FF3B30',
   anxious:    '#FFCC00',
   confused:   '#0057FF',
@@ -179,6 +179,7 @@ const Contact = () => {
   const [thinking, setThinking] = useState(false);
   const [actionBusy, setActionBusy] = useState(false);
   const [bootError, setBootError] = useState(null);
+  const [scrolled, setScrolled] = useState(false);
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -216,8 +217,18 @@ const Contact = () => {
 
   useEffect(() => {
     document.title = 'Flow AI · InFlow';
+    window.scrollTo(0, 0);
     startSession();
   }, [startSession]);
+
+  // Track scroll on the inner chat container to drive the dynamic header / composer
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    const onScroll = () => setScrolled(el.scrollTop > 24);
+    el.addEventListener('scroll', onScroll, { passive: true });
+    return () => el.removeEventListener('scroll', onScroll);
+  }, [isWelcome]);
 
   const sendMessage = useCallback(async (overrideText) => {
     const text = (overrideText ?? input).trim();
@@ -331,9 +342,9 @@ const Contact = () => {
         }
       `}</style>
 
-      {/* Sticky top bar — Swiss minimal */}
-      <header className="sticky top-0 z-50 border-b border-white/10 bg-[#050507]/80 backdrop-blur-xl">
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between">
+      {/* Sticky top bar — Swiss minimal, dynamic shrink on scroll */}
+      <header className={`sticky top-0 z-50 border-b border-white/10 bg-[#050507]/80 backdrop-blur-xl transition-all duration-300 ${scrolled ? 'py-1.5' : 'py-3'}`}>
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 flex items-center justify-between">
           <button
             onClick={() => navigate('/')}
             className="flex items-center gap-2 text-zinc-500 hover:text-white transition-colors text-sm"
@@ -341,18 +352,27 @@ const Contact = () => {
             style={{ fontFamily: FONT_BODY }}
           >
             <ArrowLeft className="w-4 h-4" />
-            <span>Home</span>
+            <span className={`transition-opacity duration-300 ${scrolled ? 'opacity-0 sm:opacity-100' : 'opacity-100'}`}>Home</span>
           </button>
 
           <div className="flex items-center gap-2.5">
-            <div
-              className="w-7 h-7 bg-white text-black flex items-center justify-center rounded-sm text-xs font-bold tracking-tight"
-              style={{ fontFamily: FONT_MONO }}
+            <a href="/" className="flex items-center group" data-testid="contact-logo">
+              <div className={`overflow-hidden flex items-center justify-center transition-all duration-500 group-hover:scale-105 ${scrolled ? 'h-5' : 'h-6'}`}>
+                <img src="/inflow-logo.png?v=3" alt="InFlow" className="h-full w-auto object-contain" />
+              </div>
+            </a>
+            <span
+              className="text-zinc-700 text-sm leading-none"
               aria-hidden
+              style={{ fontFamily: FONT_BODY }}
             >
-              F
-            </div>
-            <span className="text-[13px] font-medium tracking-tight" style={{ fontFamily: FONT_BODY }} data-testid="contact-brand-name">
+              ·
+            </span>
+            <span
+              className={`font-medium tracking-tight transition-all duration-300 ${scrolled ? 'text-[12px]' : 'text-[13px]'}`}
+              style={{ fontFamily: FONT_BODY }}
+              data-testid="contact-brand-name"
+            >
               Flow AI
             </span>
             <span
@@ -374,7 +394,7 @@ const Contact = () => {
             style={{ fontFamily: FONT_BODY }}
           >
             <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">New chat</span>
+            <span className={`hidden sm:inline transition-opacity duration-300 ${scrolled ? 'opacity-0 sm:opacity-100' : 'opacity-100'}`}>New chat</span>
           </button>
         </div>
       </header>
@@ -389,22 +409,16 @@ const Contact = () => {
                 className="text-[10px] tracking-[0.3em] text-zinc-500 uppercase mb-6"
                 style={{ fontFamily: FONT_MONO }}
               >
-                <span className="text-[#0057FF]">●</span> &nbsp;Online · ready to talk
+                <span className="text-[#34C759]">●</span> &nbsp;Online · ready to talk
               </div>
 
               <h1
-                className="text-4xl md:text-6xl text-white tracking-tighter leading-[0.95] mb-5"
+                className="text-4xl md:text-6xl text-white tracking-tighter leading-[0.95] mb-12"
                 style={{ fontFamily: FONT_HEAD, fontWeight: 800 }}
               >
                 Hi, I'm Flow&nbsp;AI.<br />
                 <span className="text-zinc-600">Ask me anything.</span>
               </h1>
-              <p
-                className="text-zinc-400 text-base md:text-lg max-w-md mx-auto mb-12"
-                style={{ fontFamily: FONT_BODY }}
-              >
-                Plans, integrations, or anything else — I'll confirm before acting.
-              </p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-2xl mx-auto text-left">
                 {STARTER_PROMPTS.map((p, i) => (
@@ -511,12 +525,12 @@ const Contact = () => {
           </div>
         )}
 
-        {/* Composer */}
-        <div className="relative z-20 border-t border-white/10 bg-[#050507]/90 backdrop-blur-2xl pb-6 pt-4 px-4 sm:px-6">
+        {/* Composer — dynamic, shrinks helper text once scrolled */}
+        <div className={`relative z-20 border-t border-white/10 bg-[#050507]/90 backdrop-blur-2xl px-4 sm:px-6 transition-all duration-300 ${scrolled ? 'pt-3 pb-3' : 'pt-4 pb-6'}`}>
           <div
-            className={`relative flex items-end gap-2 rounded-full border bg-[#0C0C0F] transition-all max-w-3xl mx-auto pl-5 pr-2 py-2 shadow-lg ${
+            className={`relative flex items-end gap-2 rounded-full border bg-[#0C0C0F] transition-all max-w-3xl mx-auto pl-5 pr-2 shadow-lg ${
               pendingAction ? 'border-[#FFCC00]/40' : 'border-white/20 focus-within:border-white/50 focus-within:bg-[#0F0F12]'
-            }`}
+            } ${scrolled ? 'py-1.5' : 'py-2'}`}
           >
             <Textarea
               ref={inputRef}
@@ -542,7 +556,9 @@ const Contact = () => {
             </Button>
           </div>
           <p
-            className="text-[10px] text-zinc-500 text-center mt-3 tracking-[0.2em] uppercase flex items-center justify-center gap-1.5"
+            className={`text-[10px] text-zinc-500 text-center tracking-[0.2em] uppercase flex items-center justify-center gap-1.5 transition-all duration-300 overflow-hidden ${
+              scrolled ? 'h-0 opacity-0 mt-0' : 'h-4 opacity-100 mt-3'
+            }`}
             style={{ fontFamily: FONT_MONO }}
           >
             <Lock className="w-3 h-3" /> Encrypted · Flow AI confirms before acting
