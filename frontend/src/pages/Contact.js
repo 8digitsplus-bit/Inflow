@@ -212,7 +212,11 @@ const Contact = () => {
       const data = await r.json();
       setSessionId(data.session_id);
       setMessages([{ role: 'assistant', content: data.greeting }]);
-      setTimeout(() => inputRef.current?.focus(), 100);
+      // Focus without auto-scrolling the page to the input (bottom of page)
+      setTimeout(() => {
+        inputRef.current?.focus({ preventScroll: true });
+        window.scrollTo({ top: 0, behavior: 'instant' });
+      }, 100);
     } catch (e) {
       setBootError(e.message || 'Could not connect to Flow AI.');
     }
@@ -266,7 +270,7 @@ const Contact = () => {
       setMessages(m => [...m, { role: 'assistant', content: 'Sorry, I had trouble with that. Try again?' }]);
     } finally {
       setThinking(false);
-      setTimeout(() => inputRef.current?.focus(), 50);
+      setTimeout(() => inputRef.current?.focus({ preventScroll: true }), 50);
     }
   }, [input, sessionId, thinking]);
 
