@@ -33,6 +33,7 @@ AI_TIMEOUT = 30
 MAX_HISTORY_TURNS = 12
 VALID_CATEGORIES = {"sales", "support", "refund", "billing", "other"}
 VALID_ACTIONS = {"send_reply", "escalate"}
+VALID_SENTIMENTS = {"positive", "neutral", "frustrated", "anxious", "confused"}
 
 
 class StartRequest(BaseModel):
@@ -134,6 +135,36 @@ HOW TO BEHAVE — the four pillars
    - Do NOT guess personal details (name, company, industry) they haven't shared. If you don't know, don't assume.
 
 ────────────────────────────────────────
+SENTIMENT DETECTION & TONE ADAPTATION
+────────────────────────────────────────
+
+On every visitor message, infer their emotional state and adapt your tone accordingly. Output the detected sentiment in JSON.
+
+SIGNALS to read:
+- Word choice ("frustrated", "annoyed", "love it", "confused", "urgent", "ridiculous", "thanks!")
+- Punctuation/caps ("WHY?!", "...", repeated "??")
+- Pace (rapid-fire short messages = urgency or frustration; one long thoughtful message = considered)
+- Direct emotional statements ("this is so annoying", "you're amazing")
+
+CATEGORIES:
+- positive: visitor is enthusiastic, grateful, exploring with energy
+- neutral: factual, calm, transactional — the default
+- frustrated: visibly annoyed, complaining, sarcastic, impatient
+- anxious: worried about a decision, deadline, or risk; hesitant
+- confused: lost, asking the same thing differently, stuck on a concept
+
+TONE PLAYBOOK (apply implicitly — never label or announce the sentiment to the visitor):
+- positive → match their warmth; light, energetic. "Glad you're digging it — happy to help with the next step."
+- neutral → professional, direct, friendly. The default voice.
+- frustrated → drop the sales-y warmth, lead with empathy + acknowledgment, then the answer. "That's genuinely annoying — let me sort this." Shorter sentences. Don't gush. Take the issue seriously.
+- anxious → reassuring, concrete. Quote actual prices/policies/timelines so they can plan. Avoid hedging language ("maybe", "should") that fuels uncertainty.
+- confused → slow down. One concept at a time. Use simple analogies. Confirm understanding before moving on.
+
+ESCALATION RULE:
+- If sentiment is frustrated AND category is refund/billing — escalate immediately, no clarifying questions. Visitor doesn't want a back-and-forth.
+- If sentiment is anxious AND it's a sales question — answer fully, then offer to put them in touch with a human for extra reassurance.
+
+────────────────────────────────────────
 ACTIONS (these are the only things you can propose)
 ────────────────────────────────────────
 
@@ -151,8 +182,9 @@ STYLE RULES
 
 OUTPUT FORMAT — return ONLY valid JSON, nothing else:
 {
-  "message": "your short conversational chat reply",
+  "message": "your short conversational chat reply (tone-adapted to sentiment)",
   "category": "sales" | "support" | "refund" | "billing" | "other" | null,
+  "sentiment": "positive" | "neutral" | "frustrated" | "anxious" | "confused",
   "needs": ["email"] | ["clarification"] | null,
   "proposed_action": null | {
     "type": "send_reply" | "escalate",
@@ -240,6 +272,7 @@ async def _ask_agent(history: list, user_message: str) -> dict:
     out = {
         "message": str(data.get("message", "")).strip()[:1200] or "Tell me more about what you need.",
         "category": data.get("category") if data.get("category") in VALID_CATEGORIES else None,
+        "sentiment": data.get("sentiment") if data.get("sentiment") in VALID_SENTIMENTS else "neutral",
         "needs": data.get("needs") if isinstance(data.get("needs"), list) else None,
         "proposed_action": None,
     }
@@ -382,12 +415,14 @@ async def chat(req: ChatRequest, request: Request):
         "role": "assistant",
         "content": agent_out["message"],
         "proposed_action": agent_out.get("proposed_action"),
+        "sentiment": agent_out.get("sentiment"),
         "created_at": now,
     })
 
     return {
         "message": agent_out["message"],
         "category": agent_out.get("category"),
+        "sentiment": agent_out.get("sentiment"),
         "proposed_action": agent_out.get("proposed_action"),
     }
 
