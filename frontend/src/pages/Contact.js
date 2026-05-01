@@ -351,7 +351,7 @@ const Contact = () => {
 
       {/* Sticky top bar — Swiss minimal, dynamic shrink on scroll */}
       <header className={`sticky top-0 z-50 border-b border-white/10 bg-[#050507]/80 backdrop-blur-xl transition-all duration-300 ${scrolled ? 'py-1.5' : 'py-3'}`}>
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 grid grid-cols-3 items-center">
+        <div className="w-full px-4 sm:px-6 lg:px-8 grid grid-cols-3 items-center">
           {/* LEFT — logo (clickable, goes home) */}
           <a href="/" className="flex items-center group justify-self-start" data-testid="contact-logo" aria-label="InFlow home">
             <div className={`overflow-hidden flex items-center justify-center transition-all duration-500 group-hover:scale-105 ${scrolled ? 'h-5' : 'h-6'}`}>
