@@ -398,14 +398,6 @@ const Contact = () => {
         {isWelcome ? (
           <div className="flex-1 flex items-center justify-center px-4 sm:px-6 py-20 md:py-32 flow-grain relative" data-testid="contact-welcome-state">
             <div className="w-full max-w-2xl text-center animate-in fade-in slide-in-from-bottom-3 duration-500 relative z-10">
-              {/* Overline */}
-              <div
-                className="text-[10px] tracking-[0.3em] text-zinc-500 uppercase mb-6"
-                style={{ fontFamily: FONT_MONO }}
-              >
-                <span className="text-[#34C759]">●</span> &nbsp;Online · ready to talk
-              </div>
-
               <h1
                 className="text-4xl md:text-6xl text-white tracking-tighter leading-[0.95] mb-12"
                 style={{ fontFamily: FONT_HEAD, fontWeight: 800 }}
