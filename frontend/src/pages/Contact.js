@@ -344,19 +344,16 @@ const Contact = () => {
 
       {/* Sticky top bar — Swiss minimal, dynamic shrink on scroll */}
       <header className={`sticky top-0 z-50 border-b border-white/10 bg-[#050507]/80 backdrop-blur-xl transition-all duration-300 ${scrolled ? 'py-1.5' : 'py-3'}`}>
-        <div className="max-w-3xl mx-auto px-4 sm:px-6 flex items-center justify-between">
-          {/* Brand block (left) — logo doubles as Home link */}
-          <a href="/" className="flex items-center gap-2.5 group" data-testid="contact-logo">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 grid grid-cols-3 items-center">
+          {/* LEFT — logo (clickable, goes home) */}
+          <a href="/" className="flex items-center group justify-self-start" data-testid="contact-logo" aria-label="InFlow home">
             <div className={`overflow-hidden flex items-center justify-center transition-all duration-500 group-hover:scale-105 ${scrolled ? 'h-5' : 'h-6'}`}>
               <img src="/inflow-logo.png?v=3" alt="InFlow" className="h-full w-auto object-contain" />
             </div>
-            <span
-              className="text-zinc-700 text-sm leading-none"
-              aria-hidden
-              style={{ fontFamily: FONT_BODY }}
-            >
-              ·
-            </span>
+          </a>
+
+          {/* CENTER — Flow AI brand + sentiment dot */}
+          <div className="flex items-center justify-center gap-2">
             <span
               className={`font-medium tracking-tight text-white transition-all duration-300 ${scrolled ? 'text-[12px]' : 'text-[13px]'}`}
               style={{ fontFamily: FONT_BODY }}
@@ -374,11 +371,12 @@ const Contact = () => {
               title={`Tone: ${latestSentiment}`}
               data-testid="contact-sentiment-dot"
             />
-          </a>
+          </div>
 
+          {/* RIGHT — New chat */}
           <button
             onClick={startSession}
-            className="flex items-center gap-1.5 text-zinc-500 hover:text-white transition-colors text-sm px-3 py-1.5 rounded-sm hover:bg-white/5"
+            className="justify-self-end flex items-center gap-1.5 text-zinc-500 hover:text-white transition-colors text-sm px-3 py-1.5 rounded-sm hover:bg-white/5"
             data-testid="contact-new-chat-btn"
             style={{ fontFamily: FONT_BODY }}
           >
