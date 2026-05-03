@@ -59,7 +59,6 @@ const navGroups = [
     items: [
       { name: 'Integration', href: '/connect-business', icon: Plug, minTier: 0 },
       { name: 'Smart Assist', href: '/support', icon: Headphones, minTier: 0 },
-      { name: 'Customer Centre', href: '/customer-centre', icon: MessageCircle, minTier: 0 },
       { name: 'Settings', href: '/settings', icon: Settings, minTier: 0 },
     ]
   },
