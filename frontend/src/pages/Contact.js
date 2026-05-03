@@ -402,8 +402,8 @@ const Contact = () => {
                 className="text-4xl md:text-6xl text-white tracking-tighter leading-[0.95] mb-12"
                 style={{ fontFamily: FONT_HEAD, fontWeight: 800 }}
               >
-                Hi, I'm Flow&nbsp;AI.<br />
-                <span className="text-zinc-600">Ask me anything.</span>
+                Hi, I'm <span style={{ color: '#6366F1' }}>flow</span> AI.<br />
+                <span className="text-zinc-600">How can I help?</span>
               </h1>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-2xl mx-auto text-left">
