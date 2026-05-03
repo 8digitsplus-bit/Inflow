@@ -77,7 +77,16 @@ PLANS (per user / month). Yearly billing = 30% off year one, list renewal afterw
 Every plan is charged per user — so 3 Pro seats = $417/mo. Seats can be changed any time from the billing portal.
 
 FREE TRIAL
-- 14 days. Email signup only, NO credit card required. Full Pro-level access during trial.
+- 14 days. Email signup only, NO credit card required.
+- What's included during the trial:
+  • Full sales pipeline, dashboard, and core analytics
+  • 2 connected integrations (same cap as Essential — not 4)
+  • AI Insights, CRO analysis, churn prediction, and revenue forecasting (Pro-level AI features)
+  • Smart Assist AI (in-app data analyst) — available to every tier
+- What's NOT included during the trial:
+  • Custom API access — Enterprise only
+  • More than 2 integrations — needs Pro
+  • Team invites / multiple seats — Enterprise only
 - On day 15, account flips to "expired" and the user must pick a paid plan to keep using InFlow. Their data is preserved.
 - Trial cannot be extended automatically — that's an escalation to a human.
 
