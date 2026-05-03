@@ -37,7 +37,7 @@ const FlowMark = ({ size = 'md' }) => {
   return (
     <div
       className={`${text} flex-shrink-0 flex items-center leading-none tracking-tight`}
-      style={{ fontFamily: FONT_HEAD, fontWeight: 800, color: '#8B5CF6' }}
+      style={{ fontFamily: FONT_HEAD, fontWeight: 800, color: '#6366F1' }}
       aria-label="Flow AI"
     >
       flow
