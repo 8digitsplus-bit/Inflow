@@ -33,13 +33,14 @@ const SENTIMENT_COLOR = {
 };
 
 const FlowMark = ({ size = 'md' }) => {
-  const dim = size === 'lg' ? 'h-8' : size === 'sm' ? 'h-5' : 'h-6';
+  const text = size === 'lg' ? 'text-xl' : size === 'sm' ? 'text-sm' : 'text-base';
   return (
     <div
-      className={`${dim} flex-shrink-0 flex items-center justify-center`}
+      className={`${text} flex-shrink-0 flex items-center leading-none tracking-tight`}
+      style={{ fontFamily: FONT_HEAD, fontWeight: 800, color: '#8B5CF6' }}
       aria-label="Flow AI"
     >
-      <img src="/inflow-logo.png?v=3" alt="InFlow" className="h-full w-auto object-contain" />
+      flow
     </div>
   );
 };
