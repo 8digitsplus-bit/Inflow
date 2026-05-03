@@ -20,7 +20,7 @@ const STARTER_PROMPTS = [
   { category: 'Plans',         label: "What's the difference between Pro and Enterprise?" },
   { category: 'Integrations',  label: 'Which integrations do you support?' },
   { category: 'Trial',         label: 'How does the 14-day free trial work?' },
-  { category: 'Custom',        label: 'I want to talk to your team about a custom request.' },
+  { category: 'Get started',   label: "I'm new here — how do I get started with InFlow?" },
 ];
 
 // Sentiment dot mapping — green by default (online indicator), shifts only when non-neutral
