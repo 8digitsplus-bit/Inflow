@@ -589,27 +589,60 @@ async def get_payment_status(session_id: str, request: Request, user: User = Dep
 
 @router.post("/webhook/stripe")
 async def stripe_webhook(request: Request):
-    """Handle Stripe webhooks for subscription lifecycle."""
+    """Handle Stripe webhooks for subscription lifecycle.
+
+    Verifies the Stripe-Signature header against STRIPE_WEBHOOK_SECRET to
+    reject spoofed payloads. Handles 5 event types we actually care about:
+
+      - checkout.session.completed   (initial subscription start)
+      - customer.subscription.updated (plan/seat change via Stripe Portal)
+      - customer.subscription.deleted (cancellation)
+      - invoice.paid                  (successful renewal)
+      - invoice.payment_failed        (failed renewal → past_due)
+    """
     try:
         body = await request.body()
         api_key = os.environ.get("STRIPE_API_KEY")
+        webhook_secret = os.environ.get("STRIPE_WEBHOOK_SECRET")
+        signature = request.headers.get("Stripe-Signature", "")
 
         if is_real_stripe_key(api_key):
-            # Parse event (signature verification would need webhook secret in production)
             import json
-            event = json.loads(body)
-            event_type = event.get("type", "")
-            data_obj = event.get("data", {}).get("object", {})
+            import stripe as stripe_sdk
+
+            # Verify signature when secret is configured (production path)
+            if webhook_secret:
+                try:
+                    stripe_sdk.api_key = api_key
+                    event = stripe_sdk.Webhook.construct_event(
+                        payload=body,
+                        sig_header=signature,
+                        secret=webhook_secret,
+                    )
+                except stripe_sdk.error.SignatureVerificationError as e:
+                    logger.warning("Stripe webhook signature verification failed: %s", e)
+                    raise HTTPException(status_code=400, detail="Invalid signature")
+                except ValueError as e:
+                    logger.warning("Stripe webhook payload could not be parsed: %s", e)
+                    raise HTTPException(status_code=400, detail="Invalid payload")
+                # construct_event returns a stripe Event object; normalize to dict-like access
+                event_type = event["type"]
+                data_obj = event["data"]["object"]
+            else:
+                # Dev / unconfigured fallback — accept but log loudly
+                logger.warning("STRIPE_WEBHOOK_SECRET not set; webhook accepted WITHOUT signature verification")
+                event = json.loads(body)
+                event_type = event.get("type", "")
+                data_obj = event.get("data", {}).get("object", {})
+
+            now_iso = datetime.now(timezone.utc).isoformat()
 
             if event_type == "checkout.session.completed":
                 session_id = data_obj.get("id")
-                metadata = data_obj.get("metadata", {})
+                metadata = data_obj.get("metadata", {}) or {}
                 subscription_id = data_obj.get("subscription")
 
-                update_fields = {
-                    "payment_status": "paid",
-                    "updated_at": datetime.now(timezone.utc).isoformat()
-                }
+                update_fields = {"payment_status": "paid", "updated_at": now_iso}
                 if subscription_id:
                     update_fields["stripe_subscription_id"] = subscription_id
 
@@ -618,9 +651,10 @@ async def stripe_webhook(request: Request):
                 )
 
                 if metadata.get("user_id"):
+                    plan = metadata.get("plan", "pro_monthly")
                     user_update = {
-                        "subscription_tier": metadata.get("plan", "pro_monthly"),
-                        "subscription_status": "active"
+                        "subscription_tier": plan,
+                        "subscription_status": "active",
                     }
                     if subscription_id:
                         user_update["stripe_subscription_id"] = subscription_id
@@ -629,14 +663,14 @@ async def stripe_webhook(request: Request):
                         {"user_id": metadata["user_id"]}, {"$set": user_update}
                     )
 
-                    # Also sync the user's organization
+                    # Sync the user's organization
                     u_doc = await db.users.find_one(
                         {"user_id": metadata["user_id"]}, {"_id": 0, "org_id": 1}
                     )
                     if u_doc and u_doc.get("org_id"):
                         quantity = int(metadata.get("quantity", 1))
                         org_update = {
-                            "subscription_tier": metadata.get("plan", "pro_monthly"),
+                            "subscription_tier": plan,
                             "subscription_status": "active",
                             "seat_count": quantity,
                         }
@@ -646,33 +680,97 @@ async def stripe_webhook(request: Request):
                             {"org_id": u_doc["org_id"]}, {"$set": org_update}
                         )
 
+            elif event_type == "customer.subscription.updated":
+                # Fires when plan or seat count changes via the Stripe Customer Portal.
+                # Without this handler the DB silently drifts from Stripe.
+                sub_id = data_obj.get("id")
+                status = data_obj.get("status")  # active / past_due / canceled / etc
+                items = (data_obj.get("items") or {}).get("data") or []
+                seat_qty = items[0].get("quantity") if items else None
+                # Plan key was stored on the subscription's metadata at checkout time.
+                plan = (data_obj.get("metadata") or {}).get("plan")
+
+                if sub_id:
+                    user_doc = await db.users.find_one(
+                        {"stripe_subscription_id": sub_id},
+                        {"_id": 0, "user_id": 1, "org_id": 1},
+                    )
+                    if user_doc:
+                        u_set = {"subscription_status": status} if status else {}
+                        if plan:
+                            u_set["subscription_tier"] = plan
+                        if u_set:
+                            await db.users.update_one(
+                                {"user_id": user_doc["user_id"]}, {"$set": u_set}
+                            )
+                        if user_doc.get("org_id"):
+                            o_set = {"subscription_status": status} if status else {}
+                            if plan:
+                                o_set["subscription_tier"] = plan
+                            if seat_qty:
+                                o_set["seat_count"] = int(seat_qty)
+                            if o_set:
+                                await db.organizations.update_one(
+                                    {"org_id": user_doc["org_id"]}, {"$set": o_set}
+                                )
+
             elif event_type == "customer.subscription.deleted":
                 sub_id = data_obj.get("id")
                 user_doc = await db.users.find_one(
-                    {"stripe_subscription_id": sub_id}, {"_id": 0, "user_id": 1, "subscription_tier": 1}
+                    {"stripe_subscription_id": sub_id},
+                    {"_id": 0, "user_id": 1, "subscription_tier": 1, "org_id": 1},
                 )
                 if user_doc:
+                    cancel_set = {
+                        "subscription_status": "cancelled",
+                        "previous_tier": user_doc.get("subscription_tier"),
+                        "subscription_tier": "cancelled",
+                        "cancelled_at": now_iso,
+                    }
                     await db.users.update_one(
-                        {"user_id": user_doc["user_id"]},
-                        {"$set": {
-                            "subscription_status": "cancelled",
-                            "previous_tier": user_doc.get("subscription_tier"),
-                            "subscription_tier": "cancelled",
-                            "cancelled_at": datetime.now(timezone.utc).isoformat()
-                        }}
+                        {"user_id": user_doc["user_id"]}, {"$set": cancel_set}
                     )
+                    if user_doc.get("org_id"):
+                        await db.organizations.update_one(
+                            {"org_id": user_doc["org_id"]}, {"$set": cancel_set}
+                        )
+
+            elif event_type == "invoice.paid":
+                # Successful renewal — clear past_due flag if it was set, reaffirm active.
+                sub_id = data_obj.get("subscription")
+                if sub_id:
+                    user_doc = await db.users.find_one(
+                        {"stripe_subscription_id": sub_id},
+                        {"_id": 0, "user_id": 1, "org_id": 1},
+                    )
+                    if user_doc:
+                        await db.users.update_one(
+                            {"user_id": user_doc["user_id"]},
+                            {"$set": {"subscription_status": "active", "last_paid_at": now_iso}},
+                        )
+                        if user_doc.get("org_id"):
+                            await db.organizations.update_one(
+                                {"org_id": user_doc["org_id"]},
+                                {"$set": {"subscription_status": "active", "last_paid_at": now_iso}},
+                            )
 
             elif event_type == "invoice.payment_failed":
                 sub_id = data_obj.get("subscription")
                 if sub_id:
                     user_doc = await db.users.find_one(
-                        {"stripe_subscription_id": sub_id}, {"_id": 0, "user_id": 1}
+                        {"stripe_subscription_id": sub_id},
+                        {"_id": 0, "user_id": 1, "org_id": 1},
                     )
                     if user_doc:
                         await db.users.update_one(
                             {"user_id": user_doc["user_id"]},
-                            {"$set": {"subscription_status": "past_due"}}
+                            {"$set": {"subscription_status": "past_due"}},
                         )
+                        if user_doc.get("org_id"):
+                            await db.organizations.update_one(
+                                {"org_id": user_doc["org_id"]},
+                                {"$set": {"subscription_status": "past_due"}},
+                            )
 
         else:
             from emergentintegrations.payments.stripe.checkout import StripeCheckout
@@ -700,6 +798,8 @@ async def stripe_webhook(request: Request):
 
         return {"received": True}
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Webhook error: {str(e)}")
         return {"received": True}
