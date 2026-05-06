@@ -1,8 +1,8 @@
 {
-  "buildCommand": "CI=false npm run build",
+  "buildCommand": "CI=false yarn build",
   "outputDirectory": "build",
   "framework": "create-react-app",
-  "installCommand": "npm install --legacy-peer-deps",
+  "installCommand": "yarn install --frozen-lockfile",
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ]
