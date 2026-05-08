@@ -155,32 +155,8 @@ const Settings = () => {
       navigate('/choose-plan');
       return;
     }
-    
-    setProcessingPayment(true);
-    try {
-      const response = await fetch(`${API_URL}/api/payments/create-checkout`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({
-          plan: planId,
-          origin_url: window.location.origin
-        })
-      });
-
-      if (response.ok) {
-        const data = await response.json();
-        window.location.href = data.url;
-      } else {
-        const error = await response.json();
-        toast.error(error.detail || 'Failed to create checkout session');
-      }
-    } catch (error) {
-      console.error('Checkout failed:', error);
-      toast.error('Failed to start checkout');
-    } finally {
-      setProcessingPayment(false);
-    }
+    // All other plans use the embedded Stripe checkout page
+    navigate(`/checkout?plan=${planId}`);
   };
 
   const handleCancelSubscription = async () => {
