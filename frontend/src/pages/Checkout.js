@@ -10,6 +10,7 @@ import {
   EmbeddedCheckoutProvider,
   EmbeddedCheckout,
 } from '@stripe/react-stripe-js';
+import { useAuth } from '../contexts/AuthContext';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -32,6 +33,7 @@ const PLANS = {
 const Checkout = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { user } = useAuth();
 
   const planKey = searchParams.get('plan') || 'pro_monthly';
   const plan = PLANS[planKey];
@@ -39,6 +41,21 @@ const Checkout = () => {
   const userCount = plan?.perUser ? Math.max(1, usersParam) : 1;
   const totalPrice = plan ? plan.price * userCount : 0;
   const totalOriginal = plan?.originalPrice ? plan.originalPrice * userCount : null;
+
+  // Compute remaining trial days from the user's actual trial_end (if any).
+  // If they have time left, we honor it; otherwise they're charged immediately.
+  const trialDaysLeft = (() => {
+    if (!user?.trial_end) return 0;
+    try {
+      const end = new Date(user.trial_end);
+      const ms = end.getTime() - Date.now();
+      return Math.max(0, Math.ceil(ms / (1000 * 60 * 60 * 24)));
+    } catch { return 0; }
+  })();
+  const hasTrialRemaining = trialDaysLeft >= 2; // Stripe min trial = 48h
+  const trialEndDate = hasTrialRemaining
+    ? new Date(user.trial_end).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
+    : null;
 
   const fetchClientSecret = useCallback(async () => {
     const response = await fetch(`${API_URL}/api/payments/create-checkout`, {
@@ -117,7 +134,11 @@ const Checkout = () => {
           <h1 className="text-lg sm:text-xl font-bold text-white tracking-tight" style={{ fontFamily: 'Outfit' }}>
             Complete your subscription
           </h1>
-          <p className="text-zinc-500 text-[11px] mt-0.5">14 days free · No charge today · Cancel anytime</p>
+          <p className="text-zinc-500 text-[11px] mt-0.5">
+            {hasTrialRemaining
+              ? `${trialDaysLeft} days left in your free trial · No charge today · Cancel anytime`
+              : 'No charge until you confirm · Cancel anytime'}
+          </p>
         </div>
 
         {/* Two-column: Summary (left) + Stripe iframe (right) */}
@@ -189,18 +210,26 @@ const Checkout = () => {
                   )}
                   <div className="flex justify-between text-[11px]">
                     <span className="text-zinc-500">Free trial</span>
-                    <span className="text-emerald-400">14 days</span>
+                    <span className="text-emerald-400">
+                      {hasTrialRemaining ? `${trialDaysLeft} day${trialDaysLeft === 1 ? '' : 's'} left` : 'No trial remaining'}
+                    </span>
                   </div>
                 </div>
 
                 {/* Total today */}
                 <div className="flex items-center justify-between p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
                   <span className="text-white font-semibold text-sm">Total today</span>
-                  <span className="text-white font-bold text-xl" style={{ fontFamily: 'Outfit' }}>$0.00</span>
+                  <span className="text-white font-bold text-xl" style={{ fontFamily: 'Outfit' }}>
+                    {hasTrialRemaining ? '$0.00' : `$${totalPrice.toLocaleString()}`}
+                  </span>
                 </div>
 
                 <p className="text-[10px] text-zinc-600 mt-3 leading-relaxed">
-                  After your 14-day trial: <span className="text-zinc-400">${totalPrice.toLocaleString()}</span>. Cancel anytime from Settings — no charge during the trial.
+                  {hasTrialRemaining ? (
+                    <>You'll be charged <span className="text-zinc-400">${totalPrice.toLocaleString()}</span> on <span className="text-zinc-400">{trialEndDate}</span> when your trial ends. Cancel anytime in Settings — no charge during the trial.</>
+                  ) : (
+                    <>Charged today: <span className="text-zinc-400">${totalPrice.toLocaleString()}</span>. Cancel anytime from Settings.</>
+                  )}
                 </p>
               </div>
             </div>

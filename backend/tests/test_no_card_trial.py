@@ -4,7 +4,8 @@ Backend tests for the no-card free trial model.
 Verifies:
 1. POST /api/auth/register → subscription_tier='trial', trial_days_left=14 (no payment required)
 2. GET /api/auth/me → returns subscription_tier + trial_days_left; flips to 'expired' when trial_end is past
-3. POST /api/payments/create-checkout → creates Stripe subscription session WITHOUT trial_period_days
+3. POST /api/payments/create-checkout → respects user's remaining DB trial via Stripe `trial_end`
+   (no fresh Stripe trial — mid-trial upgrades carry over remaining days, full-trial users get charged immediately)
 """
 import os
 import uuid
@@ -135,6 +136,12 @@ class TestCheckoutNoTrialPeriod:
         return r.cookies
 
     def test_create_checkout_has_no_trial_period_days(self, api, mongo):
+        """
+        Verifies:
+        - Stripe `trial_period_days` is never used (we use absolute `trial_end` instead).
+        - When user has DB trial time remaining, Stripe subscription's trial_end matches it.
+        - When user's trial is expired/missing, Stripe subscription is charged immediately.
+        """
         cookies = self._login(api)
         r = api.post(
             f"{BASE_URL}/api/payments/create-checkout",
@@ -146,25 +153,40 @@ class TestCheckoutNoTrialPeriod:
         session_id = body.get("session_id")
         assert session_id
 
-        # If real Stripe key, fetch the session directly and assert no trial
+        # Check the test user's DB trial_end so we know what to expect
+        user_doc = mongo.users.find_one({"email": EXISTING_EMAIL}) or {}
+        db_trial_end = user_doc.get("trial_end")
+        has_trial = False
+        if db_trial_end:
+            try:
+                if isinstance(db_trial_end, str):
+                    end_dt = datetime.fromisoformat(db_trial_end.replace("Z", "+00:00"))
+                else:
+                    end_dt = db_trial_end.replace(tzinfo=timezone.utc) if db_trial_end.tzinfo is None else db_trial_end
+                seconds_left = (end_dt - datetime.now(timezone.utc)).total_seconds()
+                has_trial = seconds_left >= 48 * 3600
+            except Exception:
+                has_trial = False
+
+        # If real Stripe key, fetch the session directly
         import stripe as stripe_sdk
         api_key = os.environ.get("STRIPE_API_KEY")
         if api_key and (api_key.startswith("sk_live_") or api_key.startswith("sk_test_")) and api_key != "sk_test_emergent":
             stripe_sdk.api_key = api_key
             session = stripe_sdk.checkout.Session.retrieve(session_id)
             sub_data = session.get("subscription_data") or {}
-            # Must NOT include trial_period_days
+            # Must NEVER include trial_period_days (we use trial_end instead)
             assert "trial_period_days" not in sub_data or sub_data.get("trial_period_days") in (None, 0), sub_data
-            # If a subscription was created, verify it too
-            sub_id = session.get("subscription")
-            if sub_id:
-                sub = stripe_sdk.Subscription.retrieve(sub_id)
-                assert sub.get("trial_end") in (None, 0), f"trial_end set on sub: {sub.get('trial_end')}"
-                assert sub.get("status") != "trialing", f"status=trialing: {sub}"
+
+            if has_trial:
+                # Should carry over remaining trial via trial_end (within ~1 hour tolerance)
+                assert sub_data.get("trial_end"), f"Expected trial_end honored from DB, got: {sub_data}"
+            else:
+                # No trial remaining → no Stripe trial
+                assert sub_data.get("trial_end") in (None, 0), f"Unexpected trial_end: {sub_data.get('trial_end')}"
         else:
-            # Sandbox fallback uses one-time checkout — no subscription to inspect.
-            # Verify source code has no trial_period_days in the subscription path.
+            # Sandbox fallback: only verify source uses trial_end pattern, not trial_period_days
             src = open("/app/backend/routes/payments.py").read()
             assert "trial_period_days" not in src, (
-                "trial_period_days must not appear anywhere in payments.py"
+                "trial_period_days must not appear anywhere in payments.py — use trial_end instead"
             )

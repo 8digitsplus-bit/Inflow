@@ -198,6 +198,11 @@ async def create_subscription_checkout(plan_key: str, plan: dict, user: User, or
     own page. Returns a `client_secret` (instead of a redirect URL) which the
     frontend passes to <EmbeddedCheckoutProvider>. After payment, Stripe redirects
     the user's browser to `return_url` with `session_id={CHECKOUT_SESSION_ID}`.
+
+    If the user is currently on a no-card free trial with days remaining, we pass
+    Stripe `subscription_data.trial_end` so they aren't charged until their
+    original 14-day trial ends. Total trial time is capped at 14 days from
+    signup — upgrading mid-trial does NOT extend the trial.
     """
     price_id = await get_or_create_stripe_price(plan_key, plan)
 
@@ -205,19 +210,44 @@ async def create_subscription_checkout(plan_key: str, plan: dict, user: User, or
     # render the correct order summary even after the redirect.
     return_url = f"{origin_url}/checkout/return?session_id={{CHECKOUT_SESSION_ID}}"
 
+    subscription_data = {
+        "metadata": {
+            "user_id": user.user_id,
+            "plan": plan_key,
+            "quantity": str(quantity),
+        }
+    }
+
+    # Honor remaining trial days: if user still has free trial time left, pass
+    # `trial_end` (Unix timestamp) so Stripe defers charging until that moment.
+    # Stripe requires `trial_end` to be at least 48 hours in the future, so we
+    # only set it if the remaining trial covers that minimum.
+    user_doc = await db.users.find_one({"user_id": user.user_id}, {"_id": 0, "trial_end": 1})
+    if user_doc and user_doc.get("trial_end"):
+        trial_end_raw = user_doc["trial_end"]
+        try:
+            if isinstance(trial_end_raw, str):
+                end_dt = datetime.fromisoformat(trial_end_raw.replace("Z", "+00:00"))
+            else:
+                end_dt = trial_end_raw.replace(tzinfo=timezone.utc) if trial_end_raw.tzinfo is None else trial_end_raw
+            now = datetime.now(timezone.utc)
+            seconds_left = (end_dt - now).total_seconds()
+            # Stripe min trial = 48 hours
+            if seconds_left >= 48 * 3600:
+                subscription_data["trial_end"] = int(end_dt.timestamp())
+                # When using a trial, Stripe requires payment method to be
+                # collected for after-trial billing. Default behavior already
+                # collects PM for embedded checkout subscription mode.
+        except Exception as e:
+            logger.warning(f"Could not parse trial_end for user {user.user_id}: {e}")
+
     session_params = {
         "mode": "subscription",
         "ui_mode": "embedded",
         "return_url": return_url,
         "line_items": [{"price": price_id, "quantity": quantity}],
         "customer_email": user.email,
-        "subscription_data": {
-            "metadata": {
-                "user_id": user.user_id,
-                "plan": plan_key,
-                "quantity": str(quantity),
-            }
-        },
+        "subscription_data": subscription_data,
         "metadata": {
             "user_id": user.user_id,
             "plan": plan_key,
