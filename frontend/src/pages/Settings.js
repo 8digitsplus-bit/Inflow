@@ -13,7 +13,8 @@ import {
   AlertCircle,
   XCircle,
   Clock,
-  ShieldCheck
+  ShieldCheck,
+  RefreshCw
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -40,6 +41,8 @@ const Settings = () => {
   const [toggling2FA, setToggling2FA] = useState(false);
   const [show2FADialog, setShow2FADialog] = useState(false);
   const [org, setOrg] = useState(null);
+  const [subDetails, setSubDetails] = useState(null);
+  const [togglingAutoRenew, setTogglingAutoRenew] = useState(false);
 
   useEffect(() => {
     fetch(`${API_URL}/api/org/me`, { credentials: 'include' })
@@ -47,6 +50,40 @@ const Settings = () => {
       .then(setOrg)
       .catch(() => {});
   }, []);
+
+  const fetchSubDetails = async () => {
+    try {
+      const res = await fetch(`${API_URL}/api/subscription/details`, { credentials: 'include' });
+      if (res.ok) setSubDetails(await res.json());
+    } catch {}
+  };
+
+  useEffect(() => {
+    fetchSubDetails();
+  }, [user?.subscription_tier]);
+
+  const handleToggleAutoRenew = async (enabled) => {
+    setTogglingAutoRenew(true);
+    try {
+      const res = await fetch(`${API_URL}/api/subscription/auto-renew`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled }),
+      });
+      if (res.ok) {
+        toast.success(enabled ? 'Auto-renew turned on' : 'Auto-renew turned off — your plan will end at the period end');
+        await fetchSubDetails();
+      } else {
+        const err = await res.json().catch(() => ({}));
+        toast.error(err.detail || 'Failed to update auto-renew');
+      }
+    } catch {
+      toast.error('Failed to update auto-renew');
+    } finally {
+      setTogglingAutoRenew(false);
+    }
+  };
 
   useEffect(() => {
     fetchPlans();
@@ -291,7 +328,45 @@ const Settings = () => {
                 </div>
               </div>
             </div>
-            
+
+            {/* Auto-renew status block — shown when there is a real Stripe subscription */}
+            {subDetails?.has_subscription && org?.role === 'owner' && (
+              <div className="mt-6 pt-6 border-t border-zinc-800" data-testid="auto-renew-block">
+                <div className="flex items-start justify-between gap-4 flex-wrap">
+                  <div className="flex items-start gap-3">
+                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${subDetails.auto_renew ? 'bg-emerald-500/10' : 'bg-amber-500/10'}`}>
+                      <RefreshCw className={`w-4 h-4 ${subDetails.auto_renew ? 'text-emerald-400' : 'text-amber-400'}`} />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-medium text-white mb-0.5">
+                        {subDetails.auto_renew ? 'Auto-renew is on' : 'Auto-renew is off'}
+                      </h4>
+                      <p className="text-xs text-zinc-500">
+                        {subDetails.current_period_end ? (
+                          subDetails.auto_renew
+                            ? <>Your plan renews on <span className="text-zinc-300">{new Date(subDetails.current_period_end).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}</span>.</>
+                            : <>Your plan ends on <span className="text-zinc-300">{new Date(subDetails.current_period_end).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}</span>. You'll keep access until then.</>
+                        ) : 'Manage how your subscription continues.'}
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className={subDetails.auto_renew
+                      ? 'border-zinc-700 text-zinc-300 hover:bg-zinc-800 text-xs h-8'
+                      : 'border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/10 text-xs h-8'}
+                    onClick={() => handleToggleAutoRenew(!subDetails.auto_renew)}
+                    disabled={togglingAutoRenew}
+                    data-testid="auto-renew-toggle-btn"
+                  >
+                    {togglingAutoRenew ? <Loader2 className="w-3 h-3 mr-1.5 animate-spin" /> : null}
+                    {subDetails.auto_renew ? 'Turn off' : 'Turn on'}
+                  </Button>
+                </div>
+              </div>
+            )}
+
             <div className="mt-6 pt-6 border-t border-zinc-800 flex flex-wrap items-center gap-3">
               <Button 
                 variant="outline" 

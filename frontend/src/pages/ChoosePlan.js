@@ -96,7 +96,7 @@ const ChoosePlan = () => {
       <div className="relative z-10 w-full max-w-5xl">
         {/* Back button */}
         <button
-          onClick={() => navigate(-1)}
+          onClick={() => navigate('/settings?tab=subscription')}
           className="flex items-center gap-2 text-zinc-500 hover:text-white text-sm mb-8 transition-colors"
           data-testid="back-btn"
         >

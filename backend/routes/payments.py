@@ -883,3 +883,84 @@ async def cancel_subscription(current_user: User = Depends(require_owner)):
         "previous_tier": tier,
         "message": "Your subscription has been cancelled. You can resubscribe at any time.",
     }
+
+
+
+@router.get("/subscription/details")
+async def get_subscription_details(current_user: User = Depends(get_current_user)):
+    """Return live Stripe subscription details: auto-renew, period end, status."""
+    user_doc = await db.users.find_one(
+        {"user_id": current_user.user_id},
+        {"_id": 0, "stripe_subscription_id": 1, "subscription_tier": 1, "trial_end": 1}
+    )
+    if not user_doc:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    sub_id = user_doc.get("stripe_subscription_id")
+    api_key = os.environ.get("STRIPE_API_KEY")
+
+    # Default response for users without an active Stripe subscription (trial-only / cancelled / free)
+    default = {
+        "has_subscription": False,
+        "auto_renew": False,
+        "status": user_doc.get("subscription_tier", "trial"),
+        "current_period_end": None,
+        "trial_end": user_doc.get("trial_end"),
+        "cancel_at_period_end": False,
+    }
+
+    if not sub_id or not api_key or not is_real_stripe_key(api_key):
+        return default
+
+    try:
+        stripe_sdk.api_key = api_key
+        sub = stripe_sdk.Subscription.retrieve(sub_id)
+        cpe = sub.get("current_period_end")
+        return {
+            "has_subscription": True,
+            "auto_renew": not sub.get("cancel_at_period_end", False),
+            "status": sub.get("status"),
+            "current_period_end": datetime.fromtimestamp(cpe, tz=timezone.utc).isoformat() if cpe else None,
+            "trial_end": datetime.fromtimestamp(sub["trial_end"], tz=timezone.utc).isoformat() if sub.get("trial_end") else None,
+            "cancel_at_period_end": bool(sub.get("cancel_at_period_end", False)),
+        }
+    except Exception as e:
+        logger.warning(f"Could not fetch Stripe subscription {sub_id}: {e}")
+        return default
+
+
+@router.post("/subscription/auto-renew")
+async def set_auto_renew(request: Request, current_user: User = Depends(require_owner)):
+    """Toggle auto-renew on/off via Stripe `cancel_at_period_end`.
+
+    enabled=True  → cancel_at_period_end=False (renews automatically)
+    enabled=False → cancel_at_period_end=True  (keeps access until period end, then cancels)
+    """
+    body = await request.json()
+    enabled = bool(body.get("enabled", True))
+
+    user_doc = await db.users.find_one(
+        {"user_id": current_user.user_id},
+        {"_id": 0, "stripe_subscription_id": 1}
+    )
+    sub_id = user_doc.get("stripe_subscription_id") if user_doc else None
+    api_key = os.environ.get("STRIPE_API_KEY")
+
+    if not sub_id or not api_key or not is_real_stripe_key(api_key):
+        raise HTTPException(status_code=400, detail="No active subscription to update")
+
+    try:
+        stripe_sdk.api_key = api_key
+        sub = stripe_sdk.Subscription.modify(
+            sub_id,
+            cancel_at_period_end=(not enabled),
+        )
+        cpe = sub.get("current_period_end")
+        return {
+            "auto_renew": enabled,
+            "cancel_at_period_end": bool(sub.get("cancel_at_period_end", False)),
+            "current_period_end": datetime.fromtimestamp(cpe, tz=timezone.utc).isoformat() if cpe else None,
+        }
+    except Exception as e:
+        logger.error(f"Stripe modify error: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to update auto-renew: {str(e)}")
