@@ -22,6 +22,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from './ui/alert-dialog';
 import { Toaster } from './ui/sonner';
+import TrialBanner from './TrialBanner';
 
 const TIER_LEVEL = {
   trial: 0, expired: -1, cancelled: -1, free: 0,
@@ -217,7 +218,10 @@ const DashboardLayout = ({ children }) => {
             <img src="/inflow-logo.png?v=3" alt="InFlow" className="h-4 w-auto object-contain" />
           </div>
         </div>
-        <div className="lg:pt-0 pt-12">{children}</div>
+        <div className="lg:pt-0 pt-12">
+          <TrialBanner />
+          {children}
+        </div>
       </main>
 
       <Toaster position="top-right" richColors />
