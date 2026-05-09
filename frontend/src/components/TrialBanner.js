@@ -141,7 +141,7 @@ const computeMilestone = (user) => {
     return {
       key: `urgent_${daysLeft}`,
       title: `${daysLeft} days left in your free trial`,
-      subtitle: 'Lock in your plan now — no charge until the trial ends.',
+      subtitle: 'No charge until the trial ends.',
       icon: Clock,
       bg: 'bg-amber-500/10',
       border: 'border-amber-500/20',
@@ -179,7 +179,7 @@ const computeMilestone = (user) => {
     return {
       key: 'welcome_14',
       title: 'Welcome to your 14-day free trial',
-      subtitle: "Explore everything — no card required. We'll remind you before it ends.",
+      subtitle: "Explore everything. We'll remind you before it ends.",
       icon: Sparkles,
       bg: 'bg-emerald-500/10',
       border: 'border-emerald-500/20',
