@@ -110,14 +110,14 @@ const Checkout = () => {
         </div>
       </div>
 
-      <div className="relative z-10 max-w-6xl w-full mx-auto px-4 sm:px-6 py-4 sm:py-6 flex-1">
+      <div className="relative z-10 max-w-6xl w-full mx-auto px-4 sm:px-6 py-3 sm:py-4 flex-1">
 
         {/* Compact heading — desktop only to save mobile space */}
-        <div className="hidden sm:block text-center mb-4">
-          <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight" style={{ fontFamily: 'Outfit' }}>
+        <div className="hidden sm:block text-center mb-3">
+          <h1 className="text-lg sm:text-xl font-bold text-white tracking-tight" style={{ fontFamily: 'Outfit' }}>
             Complete your subscription
           </h1>
-          <p className="text-zinc-500 text-xs mt-0.5">14 days free · No charge today · Cancel anytime</p>
+          <p className="text-zinc-500 text-[11px] mt-0.5">14 days free · No charge today · Cancel anytime</p>
         </div>
 
         {/* Two-column: Summary (left) + Stripe iframe (right) */}
