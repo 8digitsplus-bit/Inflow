@@ -1,7 +1,7 @@
 import { useCallback } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
-  Check, ArrowLeft, Lock, Zap, ShieldCheck, Sparkles,
+  Check, ArrowLeft, Lock, Zap, ShieldCheck,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Toaster } from '../components/ui/sonner';
@@ -85,7 +85,7 @@ const Checkout = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#050507] relative overflow-hidden">
+    <div className="min-h-screen bg-[#050507] relative overflow-hidden flex flex-col">
       <Toaster position="top-center" richColors />
 
       {/* Ambient radial glow background */}
@@ -99,9 +99,9 @@ const Checkout = () => {
 
       {/* Header */}
       <div className="relative border-b border-white/[0.04] bg-[#050507]/80 backdrop-blur-xl z-10">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-12 flex items-center justify-between">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 h-11 flex items-center justify-between">
           <button onClick={() => navigate('/choose-plan')} className="flex items-center gap-2 text-zinc-500 hover:text-white text-xs transition-colors" data-testid="back-btn">
-            <ArrowLeft className="w-3.5 h-3.5" /> Back to plans
+            <ArrowLeft className="w-3.5 h-3.5" /> Back
           </button>
           <img src="/inflow-logo.png?v=3" alt="InFlow" className="h-4 w-auto" />
           <div className="flex items-center gap-1.5 text-zinc-600 text-xs">
@@ -110,27 +110,21 @@ const Checkout = () => {
         </div>
       </div>
 
-      <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 pt-6 pb-4">
+      <div className="relative z-10 max-w-6xl w-full mx-auto px-4 sm:px-6 py-4 sm:py-6 flex-1">
 
-        {/* Compact heading */}
-        <div className="text-center mb-5">
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-white/[0.04] border border-white/[0.06] mb-2" data-testid="checkout-plan-badge">
-            <Sparkles className="w-3 h-3" style={{ color: INDIGO }} />
-            <span className="text-[10px] font-medium uppercase tracking-wider text-zinc-300">
-              InFlow {plan.name}
-            </span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-white tracking-tight" style={{ fontFamily: 'Outfit' }}>
+        {/* Compact heading — desktop only to save mobile space */}
+        <div className="hidden sm:block text-center mb-4">
+          <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight" style={{ fontFamily: 'Outfit' }}>
             Complete your subscription
           </h1>
-          <p className="text-zinc-500 text-xs mt-1">14 days free · No charge today · Cancel anytime</p>
+          <p className="text-zinc-500 text-xs mt-0.5">14 days free · No charge today · Cancel anytime</p>
         </div>
 
-        {/* Two-column: Summary (left) + Stripe iframe (right) — even 6/6 split */}
-        <div className="grid lg:grid-cols-12 gap-5 items-start">
+        {/* Two-column: Summary (left) + Stripe iframe (right) */}
+        <div className="grid lg:grid-cols-12 gap-4 lg:gap-5 items-start">
 
           {/* Left: Summary card */}
-          <div className="lg:col-span-6 order-2 lg:order-1">
+          <div className="lg:col-span-5 order-2 lg:order-1">
             <div className="relative" data-testid="order-summary">
               {/* Halo */}
               <div
@@ -138,18 +132,18 @@ const Checkout = () => {
                 style={{ background: `linear-gradient(135deg, ${INDIGO}60, ${INDIGO}30, ${INDIGO}60)` }}
               />
               {/* Card */}
-              <div className="relative bg-zinc-950/80 backdrop-blur-xl border border-white/[0.08] rounded-2xl p-5">
+              <div className="relative bg-zinc-950/80 backdrop-blur-xl border border-white/[0.08] rounded-2xl p-4">
 
-                <div className="flex items-center gap-3 mb-4 pb-4 border-b border-white/[0.06]">
-                  <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${INDIGO}20` }}>
-                    <Zap className="w-5 h-5" style={{ color: INDIGO }} />
+                <div className="flex items-center gap-3 mb-3 pb-3 border-b border-white/[0.06]">
+                  <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${INDIGO}20` }}>
+                    <Zap className="w-4.5 h-4.5" style={{ color: INDIGO }} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-white font-semibold text-sm" style={{ fontFamily: 'Outfit' }}>
                       InFlow {plan.name}
                     </p>
                     <p className="text-zinc-500 text-[11px] capitalize">
-                      {plan.period}ly subscription
+                      {plan.period}ly
                       {plan.perUser && userCount > 1 && ` · ${userCount} seats`}
                     </p>
                   </div>
@@ -163,33 +157,32 @@ const Checkout = () => {
                   </div>
                 </div>
 
-                {/* Features */}
-                <div className="space-y-1.5 mb-4 pb-4 border-b border-white/[0.06]">
-                  {plan.features.map((f, i) => (
+                {/* Features — show top 4 only on mobile to keep it compact */}
+                <div className="space-y-1.5 mb-3 pb-3 border-b border-white/[0.06]">
+                  {plan.features.slice(0, 4).map((f, i) => (
                     <div key={i} className="flex items-center gap-2">
                       <div className="w-4 h-4 rounded-full bg-emerald-500/15 flex items-center justify-center shrink-0">
                         <Check className="w-2.5 h-2.5 text-emerald-400" strokeWidth={3} />
                       </div>
-                      <span className="text-zinc-400 text-[12px]">{f}</span>
+                      <span className="text-zinc-400 text-[12px] truncate">{f}</span>
                     </div>
                   ))}
+                  {plan.features.length > 4 && (
+                    <p className="text-zinc-600 text-[10px] pl-6">+{plan.features.length - 4} more features</p>
+                  )}
                 </div>
 
                 {/* Subtotal lines */}
-                <div className="space-y-1.5 mb-4">
+                <div className="space-y-1 mb-3">
                   {plan.perUser && userCount > 1 && (
                     <div className="flex justify-between text-[11px]">
-                      <span className="text-zinc-500">${plan.price.toLocaleString()} × {userCount} seats</span>
+                      <span className="text-zinc-500">${plan.price.toLocaleString()} × {userCount}</span>
                       <span className="text-zinc-300">${totalPrice.toLocaleString()}</span>
                     </div>
                   )}
-                  <div className="flex justify-between text-[11px]">
-                    <span className="text-zinc-500">Subtotal</span>
-                    <span className="text-zinc-300">${(totalOriginal || totalPrice).toLocaleString()}</span>
-                  </div>
                   {totalOriginal && (
                     <div className="flex justify-between text-[11px]">
-                      <span className="text-emerald-400">First-year discount (30%)</span>
+                      <span className="text-emerald-400">First-year discount</span>
                       <span className="text-emerald-400">-${(totalOriginal - totalPrice).toLocaleString()}</span>
                     </div>
                   )}
@@ -200,21 +193,21 @@ const Checkout = () => {
                 </div>
 
                 {/* Total today */}
-                <div className="flex items-center justify-between p-3 rounded-xl bg-white/[0.03] border border-white/[0.06]">
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/[0.06]">
                   <span className="text-white font-semibold text-sm">Total today</span>
-                  <span className="text-white font-bold text-xl" style={{ fontFamily: 'Outfit' }}>$0.00</span>
+                  <span className="text-white font-bold text-lg" style={{ fontFamily: 'Outfit' }}>$0.00</span>
                 </div>
 
-                <p className="text-[10px] text-zinc-600 mt-3 leading-relaxed">
-                  After your 14-day trial: <span className="text-zinc-400">${totalPrice.toLocaleString()}</span>. Cancel anytime from Settings — no charge during the trial.
+                <p className="text-[10px] text-zinc-600 mt-2 leading-relaxed">
+                  After trial: <span className="text-zinc-400">${totalPrice.toLocaleString()}/{plan.period === 'month' ? 'mo' : 'yr'}</span>. Cancel anytime in Settings.
                 </p>
               </div>
             </div>
 
-            {/* Trust strip below summary */}
-            <div className="flex items-center justify-center gap-4 mt-3 text-zinc-600 text-[10px]">
+            {/* Trust strip below summary — desktop only */}
+            <div className="hidden sm:flex items-center justify-center gap-3 mt-2 text-zinc-600 text-[10px]">
               <span className="flex items-center gap-1"><ShieldCheck className="w-3 h-3" />SSL</span>
-              <span className="flex items-center gap-1"><Lock className="w-3 h-3" />PCI compliant</span>
+              <span className="flex items-center gap-1"><Lock className="w-3 h-3" />PCI</span>
               <span className="flex items-center gap-1">
                 Powered by <span className="text-zinc-400 font-semibold">Stripe</span>
               </span>
@@ -222,7 +215,7 @@ const Checkout = () => {
           </div>
 
           {/* Right: Stripe iframe */}
-          <div className="lg:col-span-6 order-1 lg:order-2">
+          <div className="lg:col-span-7 order-1 lg:order-2">
             <div className="relative" data-testid="embedded-checkout-wrapper">
               {/* Halo */}
               <div className="pointer-events-none absolute -inset-px rounded-2xl bg-gradient-to-br from-indigo-500/30 via-indigo-500/15 to-indigo-500/30 blur-xl opacity-60" />
