@@ -94,7 +94,7 @@ export const Footer = () => (
         <div className="flex items-center gap-6">
           <a href="/privacy" className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors duration-200">Privacy Policy</a>
           <a href="#" className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors duration-200">Terms of Service</a>
-          <a href="#" className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors duration-200">Cookies</a>
+          <a href="/cookies" className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors duration-200">Cookies</a>
         </div>
       </div>
     </div>
