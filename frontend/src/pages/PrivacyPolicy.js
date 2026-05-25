@@ -30,6 +30,14 @@ const PrivacyPolicy = () => {
           <span className="text-sm">Back</span>
         </button>
 
+        <h1
+          className="text-3xl sm:text-4xl font-bold text-white mb-12"
+          style={{ fontFamily: 'Outfit' }}
+          data-testid="privacy-heading"
+        >
+          Privacy Policy
+        </h1>
+
         <div className="termly-wrapper text-sm leading-relaxed text-zinc-300">
           <div
             name="termly-embed"
