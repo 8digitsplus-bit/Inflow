@@ -38,7 +38,7 @@ const PrivacyPolicy = () => {
           Privacy Policy
         </h1>
 
-        <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-6 sm:p-8 backdrop-blur-sm">
+        <div className="bg-zinc-800/40 border border-zinc-700/60 rounded-2xl p-6 sm:p-8 backdrop-blur-sm">
           <div className="termly-wrapper text-sm leading-relaxed">
             <div
               name="termly-embed"
