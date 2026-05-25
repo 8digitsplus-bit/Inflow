@@ -51,7 +51,7 @@ const PrivacyPolicy = () => {
       {/* Style the inline-rendered Termly content to match our dark theme */}
       <style>{`
         .termly-wrapper,
-        .termly-wrapper * { color: rgb(228 228 231) !important; }
+        .termly-wrapper * { color: #ffffff !important; }
         .termly-wrapper h1,
         .termly-wrapper h1 *,
         .termly-wrapper h2,
