@@ -95,6 +95,7 @@ export const Footer = () => (
           <a href="/privacy" className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors duration-200">Privacy Policy</a>
           <a href="#" className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors duration-200">Terms of Service</a>
           <a href="/cookies" className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors duration-200">Cookies</a>
+          <a href="#" className="termly-display-preferences text-xs text-zinc-600 hover:text-zinc-400 transition-colors duration-200">Consent Preferences</a>
         </div>
       </div>
     </div>
