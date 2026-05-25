@@ -48,7 +48,8 @@ const PrivacyPolicy = () => {
 
       {/* Style the inline-rendered Termly content to match our dark theme */}
       <style>{`
-        .termly-wrapper { color: rgb(212 212 216); }
+        .termly-wrapper,
+        .termly-wrapper * { color: rgb(212 212 216) !important; }
         .termly-wrapper h1,
         .termly-wrapper h2,
         .termly-wrapper h3,
@@ -57,13 +58,15 @@ const PrivacyPolicy = () => {
         .termly-wrapper h6,
         .termly-wrapper strong,
         .termly-wrapper b { color: #fff !important; font-family: 'Outfit', system-ui, sans-serif; }
+        .termly-wrapper a,
+        .termly-wrapper a * { color: #818cf8 !important; text-decoration: underline; text-underline-offset: 2px; }
+        .termly-wrapper a:hover,
+        .termly-wrapper a:hover * { color: #a5b4fc !important; }
         .termly-wrapper h1 { font-size: 1.75rem; margin: 2rem 0 1rem; }
         .termly-wrapper h2 { font-size: 1.4rem; margin: 2rem 0 0.75rem; }
         .termly-wrapper h3 { font-size: 1.15rem; margin: 1.5rem 0 0.5rem; }
         .termly-wrapper p,
-        .termly-wrapper li { color: rgb(212 212 216); line-height: 1.7; margin-bottom: 0.75rem; }
-        .termly-wrapper a { color: #818cf8; text-decoration: underline; text-underline-offset: 2px; }
-        .termly-wrapper a:hover { color: #a5b4fc; }
+        .termly-wrapper li { line-height: 1.7; margin-bottom: 0.75rem; }
         .termly-wrapper ul,
         .termly-wrapper ol { padding-left: 1.5rem; margin: 0.5rem 0 1rem; }
         .termly-wrapper table {
