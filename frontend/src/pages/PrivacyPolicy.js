@@ -40,9 +40,6 @@ const PrivacyPolicy = () => {
 
       {/* Style the inline-rendered Termly content to match our dark theme */}
       <style>{`
-        /* Hide Termly's auto-rendered "Privacy Policy" title — we don't need it twice */
-        .termly-wrapper > h1:first-child,
-        .termly-wrapper [data-custom-class="title"] { display: none !important; }
         .termly-wrapper { color: rgb(212 212 216); }
         .termly-wrapper h1,
         .termly-wrapper h2,
