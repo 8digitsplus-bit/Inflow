@@ -22,6 +22,7 @@ import RevenueForecast from './pages/RevenueForecast';
 import AuthCallback from './pages/AuthCallback';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import CookiePolicy from './pages/CookiePolicy';
+import Terms from './pages/Terms';
 import AcceptInvite from './pages/AcceptInvite';
 import Contact from './pages/Contact';
 import TrialNotification from './components/TrialNotification';
@@ -45,6 +46,7 @@ const AppRouter = () => {
       <Route path="/auth" element={<AuthPage />} />
       <Route path="/privacy" element={<PrivacyPolicy />} />
       <Route path="/cookies" element={<CookiePolicy />} />
+      <Route path="/terms" element={<Terms />} />
       <Route path="/contact" element={<Contact />} />
       <Route path="/accept-invite/:token" element={<AcceptInvite />} />
       <Route path="/onboarding" element={
