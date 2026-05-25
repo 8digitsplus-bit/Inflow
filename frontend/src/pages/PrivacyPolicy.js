@@ -38,26 +38,36 @@ const PrivacyPolicy = () => {
           Privacy Policy
         </h1>
 
-        <div className="termly-wrapper text-sm leading-relaxed text-zinc-300">
-          <div
-            name="termly-embed"
-            data-id={TERMLY_PRIVACY_POLICY_ID}
-          />
+        <div className="bg-zinc-900/50 border border-zinc-800/60 rounded-2xl p-6 sm:p-8 backdrop-blur-sm">
+          <div className="termly-wrapper text-sm leading-relaxed">
+            <div
+              name="termly-embed"
+              data-id={TERMLY_PRIVACY_POLICY_ID}
+            />
+          </div>
         </div>
       </div>
 
       {/* Style the inline-rendered Termly content to match our dark theme */}
       <style>{`
         .termly-wrapper,
-        .termly-wrapper * { color: rgb(212 212 216) !important; }
+        .termly-wrapper * { color: rgb(228 228 231) !important; }
         .termly-wrapper h1,
+        .termly-wrapper h1 *,
         .termly-wrapper h2,
+        .termly-wrapper h2 *,
         .termly-wrapper h3,
+        .termly-wrapper h3 *,
         .termly-wrapper h4,
+        .termly-wrapper h4 *,
         .termly-wrapper h5,
+        .termly-wrapper h5 *,
         .termly-wrapper h6,
+        .termly-wrapper h6 *,
         .termly-wrapper strong,
-        .termly-wrapper b { color: #fff !important; font-family: 'Outfit', system-ui, sans-serif; }
+        .termly-wrapper strong *,
+        .termly-wrapper b,
+        .termly-wrapper b * { color: #ffffff !important; font-family: 'Outfit', system-ui, sans-serif !important; }
         .termly-wrapper a,
         .termly-wrapper a * { color: #818cf8 !important; text-decoration: underline; text-underline-offset: 2px; }
         .termly-wrapper a:hover,
