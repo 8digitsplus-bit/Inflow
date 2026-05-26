@@ -13,6 +13,22 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
+### Login Rate Limiting (Feb 2026) — P0 security
+- Two-layer brute-force protection on all auth endpoints using slowapi (in-memory).
+  - **IP throttle** (slowapi decorators, honours `X-Forwarded-For` from Cloudflare/Railway):
+    - `/api/auth/login`, `/api/auth/2fa/verify`: 10 / 15 minutes
+    - `/api/auth/session`: 10 / minute (Google OAuth)
+    - `/api/auth/register`: 5 / hour
+    - `/api/auth/2fa/resend`: 3 / 5 minutes
+  - **Email throttle** (`utils/rate_limit.check_email_rate_limit`, in-memory rolling window):
+    - 5 failed login attempts per email per 15 minutes → 429 with `Retry-After`
+    - Counter resets on a successful credential check (`reset_email_attempts`)
+- Friendly 429 response bodies surfaced to the UI via existing `AuthContext.safeJson` flow.
+- New module: `/app/backend/utils/rate_limit.py`. Storage is in-process — swap `Limiter(storage_uri="redis://...")` when scaling to multiple Railway replicas.
+- Verified via curl: 6th failed attempt for same email → 429; 11th attempt from same IP → 429 (persistent across emails).
+
+
+
 ### Authenticated Customer Centre Agent (Feb 2026)
 - New protected page at `/customer-centre` powered by Claude Sonnet 4.5: logged-in customers chat with **Flow AI** to manage their account.
 - Endpoints (auth required): `POST /api/customer/agent/{start,chat,approve,cancel}` — multi-step with explicit Approve/Cancel before any action executes.

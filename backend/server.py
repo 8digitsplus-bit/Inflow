@@ -1,9 +1,14 @@
-from fastapi import FastAPI, APIRouter
+from fastapi import FastAPI, APIRouter, Request
+from fastapi.responses import JSONResponse
 from starlette.middleware.cors import CORSMiddleware
 import logging
 
 import os
 
+from slowapi.errors import RateLimitExceeded
+from slowapi.middleware import SlowAPIMiddleware
+
+from utils.rate_limit import limiter
 from database import client
 from routes.auth import router as auth_router
 from routes.deals import router as deals_router
@@ -28,6 +33,27 @@ logging.basicConfig(
 
 # Create the main app
 app = FastAPI()
+
+# Register the rate limiter (used via decorators on auth routes)
+app.state.limiter = limiter
+app.add_middleware(SlowAPIMiddleware)
+
+
+@app.exception_handler(RateLimitExceeded)
+async def _rate_limit_handler(request: Request, exc: RateLimitExceeded):
+    """Friendly 429 response for IP-throttled requests."""
+    retry_after = getattr(exc, "retry_after", 60)
+    return JSONResponse(
+        status_code=429,
+        content={
+            "detail": (
+                "Too many requests from your network. "
+                "Please wait a few minutes and try again."
+            )
+        },
+        headers={"Retry-After": str(retry_after)},
+    )
+
 
 # Create a router with the /api prefix
 api_router = APIRouter(prefix="/api")

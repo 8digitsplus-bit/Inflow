@@ -10,6 +10,12 @@ from database import db
 from models import User, RegisterRequest, LoginRequest, OnboardingData
 from dependencies import get_current_user
 from utils.email import send_email
+from utils.rate_limit import (
+    limiter,
+    check_email_rate_limit,
+    record_email_failure,
+    reset_email_attempts,
+)
 
 router = APIRouter()
 
@@ -68,6 +74,7 @@ async def _send_2fa_code(user_doc: dict) -> tuple:
 # ============== GOOGLE SESSION AUTH ==============
 
 @router.post("/auth/session")
+@limiter.limit("10/minute")
 async def create_session(request: Request, response: Response):
     """Exchange session_id for session_token"""
     data = await request.json()
@@ -209,7 +216,8 @@ async def logout(request: Request, response: Response):
 # ============== EMAIL/PASSWORD AUTH ==============
 
 @router.post("/auth/register")
-async def register_with_email(req: RegisterRequest, response: Response):
+@limiter.limit("5/hour")
+async def register_with_email(request: Request, req: RegisterRequest, response: Response):
     """Register with email and password"""
     existing = await db.users.find_one({"email": req.email}, {"_id": 0})
     if existing:
@@ -270,10 +278,15 @@ async def register_with_email(req: RegisterRequest, response: Response):
     user_doc["trial_days_left"] = 14
     return user_doc
 @router.post("/auth/login")
-async def login_with_email(req: LoginRequest, response: Response):
+@limiter.limit("10/15 minutes")
+async def login_with_email(request: Request, req: LoginRequest, response: Response):
     """Login with email and password — returns 2FA challenge if enabled"""
+    # Email-based throttle (prevents IP-rotating attackers from pounding one account)
+    check_email_rate_limit(req.email)
+
     user_doc = await db.users.find_one({"email": req.email}, {"_id": 0})
     if not user_doc:
+        record_email_failure(req.email)
         raise HTTPException(status_code=401, detail="Invalid email or password")
 
     stored_hash = user_doc.get("password_hash")
@@ -281,7 +294,11 @@ async def login_with_email(req: LoginRequest, response: Response):
         raise HTTPException(status_code=401, detail="This account uses social login. Please sign in with Google.")
 
     if not bcrypt.checkpw(req.password.encode("utf-8"), stored_hash.encode("utf-8")):
+        record_email_failure(req.email)
         raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    # Successful credential check — clear failure history
+    reset_email_attempts(req.email)
 
     # Check if 2FA is enabled
     if user_doc.get("two_fa_enabled"):
@@ -298,6 +315,7 @@ async def login_with_email(req: LoginRequest, response: Response):
 
 
 @router.post("/auth/2fa/verify")
+@limiter.limit("10/15 minutes")
 async def verify_2fa(request: Request, response: Response):
     """Verify OTP code and complete login"""
     data = await request.json()
@@ -374,6 +392,7 @@ async def disable_2fa(current_user: User = Depends(get_current_user)):
 
 
 @router.post("/auth/2fa/resend")
+@limiter.limit("3/5 minutes")
 async def resend_2fa_code(request: Request):
     """Re-send the OTP during login (public — needs only user_id from the prior /auth/login response)."""
     data = await request.json()
