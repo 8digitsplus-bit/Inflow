@@ -98,7 +98,7 @@ if _cors_env.strip() in ("", "*"):
     origins = [
         "http://localhost:3000",
         "http://localhost:8001",
-        "https://ai-analytics-20.preview.emergentagent.com",
+        "https://inflow-preview-1.preview.emergentagent.com",
     ]
 else:
     origins = [o.strip() for o in _cors_env.split(",") if o.strip()]

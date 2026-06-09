@@ -100,7 +100,7 @@ class TestStripeSeatSync:
 
         BASE_URL = os.environ.get(
             "BASE_URL",
-            "https://ai-analytics-20.preview.emergentagent.com",
+            "https://inflow-preview-1.preview.emergentagent.com",
         )
 
         session = requests.Session()
