@@ -34,16 +34,19 @@ ALLOWED_POLICY_IDS = {
 
 _UUID_RE = re.compile(r"^[0-9a-fA-F-]{36}$")
 
-# Termly forces a black brand background on the document body. Replace it with a
-# transparent background so the policy reads as dark text on our white surface.
-_BLACK_BG_RE = re.compile(
-    r"background:\s*#000000\s*!important", re.IGNORECASE
-)
+# Termly forces a black brand background on the document body and hardcodes
+# near-black text colours (meant for a white page). We strip ALL colour and
+# background declarations so the frontend can theme the policy to match our
+# dark site (light text on the dark background).
+_BG_RE = re.compile(r"(?<![-\w])background\s*:\s*[^;\"}]+;?", re.IGNORECASE)
+_COLOR_RE = re.compile(r"(?<![-\w])color\s*:\s*[^;\"}]+;?", re.IGNORECASE)
 
 
 def _sanitise(content: str) -> str:
-    """Neutralise Termly's forced black background and drop any scripts."""
-    content = _BLACK_BG_RE.sub("background: transparent !important", content)
+    """Strip Termly's forced colours/backgrounds and any scripts so the policy
+    can be themed by the frontend to match our dark site."""
+    content = _BG_RE.sub("", content)
+    content = _COLOR_RE.sub("", content)
     content = re.sub(
         r"<script\b[^>]*>.*?</script>", "", content, flags=re.DOTALL | re.IGNORECASE
     )
