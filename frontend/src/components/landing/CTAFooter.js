@@ -1,4 +1,4 @@
-import { ArrowRight, Mail, MapPin, Phone } from 'lucide-react';
+import { ArrowRight, Mail, MapPin } from 'lucide-react';
 import { Button } from '../ui/button';
 
 export const CTASection = ({ handleGetStarted }) => (
@@ -75,10 +75,6 @@ export const Footer = () => (
                 <Mail className="w-4 h-4 text-zinc-600 flex-shrink-0" />
                 support@inflowft.com
               </a>
-            </li>
-            <li className="flex items-center gap-2.5 text-sm text-zinc-500">
-              <Phone className="w-4 h-4 text-zinc-600 flex-shrink-0" />
-              +44 330 223 8021
             </li>
             <li className="flex items-start gap-2.5 text-sm text-zinc-500">
               <MapPin className="w-4 h-4 text-zinc-600 flex-shrink-0 mt-0.5" />
