@@ -78,11 +78,11 @@ export const Footer = () => (
             </li>
             <li className="flex items-center gap-2.5 text-sm text-zinc-500">
               <Phone className="w-4 h-4 text-zinc-600 flex-shrink-0" />
-              +1 (555) 000-0000
+              +44 330 223 8021
             </li>
             <li className="flex items-start gap-2.5 text-sm text-zinc-500">
               <MapPin className="w-4 h-4 text-zinc-600 flex-shrink-0 mt-0.5" />
-              San Francisco, CA
+              Greater London, UK
             </li>
           </ul>
         </div>
