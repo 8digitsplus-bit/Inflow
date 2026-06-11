@@ -76,6 +76,12 @@ export const Footer = () => (
                 Send us a message
               </a>
             </li>
+            <li>
+              <a href="mailto:support@inflowft.com" className="flex items-center gap-2.5 text-sm text-zinc-500 hover:text-white transition-colors" data-testid="footer-email-link">
+                <Mail className="w-4 h-4 text-zinc-600 flex-shrink-0" />
+                support@inflowft.com
+              </a>
+            </li>
             <li className="flex items-center gap-2.5 text-sm text-zinc-500">
               <Phone className="w-4 h-4 text-zinc-600 flex-shrink-0" />
               +44 330 223 8021
