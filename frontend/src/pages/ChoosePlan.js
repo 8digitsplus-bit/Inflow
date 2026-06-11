@@ -24,7 +24,6 @@ const PLANS = [
       'Core Analytics Dashboard',
       'Churn Monitoring',
       '2 live integrations',
-      'Email support',
     ],
   },
   {
@@ -65,7 +64,6 @@ const PLANS = [
       'Custom API access',
       'Smart Assist (AI)',
       'Revenue Intelligence',
-      'Dedicated support',
     ],
   },
 ];
