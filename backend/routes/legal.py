@@ -30,6 +30,7 @@ TERMLY_CONTENT_URL = (
 # Only allow known UUIDs to be proxied (prevents this becoming an open proxy).
 ALLOWED_POLICY_IDS = {
     "b2bacd1c-c041-49b6-ae03-a0e8c57fea3e",  # Privacy Policy
+    "d418110f-9ff8-4583-9d40-2cde4be2cfe0",  # Terms of Service
 }
 
 _UUID_RE = re.compile(r"^[0-9a-fA-F-]{36}$")
@@ -38,7 +39,7 @@ _UUID_RE = re.compile(r"^[0-9a-fA-F-]{36}$")
 # near-black text colours (meant for a white page). We strip ALL colour and
 # background declarations so the frontend can theme the policy to match our
 # dark site (light text on the dark background).
-_BG_RE = re.compile(r"(?<![-\w])background\s*:\s*[^;\"}]+;?", re.IGNORECASE)
+_BG_RE = re.compile(r"(?<![-\w])background(?:-color)?\s*:\s*[^;\"}]+;?", re.IGNORECASE)
 _COLOR_RE = re.compile(r"(?<![-\w])color\s*:\s*[^;\"}]+;?", re.IGNORECASE)
 
 
