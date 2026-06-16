@@ -31,6 +31,7 @@ TERMLY_CONTENT_URL = (
 ALLOWED_POLICY_IDS = {
     "b2bacd1c-c041-49b6-ae03-a0e8c57fea3e",  # Privacy Policy
     "d418110f-9ff8-4583-9d40-2cde4be2cfe0",  # Terms of Service
+    "9d85a543-e935-413d-b946-0dfab9170b2a",  # Cookie Policy
 }
 
 _UUID_RE = re.compile(r"^[0-9a-fA-F-]{36}$")
