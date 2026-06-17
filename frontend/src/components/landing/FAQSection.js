@@ -32,7 +32,7 @@ const faqs = [
   },
   {
     q: 'What kind of support do you offer?',
-    a: 'Email support on Essential, priority on Pro, dedicated account support on Enterprise. Smart Assist AI is built into the app on every tier to answer questions about your data instantly.',
+    a: 'Every plan includes Smart Assist — our in-app AI assistant plus a support ticket system. Pro and Enterprise tickets are handled with priority. You can also reach us anytime at support@inflowft.com.',
   },
 ];
 
