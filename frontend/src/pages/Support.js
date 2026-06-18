@@ -24,6 +24,7 @@ import {
   FileSearch,
   ArrowRightLeft,
   BrainCircuit,
+  Lock,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -79,12 +80,17 @@ const Support = () => {
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState('chat');
-  const [agentMode, setAgentMode] = useState(true);
+  const [agentMode, setAgentMode] = useState(false);
   const [showTicketModal, setShowTicketModal] = useState(false);
   const [ticketForm, setTicketForm] = useState({ subject: '', description: '' });
   const messagesEndRef = useRef(null);
 
   const isPriority = user?.subscription_tier?.includes('pro') || user?.subscription_tier?.includes('enterprise');
+  // Smart Assist AI (the data-investigating Agent mode) is Enterprise-only.
+  const isEnterprise = user?.subscription_tier?.includes('enterprise');
+
+  // Default to Agent mode for Enterprise users; everyone else uses basic chat.
+  useEffect(() => { setAgentMode(isEnterprise); }, [isEnterprise]);
 
   const fetchData = useCallback(async () => {
     try {
@@ -114,7 +120,7 @@ const Support = () => {
         const data = await res.json();
         setActiveConv(convId);
         setMessages(data.messages || []);
-        setAgentMode(data.mode === 'agent' || convId.startsWith('agent_'));
+        setAgentMode((data.mode === 'agent' || convId.startsWith('agent_')) && isEnterprise);
       }
     } catch (err) {
       console.error('Failed to load conversation:', err);
@@ -356,18 +362,27 @@ const Support = () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    {/* Agent Mode Toggle */}
+                    {/* Agent Mode Toggle (Smart Assist AI — Enterprise only) */}
                     <button
-                      onClick={() => setAgentMode(!agentMode)}
+                      onClick={() => {
+                        if (!isEnterprise) {
+                          toast.error('Smart Assist AI is an Enterprise feature. Upgrade to unlock the data-investigating agent.');
+                          return;
+                        }
+                        setAgentMode(!agentMode);
+                      }}
                       className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-medium border transition-all ${
-                        agentMode
+                        !isEnterprise
+                          ? 'bg-zinc-800/50 border-zinc-700 text-zinc-500 hover:text-amber-300 hover:border-amber-500/30'
+                          : agentMode
                           ? 'bg-violet-500/15 border-violet-500/30 text-violet-300'
                           : 'bg-zinc-800/50 border-zinc-700 text-zinc-500 hover:text-zinc-300 hover:border-zinc-600'
                       }`}
+                      title={!isEnterprise ? 'Smart Assist AI — Enterprise only' : undefined}
                       data-testid="agent-mode-toggle"
                     >
-                      <BrainCircuit className="w-3 h-3" />
-                      {agentMode ? 'Agent' : 'Basic'}
+                      {!isEnterprise ? <Lock className="w-3 h-3" /> : <BrainCircuit className="w-3 h-3" />}
+                      {!isEnterprise ? 'Agent (Enterprise)' : agentMode ? 'Agent' : 'Basic'}
                     </button>
                     <Button
                       size="sm"

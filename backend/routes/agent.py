@@ -355,6 +355,12 @@ def build_tools_description() -> str:
 @router.post("/support/agent")
 async def agent_chat(msg: AgentMessage, user: User = Depends(get_current_user)):
     """Agentic AI endpoint - can investigate data and take actions."""
+    # Smart Assist AI (Agent mode) is an Enterprise-only feature.
+    if "enterprise" not in (user.subscription_tier or "").lower():
+        raise HTTPException(
+            status_code=403,
+            detail="Smart Assist AI is an Enterprise feature. Upgrade to Enterprise to unlock the data-investigating AI agent.",
+        )
     try:
         from emergentintegrations.llm.chat import LlmChat, UserMessage
 

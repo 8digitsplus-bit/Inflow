@@ -32,7 +32,7 @@ const faqs = [
   },
   {
     q: 'What kind of support do you offer?',
-    a: 'Every plan includes Smart Assist — our in-app AI assistant plus a support ticket system. Pro and Enterprise tickets are handled with priority. You can also reach us anytime at support@inflowft.com.',
+    a: 'All plans include AI support chat and a ticket system, with priority handling on Pro and Enterprise. Smart Assist AI — our autonomous agent that investigates your data and takes actions — is exclusive to Enterprise. You can also reach us anytime at support@inflowft.com.',
   },
 ];
 
