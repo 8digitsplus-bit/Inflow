@@ -23,6 +23,7 @@ import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from './ui/alert-dialog';
 import { Toaster } from './ui/sonner';
 import TrialBanner from './TrialBanner';
+import LegalBanner from './LegalBanner';
 
 const TIER_LEVEL = {
   trial: 0, expired: -1, cancelled: -1, free: 0,
@@ -220,6 +221,7 @@ const DashboardLayout = ({ children }) => {
         </div>
         <div className="lg:pt-0 pt-12">
           <TrialBanner />
+          <LegalBanner />
           {children}
         </div>
       </main>

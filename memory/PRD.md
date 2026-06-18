@@ -13,6 +13,16 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
+### In-App Legal Update Notifications (Jun 2026) — P0 compliance
+- Logged-in users are notified in-app when a legal document (Terms, Privacy, Cookie Policy) changes.
+- Backend (`/app/backend/routes/legal.py`): versions tracked per doc in `db.legal_documents` via a content-hash of the visible text fetched from Termly (auto-bumps `version` + `effective_date` when wording/date changes). Per-user acknowledgement stored in `users.legal_ack` (`{doc_type: version}`).
+  - `GET /api/legal/updates` (auth) → returns docs whose current version is ahead of the user's ack. First-ever call silently brings the user current (no day-one banner).
+  - `POST /api/legal/ack` (auth) → records ack for given `doc_types` (or all).
+  - `GET /api/legal/policy/{id}` → sanitised Termly HTML for in-page dark-theme rendering.
+- Frontend: dismissible banner `/app/frontend/src/components/LegalBanner.js`, mounted in `DashboardLayout` (below `TrialBanner`). Shows "We've updated our …" with per-doc Review links (open in new tab) + "Got it" (acks via API, removes banner) + X (session-dismiss only). Scope per user choice = simple banner (no email blast, no blocking re-acceptance modal).
+- Tests: `/app/backend/tests/test_legal_notifications.py` (6 pass). Verified E2E in UI (banner appears, Review links, "Got it" clears).
+
+
 ### Login Rate Limiting (Feb 2026) — P0 security
 - Two-layer brute-force protection on all auth endpoints using slowapi (in-memory).
   - **IP throttle** (slowapi decorators, honours `X-Forwarded-For` from Cloudflare/Railway):
