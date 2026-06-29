@@ -1,4 +1,5 @@
 import { CreditCard, ShoppingBag, Users, Cloud, Calculator, Zap, Database, RefreshCw, Code2, FileSpreadsheet, Shield, Gauge } from 'lucide-react';
+import { GradientCard } from '../ui/gradient-card';
 
 const platforms = [
   { name: 'Stripe', desc: 'Payments & subscriptions', icon: CreditCard, color: '#635BFF' },
@@ -93,7 +94,7 @@ export const CustomIntegrationSection = () => (
     <div className="max-w-7xl mx-auto">
       <div className="reveal">
         <div className="text-center mb-14">
-          <span className="text-indigo-400 text-sm font-medium uppercase tracking-widest">Custom Integration</span>
+          <span className="text-zinc-400 text-sm font-medium uppercase tracking-widest">Custom Integration</span>
           <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>
             Your business. Your data sources.
           </h2>
@@ -103,14 +104,14 @@ export const CustomIntegrationSection = () => (
         </div>
       </div>
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-12">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 mb-12 items-stretch">
         {customBenefits.map((b, i) => (
-          <div key={i} className={`reveal reveal-delay-${Math.min(i + 1, 4)} group p-5 rounded-2xl border border-white/[0.08] bg-white/[0.03] backdrop-blur-xl hover:border-white/[0.15] hover:bg-white/[0.05] transition-all duration-300`} data-testid={`custom-benefit-${i}`}>
-            <div className={`w-10 h-10 rounded-xl ${b.bg} flex items-center justify-center mb-4`}>
-              <b.icon className={`w-5 h-5 ${b.color}`} />
-            </div>
-            <h3 className="text-sm font-semibold text-white mb-1.5 group-hover:text-indigo-300 transition-colors" style={{ fontFamily: 'Outfit' }}>{b.title}</h3>
-            <p className="text-sm text-zinc-500 leading-relaxed">{b.desc}</p>
+          <div
+            key={i}
+            className={`reveal reveal-delay-${Math.min(i + 1, 4)} h-full`}
+            data-testid={`custom-benefit-${i}`}
+          >
+            <GradientCard icon={b.icon} title={b.title} description={b.desc} />
           </div>
         ))}
       </div>
