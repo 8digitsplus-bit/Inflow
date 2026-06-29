@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { ArrowLeft, Mail, Loader2, Eye, EyeOff, ShieldCheck, User, ChevronRight, CheckCircle2 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
-import { GlassDotBackground } from '../components/ui/glass-dot-background';
+import { CanvasRevealEffect } from '../components/ui/canvas-reveal-effect';
 import { toast } from 'sonner';
 import { Toaster } from '../components/ui/sonner';
 
@@ -197,7 +197,17 @@ const AuthPage = () => {
 
   return (
     <div className="min-h-screen bg-[#050507] flex flex-col items-center justify-center px-4 relative overflow-hidden">
-      <GlassDotBackground />
+      <div className="absolute inset-0 z-0 pointer-events-none">
+        <CanvasRevealEffect
+          animationSpeed={3}
+          containerClassName="bg-[#050507]"
+          colors={[[255, 255, 255], [255, 255, 255]]}
+          dotSize={6}
+          reverse={false}
+        />
+        <div className="absolute inset-0" style={{ background: 'radial-gradient(circle at center, rgba(5,5,7,0.95) 0%, transparent 70%)' }} />
+        <div className="absolute inset-x-0 top-0 h-1/3 bg-gradient-to-b from-[#050507] to-transparent" />
+      </div>
 
       <button onClick={() => navigate('/')} className="absolute top-6 left-6 flex items-center gap-2 text-zinc-400 hover:text-white transition-colors z-10" data-testid="back-to-home">
         <ArrowLeft className="w-4 h-4" /><span className="text-sm">Home</span>
