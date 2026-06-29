@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { ArrowLeft, Mail, Loader2, Eye, EyeOff, ShieldCheck, User, ChevronRight, CheckCircle2 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
+import { GlassDotBackground } from '../components/ui/glass-dot-background';
 import { toast } from 'sonner';
 import { Toaster } from '../components/ui/sonner';
 
@@ -23,11 +24,11 @@ const AccountChooser = ({ savedAccount, onSelectAccount, onUseAnother, isActiveS
 
       <button
         onClick={onSelectAccount}
-        className="w-full flex items-center gap-3 p-4 rounded-xl bg-white/[0.03] border border-white/[0.08] backdrop-blur-xl hover:bg-white/[0.06] hover:border-indigo-500/30 transition-all duration-200 group"
+        className="w-full flex items-center gap-3 p-4 rounded-xl bg-white/[0.04] border border-white/10 backdrop-blur-xl hover:bg-white/[0.08] hover:border-white/25 transition-all duration-200 group"
         data-testid="saved-account-card"
       >
-        <div className="w-10 h-10 rounded-full bg-indigo-500/20 flex items-center justify-center shrink-0 relative">
-          <span className="text-sm font-semibold text-indigo-300">{initials}</span>
+        <div className="w-10 h-10 rounded-full bg-white/10 border border-white/15 flex items-center justify-center shrink-0 relative">
+          <span className="text-sm font-semibold text-white">{initials}</span>
           {isActiveSession && (
             <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-zinc-900 flex items-center justify-center" data-testid="active-session-dot">
               <CheckCircle2 className="w-2 h-2 text-white" strokeWidth={3} />
@@ -49,7 +50,7 @@ const AccountChooser = ({ savedAccount, onSelectAccount, onUseAnother, isActiveS
         className="w-full flex items-center gap-3 p-4 rounded-xl hover:bg-white/[0.04] transition-all duration-200 mt-2 group"
         data-testid="use-another-account-btn"
       >
-        <div className="w-10 h-10 rounded-full bg-zinc-800 border border-zinc-700 flex items-center justify-center shrink-0">
+        <div className="w-10 h-10 rounded-full bg-white/[0.04] border border-white/10 flex items-center justify-center shrink-0">
           <User className="w-4 h-4 text-zinc-400" />
         </div>
         <span className="text-sm text-zinc-400 group-hover:text-zinc-200 transition-colors">Use another account</span>
@@ -196,8 +197,7 @@ const AuthPage = () => {
 
   return (
     <div className="min-h-screen bg-[#050507] flex flex-col items-center justify-center px-4 relative overflow-hidden">
-      <div className="absolute inset-0 hero-glow pointer-events-none" />
-      <div className="absolute inset-0 noise-overlay pointer-events-none" />
+      <GlassDotBackground />
 
       <button onClick={() => navigate('/')} className="absolute top-6 left-6 flex items-center gap-2 text-zinc-400 hover:text-white transition-colors z-10" data-testid="back-to-home">
         <ArrowLeft className="w-4 h-4" /><span className="text-sm">Home</span>
@@ -210,17 +210,17 @@ const AuthPage = () => {
           </div>
         </div>
 
-        <div className="bg-zinc-900/60 border border-white/10 rounded-2xl p-8 backdrop-blur-xl">
+        <div className="bg-white/[0.04] border border-white/10 rounded-2xl p-8 backdrop-blur-2xl shadow-2xl shadow-black/40">
           {authLoading ? (
             <div className="flex items-center justify-center py-12" data-testid="auth-loading">
-              <Loader2 className="w-6 h-6 animate-spin text-indigo-400" />
+              <Loader2 className="w-6 h-6 animate-spin text-white/70" />
             </div>
           ) : twoFAState ? (
             /* 2FA Verification Step */
             <div data-testid="2fa-verify-form">
               <div className="flex justify-center mb-4">
-                <div className="w-12 h-12 rounded-full bg-indigo-500/10 flex items-center justify-center">
-                  <ShieldCheck className="w-6 h-6 text-indigo-400" />
+                <div className="w-12 h-12 rounded-full bg-white/10 border border-white/15 flex items-center justify-center">
+                  <ShieldCheck className="w-6 h-6 text-white" />
                 </div>
               </div>
               <h2 className="text-xl font-semibold text-white text-center mb-1" style={{ fontFamily: 'Outfit' }}>
@@ -241,7 +241,7 @@ const AuthPage = () => {
                     value={digit}
                     onChange={e => handleOtpChange(i, e.target.value)}
                     onKeyDown={e => handleOtpKeyDown(i, e)}
-                    className="w-11 h-13 text-center text-xl font-mono font-bold bg-zinc-800 border border-zinc-700 rounded-lg text-white focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 outline-none transition-colors"
+                    className="w-11 h-13 text-center text-xl font-mono font-bold bg-white/[0.04] border border-white/10 rounded-lg text-white focus:border-white/40 focus:ring-1 focus:ring-white/20 outline-none transition-colors backdrop-blur-sm"
                     data-testid={`otp-input-${i}`}
                     autoFocus={i === 0}
                   />
@@ -249,7 +249,7 @@ const AuthPage = () => {
               </div>
 
               <Button
-                className="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-medium h-11"
+                className="w-full bg-white text-zinc-950 hover:bg-zinc-200 font-medium h-11"
                 onClick={handleVerify2FA}
                 disabled={loading === '2fa' || otpDigits.join('').length < 6}
                 data-testid="verify-2fa-btn"
@@ -334,11 +334,11 @@ const AuthPage = () => {
               </Button>
 
               <div className="relative my-4">
-                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-zinc-800" /></div>
-                <div className="relative flex justify-center text-xs"><span className="bg-zinc-900/60 px-3 text-zinc-500">or</span></div>
+                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/10" /></div>
+                <div className="relative flex justify-center text-xs"><span className="px-3 text-zinc-500">or</span></div>
               </div>
 
-              <Button className="w-full bg-transparent hover:bg-zinc-800 text-zinc-300 font-medium h-11 gap-3 border border-zinc-700" onClick={() => setShowEmailForm(true)} data-testid="auth-email-btn">
+              <Button className="w-full bg-white/[0.04] hover:bg-white/[0.08] text-zinc-200 font-medium h-11 gap-3 border border-white/10 backdrop-blur-sm" onClick={() => setShowEmailForm(true)} data-testid="auth-email-btn">
                 <Mail className="w-5 h-5" />
                 Continue with Email
               </Button>
@@ -351,23 +351,23 @@ const AuthPage = () => {
               {mode === 'register' && (
                 <div>
                   <label className="text-sm text-zinc-400 mb-1.5 block">Full Name</label>
-                  <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="John Doe" className="bg-zinc-800 border-zinc-700 text-white h-11" data-testid="auth-name-input" />
+                  <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="John Doe" className="bg-white/[0.04] border-white/10 text-white placeholder:text-zinc-500 h-11 backdrop-blur-sm focus-visible:ring-white/20" data-testid="auth-name-input" />
                 </div>
               )}
               <div>
                 <label className="text-sm text-zinc-400 mb-1.5 block">Email</label>
-                <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="you@company.com" className="bg-zinc-800 border-zinc-700 text-white h-11" data-testid="auth-email-input" />
+                <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="you@company.com" className="bg-white/[0.04] border-white/10 text-white placeholder:text-zinc-500 h-11 backdrop-blur-sm focus-visible:ring-white/20" data-testid="auth-email-input" />
               </div>
               <div>
                 <label className="text-sm text-zinc-400 mb-1.5 block">Password</label>
                 <div className="relative">
-                  <Input type={showPassword ? 'text' : 'password'} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="Min. 6 characters" className="bg-zinc-800 border-zinc-700 text-white h-11 pr-10" data-testid="auth-password-input" />
+                  <Input type={showPassword ? 'text' : 'password'} value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} placeholder="Min. 6 characters" className="bg-white/[0.04] border-white/10 text-white placeholder:text-zinc-500 h-11 pr-10 backdrop-blur-sm focus-visible:ring-white/20" data-testid="auth-password-input" />
                   <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300">
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
               </div>
-              <Button type="submit" className="w-full bg-indigo-600 hover:bg-indigo-500 btn-glow h-11 font-medium" disabled={loading === 'email'} data-testid="auth-submit-btn">
+              <Button type="submit" className="w-full bg-white text-zinc-950 hover:bg-zinc-200 h-11 font-medium" disabled={loading === 'email'} data-testid="auth-submit-btn">
                 {loading === 'email' ? <Loader2 className="w-4 h-4 animate-spin" /> : mode === 'register' ? 'Create Account' : 'Sign In'}
               </Button>
             </form>
@@ -375,7 +375,7 @@ const AuthPage = () => {
 
           <p className="text-sm text-zinc-400 text-center mt-6">
             {mode === 'register' ? 'Already have an account?' : "Don't have an account?"}{' '}
-            <button onClick={() => { setMode(mode === 'register' ? 'login' : 'register'); resetForms(); }} className="text-indigo-400 hover:text-indigo-300 font-medium transition-colors" data-testid="auth-toggle-mode">
+            <button onClick={() => { setMode(mode === 'register' ? 'login' : 'register'); resetForms(); }} className="text-white hover:text-zinc-300 font-medium transition-colors underline underline-offset-2" data-testid="auth-toggle-mode">
               {mode === 'register' ? 'Sign in' : 'Sign up'}
             </button>
           </p>
