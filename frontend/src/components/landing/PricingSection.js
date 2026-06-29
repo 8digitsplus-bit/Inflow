@@ -96,7 +96,10 @@ export const PricingSection = ({ handleGetStarted, isAuthenticated }) => {
                 <List className="flex-1">
                   {plan.features.map((feature, j) => (
                     <ListItem key={j}>
-                      <Check className="w-5 h-5 text-emerald-400 flex-shrink-0" /> {feature}
+                      <span className="mt-0.5 flex h-4 w-4 flex-shrink-0 items-center justify-center rounded-full bg-white/10 border border-white/20">
+                        <Check className="w-2.5 h-2.5 text-white" strokeWidth={3} />
+                      </span>
+                      {feature}
                     </ListItem>
                   ))}
                 </List>
