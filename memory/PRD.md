@@ -13,6 +13,12 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
+### Checkout Page Glass UI Revamp (Jun 2026) — P0 conversion funnel
+- Rebuilt `/app/frontend/src/pages/Checkout.js` to match the sitewide white-on-glass aesthetic (Hero/Pricing/Auth): translucent `bg-white/[0.04]` backdrop-blur order-summary card, glass halos, white circle ticks (replacing emerald), dropped indigo accents, Framer Motion blur-in reveals, ambient glows. Columns aligned with `items-start`.
+- LIVE Stripe Embedded Checkout fully preserved: `fetchClientSecret()` → `POST /api/payments/create-checkout` {plan, origin_url, users}; `EmbeddedCheckoutProvider`/`EmbeddedCheckout` kept on a clean light card (Stripe's embedded UI is light-themed and not controllable). Trial/seat math and all `data-testid`s unchanged.
+- Verified (testing_agent iteration_38, 100% frontend): glass UI renders, Stripe iframe mounts (js.stripe.com), pro_yearly+3 / essential_monthly+1 scenarios, back-btn → /choose-plan, no layout overlap at 1920x800. Backend verified via curl (login → /api/auth/me → create-checkout returns client_secret).
+
+
 ### In-App Legal Update Notifications (Jun 2026) — P0 compliance
 - Logged-in users are notified in-app when a legal document (Terms, Privacy, Cookie Policy) changes.
 - Backend (`/app/backend/routes/legal.py`): versions tracked per doc in `db.legal_documents` via a content-hash of the visible text fetched from Termly (auto-bumps `version` + `effective_date` when wording/date changes). Per-user acknowledgement stored in `users.legal_ack` (`{doc_type: version}`).

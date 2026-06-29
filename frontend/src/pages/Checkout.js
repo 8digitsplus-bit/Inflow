@@ -154,7 +154,7 @@ const Checkout = () => {
         </motion.div>
 
         {/* Two-column: Summary (left) + Stripe iframe (right) */}
-        <div className="grid lg:grid-cols-12 gap-4 lg:gap-5 items-center">
+        <div className="grid lg:grid-cols-12 gap-4 lg:gap-5 items-start">
 
           {/* Left: Summary card */}
           <motion.div
