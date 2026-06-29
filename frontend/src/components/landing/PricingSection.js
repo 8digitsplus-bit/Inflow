@@ -2,6 +2,22 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Check, ChevronRight, Users } from 'lucide-react';
 import { Button } from '../ui/button';
+import { cn } from '../../lib/utils';
+import {
+  Card,
+  Header,
+  Plan,
+  PlanName,
+  Badge,
+  Price,
+  MainPrice,
+  Period,
+  OriginalPrice,
+  Description,
+  Body,
+  List,
+  ListItem,
+} from '../ui/pricing-card';
 
 const plans = {
   monthly: [
@@ -22,12 +38,9 @@ export const PricingSection = ({ handleGetStarted, isAuthenticated }) => {
 
   const handlePlanClick = (plan) => {
     if (!isAuthenticated) {
-      // Unauthenticated → start a free trial (no card). User picks a paid plan
-      // later from inside the app when ready to upgrade.
       handleGetStarted();
       return;
     }
-    // Logged-in user wants to upgrade → seat selector on /choose-plan
     navigate(`/choose-plan`);
   };
 
@@ -35,12 +48,12 @@ export const PricingSection = ({ handleGetStarted, isAuthenticated }) => {
     <section id="pricing" className="py-24 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         <div className="text-center mb-12 reveal">
-          <span className="text-indigo-400 text-sm font-medium uppercase tracking-widest">Pricing</span>
+          <span className="text-zinc-400 text-sm font-medium uppercase tracking-widest">Pricing</span>
           <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>Unlock full access</h2>
           <p className="mt-4 text-zinc-400">Start growing. Scale as you need.</p>
-          <div className="mt-8 inline-flex items-center p-1 bg-zinc-900 rounded-full border border-zinc-800 relative" data-testid="billing-toggle">
+          <div className="mt-8 inline-flex items-center p-1 bg-white/[0.04] rounded-full border border-white/10 backdrop-blur-md relative" data-testid="billing-toggle">
             <div
-              className="absolute top-1 bottom-1 rounded-full bg-indigo-600 shadow-lg shadow-indigo-500/25 transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)]"
+              className="absolute top-1 bottom-1 rounded-full bg-white/15 border border-white/20 backdrop-blur-sm transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)]"
               style={{
                 width: 'calc(50% - 4px)',
                 left: billingPeriod === 'monthly' ? '4px' : 'calc(50%)',
@@ -55,39 +68,52 @@ export const PricingSection = ({ handleGetStarted, isAuthenticated }) => {
           </div>
         </div>
 
-        <div className="grid md:grid-cols-3 gap-8">
+        <div className="grid md:grid-cols-3 gap-8 items-stretch max-w-5xl mx-auto">
           {plans[billingPeriod].map((plan, i) => (
-            <div key={i} className={`pricing-card ${plan.featured ? 'featured' : ''}`} data-testid={`pricing-card-${plan.name.toLowerCase()}`}>
-              {plan.savings && (
-                <div className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-medium mb-4">
-                  {plan.savings}
-                </div>
-              )}
-              <h3 className="text-xl font-semibold text-white" style={{ fontFamily: 'Outfit' }}>{plan.name}</h3>
-              <div className="mt-4 flex items-baseline gap-2 flex-wrap">
-                <span className="text-4xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>${plan.price}</span>
-                {plan.originalPrice && <span className="text-lg text-zinc-500 line-through">${plan.originalPrice}</span>}
-                <span className="text-zinc-400">{plan.period}</span>
-              </div>
-              {plan.perUser && (
-                <p className="mt-2 text-xs text-purple-400 flex items-center gap-1.5">
-                  <Users className="w-3.5 h-3.5" />
-                  Choose any number of seats
-                </p>
-              )}
-              <ul className="mt-8 space-y-4">
-                {plan.features.map((feature, j) => (
-                  <li key={j} className="flex items-center gap-3 text-zinc-300">
-                    <Check className="w-5 h-5 text-emerald-400 flex-shrink-0" />
-                    {feature}
-                  </li>
-                ))}
-              </ul>
-              <Button className={`w-full mt-8 ${plan.featured ? 'bg-indigo-600 hover:bg-indigo-500 btn-glow' : 'bg-zinc-800 hover:bg-zinc-700 border border-zinc-700'}`}
-                onClick={() => handlePlanClick(plan)} data-testid={`pricing-cta-${plan.name.toLowerCase()}`}>
-                {plan.cta} <ChevronRight className="w-4 h-4 ml-1" />
-              </Button>
-            </div>
+            <Card key={i} featured={plan.featured} data-testid={`pricing-card-${plan.name.toLowerCase()}`}>
+              <Header>
+                <Plan>
+                  <PlanName>
+                    {plan.name}
+                    {plan.featured && <Badge className="border-white/30 text-white">Popular</Badge>}
+                  </PlanName>
+                  {plan.savings && (
+                    <Badge className="border-emerald-400/30 bg-emerald-500/10 text-emerald-300">{plan.savings}</Badge>
+                  )}
+                </Plan>
+                <Price>
+                  <MainPrice>${plan.price}</MainPrice>
+                  {plan.originalPrice && <OriginalPrice>${plan.originalPrice}</OriginalPrice>}
+                  <Period>{plan.period}</Period>
+                </Price>
+                {plan.perUser && (
+                  <Description className="flex items-center gap-1.5">
+                    <Users className="w-3.5 h-3.5" /> Choose any number of seats
+                  </Description>
+                )}
+              </Header>
+              <Body>
+                <List className="flex-1">
+                  {plan.features.map((feature, j) => (
+                    <ListItem key={j}>
+                      <Check className="w-5 h-5 text-emerald-400 flex-shrink-0" /> {feature}
+                    </ListItem>
+                  ))}
+                </List>
+                <Button
+                  className={cn(
+                    'w-full mt-6',
+                    plan.featured
+                      ? 'bg-white text-zinc-950 hover:bg-zinc-200'
+                      : 'bg-white/10 text-white border border-white/15 hover:bg-white/20 backdrop-blur-sm',
+                  )}
+                  onClick={() => handlePlanClick(plan)}
+                  data-testid={`pricing-cta-${plan.name.toLowerCase()}`}
+                >
+                  {plan.cta} <ChevronRight className="w-4 h-4 ml-1" />
+                </Button>
+              </Body>
+            </Card>
           ))}
         </div>
       </div>
