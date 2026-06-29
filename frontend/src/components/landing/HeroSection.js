@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { Button } from '../ui/button';
 import { AnimatedGroup } from '../ui/animated-group';
@@ -16,6 +17,7 @@ const transitionVariants = {
 };
 
 export const HeroSection = ({ handleGetStarted }) => {
+  const navigate = useNavigate();
   const scrollTo = (id) => document.querySelector(id)?.scrollIntoView({ behavior: 'smooth' });
 
   return (
@@ -31,11 +33,11 @@ export const HeroSection = ({ handleGetStarted }) => {
         <AnimatedGroup variants={transitionVariants}>
           {/* Announcement pill */}
           <button
-            onClick={() => scrollTo('#features')}
+            onClick={() => navigate('/contact')}
             className="group mx-auto flex w-fit items-center gap-3 rounded-full border border-white/10 bg-white/5 p-1 pl-4 backdrop-blur-md transition-all duration-300 hover:border-white/20 hover:bg-white/[0.08]"
             data-testid="hero-announcement-pill"
           >
-            <span className="text-sm text-zinc-300">Introducing AI Smart Assist</span>
+            <span className="text-sm text-zinc-300">AI Smart Assist</span>
             <span className="block h-4 w-px bg-white/20" />
             <div className="size-6 overflow-hidden rounded-full bg-indigo-600">
               <div className="flex w-12 -translate-x-1/2 duration-500 ease-in-out group-hover:translate-x-0">
