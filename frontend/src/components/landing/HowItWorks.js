@@ -121,6 +121,7 @@ export const CustomIntegrationSection = () => (
           icon={Code2}
           title="Custom API"
           badge="Enterprise"
+          className="min-h-[200px]"
           description="Define your endpoint URL, authentication headers, and data mapping. InFlow handles the sync schedule, error retries, and data flows automatically."
         />
       </div>
