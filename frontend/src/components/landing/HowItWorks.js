@@ -117,20 +117,12 @@ export const CustomIntegrationSection = () => (
       </div>
 
       <div className="reveal">
-        <div className="relative bg-white/[0.03] border border-white/[0.08] rounded-2xl p-6 sm:p-8 backdrop-blur-xl overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/[0.04] blur-[80px] rounded-full pointer-events-none" />
-          <div className="relative flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <h3 className="text-base font-semibold text-white" style={{ fontFamily: 'Outfit' }}>Custom API</h3>
-                <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-purple-500/15 text-purple-400 border border-purple-500/20">Enterprise</span>
-              </div>
-              <p className="text-sm text-zinc-400 max-w-lg">
-                Define your endpoint URL, authentication headers, and data mapping. InFlow handles the sync schedule, error retries, and data flows automatically.
-              </p>
-            </div>
-          </div>
-        </div>
+        <GradientCard
+          icon={Code2}
+          title="Custom API"
+          badge="Enterprise"
+          description="Define your endpoint URL, authentication headers, and data mapping. InFlow handles the sync schedule, error retries, and data flows automatically."
+        />
       </div>
     </div>
   </section>

@@ -8,7 +8,7 @@ import { cn } from '../../lib/utils';
  * subtle 3D rotation and layers glass reflection, noise texture and a
  * purple/cyan glow. Renders any lucide icon passed via the `icon` prop.
  */
-export const GradientCard = ({ icon: Icon, title, description, className }) => {
+export const GradientCard = ({ icon: Icon, title, description, badge, className }) => {
   const cardRef = useRef(null);
   const [isHovered, setIsHovered] = useState(false);
   const [rotation, setRotation] = useState({ x: 0, y: 0 });
@@ -118,9 +118,16 @@ export const GradientCard = ({ icon: Icon, title, description, className }) => {
           {Icon && <Icon className="relative z-10 h-5 w-5 text-white" />}
         </div>
 
-        <h3 className="mb-3 text-xl font-medium text-white" style={{ fontFamily: 'Outfit', letterSpacing: '-0.01em' }}>
-          {title}
-        </h3>
+        <div className="mb-3 flex items-center gap-2">
+          <h3 className="text-xl font-medium text-white" style={{ fontFamily: 'Outfit', letterSpacing: '-0.01em' }}>
+            {title}
+          </h3>
+          {badge && (
+            <span className="rounded-full border border-white/20 bg-white/10 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-white">
+              {badge}
+            </span>
+          )}
+        </div>
         <p className="text-sm leading-relaxed text-gray-300/80">{description}</p>
       </div>
     </motion.div>
