@@ -24,9 +24,9 @@ export const HeroSection = ({ handleGetStarted }) => {
     <section className="landing-hero relative overflow-hidden pt-32 pb-20 px-4 sm:px-6 lg:px-8">
       {/* Ambient glass glows */}
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10">
-        <div className="absolute left-1/2 top-0 -translate-x-1/2 h-[40rem] w-[40rem] rounded-full bg-indigo-500/10 blur-[120px]" />
-        <div className="absolute left-0 top-24 h-[28rem] w-[18rem] -rotate-45 rounded-full bg-cyan-500/[0.06] blur-[100px]" />
-        <div className="absolute right-0 top-40 h-[28rem] w-[18rem] rotate-45 rounded-full bg-indigo-600/[0.06] blur-[100px]" />
+        <div className="absolute left-1/2 top-0 -translate-x-1/2 h-[40rem] w-[40rem] rounded-full bg-white/[0.07] blur-[120px]" />
+        <div className="absolute left-0 top-24 h-[28rem] w-[18rem] -rotate-45 rounded-full bg-white/[0.04] blur-[100px]" />
+        <div className="absolute right-0 top-40 h-[28rem] w-[18rem] rotate-45 rounded-full bg-white/[0.04] blur-[100px]" />
       </div>
 
       <div className="max-w-5xl mx-auto relative z-10 text-center">
@@ -95,8 +95,8 @@ export const HeroSection = ({ handleGetStarted }) => {
         className="relative z-10"
       >
         <div className="relative mx-auto mt-16 max-w-5xl px-2">
-          <div className="absolute -inset-4 bg-indigo-500/20 blur-3xl rounded-3xl animate-pulse-glow" />
-          <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-2 shadow-2xl shadow-indigo-500/10 backdrop-blur-sm">
+          <div className="absolute -inset-4 bg-white/10 blur-3xl rounded-3xl animate-pulse-glow" />
+          <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-white/5 p-2 shadow-2xl shadow-white/10 backdrop-blur-sm">
             <div
               aria-hidden
               className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-32 bg-gradient-to-b from-transparent to-[#050507]"

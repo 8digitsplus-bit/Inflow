@@ -13,6 +13,9 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
+### Landing Ambient Glows → Glass (Jun 2026) — UI
+- Converted all large soft ambient background glows on the landing page from indigo/cyan to neutral glass-white to match the glass aesthetic: `HeroSection.js` (3 corner glows + dashboard-preview halo + shadow), `CTAFooter.js` (CTA radial + 2 footer glows; swapped the shared `hero-glow` class for an inline white radial so non-landing pages using `.hero-glow` are unaffected), `HowItWorks.js` integrations-panel glow. Neutralized the landing-only `@keyframes pulse-glow` to white. Brand text gradient & buttons intentionally left as-is. Hero verified visually; compiles clean.
+
 ### Glow-Ray Cards — Features & Custom Integration (Jun 2026) — UI
 - Rewrote shared `/app/frontend/src/components/ui/gradient-card.jsx` from the 3D-tilt card into a 21st.dev-style glow-ray glass card (rotating light ray, a glowing dot that travels the border via `@keyframes glow-moveDot`, inset gradient frame lines). Kept the same prop API (`icon`/`title`/`description`/`badge`/`className`) so `FeaturesSection.js` (6 cards) and `HowItWorks.js`→`CustomIntegrationSection` (4 + wide Custom API card) update automatically.
 - CSS lives in `index.css` under prefixed classes (`.glow-outer/.glow-card/.glow-ray/.glow-dot/.glow-line` + `glow-topl/leftl/bottoml/rightl`). Monochrome white/silver glow to match the white-on-glass aesthetic. Verified visually via a temporary preview route (since the screenshot tool only captures top-of-page); route since removed. Compiles clean.

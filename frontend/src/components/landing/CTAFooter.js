@@ -5,7 +5,7 @@ export const CTASection = ({ handleGetStarted }) => (
   <section className="py-24 px-4 sm:px-6 lg:px-8">
     <div className="max-w-4xl mx-auto text-center reveal-scale">
       <div className="relative">
-        <div className="absolute inset-0 hero-glow" />
+        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(circle at center, rgba(255,255,255,0.06) 0%, transparent 70%)' }} />
         <div className="cta-card relative bg-white/[0.04] border border-white/[0.1] rounded-3xl p-12 backdrop-blur-xl">
           <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4" style={{ fontFamily: 'Outfit' }}>
             Ready to optimize your pricing?
@@ -25,8 +25,8 @@ export const CTASection = ({ handleGetStarted }) => (
 export const Footer = () => (
   <footer className="relative overflow-hidden border-t border-white/[0.06]" data-testid="main-footer">
     {/* Background ambient glow */}
-    <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-full bg-indigo-500/[0.04] blur-[120px] pointer-events-none" />
-    <div className="absolute -bottom-20 right-0 w-[400px] h-[200px] rounded-full bg-cyan-500/[0.03] blur-[100px] pointer-events-none" />
+    <div className="absolute -top-40 left-1/2 -translate-x-1/2 w-[600px] h-[300px] rounded-full bg-white/[0.05] blur-[120px] pointer-events-none" />
+    <div className="absolute -bottom-20 right-0 w-[400px] h-[200px] rounded-full bg-white/[0.035] blur-[100px] pointer-events-none" />
 
     <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       {/* Main footer grid */}

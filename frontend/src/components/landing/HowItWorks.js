@@ -48,7 +48,7 @@ export const ConnectBusinessSection = () => {
           </div>
 
           <div className="relative reveal-right">
-            <div className="absolute -inset-4 bg-indigo-500/5 blur-3xl rounded-3xl" />
+            <div className="absolute -inset-4 bg-white/[0.04] blur-3xl rounded-3xl" />
             <div className="relative bg-white/[0.03] border border-white/[0.08] rounded-2xl p-6 backdrop-blur-xl">
               <div className="flex items-center gap-2 mb-5">
                 <Zap className="w-4 h-4 text-indigo-400" />
