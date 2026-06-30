@@ -362,7 +362,7 @@ const ConversionOptimization = () => {
               <Button
                 onClick={getAIRecommendations}
                 disabled={loadingAI}
-                className="bg-purple-600 hover:bg-purple-500 w-full sm:w-auto sm:ml-auto flex-shrink-0"
+                className="bg-white/10 hover:bg-white/20 w-full sm:w-auto sm:ml-auto flex-shrink-0"
                 data-testid="get-ai-recs-btn"
               >
                 {loadingAI ? (
@@ -381,7 +381,7 @@ const ConversionOptimization = () => {
                   Upgrade to Pro for AI-powered CRO recommendations
                 </p>
                 <Button 
-                  className="bg-purple-600 hover:bg-purple-500"
+                  className="bg-white/10 hover:bg-white/20"
                   onClick={() => window.location.href = '/settings'}
                 >
                   Upgrade Now

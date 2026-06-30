@@ -259,7 +259,7 @@ const AuthPage = () => {
               </div>
 
               <Button
-                className="w-full bg-white text-zinc-950 hover:bg-zinc-200 font-medium h-11"
+                className="w-full bg-white/10 text-white hover:bg-white/20 font-medium h-11"
                 onClick={handleVerify2FA}
                 disabled={loading === '2fa' || otpDigits.join('').length < 6}
                 data-testid="verify-2fa-btn"
@@ -377,7 +377,7 @@ const AuthPage = () => {
                   </button>
                 </div>
               </div>
-              <Button type="submit" className="w-full bg-white text-zinc-950 hover:bg-zinc-200 h-11 font-medium" disabled={loading === 'email'} data-testid="auth-submit-btn">
+              <Button type="submit" className="w-full bg-white/10 text-white hover:bg-white/20 h-11 font-medium" disabled={loading === 'email'} data-testid="auth-submit-btn">
                 {loading === 'email' ? <Loader2 className="w-4 h-4 animate-spin" /> : mode === 'register' ? 'Create Account' : 'Sign In'}
               </Button>
             </form>

@@ -388,7 +388,7 @@ const ChurnRetention = () => {
                 <div className="text-center py-8">
                   <Sparkles className="w-10 h-10 text-purple-400/50 mx-auto mb-3" />
                   <p className="text-zinc-400 text-sm mb-4">Upgrade to Pro for AI-powered churn predictions</p>
-                  <Button className="bg-purple-600 hover:bg-purple-500" onClick={() => window.location.href = '/settings'}>Upgrade Now</Button>
+                  <Button className="bg-white/10 hover:bg-white/20" onClick={() => window.location.href = '/settings'}>Upgrade Now</Button>
                 </div>
               ) : aiPrediction ? (
                 <div className="max-h-[360px] overflow-y-auto"><AIResponseRenderer text={aiPrediction} /></div>

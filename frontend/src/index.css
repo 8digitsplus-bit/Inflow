@@ -273,8 +273,6 @@ h1, h2, h3, h4, h5, h6 {
 .btn-glow {
   position: relative;
   overflow: hidden;
-  box-shadow: 0 0 12px rgba(255, 255, 255, 0.08);
-  transition: box-shadow 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .btn-glow::before {
@@ -300,16 +298,6 @@ h1, h2, h3, h4, h5, h6 {
 .btn-glow:hover::before {
   left: 130%;
   transition: left 0.6s ease;
-}
-
-.btn-glow:hover {
-  box-shadow: 0 0 32px rgba(255, 255, 255, 0.18);
-  transform: translateY(-1px);
-}
-
-.btn-glow:active {
-  transform: translateY(0) scale(0.98);
-  box-shadow: 0 0 16px rgba(255, 255, 255, 0.12);
 }
 
 /* Pricing card hover */

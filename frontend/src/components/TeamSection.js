@@ -168,7 +168,7 @@ export default function TeamSection() {
                 <Button
                   size="sm"
                   onClick={() => window.location.assign('/choose-plan')}
-                  className="bg-purple-600 hover:bg-purple-500 text-xs h-8"
+                  className="bg-white/10 hover:bg-white/20 text-xs h-8"
                   data-testid="upgrade-for-team-btn"
                 >
                   Upgrade to Enterprise

@@ -539,7 +539,7 @@ const Dashboard = () => {
                       <div className="max-h-[120px] overflow-y-auto"><AIResponseRenderer text={aiInsight.substring(0, 300)} /></div>
                     ) : (
                       <div className="text-center py-4">
-                        <Button onClick={getAIInsight} disabled={loadingInsight} size="sm" className="bg-purple-600 hover:bg-purple-500 h-8 text-xs">
+                        <Button onClick={getAIInsight} disabled={loadingInsight} size="sm" className="bg-white/10 hover:bg-white/20 h-8 text-xs">
                           {loadingInsight ? 'Analyzing...' : 'Generate Insights'}
                         </Button>
                       </div>

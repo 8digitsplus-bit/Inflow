@@ -107,7 +107,7 @@ export const PricingSection = ({ handleGetStarted, isAuthenticated }) => {
                   className={cn(
                     'w-full mt-6',
                     plan.featured
-                      ? 'bg-white text-zinc-950 hover:bg-zinc-200'
+                      ? 'bg-white/10 text-white hover:bg-white/20'
                       : 'bg-white/10 text-white border border-white/15 hover:bg-white/20 backdrop-blur-sm',
                   )}
                   onClick={() => handlePlanClick(plan)}

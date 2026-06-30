@@ -13,6 +13,10 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
+### Sitewide Liquid-Glass Buttons (Jun 2026) — UI
+- Rewrote shared `/app/frontend/src/components/ui/button.jsx` into a frosted liquid-glass button: translucent white bg + layered inset box-shadow "glass lens" (`GLASS_LENS`) + `backdrop-blur` + hover scale, `rounded-full`. Kept the full shadcn API (variants default/destructive/outline/secondary = glass; ghost/link = minimal text; sizes default/sm/lg/icon; `asChild`). The SVG displacement filter from the source was omitted (Firefox-only; no visible effect in Chrome/Safari/Edge). Verified clickable + non-blocking (testing_agent iteration_39, 5/5 flows pass).
+- Neutralized explicit non-glass overrides site-wide so every button matches: `bg-indigo-600 hover:bg-indigo-500` (35 spots) + `bg-violet-600`/`bg-purple-600 hover:bg-purple-500` (AI/action buttons) + white pills `bg-white text-zinc-950 hover:bg-zinc-200` (auth submit, featured pricing CTA) → `bg-white/10 hover:bg-white/20 text-white`. Gutted `.btn-glow` in `index.css` (removed its box-shadow/transform overrides that hid the lens; kept the shine-streak). Google OAuth button kept white (brand).
+
 ### Landing Ambient Glows → Glass (Jun 2026) — UI
 - Converted all large soft ambient background glows on the landing page from indigo/cyan to neutral glass-white to match the glass aesthetic: `HeroSection.js` (3 corner glows + dashboard-preview halo + shadow), `CTAFooter.js` (CTA radial + 2 footer glows; swapped the shared `hero-glow` class for an inline white radial so non-landing pages using `.hero-glow` are unaffected), `HowItWorks.js` integrations-panel glow. Neutralized the landing-only `@keyframes pulse-glow` to white. Brand text gradient & buttons intentionally left as-is. Hero verified visually; compiles clean.
 
