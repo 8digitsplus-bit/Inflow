@@ -438,3 +438,86 @@ h1, h2, h3, h4, h5, h6 {
   border-radius: 0.5rem !important;
   box-shadow: 0 4px 20px rgba(0,0,0,0.8) !important;
 }
+
+
+/* ── Glow-ray card (landing Features & Custom-Integration cards) ── */
+@keyframes glow-moveDot {
+  0%, 100% { top: 10%;  right: 10%; }
+  25%      { top: 10%;  right: 90%; }
+  50%      { top: 90%;  right: 90%; }
+  75%      { top: 90%;  right: 10%; }
+}
+
+.glow-outer {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  border-radius: 16px;
+  padding: 1px;
+  background: radial-gradient(circle 240px at 0% 0%, #50515b, #0a0b0d);
+  transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.glow-outer:hover {
+  transform: translateY(-5px);
+}
+
+.glow-dot {
+  position: absolute;
+  top: 10%;
+  right: 10%;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background-color: #fff;
+  box-shadow: 0 0 12px 1px rgba(255, 255, 255, 0.9);
+  z-index: 4;
+  animation: glow-moveDot 6s linear infinite;
+}
+
+.glow-card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  border-radius: 15px;
+  border: solid 1px #1c1d22;
+  background: radial-gradient(circle 320px at 0% 0%, #1a1b22, #08090b);
+  overflow: hidden;
+  color: #fff;
+}
+
+.glow-ray {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 240px;
+  height: 50px;
+  border-radius: 100px;
+  background-color: #c7c7c7;
+  opacity: 0.35;
+  box-shadow: 0 0 55px 5px rgba(255, 255, 255, 0.55);
+  filter: blur(12px);
+  transform-origin: 10% 0;
+  transform: rotate(40deg);
+  z-index: 1;
+  pointer-events: none;
+  transition: opacity 0.45s ease;
+}
+
+.glow-outer:hover .glow-ray {
+  opacity: 0.5;
+}
+
+.glow-line {
+  position: absolute;
+  background-color: #26272d;
+  z-index: 1;
+  pointer-events: none;
+}
+.glow-topl    { top: 10%;    left: 0; width: 100%; height: 1px; background: linear-gradient(90deg, #8a8a93 30%, #18191d 70%); }
+.glow-bottoml { bottom: 10%; left: 0; width: 100%; height: 1px; }
+.glow-leftl   { left: 10%;   top: 0;  width: 1px;  height: 100%; background: linear-gradient(180deg, #75757e 30%, #1e1f24 70%); }
+.glow-rightl  { right: 10%;  top: 0;  width: 1px;  height: 100%; }

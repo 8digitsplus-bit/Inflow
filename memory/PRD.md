@@ -13,6 +13,11 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
+### Glow-Ray Cards — Features & Custom Integration (Jun 2026) — UI
+- Rewrote shared `/app/frontend/src/components/ui/gradient-card.jsx` from the 3D-tilt card into a 21st.dev-style glow-ray glass card (rotating light ray, a glowing dot that travels the border via `@keyframes glow-moveDot`, inset gradient frame lines). Kept the same prop API (`icon`/`title`/`description`/`badge`/`className`) so `FeaturesSection.js` (6 cards) and `HowItWorks.js`→`CustomIntegrationSection` (4 + wide Custom API card) update automatically.
+- CSS lives in `index.css` under prefixed classes (`.glow-outer/.glow-card/.glow-ray/.glow-dot/.glow-line` + `glow-topl/leftl/bottoml/rightl`). Monochrome white/silver glow to match the white-on-glass aesthetic. Verified visually via a temporary preview route (since the screenshot tool only captures top-of-page); route since removed. Compiles clean.
+
+
 ### Checkout Page Glass UI Revamp (Jun 2026) — P0 conversion funnel
 - Rebuilt `/app/frontend/src/pages/Checkout.js` to match the sitewide white-on-glass aesthetic (Hero/Pricing/Auth): translucent `bg-white/[0.04]` backdrop-blur order-summary card, glass halos, white circle ticks (replacing emerald), dropped indigo accents, Framer Motion blur-in reveals, ambient glows. Columns aligned with `items-start`.
 - LIVE Stripe Embedded Checkout fully preserved: `fetchClientSecret()` → `POST /api/payments/create-checkout` {plan, origin_url, users}; `EmbeddedCheckoutProvider`/`EmbeddedCheckout` kept on a clean light card (Stripe's embedded UI is light-themed and not controllable). Trial/seat math and all `data-testid`s unchanged.
