@@ -229,7 +229,7 @@ const Pipeline = () => {
             <p className="text-zinc-400 mt-1 text-sm">Manage, track, and close your deals</p>
           </div>
           <Button
-            className="bg-indigo-600 hover:bg-indigo-500 text-sm h-9 px-4 w-auto self-start sm:self-auto"
+            className="bg-white/10 hover:bg-white/20 text-sm h-9 px-4 w-auto self-start sm:self-auto"
             onClick={() => setShowDealModal(true)}
             data-testid="add-deal-btn"
           >
@@ -633,7 +633,7 @@ const Pipeline = () => {
               </div>
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={closeModal} className="border-zinc-700 text-zinc-300 hover:bg-zinc-800">Cancel</Button>
-                <Button type="submit" className="bg-indigo-600 hover:bg-indigo-500" data-testid="deal-submit-btn">{editingDeal ? 'Update Deal' : 'Create Deal'}</Button>
+                <Button type="submit" className="bg-white/10 hover:bg-white/20" data-testid="deal-submit-btn">{editingDeal ? 'Update Deal' : 'Create Deal'}</Button>
               </DialogFooter>
             </form>
           </DialogContent>

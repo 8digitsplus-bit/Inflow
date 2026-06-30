@@ -201,7 +201,7 @@ const CustomApiModal = ({ onClose, onSuccess }) => {
             <div className="space-y-5">
               {/* Test Connection */}
               <div className="flex items-center gap-3">
-                <Button onClick={handleTest} disabled={testing} className="bg-indigo-600 hover:bg-indigo-500" data-testid="api-test-btn">
+                <Button onClick={handleTest} disabled={testing} className="bg-white/10 hover:bg-white/20" data-testid="api-test-btn">
                   {testing ? <><Loader2 className="w-4 h-4 animate-spin mr-1.5" />Testing...</> : <><Zap className="w-4 h-4 mr-1.5" />Test Connection</>}
                 </Button>
                 {testResult?.success && (
@@ -297,17 +297,17 @@ const CustomApiModal = ({ onClose, onSuccess }) => {
             <Button variant="outline" onClick={onClose} className="border-zinc-700 text-zinc-300 hover:bg-zinc-800">Cancel</Button>
             {step === 1 && (
               <Button onClick={() => { setError(''); setStep(2); }} disabled={!config.endpoint}
-                className="bg-indigo-600 hover:bg-indigo-500" data-testid="api-next-btn">
+                className="bg-white/10 hover:bg-white/20" data-testid="api-next-btn">
                 Test & Map <ArrowRight className="w-4 h-4 ml-1.5" />
               </Button>
             )}
             {step === 2 && testResult?.success && (
-              <Button onClick={() => { setError(''); setStep(3); }} className="bg-indigo-600 hover:bg-indigo-500" data-testid="api-review-btn">
+              <Button onClick={() => { setError(''); setStep(3); }} className="bg-white/10 hover:bg-white/20" data-testid="api-review-btn">
                 Review <ArrowRight className="w-4 h-4 ml-1.5" />
               </Button>
             )}
             {step === 3 && (
-              <Button onClick={handleConnect} disabled={connecting} className="bg-indigo-600 hover:bg-indigo-500" data-testid="api-connect-btn">
+              <Button onClick={handleConnect} disabled={connecting} className="bg-white/10 hover:bg-white/20" data-testid="api-connect-btn">
                 {connecting ? <><Loader2 className="w-4 h-4 animate-spin mr-1.5" />Connecting...</> : <><Check className="w-4 h-4 mr-1.5" />Connect & Sync</>}
               </Button>
             )}

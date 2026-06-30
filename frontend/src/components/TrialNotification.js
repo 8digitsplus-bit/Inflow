@@ -110,7 +110,7 @@ const TrialNotification = () => {
 
         <div className="px-6 pb-6 pt-4 space-y-2">
           <Button
-            className="w-full bg-indigo-600 hover:bg-indigo-500 h-11 font-medium"
+            className="w-full bg-white/10 hover:bg-white/20 h-11 font-medium"
             onClick={handleUpgrade}
             data-testid="trial-upgrade-btn"
           >

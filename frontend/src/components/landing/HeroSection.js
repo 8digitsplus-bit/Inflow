@@ -68,7 +68,7 @@ export const HeroSection = ({ handleGetStarted }) => {
           className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row"
         >
           <Button
-            className="bg-indigo-600 hover:bg-indigo-500 text-white btn-glow px-5 py-2.5 text-sm group"
+            className="bg-white/10 hover:bg-white/20 text-white btn-glow px-5 py-2.5 text-sm group"
             onClick={handleGetStarted}
             data-testid="hero-cta-btn"
           >

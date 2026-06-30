@@ -193,7 +193,7 @@ const Dashboard = () => {
       <Lock className="w-6 h-6 text-zinc-500 mb-2" />
       <p className="text-zinc-400 text-xs mb-2">Available on {requiredTier}+</p>
       <Link to="/settings">
-        <Button size="sm" className="bg-indigo-600 hover:bg-indigo-500 h-7 text-xs px-3">
+        <Button size="sm" className="bg-white/10 hover:bg-white/20 h-7 text-xs px-3">
           Upgrade
         </Button>
       </Link>
@@ -587,7 +587,7 @@ const Dashboard = () => {
                 <div className="text-center py-8 text-zinc-500">
                   <Target className="w-10 h-10 mx-auto mb-3 opacity-50" />
                   <p className="text-sm">No deals yet</p>
-                  <Link to="/pipeline"><Button size="sm" className="mt-3 bg-indigo-600 hover:bg-indigo-500">Create Your First Deal</Button></Link>
+                  <Link to="/pipeline"><Button size="sm" className="mt-3 bg-white/10 hover:bg-white/20">Create Your First Deal</Button></Link>
                 </div>
               )}
             </CardContent>

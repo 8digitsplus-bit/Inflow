@@ -594,7 +594,7 @@ const Settings = () => {
                       className={`w-full mt-4 ${
                         isCurrentPlan
                           ? 'bg-zinc-800 text-zinc-400 cursor-not-allowed'
-                          : 'bg-indigo-600 hover:bg-indigo-500 btn-glow disabled:opacity-40'
+                          : 'bg-white/10 hover:bg-white/20 btn-glow disabled:opacity-40'
                       }`}
                       disabled={isCurrentPlan || processingPayment || !canChangePlan}
                       onClick={() => handleUpgrade(plan.key)}

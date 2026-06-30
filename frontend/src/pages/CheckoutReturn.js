@@ -66,7 +66,7 @@ const CheckoutReturn = () => {
             Couldn't confirm payment
           </h1>
           <p className="text-zinc-500 text-sm mb-6">{state.error}</p>
-          <Button onClick={() => navigate('/settings')} className="bg-indigo-600 hover:bg-indigo-500" data-testid="checkout-return-settings-btn">
+          <Button onClick={() => navigate('/settings')} className="bg-white/10 hover:bg-white/20" data-testid="checkout-return-settings-btn">
             Go to Settings
           </Button>
         </div>
@@ -93,7 +93,7 @@ const CheckoutReturn = () => {
             Checkout session expired
           </h1>
           <p className="text-zinc-500 text-sm mb-6">No worries — start over and we'll get you sorted in seconds.</p>
-          <Button onClick={() => navigate('/choose-plan')} className="bg-indigo-600 hover:bg-indigo-500" data-testid="checkout-return-restart-btn">
+          <Button onClick={() => navigate('/choose-plan')} className="bg-white/10 hover:bg-white/20" data-testid="checkout-return-restart-btn">
             Choose a plan
           </Button>
         </div>
@@ -121,7 +121,7 @@ const CheckoutReturn = () => {
         )}
         <Button
           onClick={() => navigate('/dashboard')}
-          className="bg-indigo-600 hover:bg-indigo-500 px-8 h-11"
+          className="bg-white/10 hover:bg-white/20 px-8 h-11"
           data-testid="checkout-return-dashboard-btn"
         >
           Go to Dashboard <ChevronRight className="w-4 h-4 ml-1" />

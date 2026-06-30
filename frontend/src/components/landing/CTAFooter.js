@@ -13,7 +13,7 @@ export const CTASection = ({ handleGetStarted }) => (
           <p className="text-zinc-400 mb-8 max-w-xl mx-auto">
             Start optimizing your pricing and accelerate revenue growth today.
           </p>
-          <Button className="bg-indigo-600 hover:bg-indigo-500 btn-glow px-3 group" onClick={handleGetStarted} data-testid="cta-final-btn">
+          <Button className="bg-white/10 hover:bg-white/20 btn-glow px-3 group" onClick={handleGetStarted} data-testid="cta-final-btn">
             Access Now <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
           </Button>
         </div>

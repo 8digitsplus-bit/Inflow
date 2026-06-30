@@ -214,7 +214,7 @@ const Integrations = () => {
                         className={
                           integration.connected
                             ? 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border border-zinc-700'
-                            : 'bg-indigo-600 hover:bg-indigo-500'
+                            : 'bg-white/10 hover:bg-white/20'
                         }
                         onClick={() =>
                           toggleIntegration(

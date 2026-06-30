@@ -288,7 +288,7 @@ const ChoosePlan = () => {
                     current
                       ? 'bg-zinc-800 text-zinc-500 cursor-not-allowed'
                       : plan.popular
-                        ? 'bg-indigo-600 hover:bg-indigo-500 shadow-lg shadow-indigo-500/20'
+                        ? 'bg-white/10 hover:bg-white/20 shadow-lg shadow-white/10'
                         : 'bg-zinc-800 hover:bg-zinc-700 text-white'
                   }`}
                   disabled={current || isProcessing}

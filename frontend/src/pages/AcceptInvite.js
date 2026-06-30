@@ -154,7 +154,7 @@ export default function AcceptInvite() {
               <Button
                 onClick={handleJoinAsExistingUser}
                 disabled={joining}
-                className="w-full bg-indigo-600 hover:bg-indigo-500 h-11"
+                className="w-full bg-white/10 hover:bg-white/20 h-11"
                 data-testid="accept-invite-btn"
               >
                 {joining ? <Loader2 className="w-4 h-4 animate-spin" /> : `Accept and join ${invite.org_name}`}
@@ -218,7 +218,7 @@ export default function AcceptInvite() {
               <Button
                 type="submit"
                 disabled={joining || !name.trim() || password.length < 6}
-                className="w-full bg-indigo-600 hover:bg-indigo-500 h-11"
+                className="w-full bg-white/10 hover:bg-white/20 h-11"
                 data-testid="signup-and-join-btn"
               >
                 {joining ? <Loader2 className="w-4 h-4 animate-spin" /> : `Create account and join`}

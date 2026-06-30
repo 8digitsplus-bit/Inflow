@@ -118,7 +118,7 @@ const Onboarding = () => {
               Skip for now
             </Button>
             <Button
-              className="bg-indigo-600 hover:bg-indigo-500 btn-glow px-6"
+              className="bg-white/10 hover:bg-white/20 btn-glow px-6"
               onClick={() => navigate('/dashboard')}
               data-testid="onboarding-next-btn"
             >

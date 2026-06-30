@@ -25,6 +25,7 @@ import CookiePolicy from './pages/CookiePolicy';
 import Terms from './pages/Terms';
 import AcceptInvite from './pages/AcceptInvite';
 import Contact from './pages/Contact';
+import GlowPreview from './pages/GlowPreview';
 import TrialNotification from './components/TrialNotification';
 import ProtectedRoute from './components/ProtectedRoute';
 import TierGate from './components/TierGate';

@@ -48,7 +48,7 @@ export const ComingSoonVideo = () => {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <a
               href="/auth"
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white text-sm font-medium transition-colors btn-glow"
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-white/10 hover:bg-white/20 text-white text-sm font-medium transition-colors btn-glow"
               data-testid="coming-soon-cta"
             >
               Join the waitlist

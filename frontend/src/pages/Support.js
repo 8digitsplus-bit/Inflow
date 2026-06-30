@@ -294,7 +294,7 @@ const Support = () => {
             <Button
               variant={view === 'chat' ? 'default' : 'outline'}
               size="sm"
-              className={view === 'chat' ? 'bg-indigo-600 hover:bg-indigo-500' : 'border-zinc-700 text-zinc-400 hover:bg-indigo-500/10 hover:text-indigo-400 hover:border-indigo-500/30'}
+              className={view === 'chat' ? 'bg-white/10 hover:bg-white/20' : 'border-zinc-700 text-zinc-400 hover:bg-indigo-500/10 hover:text-indigo-400 hover:border-indigo-500/30'}
               onClick={() => setView('chat')}
               data-testid="view-chat-btn"
             >
@@ -303,7 +303,7 @@ const Support = () => {
             <Button
               variant={view === 'tickets' ? 'default' : 'outline'}
               size="sm"
-              className={view === 'tickets' ? 'bg-indigo-600 hover:bg-indigo-500' : 'border-zinc-700 text-zinc-400 hover:bg-indigo-500/10 hover:text-indigo-400 hover:border-indigo-500/30'}
+              className={view === 'tickets' ? 'bg-white/10 hover:bg-white/20' : 'border-zinc-700 text-zinc-400 hover:bg-indigo-500/10 hover:text-indigo-400 hover:border-indigo-500/30'}
               onClick={() => setView('tickets')}
               data-testid="view-tickets-btn"
             >
@@ -547,7 +547,7 @@ const Support = () => {
                       disabled={sending}
                       data-testid="chat-input"
                     />
-                    <Button type="submit" size="sm" className={`h-9 w-9 p-0 ${agentMode ? 'bg-violet-600 hover:bg-violet-500' : 'bg-indigo-600 hover:bg-indigo-500'}`} disabled={sending || !input.trim()} data-testid="send-btn">
+                    <Button type="submit" size="sm" className={`h-9 w-9 p-0 ${agentMode ? 'bg-white/15 hover:bg-white/25' : 'bg-white/10 hover:bg-white/20'}`} disabled={sending || !input.trim()} data-testid="send-btn">
                       <Send className="w-4 h-4" />
                     </Button>
                   </div>
@@ -560,7 +560,7 @@ const Support = () => {
           <div className="space-y-4">
             <div className="flex items-center justify-between">
               <p className="text-zinc-400 text-sm">{tickets.length} ticket{tickets.length !== 1 ? 's' : ''}</p>
-              <Button size="sm" className="bg-indigo-600 hover:bg-indigo-500 text-sm" onClick={() => setShowTicketModal(true)} data-testid="create-ticket-btn">
+              <Button size="sm" className="bg-white/10 hover:bg-white/20 text-sm" onClick={() => setShowTicketModal(true)} data-testid="create-ticket-btn">
                 <Plus className="w-4 h-4 mr-1.5" /> New Ticket
               </Button>
             </div>
@@ -637,7 +637,7 @@ const Support = () => {
               )}
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setShowTicketModal(false)} className="border-zinc-700 text-zinc-300 hover:bg-indigo-500/10 hover:text-indigo-400 hover:border-indigo-500/30">Cancel</Button>
-                <Button type="submit" className="bg-indigo-600 hover:bg-indigo-500" data-testid="submit-ticket-btn">Submit Ticket</Button>
+                <Button type="submit" className="bg-white/10 hover:bg-white/20" data-testid="submit-ticket-btn">Submit Ticket</Button>
               </DialogFooter>
             </form>
           </DialogContent>

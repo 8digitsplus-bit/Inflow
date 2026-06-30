@@ -196,7 +196,7 @@ export default function TeamSection() {
               <Button
                 type="submit"
                 disabled={inviting || seats?.available <= 0 || !inviteEmail.trim()}
-                className="bg-indigo-600 hover:bg-indigo-500 shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
+                className="bg-white/10 hover:bg-white/20 shrink-0 disabled:opacity-40 disabled:cursor-not-allowed"
                 data-testid="send-invite-btn"
               >
                 {inviting ? <Loader2 className="w-4 h-4 animate-spin" /> : (

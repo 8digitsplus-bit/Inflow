@@ -121,7 +121,7 @@ export default function Enable2FADialog({ open, onOpenChange, onEnabled }) {
           <Button
             type="submit"
             disabled={loading || code.length !== 6}
-            className="w-full bg-indigo-600 hover:bg-indigo-500 disabled:opacity-40"
+            className="w-full bg-white/10 hover:bg-white/20 disabled:opacity-40"
             data-testid="enable-2fa-verify-btn"
           >
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Verify and enable'}

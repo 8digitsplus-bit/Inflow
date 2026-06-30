@@ -131,7 +131,7 @@ const TierGate = ({ requiredLevel, children }) => {
                 <Button
                   className={`w-full text-xs h-9 ${
                     t.popular
-                      ? 'bg-indigo-600 hover:bg-indigo-500'
+                      ? 'bg-white/10 hover:bg-white/20'
                       : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-200'
                   }`}
                   data-testid={`upgrade-btn-${t.name.toLowerCase()}`}

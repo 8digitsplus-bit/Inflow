@@ -300,7 +300,7 @@ const CsvImportModal = ({ onClose, onSuccess }) => {
           <div className="flex gap-2">
             <Button variant="outline" onClick={onClose} className="border-zinc-700 text-zinc-300 hover:bg-zinc-800">Cancel</Button>
             {step === 2 && (
-              <Button onClick={() => { setError(''); setStep(3); }} className="bg-indigo-600 hover:bg-indigo-500" data-testid="csv-next-btn">
+              <Button onClick={() => { setError(''); setStep(3); }} className="bg-white/10 hover:bg-white/20" data-testid="csv-next-btn">
                 Review <ArrowRight className="w-4 h-4 ml-1.5" />
               </Button>
             )}

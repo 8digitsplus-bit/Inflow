@@ -332,7 +332,7 @@ const ConnectBusiness = () => {
                       ))}
                     </div>
                     {isEnterprise ? (
-                      <Button className="w-full bg-indigo-600 hover:bg-indigo-500 text-xs h-9 group-hover:bg-indigo-500 transition-colors"
+                      <Button className="w-full bg-white/10 hover:bg-white/20 text-xs h-9 group-hover:bg-indigo-500 transition-colors"
                         onClick={(e) => { e.stopPropagation(); setApiModal(true); }} data-testid="custom-api-btn">
                         <Globe className="w-3.5 h-3.5 mr-2" /> Connect API
                       </Button>
@@ -429,7 +429,7 @@ const ConnectBusiness = () => {
                         {usage.at_limit && (
                           <button
                             onClick={() => window.location.assign('/settings')}
-                            className="px-2.5 py-1 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-medium transition-colors"
+                            className="px-2.5 py-1 rounded-full bg-white/10 hover:bg-white/20 text-white text-[11px] font-medium transition-colors"
                             data-testid="upgrade-for-integrations-btn"
                           >
                             Upgrade for more
@@ -537,7 +537,7 @@ const ConnectBusiness = () => {
                             </div>
                           </div>
                         ) : (
-                          <Button className="w-full bg-indigo-600 hover:bg-indigo-500 text-xs h-9 disabled:opacity-40 disabled:cursor-not-allowed"
+                          <Button className="w-full bg-white/10 hover:bg-white/20 text-xs h-9 disabled:opacity-40 disabled:cursor-not-allowed"
                             onClick={() => openConnectModal(platform)} disabled={isConnecting || (usage?.at_limit)}
                             data-testid={`connect-${platform.platform_id}`}>
                             {isConnecting ? (
