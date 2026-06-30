@@ -29,22 +29,22 @@ export const GradientCard = ({ icon: Icon, title, description, badge, className 
         </div>
 
         {/* Content */}
-        <div className="relative z-10 flex flex-col items-center p-6 text-center">
+        <div className="relative z-10 flex flex-col items-center p-5 text-center">
           {Icon && (
-            <div className="relative mb-4">
+            <div className="relative mb-3.5">
               <div className="absolute inset-0 rounded-full border-2 border-white/20 animate-ping" />
               <div className="absolute inset-0 rounded-full border border-white/10 animate-pulse" />
-              <div className="relative rounded-full border border-white/20 bg-gradient-to-br from-black/80 to-black/60 p-4 shadow-2xl backdrop-blur-lg transition-all duration-500 transform group-hover:rotate-12 group-hover:scale-110">
+              <div className="relative rounded-full border border-white/20 bg-gradient-to-br from-black/80 to-black/60 p-3.5 shadow-2xl backdrop-blur-lg transition-all duration-500 transform group-hover:rotate-12 group-hover:scale-110">
                 <div className="transform transition-transform duration-700 group-hover:rotate-180">
-                  <Icon className="h-6 w-6 text-white" />
+                  <Icon className="h-5 w-5 text-white" />
                 </div>
               </div>
             </div>
           )}
 
-          <div className="mb-2.5 flex flex-wrap items-center justify-center gap-2">
+          <div className="mb-2 flex flex-wrap items-center justify-center gap-2">
             <h3
-              className="bg-gradient-to-r from-white via-gray-100 to-white bg-clip-text text-xl font-bold text-transparent transition-transform duration-300 transform group-hover:scale-105"
+              className="bg-gradient-to-r from-white via-gray-100 to-white bg-clip-text text-lg font-bold text-transparent transition-transform duration-300 transform group-hover:scale-105"
               style={{ fontFamily: 'Outfit' }}
             >
               {title}
@@ -58,18 +58,18 @@ export const GradientCard = ({ icon: Icon, title, description, badge, className 
 
           <div className="max-w-sm space-y-1">
             {lines.map((line, idx) => (
-              <p key={idx} className="text-sm leading-relaxed text-gray-300 transition-colors duration-300 group-hover:text-gray-200">
+              <p key={idx} className="text-[13px] leading-relaxed text-gray-300 transition-colors duration-300 group-hover:text-gray-200">
                 {line}
               </p>
             ))}
           </div>
 
-          <div className="mt-4 h-0.5 w-1/3 rounded-full bg-gradient-to-r from-transparent via-white to-transparent transition-all duration-500 animate-pulse group-hover:h-1 group-hover:w-1/2" />
+          <div className="mt-3.5 h-0.5 w-1/3 rounded-full bg-gradient-to-r from-transparent via-white to-transparent transition-all duration-500 animate-pulse group-hover:h-1 group-hover:w-1/2" />
 
-          <div className="mt-3 flex space-x-2 opacity-60 transition-opacity duration-300 group-hover:opacity-100">
-            <div className="h-2 w-2 rounded-full bg-white animate-bounce" />
-            <div className="h-2 w-2 rounded-full bg-white animate-bounce" style={{ animationDelay: '0.1s' }} />
-            <div className="h-2 w-2 rounded-full bg-white animate-bounce" style={{ animationDelay: '0.2s' }} />
+          <div className="mt-2.5 flex space-x-2 opacity-60 transition-opacity duration-300 group-hover:opacity-100">
+            <div className="h-1.5 w-1.5 rounded-full bg-white animate-bounce" />
+            <div className="h-1.5 w-1.5 rounded-full bg-white animate-bounce" style={{ animationDelay: '0.1s' }} />
+            <div className="h-1.5 w-1.5 rounded-full bg-white animate-bounce" style={{ animationDelay: '0.2s' }} />
           </div>
         </div>
 

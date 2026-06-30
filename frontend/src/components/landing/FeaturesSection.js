@@ -30,7 +30,7 @@ export const FeaturesSection = () => (
             className={`reveal reveal-delay-${Math.min(i + 1, 4)} h-full`}
             data-testid={`feature-card-${i}`}
           >
-            <GradientCard icon={feature.icon} title={feature.name} description={feature.desc} className="min-h-[200px]" />
+            <GradientCard icon={feature.icon} title={feature.name} description={feature.desc} className="min-h-[180px]" />
           </div>
         ))}
       </div>
