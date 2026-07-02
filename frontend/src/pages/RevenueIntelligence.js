@@ -122,14 +122,14 @@ const RevenueIntelligence = () => {
             <CardContent className="p-4">
               <span className="text-zinc-400 text-xs">Total Revenue</span>
               <div className="text-base sm:text-xl font-bold font-mono truncate text-white mt-1">{fmt(data?.total_revenue || 0)}</div>
-              <Link to="/sales-revenue" className="text-xs text-indigo-400 hover:text-indigo-300 mt-1 flex items-center gap-1">Details <ArrowRight className="w-3 h-3" /></Link>
+              <Link to="/sales-revenue" className="text-xs text-slate-400 hover:text-slate-300 mt-1 flex items-center gap-1">Details <ArrowRight className="w-3 h-3" /></Link>
             </CardContent>
           </Card>
           <Card className="bg-zinc-950/50 border-white/10" data-testid="ri-pipeline">
             <CardContent className="p-4">
               <span className="text-zinc-400 text-xs">Pipeline Value</span>
               <div className="text-base sm:text-xl font-bold font-mono truncate text-white mt-1">{fmt(data?.pipeline_value || 0)}</div>
-              <Link to="/pipeline" className="text-xs text-indigo-400 hover:text-indigo-300 mt-1 flex items-center gap-1">Details <ArrowRight className="w-3 h-3" /></Link>
+              <Link to="/pipeline" className="text-xs text-slate-400 hover:text-slate-300 mt-1 flex items-center gap-1">Details <ArrowRight className="w-3 h-3" /></Link>
             </CardContent>
           </Card>
           <Card className="bg-zinc-950/50 border-white/10" data-testid="ri-weighted">
@@ -142,7 +142,7 @@ const RevenueIntelligence = () => {
             <CardContent className="p-4">
               <span className="text-zinc-400 text-xs">Win Rate</span>
               <div className="text-base sm:text-xl font-bold font-mono truncate text-white mt-1">{data?.win_rate || 0}%</div>
-              <Link to="/sales-performance" className="text-xs text-indigo-400 hover:text-indigo-300 mt-1 flex items-center gap-1">Details <ArrowRight className="w-3 h-3" /></Link>
+              <Link to="/sales-performance" className="text-xs text-slate-400 hover:text-slate-300 mt-1 flex items-center gap-1">Details <ArrowRight className="w-3 h-3" /></Link>
             </CardContent>
           </Card>
           <Card className="bg-zinc-950/50 border-white/10" data-testid="ri-avg-deal">
@@ -163,7 +163,7 @@ const RevenueIntelligence = () => {
           </Card>
           <Card className="bg-zinc-950/50 border-white/10">
             <CardContent className="p-3 sm:p-4 text-center">
-              <div className="text-lg sm:text-2xl font-bold text-indigo-400" style={{ fontFamily: 'Outfit' }}>{data?.active_deals || 0}</div>
+              <div className="text-lg sm:text-2xl font-bold text-slate-400" style={{ fontFamily: 'Outfit' }}>{data?.active_deals || 0}</div>
               <p className="text-xs text-zinc-400 mt-1">Active</p>
             </CardContent>
           </Card>
@@ -199,8 +199,8 @@ const RevenueIntelligence = () => {
                         <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
                       </linearGradient>
                       <linearGradient id="riPipe" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#6366F1" stopOpacity={0.2} />
-                        <stop offset="95%" stopColor="#6366F1" stopOpacity={0} />
+                        <stop offset="5%" stopColor="#64748B" stopOpacity={0.2} />
+                        <stop offset="95%" stopColor="#64748B" stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#27272A" />
@@ -209,7 +209,7 @@ const RevenueIntelligence = () => {
                     <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#27272A' }} />
                     <Legend />
                     <Area type="monotone" dataKey="revenue" stroke="#10B981" fill="url(#riRev)" strokeWidth={2} name="Revenue" />
-                    <Area type="monotone" dataKey="pipeline_added" stroke="#6366F1" fill="url(#riPipe)" strokeWidth={2} name="Pipeline Added" />
+                    <Area type="monotone" dataKey="pipeline_added" stroke="#64748B" fill="url(#riPipe)" strokeWidth={2} name="Pipeline Added" />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
@@ -219,7 +219,7 @@ const RevenueIntelligence = () => {
           <Card className="bg-zinc-950/50 border-white/10" data-testid="ri-performance-chart">
             <CardHeader>
               <CardTitle className="text-lg font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
-                <BarChart3 className="w-5 h-5 text-indigo-400" /> Win/Loss & Win Rate
+                <BarChart3 className="w-5 h-5 text-slate-400" /> Win/Loss & Win Rate
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -296,8 +296,8 @@ const RevenueIntelligence = () => {
                       </div>
                       <p className="text-zinc-400 text-sm">{rec.description}</p>
                       <div className="mt-2 flex items-center gap-2">
-                        <Shield className="w-3 h-3 text-indigo-400" />
-                        <span className="text-indigo-400 text-xs font-medium">{rec.action}</span>
+                        <Shield className="w-3 h-3 text-slate-400" />
+                        <span className="text-slate-400 text-xs font-medium">{rec.action}</span>
                       </div>
                     </div>
                   </div>
@@ -310,9 +310,9 @@ const RevenueIntelligence = () => {
         {/* Quick Navigation */}
         <div className="grid md:grid-cols-3 gap-4">
           <Link to="/pipeline">
-            <Card className="bg-gradient-to-br from-indigo-500/10 to-indigo-500/5 border-indigo-500/20 hover:border-indigo-500/40 transition-colors cursor-pointer">
+            <Card className="bg-gradient-to-br from-slate-500/10 to-slate-500/5 border-slate-500/20 hover:border-slate-500/40 transition-colors cursor-pointer">
               <CardContent className="p-5 flex items-center gap-3">
-                <Target className="w-8 h-8 text-indigo-400" />
+                <Target className="w-8 h-8 text-slate-400" />
                 <div>
                   <h4 className="text-white font-medium">Sales Pipeline</h4>
                   <p className="text-zinc-400 text-xs">Manage deals & stages</p>

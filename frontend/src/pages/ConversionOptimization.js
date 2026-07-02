@@ -109,7 +109,7 @@ const ConversionOptimization = () => {
   const getStatusColor = (status) => {
     switch (status) {
       case 'running': return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30';
-      case 'completed': return 'bg-indigo-500/20 text-indigo-400 border-indigo-500/30';
+      case 'completed': return 'bg-slate-500/20 text-slate-400 border-slate-500/30';
       case 'planned': return 'bg-zinc-700/50 text-zinc-400 border-zinc-600';
       default: return 'bg-zinc-700/50 text-zinc-400 border-zinc-600';
     }
@@ -147,7 +147,7 @@ const ConversionOptimization = () => {
             <CardContent className="p-3 sm:p-5">
               <div className="flex items-center justify-between mb-2 sm:mb-3">
                 <span className="text-zinc-400 text-xs sm:text-sm">Total Opportunities</span>
-                <TrendingUp className="w-5 h-5 text-indigo-400" />
+                <TrendingUp className="w-5 h-5 text-slate-400" />
               </div>
               <div className="text-xl sm:text-3xl font-bold font-mono text-white">
                 {data?.total_opportunities || 0}
@@ -189,7 +189,7 @@ const ConversionOptimization = () => {
           <Card className="bg-zinc-950/50 border-white/10" data-testid="funnel-chart">
             <CardHeader>
               <CardTitle className="text-lg font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
-                <Target className="w-5 h-5 text-indigo-400" />
+                <Target className="w-5 h-5 text-slate-400" />
                 Conversion Funnel
               </CardTitle>
             </CardHeader>
@@ -352,7 +352,7 @@ const ConversionOptimization = () => {
         </div>
 
         {/* AI Recommendations */}
-        <Card className="bg-gradient-to-br from-purple-500/10 to-indigo-500/5 border-purple-500/20" data-testid="ai-recommendations-card">
+        <Card className="bg-gradient-to-br from-purple-500/10 to-slate-500/5 border-purple-500/20" data-testid="ai-recommendations-card">
           <CardHeader className="flex flex-col sm:flex-row sm:items-center gap-3">
             <CardTitle className="text-base sm:text-lg font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
               <Sparkles className="w-5 h-5 text-purple-400 flex-shrink-0" />

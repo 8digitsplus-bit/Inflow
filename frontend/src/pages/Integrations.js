@@ -114,7 +114,7 @@ const Integrations = () => {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <span className="px-3 py-1.5 rounded-full text-xs font-medium bg-indigo-500/20 text-indigo-400" data-testid="connected-count">
+            <span className="px-3 py-1.5 rounded-full text-xs font-medium bg-slate-500/20 text-slate-400" data-testid="connected-count">
               {connectedCount} connected
             </span>
           </div>
@@ -139,7 +139,7 @@ const Integrations = () => {
                 onClick={() => setActiveCategory(cat)}
                 className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all ${
                   activeCategory === cat
-                    ? 'bg-indigo-600 text-white'
+                    ? 'bg-slate-600 text-white'
                     : 'bg-zinc-900 text-zinc-400 hover:text-white border border-zinc-800'
                 }`}
                 data-testid={`filter-${cat.toLowerCase()}`}
@@ -153,7 +153,7 @@ const Integrations = () => {
         {/* Integrations Grid */}
         {loading ? (
           <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-8 h-8 animate-spin text-indigo-400" />
+            <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
           </div>
         ) : filtered.length === 0 ? (
           <div className="text-center py-20 text-zinc-500">

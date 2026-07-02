@@ -37,7 +37,7 @@ const FlowMark = ({ size = 'md' }) => {
   return (
     <div
       className={`${text} flex-shrink-0 flex items-center leading-none tracking-tight`}
-      style={{ fontFamily: FONT_HEAD, fontWeight: 800, color: '#6366F1' }}
+      style={{ fontFamily: FONT_HEAD, fontWeight: 800, color: '#64748B' }}
       aria-label="Flow AI"
     >
       flow
@@ -402,7 +402,7 @@ const Contact = () => {
                 className="text-4xl md:text-6xl text-white tracking-tighter leading-[0.95] mb-12"
                 style={{ fontFamily: FONT_HEAD, fontWeight: 800 }}
               >
-                Hi, I'm <span style={{ color: '#6366F1' }}>flow</span> AI.<br />
+                Hi, I'm <span style={{ color: '#64748B' }}>flow</span> AI.<br />
                 <span className="text-zinc-600">How can I help?</span>
               </h1>
 

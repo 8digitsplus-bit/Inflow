@@ -61,7 +61,7 @@ const PrivacyPolicy = () => {
         {status === 'error' && (
           <div className="text-zinc-400" data-testid="privacy-error">
             We couldn't load the policy right now. Please refresh, or contact{' '}
-            <a className="text-indigo-400 underline" href="mailto:privacy@inflowft.com">
+            <a className="text-slate-400 underline" href="mailto:privacy@inflowft.com">
               privacy@inflowft.com
             </a>
             .
@@ -92,7 +92,7 @@ const PrivacyPolicy = () => {
         .legal-content h3 { font-size: 1.1rem; margin: 1.5rem 0 0.5rem; }
         .legal-content p,
         .legal-content li { margin-bottom: 0.75rem; }
-        .legal-content a { color: #a5b4fc; text-decoration: underline; text-underline-offset: 2px; }
+        .legal-content a { color: #CBD5E1; text-decoration: underline; text-underline-offset: 2px; }
         .legal-content a:hover { color: #c7d2fe; }
         .legal-content ul,
         .legal-content ol { padding-left: 1.5rem; margin: 0.5rem 0 1rem; list-style: revert; }

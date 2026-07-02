@@ -1,6 +1,6 @@
 // Canonical stage colors used across all charts and visualizations
 export const STAGE_COLORS = {
-  lead: '#6366F1',        // Indigo
+  lead: '#64748B',        // Indigo
   qualified: '#8B5CF6',   // Violet
   proposal: '#06B6D4',    // Cyan
   negotiation: '#F59E0B', // Amber
@@ -10,7 +10,7 @@ export const STAGE_COLORS = {
 
 // Ordered array matching the pipeline stages (excluding closed_lost)
 export const STAGE_COLOR_ARRAY = [
-  '#6366F1', // Lead
+  '#64748B', // Lead
   '#8B5CF6', // Qualified
   '#06B6D4', // Proposal
   '#F59E0B', // Negotiation
@@ -19,7 +19,7 @@ export const STAGE_COLOR_ARRAY = [
 
 // All stages including lost
 export const STAGE_COLOR_ARRAY_ALL = [
-  '#6366F1', // Lead
+  '#64748B', // Lead
   '#8B5CF6', // Qualified
   '#06B6D4', // Proposal
   '#F59E0B', // Negotiation

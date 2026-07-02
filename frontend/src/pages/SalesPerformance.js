@@ -103,7 +103,7 @@ const SalesPerformance = () => {
             <CardContent className="p-5">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-zinc-400 text-sm">Active Deals</span>
-                <div className="p-1.5 rounded bg-indigo-500/10"><Layers className="w-4 h-4 text-indigo-400" /></div>
+                <div className="p-1.5 rounded bg-slate-500/10"><Layers className="w-4 h-4 text-slate-400" /></div>
               </div>
               <div className="text-lg sm:text-2xl font-bold font-mono text-white">{data?.total_active || 0}</div>
               <div className="text-zinc-500 text-xs mt-1">In pipeline now</div>
@@ -142,7 +142,7 @@ const SalesPerformance = () => {
           <Card className="bg-zinc-950/50 border-white/10" data-testid="close-rate-size-chart">
             <CardHeader>
               <CardTitle className="text-sm font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
-                <Award className="w-4 h-4 text-indigo-400" /> Close Rate by Deal Size
+                <Award className="w-4 h-4 text-slate-400" /> Close Rate by Deal Size
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -199,7 +199,7 @@ const SalesPerformance = () => {
               </ResponsiveContainer>
             </div>
             <div className="flex justify-center gap-6 mt-3">
-              <div className="flex items-center gap-2 text-xs"><div className="w-3 h-0.5 bg-indigo-500 rounded" /><span className="text-zinc-400">Opened</span></div>
+              <div className="flex items-center gap-2 text-xs"><div className="w-3 h-0.5 bg-slate-500 rounded" /><span className="text-zinc-400">Opened</span></div>
               <div className="flex items-center gap-2 text-xs"><div className="w-3 h-0.5 bg-emerald-500 rounded" /><span className="text-zinc-400">Closed</span></div>
             </div>
           </CardContent>

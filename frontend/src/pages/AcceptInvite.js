@@ -127,8 +127,8 @@ export default function AcceptInvite() {
       <div className="relative z-10 max-w-md w-full">
         <div className="text-center mb-8">
           <img src="/inflow-logo.png?v=3" alt="InFlow" className="h-6 mx-auto mb-6" />
-          <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 flex items-center justify-center mx-auto mb-5">
-            <Users className="w-7 h-7 text-indigo-400" />
+          <div className="w-14 h-14 rounded-2xl bg-slate-500/10 flex items-center justify-center mx-auto mb-5">
+            <Users className="w-7 h-7 text-slate-400" />
           </div>
           <p className="text-zinc-500 text-xs uppercase tracking-widest mb-2">You've been invited</p>
           <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2" style={{ fontFamily: 'Outfit' }}>

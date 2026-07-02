@@ -5,11 +5,11 @@ export const AboutSection = () => (
     <div className="max-w-6xl mx-auto">
       {/* Header */}
       <div className="text-center mb-16">
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-indigo-500/10 border border-indigo-500/20 mb-5">
-          <span className="text-xs font-medium text-indigo-400">About InFlow</span>
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-slate-500/10 border border-slate-500/20 mb-5">
+          <span className="text-xs font-medium text-slate-400">About InFlow</span>
         </div>
         <h2 className="text-2xl sm:text-4xl font-bold text-white mb-4" style={{ fontFamily: 'Outfit' }}>
-          Your Revenue Deserves More Than <span className="text-indigo-400">Guesswork</span>
+          Your Revenue Deserves More Than <span className="text-slate-400">Guesswork</span>
         </h2>
         <p className="text-sm sm:text-base text-zinc-400 max-w-2xl mx-auto leading-relaxed">
           InFlow is a revenue intelligence platform that helps businesses optimize pricing, accelerate their sales pipeline, and predict churn before it happens.
@@ -19,7 +19,7 @@ export const AboutSection = () => (
       {/* What We Do */}
       <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 mb-20">
         {[
-          { icon: BarChart3, title: 'Pipeline Analytics', desc: 'Real-time velocity metrics, bottleneck detection, and stage-by-stage conversion tracking.', color: 'text-indigo-400', bg: 'bg-indigo-500/10' },
+          { icon: BarChart3, title: 'Pipeline Analytics', desc: 'Real-time velocity metrics, bottleneck detection, and stage-by-stage conversion tracking.', color: 'text-slate-400', bg: 'bg-slate-500/10' },
           { icon: TrendingUp, title: 'Revenue Forecasting', desc: 'Model optimistic, realistic, and conservative scenarios with AI-weighted pipeline projections.', color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
           { icon: Shield, title: 'Churn Prevention', desc: 'Health scores, engagement tracking, and AI-powered predictions to protect your revenue.', color: 'text-red-400', bg: 'bg-red-500/10' },
           { icon: Zap, title: 'Conversion Optimization', desc: 'Funnel drop-off analysis, A/B testing, and AI recommendations to close more deals.', color: 'text-amber-400', bg: 'bg-amber-500/10' },

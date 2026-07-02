@@ -128,7 +128,7 @@ export default function TeamSection() {
     <Card className="bg-zinc-950/50 border-white/10" data-testid="team-section">
       <CardHeader>
         <CardTitle className="text-lg font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
-          <Users className="w-5 h-5 text-indigo-400" />
+          <Users className="w-5 h-5 text-slate-400" />
           Team
         </CardTitle>
       </CardHeader>
@@ -145,7 +145,7 @@ export default function TeamSection() {
             <div className="flex items-center gap-2 text-xs">
               <div className="w-32 h-1.5 bg-zinc-900 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 transition-all"
+                  className="h-full bg-gradient-to-r from-slate-500 to-purple-500 transition-all"
                   style={{ width: `${Math.min(100, ((seats?.members + seats?.pending_invites) / Math.max(1, seats?.seats)) * 100)}%` }}
                 />
               </div>
@@ -156,7 +156,7 @@ export default function TeamSection() {
 
         {/* Gating message for non-Enterprise */}
         {!isEnterprise && (
-          <div className="p-4 rounded-lg bg-gradient-to-br from-purple-500/5 to-indigo-500/5 border border-purple-500/20">
+          <div className="p-4 rounded-lg bg-gradient-to-br from-purple-500/5 to-slate-500/5 border border-purple-500/20">
             <div className="flex items-start gap-3">
               <Crown className="w-5 h-5 text-purple-400 flex-shrink-0 mt-0.5" />
               <div className="flex-1">
@@ -224,7 +224,7 @@ export default function TeamSection() {
               data-testid={`member-${m.user_id}`}
             >
               <div className="flex items-center gap-3 min-w-0">
-                <div className="w-9 h-9 rounded-full bg-indigo-600/20 text-indigo-300 flex items-center justify-center text-xs font-semibold shrink-0">
+                <div className="w-9 h-9 rounded-full bg-slate-600/20 text-slate-300 flex items-center justify-center text-xs font-semibold shrink-0">
                   {m.name?.split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase() || m.email[0].toUpperCase()}
                 </div>
                 <div className="min-w-0">
@@ -288,10 +288,10 @@ export default function TeamSection() {
 
         {/* Member-role note */}
         {!isOwner && (
-          <div className="flex items-start gap-2 p-3 rounded-lg bg-indigo-500/5 border border-indigo-500/15">
-            <ShieldCheck className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" />
+          <div className="flex items-start gap-2 p-3 rounded-lg bg-slate-500/5 border border-slate-500/15">
+            <ShieldCheck className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
             <p className="text-xs text-zinc-400">
-              You're a <span className="text-indigo-400 font-medium">member</span> of this team. You have read access to deals, pipeline, and integrations, and can run AI analyses. Only the owner can edit data or manage billing.
+              You're a <span className="text-slate-400 font-medium">member</span> of this team. You have read access to deals, pipeline, and integrations, and can run AI analyses. Only the owner can edit data or manage billing.
             </p>
           </div>
         )}

@@ -61,7 +61,7 @@ const TrialNotification = () => {
     ? { icon: AlertTriangle, iconColor: 'text-amber-400', iconBg: 'bg-amber-500/15', title: 'Your trial expires tomorrow', desc: 'This is your last day! Upgrade now to keep uninterrupted access to all features.', accent: 'amber' }
     : daysLeft <= 3
     ? { icon: AlertTriangle, iconColor: 'text-amber-400', iconBg: 'bg-amber-500/15', title: `${daysLeft} days left on your free trial`, desc: 'Your trial is ending soon. Upgrade to keep your data and access all features.', accent: 'amber' }
-    : { icon: Clock, iconColor: 'text-indigo-400', iconBg: 'bg-indigo-500/15', title: `${daysLeft} days left on your free trial`, desc: 'Enjoying InFlow? Upgrade anytime to unlock the full experience.', accent: 'indigo' };
+    : { icon: Clock, iconColor: 'text-slate-400', iconBg: 'bg-slate-500/15', title: `${daysLeft} days left on your free trial`, desc: 'Enjoying InFlow? Upgrade anytime to unlock the full experience.', accent: 'indigo' };
 
   const Icon = config.icon;
 
@@ -75,7 +75,7 @@ const TrialNotification = () => {
         data-testid="trial-notification-popup"
       >
         <div className={`h-1 w-full ${
-          config.accent === 'red' ? 'bg-red-500' : config.accent === 'amber' ? 'bg-amber-500' : 'bg-indigo-500'
+          config.accent === 'red' ? 'bg-red-500' : config.accent === 'amber' ? 'bg-amber-500' : 'bg-slate-500'
         }`} />
 
         <div className="px-6 pt-6 pb-2 flex flex-col items-center text-center">
@@ -100,7 +100,7 @@ const TrialNotification = () => {
             <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all duration-700 ${
-                  daysLeft <= 3 ? 'bg-amber-500' : 'bg-indigo-500'
+                  daysLeft <= 3 ? 'bg-amber-500' : 'bg-slate-500'
                 }`}
                 style={{ width: `${((14 - daysLeft) / 14) * 100}%` }}
               />

@@ -103,7 +103,7 @@ const PricingOptimizer = () => {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-96">
-          <Loader2 className="w-8 h-8 animate-spin text-indigo-400" />
+          <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
         </div>
       </DashboardLayout>
     );
@@ -128,7 +128,7 @@ const PricingOptimizer = () => {
             <Button
               onClick={handleSync}
               disabled={syncing}
-              className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2"
+              className="bg-slate-600 hover:bg-slate-700 text-white gap-2"
               data-testid="sync-pricing-btn"
             >
               <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
@@ -146,7 +146,7 @@ const PricingOptimizer = () => {
               <p className="text-zinc-400 text-sm text-center max-w-md mb-6">
                 Connect your business platforms (Stripe, Shopify, HubSpot, etc.) on the Integrations page, then click "Sync from Integrations" to pull your product and pricing data.
               </p>
-              <Button onClick={handleSync} disabled={syncing} className="bg-indigo-600 hover:bg-indigo-700 text-white gap-2" data-testid="sync-empty-btn">
+              <Button onClick={handleSync} disabled={syncing} className="bg-slate-600 hover:bg-slate-700 text-white gap-2" data-testid="sync-empty-btn">
                 <RefreshCw className={`w-4 h-4 ${syncing ? 'animate-spin' : ''}`} />
                 {syncing ? 'Syncing...' : 'Sync Now'}
               </Button>
@@ -160,7 +160,7 @@ const PricingOptimizer = () => {
                 <CardContent className="p-5">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-zinc-400 text-sm">Products Tracked</span>
-                    <div className="p-1.5 rounded bg-indigo-500/10"><BarChart3 className="w-4 h-4 text-indigo-400" /></div>
+                    <div className="p-1.5 rounded bg-slate-500/10"><BarChart3 className="w-4 h-4 text-slate-400" /></div>
                   </div>
                   <div className="text-2xl font-bold font-mono text-white">{dashData?.total_analyses || 0}</div>
                   <div className="text-xs text-zinc-500 mt-1">From integrations</div>
@@ -222,7 +222,7 @@ const PricingOptimizer = () => {
                             itemStyle={{ color: '#e4e4e7', fontSize: '11px' }}
                           />
                           <Legend wrapperStyle={{ fontSize: 11 }} />
-                          <Line type="monotone" dataKey="current_margin" name="Current Margin" stroke="#6366F1" strokeWidth={2.5} dot={{ r: 5, fill: '#6366F1', stroke: '#0c0c10', strokeWidth: 2 }} activeDot={{ r: 7 }} />
+                          <Line type="monotone" dataKey="current_margin" name="Current Margin" stroke="#64748B" strokeWidth={2.5} dot={{ r: 5, fill: '#64748B', stroke: '#0c0c10', strokeWidth: 2 }} activeDot={{ r: 7 }} />
                           <Line type="monotone" dataKey="optimal_margin" name="Optimal Margin" stroke="#10B981" strokeWidth={2.5} dot={{ r: 5, fill: '#10B981', stroke: '#0c0c10', strokeWidth: 2 }} activeDot={{ r: 7 }} />
                           <Line type="monotone" dataKey="target_margin" name="Target Margin" stroke="#F59E0B" strokeWidth={2.5} dot={{ r: 5, fill: '#F59E0B', stroke: '#0c0c10', strokeWidth: 2 }} activeDot={{ r: 7 }} />
                         </LineChart>
@@ -238,7 +238,7 @@ const PricingOptimizer = () => {
               <Card className="bg-zinc-950/50 border-white/10" data-testid="price-comparison-chart">
                 <CardHeader>
                   <CardTitle className="text-lg font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
-                    <Target className="w-5 h-5 text-indigo-400" /> Price vs Optimal
+                    <Target className="w-5 h-5 text-slate-400" /> Price vs Optimal
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -256,7 +256,7 @@ const PricingOptimizer = () => {
                             cursor={{ fill: 'rgba(39, 39, 42, 0.15)' }}
                           />
                           <Legend wrapperStyle={{ fontSize: 11 }} />
-                          <Bar dataKey="current_price" name="Current Price" fill="#6366F1" radius={[4, 4, 0, 0]} maxBarSize={32} />
+                          <Bar dataKey="current_price" name="Current Price" fill="#64748B" radius={[4, 4, 0, 0]} maxBarSize={32} />
                           <Bar dataKey="optimal_price" name="Optimal Price" fill="#10B981" radius={[4, 4, 0, 0]} maxBarSize={32} />
                         </ComposedChart>
                       </ResponsiveContainer>
@@ -308,12 +308,12 @@ const PricingOptimizer = () => {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
-                    <Sparkles className="w-5 h-5 text-indigo-400" /> AI Pricing Analysis
+                    <Sparkles className="w-5 h-5 text-slate-400" /> AI Pricing Analysis
                   </CardTitle>
                   <Button
                     onClick={fetchAIAnalysis}
                     disabled={aiLoading || !dashData?.total_analyses}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white text-xs gap-2"
+                    className="bg-slate-600 hover:bg-slate-700 text-white text-xs gap-2"
                     data-testid="get-ai-pricing-btn"
                   >
                     {aiLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}

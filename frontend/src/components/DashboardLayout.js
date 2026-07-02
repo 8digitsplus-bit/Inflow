@@ -101,7 +101,7 @@ const DashboardLayout = ({ children }) => {
   const tierColor = () => {
     const t = user?.subscription_tier;
     if (t?.includes('enterprise')) return 'bg-purple-500/20 text-purple-400';
-    if (t?.includes('pro')) return 'bg-indigo-500/20 text-indigo-400';
+    if (t?.includes('pro')) return 'bg-slate-500/20 text-slate-400';
     if (t?.includes('essential')) return 'bg-cyan-500/20 text-cyan-400';
     if (t === 'trial') return 'bg-amber-500/20 text-amber-400';
     if (t === 'expired' || t === 'cancelled') return 'bg-red-500/20 text-red-400';
@@ -165,7 +165,7 @@ const DashboardLayout = ({ children }) => {
                       }`}
                       data-testid={`nav-${item.name.toLowerCase().replace(/\s+/g, '-')}`}
                     >
-                      <Icon className={`w-4 h-4 flex-shrink-0 ${active && !locked ? 'text-indigo-400' : ''}`} />
+                      <Icon className={`w-4 h-4 flex-shrink-0 ${active && !locked ? 'text-slate-400' : ''}`} />
                       {!collapsed && (
                         <>
                           <span className="text-[13px] truncate">{item.name}</span>
@@ -185,7 +185,7 @@ const DashboardLayout = ({ children }) => {
               <div className="flex flex-col items-center gap-1.5">
                 <Avatar className="w-7 h-7">
                   <AvatarImage src={user?.picture} alt={user?.name} />
-                  <AvatarFallback className="bg-indigo-600 text-white text-[9px]">{getInitials(user?.name)}</AvatarFallback>
+                  <AvatarFallback className="bg-slate-600 text-white text-[9px]">{getInitials(user?.name)}</AvatarFallback>
                 </Avatar>
                 <button onClick={() => setShowLogoutConfirm(true)} className="text-zinc-600 hover:text-red-400 transition-colors p-1" data-testid="sidebar-logout-btn">
                   <LogOut className="w-3.5 h-3.5" />
@@ -195,7 +195,7 @@ const DashboardLayout = ({ children }) => {
               <div className="flex items-center gap-2">
                 <Avatar className="w-7 h-7 flex-shrink-0">
                   <AvatarImage src={user?.picture} alt={user?.name} />
-                  <AvatarFallback className="bg-indigo-600 text-white text-[9px]">{getInitials(user?.name)}</AvatarFallback>
+                  <AvatarFallback className="bg-slate-600 text-white text-[9px]">{getInitials(user?.name)}</AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <p className="text-[12px] font-medium text-zinc-300 truncate">{user?.name}</p>

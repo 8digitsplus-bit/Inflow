@@ -207,19 +207,19 @@ const ConnectBusiness = () => {
         {/* Summary Cards */}
         {summary && summary.connected_count > 0 && (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4" data-testid="business-summary-cards">
-            <SummaryCard icon={Database} label="Sources Connected" value={connectedCount} color="text-indigo-400" />
+            <SummaryCard icon={Database} label="Sources Connected" value={connectedCount} color="text-slate-400" />
             <SummaryCard icon={TrendingUp} label="Records Synced" value={summary.total_records.toLocaleString()} color="text-emerald-400" />
             <SummaryCard icon={CreditCard} label="Total Pipeline Value" value={`$${(summary.total_synced_value || 0).toLocaleString()}`} color="text-amber-400" />
-            <SummaryCard icon={Zap} label="Data Sources Active" value={connectedCount} color="text-indigo-400" />
+            <SummaryCard icon={Zap} label="Data Sources Active" value={connectedCount} color="text-slate-400" />
           </div>
         )}
 
         {/* Platform Detection Banner */}
         {detectedPlatforms.length > 0 && (
-          <div className="bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-indigo-500/10 border border-indigo-500/20 rounded-xl p-4" data-testid="detection-banner">
+          <div className="bg-gradient-to-r from-slate-500/10 via-purple-500/10 to-slate-500/10 border border-slate-500/20 rounded-xl p-4" data-testid="detection-banner">
             <div className="flex items-start gap-3">
-              <div className="w-9 h-9 rounded-lg bg-indigo-500/15 flex items-center justify-center shrink-0 mt-0.5">
-                <Sparkles className="w-4 h-4 text-indigo-400" />
+              <div className="w-9 h-9 rounded-lg bg-slate-500/15 flex items-center justify-center shrink-0 mt-0.5">
+                <Sparkles className="w-4 h-4 text-slate-400" />
               </div>
               <div className="flex-1">
                 <h4 className="text-sm font-medium text-white mb-1" style={{ fontFamily: 'Outfit' }}>Platform Detected in Your Data</h4>
@@ -230,11 +230,11 @@ const ConnectBusiness = () => {
                     return (
                       <button key={d.platform_id}
                         onClick={() => plat && openConnectModal(plat)}
-                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-xs hover:bg-indigo-500/20 transition-colors"
+                        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-500/10 border border-slate-500/20 text-slate-300 text-xs hover:bg-slate-500/20 transition-colors"
                         data-testid={`detect-connect-${d.platform_id}`}>
                         <Zap className="w-3 h-3" />
                         Connect {d.platform_id.charAt(0).toUpperCase() + d.platform_id.slice(1)}
-                        <span className="text-indigo-500">({Math.round(d.confidence * 100)}% match)</span>
+                        <span className="text-slate-500">({Math.round(d.confidence * 100)}% match)</span>
                       </button>
                     );
                   })}
@@ -247,8 +247,8 @@ const ConnectBusiness = () => {
         {/* Empty state */}
         {!loading && connectedCount === 0 && (
           <div className="bg-zinc-900/40 border border-white/5 rounded-2xl p-8 text-center" data-testid="empty-state">
-            <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 flex items-center justify-center mx-auto mb-4">
-              <Zap className="w-8 h-8 text-indigo-400" />
+            <div className="w-16 h-16 rounded-2xl bg-slate-500/10 flex items-center justify-center mx-auto mb-4">
+              <Zap className="w-8 h-8 text-slate-400" />
             </div>
             <h3 className="text-lg font-semibold text-white mb-2" style={{ fontFamily: 'Outfit' }}>No data sources connected yet</h3>
             <p className="text-zinc-400 text-sm max-w-md mx-auto">
@@ -259,7 +259,7 @@ const ConnectBusiness = () => {
 
         {loading ? (
           <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-8 h-8 animate-spin text-indigo-400" />
+            <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
           </div>
         ) : (
           <>
@@ -278,7 +278,7 @@ const ConnectBusiness = () => {
                         <div className="flex items-center gap-2">
                           <h3 className="text-white font-semibold text-sm" style={{ fontFamily: 'Outfit' }}>Import CSV</h3>
                           {!isProPlus && (
-                            <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-indigo-500/15 text-indigo-300 flex items-center gap-1" data-testid="csv-import-pro-badge">
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-slate-500/15 text-slate-300 flex items-center gap-1" data-testid="csv-import-pro-badge">
                               <Lock className="w-2.5 h-2.5" /> Pro
                             </span>
                           )}
@@ -310,8 +310,8 @@ const ConnectBusiness = () => {
                   onClick={() => isEnterprise ? setApiModal(true) : toast.error('Custom API is available on the Enterprise plan. Upgrade to unlock.')} data-testid="custom-api-card">
                   <CardContent className="p-5">
                     <div className="flex items-start gap-3 mb-3">
-                      <div className="w-11 h-11 rounded-xl bg-indigo-500/10 flex items-center justify-center shrink-0">
-                        <Globe className="w-5 h-5 text-indigo-400" />
+                      <div className="w-11 h-11 rounded-xl bg-slate-500/10 flex items-center justify-center shrink-0">
+                        <Globe className="w-5 h-5 text-slate-400" />
                       </div>
                       <div className="flex-1">
                         <div className="flex items-center gap-2">
@@ -332,7 +332,7 @@ const ConnectBusiness = () => {
                       ))}
                     </div>
                     {isEnterprise ? (
-                      <Button className="w-full bg-white/10 hover:bg-white/20 text-xs h-9 group-hover:bg-indigo-500 transition-colors"
+                      <Button className="w-full bg-white/10 hover:bg-white/20 text-xs h-9 group-hover:bg-slate-500 transition-colors"
                         onClick={(e) => { e.stopPropagation(); setApiModal(true); }} data-testid="custom-api-btn">
                         <Globe className="w-3.5 h-3.5 mr-2" /> Connect API
                       </Button>
@@ -363,15 +363,15 @@ const ConnectBusiness = () => {
                         <CardContent className="p-5">
                           <div className="flex items-start justify-between mb-3">
                             <div className="flex items-center gap-3">
-                              <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${isCsv ? 'bg-emerald-500/10' : 'bg-indigo-500/10'}`}>
-                                {isCsv ? <FileSpreadsheet className="w-5 h-5 text-emerald-400" /> : <Globe className="w-5 h-5 text-indigo-400" />}
+                              <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${isCsv ? 'bg-emerald-500/10' : 'bg-slate-500/10'}`}>
+                                {isCsv ? <FileSpreadsheet className="w-5 h-5 text-emerald-400" /> : <Globe className="w-5 h-5 text-slate-400" />}
                               </div>
                               <div>
                                 <h3 className="text-white font-semibold text-sm" style={{ fontFamily: 'Outfit' }}>{source.source_name}</h3>
                                 <span className="text-[11px] text-zinc-500 font-medium">{isCsv ? 'CSV Import' : 'Custom API'}</span>
                               </div>
                             </div>
-                            <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium flex items-center gap-1 ${source.is_live ? 'bg-indigo-500/20 text-indigo-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
+                            <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium flex items-center gap-1 ${source.is_live ? 'bg-slate-500/20 text-slate-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
                               {source.is_live ? <><Zap className="w-3 h-3" /> Live</> : <><Check className="w-3 h-3" /> Imported</>}
                             </span>
                           </div>
@@ -383,7 +383,7 @@ const ConnectBusiness = () => {
                             <div className="flex items-center gap-2">
                               {source.can_sync && (
                                 <Button size="sm" variant="outline"
-                                  className="flex-1 border-zinc-700 text-zinc-300 hover:bg-indigo-500/10 hover:text-indigo-400 hover:border-indigo-500/30 text-xs h-8"
+                                  className="flex-1 border-zinc-700 text-zinc-300 hover:bg-slate-500/10 hover:text-slate-400 hover:border-slate-500/30 text-xs h-8"
                                   onClick={() => handleCustomSync(source.connection_id)} disabled={isSyncing}
                                   data-testid={`sync-custom-${source.connection_id}`}>
                                   {isSyncing ? <Loader2 className="w-3 h-3 animate-spin mr-1.5" /> : <RefreshCw className="w-3 h-3 mr-1.5" />} Re-sync
@@ -419,7 +419,7 @@ const ConnectBusiness = () => {
                       <>
                         <div className="w-28 h-1.5 bg-zinc-900 rounded-full overflow-hidden">
                           <div
-                            className={`h-full transition-all ${usage.at_limit ? 'bg-amber-500' : 'bg-gradient-to-r from-indigo-500 to-purple-500'}`}
+                            className={`h-full transition-all ${usage.at_limit ? 'bg-amber-500' : 'bg-gradient-to-r from-slate-500 to-purple-500'}`}
                             style={{ width: `${Math.min(100, (usage.used / usage.limit) * 100)}%` }}
                           />
                         </div>
@@ -462,7 +462,7 @@ const ConnectBusiness = () => {
                             </div>
                           </div>
                           {platform.connected && (
-                            <span className="bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded-full text-[11px] font-medium flex items-center gap-1 shrink-0"
+                            <span className="bg-slate-500/20 text-slate-400 px-2 py-0.5 rounded-full text-[11px] font-medium flex items-center gap-1 shrink-0"
                               data-testid={`connected-badge-${platform.platform_id}`}>
                               <Zap className="w-3 h-3" /> Live
                             </span>
@@ -470,9 +470,9 @@ const ConnectBusiness = () => {
                         </div>
                         <p className="text-zinc-400 text-xs leading-relaxed mb-3">{platform.description}</p>
                         {platform.connected && platform.account_name && (
-                          <div className="flex items-center gap-1.5 mb-3 px-2.5 py-1.5 rounded-lg bg-indigo-500/5 border border-indigo-500/10">
-                            <Shield className="w-3 h-3 text-indigo-400" />
-                            <span className="text-[11px] text-indigo-300">{platform.account_name}</span>
+                          <div className="flex items-center gap-1.5 mb-3 px-2.5 py-1.5 rounded-lg bg-slate-500/5 border border-slate-500/10">
+                            <Shield className="w-3 h-3 text-slate-400" />
+                            <span className="text-[11px] text-slate-300">{platform.account_name}</span>
                           </div>
                         )}
                         {platform.connected && platform.stats && (
@@ -512,7 +512,7 @@ const ConnectBusiness = () => {
                                   if (r.ok) { toast.success(`Role updated to ${role}`); fetchData(); }
                                   else { const d = await r.json(); toast.error(d.detail || 'Failed to update role'); }
                                 }}
-                                className="text-[11px] px-2 py-0.5 rounded-md bg-zinc-900 border border-zinc-700 text-zinc-300 focus:outline-none focus:border-indigo-500"
+                                className="text-[11px] px-2 py-0.5 rounded-md bg-zinc-900 border border-zinc-700 text-zinc-300 focus:outline-none focus:border-slate-500"
                                 data-testid={`role-select-${platform.platform_id}`}
                                 title="Defines whether this source counts toward Revenue, Pipeline, or is treated as Signal-only"
                               >
@@ -523,7 +523,7 @@ const ConnectBusiness = () => {
                             </div>
                             <div className="flex items-center gap-2">
                               <Button size="sm" variant="outline"
-                                className="flex-1 border-zinc-700 text-zinc-300 hover:bg-indigo-500/10 hover:text-indigo-400 hover:border-indigo-500/30 text-xs h-8"
+                                className="flex-1 border-zinc-700 text-zinc-300 hover:bg-slate-500/10 hover:text-slate-400 hover:border-slate-500/30 text-xs h-8"
                                 onClick={() => handleSync(platform.platform_id)} disabled={isSyncing}
                                 data-testid={`sync-${platform.platform_id}`}>
                                 {isSyncing ? <Loader2 className="w-3 h-3 animate-spin mr-1.5" /> : <RefreshCw className="w-3 h-3 mr-1.5" />} Re-sync
@@ -586,7 +586,7 @@ const ConnectBusiness = () => {
                         type="checkbox"
                         checked={!!connectFields[field.name]}
                         onChange={(e) => setConnectFields(f => ({ ...f, [field.name]: e.target.checked }))}
-                        className="w-4 h-4 rounded border-zinc-700 bg-zinc-800 text-indigo-500 focus:ring-indigo-500/30"
+                        className="w-4 h-4 rounded border-zinc-700 bg-zinc-800 text-slate-500 focus:ring-slate-500/30"
                         data-testid={`connect-field-${field.name}`}
                       />
                       <span className="text-xs text-zinc-400">{field.label}</span>
@@ -599,7 +599,7 @@ const ConnectBusiness = () => {
                         value={connectFields[field.name] || ''}
                         onChange={(e) => setConnectFields(f => ({ ...f, [field.name]: e.target.value }))}
                         placeholder={field.placeholder}
-                        className="w-full px-3 py-2.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm placeholder:text-zinc-600 focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500/30"
+                        className="w-full px-3 py-2.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm placeholder:text-zinc-600 focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500/30"
                         data-testid={`connect-field-${field.name}`}
                       />
                     </>
@@ -617,7 +617,7 @@ const ConnectBusiness = () => {
               )}
 
               <div className="flex items-start gap-2 p-3 bg-zinc-800/50 rounded-lg border border-zinc-700/50">
-                <Shield className="w-4 h-4 text-indigo-400 mt-0.5 flex-shrink-0" />
+                <Shield className="w-4 h-4 text-slate-400 mt-0.5 flex-shrink-0" />
                 <div className="text-[11px] text-zinc-400 leading-relaxed">
                   Your credentials are stored securely and only used to read your {connectModal.name} data. We never modify your account.
                 </div>
@@ -625,13 +625,13 @@ const ConnectBusiness = () => {
 
               {connectModal.key_help_url && (
                 <a href={connectModal.key_help_url} target="_blank" rel="noopener noreferrer"
-                  className="flex items-center gap-1.5 text-xs text-indigo-400 hover:text-indigo-300 transition-colors">
+                  className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-slate-300 transition-colors">
                   <ExternalLink className="w-3 h-3" /> {connectModal.key_help_text || `Get your ${connectModal.name} credentials`}
                 </a>
               )}
 
               <div className="flex gap-3 pt-2">
-                <Button variant="outline" className="flex-1 border-zinc-700 text-zinc-300 hover:bg-indigo-500/10 hover:text-indigo-400 hover:border-indigo-500/30"
+                <Button variant="outline" className="flex-1 border-zinc-700 text-zinc-300 hover:bg-slate-500/10 hover:text-slate-400 hover:border-slate-500/30"
                   onClick={() => { setConnectModal(null); setConnectFields({}); }}>Cancel</Button>
                 <Button className="flex-1 text-white"
                   style={{ backgroundColor: connectModal.color }}

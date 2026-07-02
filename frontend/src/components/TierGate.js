@@ -78,8 +78,8 @@ const TierGate = ({ requiredLevel, children }) => {
       <div className="flex flex-col items-center justify-center min-h-[70vh] px-4" data-testid="tier-gate-overlay">
         {/* Header */}
         <div className="text-center mb-8 max-w-lg">
-          <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 flex items-center justify-center mx-auto mb-5">
-            {isExpired || isCancelled ? <Clock className="w-7 h-7 text-amber-400" /> : <Lock className="w-7 h-7 text-indigo-400" />}
+          <div className="w-14 h-14 rounded-2xl bg-slate-500/10 flex items-center justify-center mx-auto mb-5">
+            {isExpired || isCancelled ? <Clock className="w-7 h-7 text-amber-400" /> : <Lock className="w-7 h-7 text-slate-400" />}
           </div>
           <h2 className="text-2xl font-bold text-white mb-2" style={{ fontFamily: 'Outfit' }}>
             {isExpired ? 'Your trial has ended' : isCancelled ? 'Your subscription was cancelled' : isTrial ? 'Upgrade to unlock this feature' : 'Upgrade your plan'}
@@ -122,7 +122,7 @@ const TierGate = ({ requiredLevel, children }) => {
               <ul className="space-y-2 mb-5">
                 {t.features.map((f, i) => (
                   <li key={i} className="flex items-start gap-2 text-xs text-zinc-400">
-                    <Check className="w-3.5 h-3.5 text-indigo-400 mt-0.5 shrink-0" />
+                    <Check className="w-3.5 h-3.5 text-slate-400 mt-0.5 shrink-0" />
                     {f}
                   </li>
                 ))}

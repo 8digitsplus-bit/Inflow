@@ -65,15 +65,15 @@ const LegalBanner = () => {
 
   return (
     <div
-      className="relative w-full bg-indigo-500/10 border-b border-indigo-500/20"
+      className="relative w-full bg-slate-500/10 border-b border-slate-500/20"
       data-testid="legal-update-banner"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-2.5 flex items-center gap-3">
-        <div className="shrink-0 w-7 h-7 rounded-full bg-indigo-500/20 flex items-center justify-center">
-          <ScrollText className="w-3.5 h-3.5 text-indigo-300" />
+        <div className="shrink-0 w-7 h-7 rounded-full bg-slate-500/20 flex items-center justify-center">
+          <ScrollText className="w-3.5 h-3.5 text-slate-300" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-[13px] sm:text-sm font-medium text-indigo-100">
+          <p className="text-[13px] sm:text-sm font-medium text-slate-100">
             We've updated our {phrase}.
           </p>
           <div className="flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5">
@@ -83,7 +83,7 @@ const LegalBanner = () => {
                 href={u.path}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-0.5 text-[11px] text-indigo-300/90 hover:text-indigo-200 underline underline-offset-2 transition-colors"
+                className="inline-flex items-center gap-0.5 text-[11px] text-slate-300/90 hover:text-slate-200 underline underline-offset-2 transition-colors"
                 data-testid={`legal-review-${u.doc_type}`}
               >
                 Review {u.name}
@@ -95,14 +95,14 @@ const LegalBanner = () => {
         <button
           onClick={handleAck}
           disabled={acking}
-          className="shrink-0 inline-flex items-center px-3 py-1.5 rounded-md text-[12px] font-semibold bg-indigo-500 hover:bg-indigo-400 text-white transition-colors disabled:opacity-60"
+          className="shrink-0 inline-flex items-center px-3 py-1.5 rounded-md text-[12px] font-semibold bg-slate-500 hover:bg-slate-400 text-white transition-colors disabled:opacity-60"
           data-testid="legal-banner-ack-btn"
         >
           {acking ? 'Saving…' : 'Got it'}
         </button>
         <button
           onClick={() => setDismissed(true)}
-          className="shrink-0 text-indigo-300/60 hover:text-indigo-200 transition-colors p-1"
+          className="shrink-0 text-slate-300/60 hover:text-slate-200 transition-colors p-1"
           aria-label="Dismiss"
           data-testid="legal-banner-dismiss-btn"
         >

@@ -262,7 +262,7 @@ const Settings = () => {
   const getTierColor = (tier) => {
     if (!tier) return 'bg-zinc-700 text-zinc-300';
     if (tier.includes('enterprise')) return 'bg-purple-500/20 text-purple-400';
-    if (tier.includes('pro')) return 'bg-indigo-500/20 text-indigo-400';
+    if (tier.includes('pro')) return 'bg-slate-500/20 text-slate-400';
     if (tier.includes('essential')) return 'bg-cyan-500/20 text-cyan-400';
     if (tier === 'trial') return 'bg-amber-500/20 text-amber-400';
     if (tier === 'expired' || tier === 'cancelled') return 'bg-red-500/20 text-red-400';
@@ -295,9 +295,9 @@ const Settings = () => {
 
         {/* Payment Status Banner */}
         {checkingStatus && (
-          <div className="flex items-center gap-3 p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-lg">
-            <Loader2 className="w-5 h-5 animate-spin text-indigo-400" />
-            <span className="text-indigo-300">Verifying payment...</span>
+          <div className="flex items-center gap-3 p-4 bg-slate-500/10 border border-slate-500/20 rounded-lg">
+            <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
+            <span className="text-slate-300">Verifying payment...</span>
           </div>
         )}
 
@@ -305,7 +305,7 @@ const Settings = () => {
         <Card className="bg-zinc-950/50 border-white/10" data-testid="profile-card">
           <CardHeader>
             <CardTitle className="text-lg font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
-              <User className="w-5 h-5 text-indigo-400" />
+              <User className="w-5 h-5 text-slate-400" />
               Profile
             </CardTitle>
           </CardHeader>
@@ -313,7 +313,7 @@ const Settings = () => {
             <div className="flex items-center gap-4">
               <Avatar className="w-16 h-16">
                 <AvatarImage src={user?.picture} alt={user?.name} />
-                <AvatarFallback className="bg-indigo-600 text-white text-lg">
+                <AvatarFallback className="bg-slate-600 text-white text-lg">
                   {getInitials(user?.name)}
                 </AvatarFallback>
               </Avatar>
@@ -380,7 +380,7 @@ const Settings = () => {
               {hasActivePaidSub && org?.role === 'owner' && (
                 <Button
                   variant="outline"
-                  className="border-indigo-500/40 text-indigo-300 hover:bg-indigo-500/10 hover:border-indigo-400"
+                  className="border-slate-500/40 text-slate-300 hover:bg-slate-500/10 hover:border-slate-400"
                   onClick={handleOpenBillingPortal}
                   disabled={loadingPortal}
                   data-testid="manage-billing-btn"
@@ -455,7 +455,7 @@ const Settings = () => {
         <Card className="bg-zinc-950/50 border-white/10" data-testid="security-2fa-card">
           <CardHeader>
             <CardTitle className="text-lg font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
-              <ShieldCheck className="w-5 h-5 text-indigo-400" />
+              <ShieldCheck className="w-5 h-5 text-slate-400" />
               Security
             </CardTitle>
           </CardHeader>
@@ -472,16 +472,16 @@ const Settings = () => {
               <button
                 onClick={toggle2FA}
                 disabled={toggling2FA}
-                className={`ml-4 relative inline-flex h-6 w-11 items-center rounded-full flex-shrink-0 transition-colors duration-200 focus:outline-none ${twoFAEnabled ? 'bg-indigo-600' : 'bg-zinc-700'}`}
+                className={`ml-4 relative inline-flex h-6 w-11 items-center rounded-full flex-shrink-0 transition-colors duration-200 focus:outline-none ${twoFAEnabled ? 'bg-slate-600' : 'bg-zinc-700'}`}
                 data-testid="2fa-toggle"
               >
                 <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${twoFAEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
               </button>
             </div>
             {twoFAEnabled && (
-              <div className="flex items-center gap-2 px-3 py-2 bg-indigo-500/5 border border-indigo-500/20 rounded-lg">
-                <ShieldCheck className="w-4 h-4 text-indigo-400 flex-shrink-0" />
-                <p className="text-xs text-indigo-300">2FA is active. A code will be emailed to you on every sign-in.</p>
+              <div className="flex items-center gap-2 px-3 py-2 bg-slate-500/5 border border-slate-500/20 rounded-lg">
+                <ShieldCheck className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                <p className="text-xs text-slate-300">2FA is active. A code will be emailed to you on every sign-in.</p>
               </div>
             )}
           </CardContent>
@@ -497,10 +497,10 @@ const Settings = () => {
           </CardHeader>
           <CardContent>
             {!canChangePlan && org?.role === 'member' && (
-              <div className="mb-4 flex items-start gap-2 p-3 rounded-lg bg-indigo-500/5 border border-indigo-500/15">
-                <ShieldCheck className="w-4 h-4 text-indigo-400 shrink-0 mt-0.5" />
+              <div className="mb-4 flex items-start gap-2 p-3 rounded-lg bg-slate-500/5 border border-slate-500/15">
+                <ShieldCheck className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
                 <p className="text-xs text-zinc-400">
-                  You're a <span className="text-indigo-400 font-medium">member</span> of this team. Only the team owner can change the plan or cancel the subscription.
+                  You're a <span className="text-slate-400 font-medium">member</span> of this team. Only the team owner can change the plan or cancel the subscription.
                 </p>
               </div>
             )}
@@ -508,7 +508,7 @@ const Settings = () => {
             <div className="mb-6 flex flex-col items-center">
               <div className="inline-flex items-center p-1 bg-zinc-900 rounded-full border border-zinc-800 relative">
                 <div
-                  className="absolute top-1 bottom-1 rounded-full bg-indigo-600 shadow-lg shadow-indigo-500/25 transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)]"
+                  className="absolute top-1 bottom-1 rounded-full bg-slate-600 shadow-lg shadow-slate-500/25 transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)]"
                   style={{
                     width: billingPeriod === 'monthly' ? 'calc(40% - 2px)' : 'calc(60% - 2px)',
                     left: billingPeriod === 'monthly' ? '4px' : 'calc(40% + 2px)',
@@ -544,9 +544,9 @@ const Settings = () => {
                     key={plan.key}
                     className={`relative p-5 rounded-xl border transition-all ${
                       isCurrentPlan 
-                        ? 'bg-indigo-500/10 border-indigo-500/30' 
+                        ? 'bg-slate-500/10 border-slate-500/30' 
                         : plan.featured
-                          ? 'bg-zinc-900/50 border-indigo-500/20 hover:border-indigo-500/40'
+                          ? 'bg-zinc-900/50 border-slate-500/20 hover:border-slate-500/40'
                           : 'bg-zinc-900/50 border-zinc-800 hover:border-zinc-700'
                     }`}
                     data-testid={`plan-${plan.key}`}

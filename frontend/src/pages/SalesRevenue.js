@@ -79,7 +79,7 @@ const SalesRevenue = () => {
             <CardContent className="p-5">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-zinc-400 text-sm">MRR</span>
-                <div className="p-1.5 rounded bg-indigo-500/10"><DollarSign className="w-4 h-4 text-indigo-400" /></div>
+                <div className="p-1.5 rounded bg-slate-500/10"><DollarSign className="w-4 h-4 text-slate-400" /></div>
               </div>
               <div className="text-lg sm:text-2xl font-bold font-mono text-white">{fmt(data?.mrr || 0)}</div>
               <div className="text-zinc-500 text-xs mt-1">ARR: {fmt(data?.arr || 0)}</div>
@@ -133,8 +133,8 @@ const SalesRevenue = () => {
                   <AreaChart data={data?.monthly_revenue || []}>
                     <defs>
                       <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#6366F1" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#6366F1" stopOpacity={0} />
+                        <stop offset="5%" stopColor="#64748B" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#64748B" stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#27272A" />
@@ -142,7 +142,7 @@ const SalesRevenue = () => {
                     <YAxis stroke="#71717A" fontSize={12} tickFormatter={(v) => `$${(v/1000).toFixed(0)}k`} />
                     <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#27272A' }} />
                     <Area type="monotone" dataKey="target" stroke="#3f3f46" fill="none" strokeDasharray="5 5" strokeWidth={1.5} name="Target" />
-                    <Area type="monotone" dataKey="revenue" stroke="#6366F1" fill="url(#revGrad)" strokeWidth={2} name="Revenue" />
+                    <Area type="monotone" dataKey="revenue" stroke="#64748B" fill="url(#revGrad)" strokeWidth={2} name="Revenue" />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>
@@ -192,14 +192,14 @@ const SalesRevenue = () => {
               {(data?.top_accounts || []).map((a, i) => (
                 <div key={i} className="flex items-center justify-between">
                   <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <span className="w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-xs font-bold flex-shrink-0">{i + 1}</span>
+                    <span className="w-6 h-6 rounded-full bg-slate-500/20 text-slate-400 flex items-center justify-center text-xs font-bold flex-shrink-0">{i + 1}</span>
                     <span className="text-zinc-300 text-sm truncate">{a.company}</span>
                   </div>
                   <div className="flex items-center gap-4">
                     <span className="text-white font-mono text-sm">{fmt(a.value)}</span>
                     <div className="w-16">
                       <div className="h-1.5 bg-zinc-800 rounded-full overflow-hidden">
-                        <div className="h-full bg-indigo-500 rounded-full" style={{ width: `${a.pct}%` }} />
+                        <div className="h-full bg-slate-500 rounded-full" style={{ width: `${a.pct}%` }} />
                       </div>
                     </div>
                     <span className="text-zinc-500 text-xs w-10 text-right">{a.pct}%</span>

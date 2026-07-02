@@ -239,13 +239,13 @@ const Support = () => {
 
   const statusIcon = {
     open: <AlertCircle className="w-3.5 h-3.5 text-amber-400" />,
-    'in-progress': <Clock className="w-3.5 h-3.5 text-indigo-400" />,
+    'in-progress': <Clock className="w-3.5 h-3.5 text-slate-400" />,
     resolved: <CheckCircle className="w-3.5 h-3.5 text-emerald-400" />,
   };
 
   const statusColor = {
     open: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-    'in-progress': 'bg-indigo-500/10 text-indigo-400 border-indigo-500/20',
+    'in-progress': 'bg-slate-500/10 text-slate-400 border-slate-500/20',
     resolved: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
   };
 
@@ -253,14 +253,14 @@ const Support = () => {
     if (!steps?.length) return null;
     return (
       <div className="mt-2 mb-3 space-y-1.5" data-testid="agent-steps">
-        <p className="text-[10px] uppercase tracking-wider text-indigo-400/70 font-medium">Investigation</p>
+        <p className="text-[10px] uppercase tracking-wider text-slate-400/70 font-medium">Investigation</p>
         {steps.map((step, i) => {
           const Icon = TOOL_ICONS[step.tool] || Database;
           const label = TOOL_LABELS[step.tool] || step.tool;
           return (
             <div key={i} className="flex items-center gap-2 text-xs" data-testid={`agent-step-${i}`}>
-              <div className="w-5 h-5 rounded bg-indigo-500/10 flex items-center justify-center flex-shrink-0">
-                <Icon className="w-3 h-3 text-indigo-400" />
+              <div className="w-5 h-5 rounded bg-slate-500/10 flex items-center justify-center flex-shrink-0">
+                <Icon className="w-3 h-3 text-slate-400" />
               </div>
               <span className="text-zinc-500">{label}</span>
               <span className="text-zinc-600 mx-1">-</span>
@@ -283,7 +283,7 @@ const Support = () => {
                 Smart Assist
               </h1>
               {isPriority && (
-                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-indigo-500/15 border border-indigo-500/25 text-indigo-400 text-xs rounded-full" data-testid="priority-badge">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-slate-500/15 border border-slate-500/25 text-slate-400 text-xs rounded-full" data-testid="priority-badge">
                   <Zap className="w-3 h-3" /> Priority
                 </span>
               )}
@@ -294,7 +294,7 @@ const Support = () => {
             <Button
               variant={view === 'chat' ? 'default' : 'outline'}
               size="sm"
-              className={view === 'chat' ? 'bg-white/10 hover:bg-white/20' : 'border-zinc-700 text-zinc-400 hover:bg-indigo-500/10 hover:text-indigo-400 hover:border-indigo-500/30'}
+              className={view === 'chat' ? 'bg-white/10 hover:bg-white/20' : 'border-zinc-700 text-zinc-400 hover:bg-slate-500/10 hover:text-slate-400 hover:border-slate-500/30'}
               onClick={() => setView('chat')}
               data-testid="view-chat-btn"
             >
@@ -303,7 +303,7 @@ const Support = () => {
             <Button
               variant={view === 'tickets' ? 'default' : 'outline'}
               size="sm"
-              className={view === 'tickets' ? 'bg-white/10 hover:bg-white/20' : 'border-zinc-700 text-zinc-400 hover:bg-indigo-500/10 hover:text-indigo-400 hover:border-indigo-500/30'}
+              className={view === 'tickets' ? 'bg-white/10 hover:bg-white/20' : 'border-zinc-700 text-zinc-400 hover:bg-slate-500/10 hover:text-slate-400 hover:border-slate-500/30'}
               onClick={() => setView('tickets')}
               data-testid="view-tickets-btn"
             >
@@ -333,7 +333,7 @@ const Support = () => {
                     key={c.conversation_id}
                     onClick={() => loadConversation(c.conversation_id)}
                     className={`w-full text-left p-2.5 rounded-lg transition-all text-sm ${
-                      activeConv === c.conversation_id ? 'bg-indigo-500/10 border border-indigo-500/20' : 'hover:bg-white/5 border border-transparent'
+                      activeConv === c.conversation_id ? 'bg-slate-500/10 border border-slate-500/20' : 'hover:bg-white/5 border border-transparent'
                     }`}
                     data-testid={`conv-${c.conversation_id}`}
                   >
@@ -353,8 +353,8 @@ const Support = () => {
                 {/* Chat Header */}
                 <div className="flex items-center justify-between px-4 py-3 border-b border-white/5">
                   <div className="flex items-center gap-2">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${agentMode ? 'bg-violet-500/20' : 'bg-indigo-500/20'}`}>
-                      {agentMode ? <BrainCircuit className="w-4 h-4 text-violet-400" /> : <Sparkles className="w-4 h-4 text-indigo-400" />}
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${agentMode ? 'bg-violet-500/20' : 'bg-slate-500/20'}`}>
+                      {agentMode ? <BrainCircuit className="w-4 h-4 text-violet-400" /> : <Sparkles className="w-4 h-4 text-slate-400" />}
                     </div>
                     <div>
                       <p className="text-sm font-medium text-white">{agentMode ? 'InFlow Agent' : 'InFlow AI Support'}</p>
@@ -387,7 +387,7 @@ const Support = () => {
                     <Button
                       size="sm"
                       variant="outline"
-                      className="border-zinc-700 text-zinc-400 text-xs h-7 hover:bg-indigo-500/10 hover:text-indigo-400 hover:border-indigo-500/30"
+                      className="border-zinc-700 text-zinc-400 text-xs h-7 hover:bg-slate-500/10 hover:text-slate-400 hover:border-slate-500/30"
                       onClick={() => setShowTicketModal(true)}
                       data-testid="escalate-btn"
                     >
@@ -403,8 +403,8 @@ const Support = () => {
                 <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4">
                   {messages.length === 0 && (
                     <div className="flex flex-col items-center justify-center h-full text-center">
-                      <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-4 ${agentMode ? 'bg-violet-500/10' : 'bg-indigo-500/10'}`}>
-                        {agentMode ? <BrainCircuit className="w-8 h-8 text-violet-400" /> : <Sparkles className="w-8 h-8 text-indigo-400" />}
+                      <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-4 ${agentMode ? 'bg-violet-500/10' : 'bg-slate-500/10'}`}>
+                        {agentMode ? <BrainCircuit className="w-8 h-8 text-violet-400" /> : <Sparkles className="w-8 h-8 text-slate-400" />}
                       </div>
                       <h3 className="text-white font-semibold mb-1" style={{ fontFamily: 'Outfit' }}>
                         {agentMode ? 'What should I investigate?' : 'How can I help?'}
@@ -437,7 +437,7 @@ const Support = () => {
                     <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                       <div className={`max-w-[85%] sm:max-w-[75%] ${
                         msg.role === 'user'
-                          ? 'bg-indigo-600 rounded-2xl rounded-br-md px-4 py-2.5'
+                          ? 'bg-slate-600 rounded-2xl rounded-br-md px-4 py-2.5'
                           : 'bg-zinc-800/70 border border-white/5 rounded-2xl rounded-bl-md px-4 py-2.5'
                       }`}>
                         {/* Agent Mode Badge */}
@@ -513,7 +513,7 @@ const Support = () => {
                           </div>
                         )}
 
-                        <p className={`text-[10px] mt-1.5 ${msg.role === 'user' ? 'text-indigo-200' : 'text-zinc-600'}`}>
+                        <p className={`text-[10px] mt-1.5 ${msg.role === 'user' ? 'text-slate-200' : 'text-zinc-600'}`}>
                           {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                         </p>
                       </div>
@@ -586,7 +586,7 @@ const Support = () => {
                           {statusIcon[t.status]} {t.status}
                         </span>
                         {t.priority === 'priority' && (
-                          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-indigo-500/15 text-indigo-400 text-[10px] rounded-full border border-indigo-500/20">
+                          <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-slate-500/15 text-slate-400 text-[10px] rounded-full border border-slate-500/20">
                             <Zap className="w-2.5 h-2.5" /> Priority
                           </span>
                         )}
@@ -636,7 +636,7 @@ const Support = () => {
                 </p>
               )}
               <DialogFooter>
-                <Button type="button" variant="outline" onClick={() => setShowTicketModal(false)} className="border-zinc-700 text-zinc-300 hover:bg-indigo-500/10 hover:text-indigo-400 hover:border-indigo-500/30">Cancel</Button>
+                <Button type="button" variant="outline" onClick={() => setShowTicketModal(false)} className="border-zinc-700 text-zinc-300 hover:bg-slate-500/10 hover:text-slate-400 hover:border-slate-500/30">Cancel</Button>
                 <Button type="submit" className="bg-white/10 hover:bg-white/20" data-testid="submit-ticket-btn">Submit Ticket</Button>
               </DialogFooter>
             </form>

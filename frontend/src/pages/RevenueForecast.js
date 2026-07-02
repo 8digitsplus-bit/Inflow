@@ -53,7 +53,7 @@ const RevenueForecast = () => {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-96">
-          <Loader2 className="w-8 h-8 animate-spin text-indigo-400" />
+          <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
         </div>
       </DashboardLayout>
     );
@@ -66,7 +66,7 @@ const RevenueForecast = () => {
   );
 
   const scenarioData = data.scenarios?.[scenario] || {};
-  const scenarioColors = { best: '#10B981', expected: '#6366F1', worst: '#F59E0B' };
+  const scenarioColors = { best: '#10B981', expected: '#64748B', worst: '#F59E0B' };
   const scenarioLabels = { best: 'Best Case', expected: 'Expected', worst: 'Conservative' };
 
   return (
@@ -82,7 +82,7 @@ const RevenueForecast = () => {
 
         {/* Key Metrics */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4" data-testid="forecast-metrics">
-          <MetricCard icon={DollarSign} label="Weighted Pipeline" value={fmt(data.weighted_pipeline)} change={data.pipeline_trend} color="text-indigo-400" />
+          <MetricCard icon={DollarSign} label="Weighted Pipeline" value={fmt(data.weighted_pipeline)} change={data.pipeline_trend} color="text-slate-400" />
           <MetricCard icon={Target} label="Expected Revenue" value={fmt(data.scenarios?.expected?.total)} color="text-emerald-400" />
           <MetricCard icon={Zap} label="Revenue Velocity" value={fmt(data.velocity?.value_per_day)} sub="/day" color="text-amber-400" />
           <MetricCard icon={Clock} label="Avg. Days to Close" value={`${data.velocity?.avg_cycle_days || 0}d`} color="text-cyan-400" />
@@ -93,7 +93,7 @@ const RevenueForecast = () => {
           <CardHeader className="pb-2">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <CardTitle className="text-base text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
-                <BarChart3 className="w-5 h-5 text-indigo-400" /> Monthly Forecast
+                <BarChart3 className="w-5 h-5 text-slate-400" /> Monthly Forecast
               </CardTitle>
               <div className="flex items-center gap-1 bg-zinc-900 rounded-lg p-0.5 border border-zinc-800" data-testid="scenario-toggle">
                 {['best', 'expected', 'worst'].map(s => (
@@ -129,8 +129,8 @@ const RevenueForecast = () => {
                     <stop offset="100%" stopColor="#10B981" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="gradExpected" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#6366F1" stopOpacity={0.3} />
-                    <stop offset="100%" stopColor="#6366F1" stopOpacity={0} />
+                    <stop offset="0%" stopColor="#64748B" stopOpacity={0.3} />
+                    <stop offset="100%" stopColor="#64748B" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="gradWorst" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#F59E0B" stopOpacity={0.3} />
@@ -145,7 +145,7 @@ const RevenueForecast = () => {
                   cursor={{ stroke: '#27272A', fill: 'none' }}
                 />
                 <Area type="monotone" dataKey="best" name="Best Case" stroke="#10B981" fill="url(#gradBest)" strokeWidth={scenario === 'best' ? 2.5 : 1} strokeOpacity={scenario === 'best' ? 1 : 0.3} fillOpacity={scenario === 'best' ? 1 : 0.1} />
-                <Area type="monotone" dataKey="expected" name="Expected" stroke="#6366F1" fill="url(#gradExpected)" strokeWidth={scenario === 'expected' ? 2.5 : 1} strokeOpacity={scenario === 'expected' ? 1 : 0.3} fillOpacity={scenario === 'expected' ? 1 : 0.1} />
+                <Area type="monotone" dataKey="expected" name="Expected" stroke="#64748B" fill="url(#gradExpected)" strokeWidth={scenario === 'expected' ? 2.5 : 1} strokeOpacity={scenario === 'expected' ? 1 : 0.3} fillOpacity={scenario === 'expected' ? 1 : 0.1} />
                 <Area type="monotone" dataKey="worst" name="Conservative" stroke="#F59E0B" fill="url(#gradWorst)" strokeWidth={scenario === 'worst' ? 2.5 : 1} strokeOpacity={scenario === 'worst' ? 1 : 0.3} fillOpacity={scenario === 'worst' ? 1 : 0.1} />
               </ComposedChart>
             </ResponsiveContainer>
@@ -256,7 +256,7 @@ const RevenueForecast = () => {
                   <span className="text-zinc-600">/</span>
                   <span className="bg-zinc-800 px-2 py-1 rounded text-xs">{data.velocity?.avg_cycle_days}d</span>
                   <span className="text-zinc-600">=</span>
-                  <span className="bg-indigo-500/15 text-indigo-400 px-2 py-1 rounded text-xs font-semibold">{fmt(data.velocity?.value_per_day)}/day</span>
+                  <span className="bg-slate-500/15 text-slate-400 px-2 py-1 rounded text-xs font-semibold">{fmt(data.velocity?.value_per_day)}/day</span>
                 </div>
               </div>
             </CardContent>
@@ -290,14 +290,14 @@ const RevenueForecast = () => {
                         <td className="py-2.5 px-3 text-white font-medium truncate max-w-[180px]">{deal.name}</td>
                         <td className="py-2.5 px-3 text-zinc-400 truncate max-w-[140px]">{deal.company}</td>
                         <td className="py-2.5 px-3 text-right text-white">{fmt(deal.value)}</td>
-                        <td className="py-2.5 px-3 text-right text-indigo-400 font-medium">{fmt(deal.weighted)}</td>
+                        <td className="py-2.5 px-3 text-right text-slate-400 font-medium">{fmt(deal.weighted)}</td>
                         <td className="py-2.5 px-3 text-center">
                           <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium ${deal.probability >= 70 ? 'bg-emerald-500/15 text-emerald-400' : deal.probability >= 40 ? 'bg-amber-500/15 text-amber-400' : 'bg-zinc-700 text-zinc-400'}`}>
                             {deal.probability}%
                           </span>
                         </td>
                         <td className="py-2.5 px-3">
-                          <span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-indigo-500/10 text-indigo-400 capitalize">
+                          <span className="px-2 py-0.5 rounded-full text-[11px] font-medium bg-slate-500/10 text-slate-400 capitalize">
                             {deal.stage?.replace(/_/g, ' ')}
                           </span>
                         </td>

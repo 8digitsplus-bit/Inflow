@@ -89,8 +89,8 @@ export default function Enable2FADialog({ open, onOpenChange, onEnabled }) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="bg-zinc-950 border-zinc-800 text-white max-w-sm" data-testid="enable-2fa-dialog">
         <DialogHeader>
-          <div className="w-11 h-11 rounded-xl bg-indigo-500/10 flex items-center justify-center mb-2">
-            <ShieldCheck className="w-5 h-5 text-indigo-400" />
+          <div className="w-11 h-11 rounded-xl bg-slate-500/10 flex items-center justify-center mb-2">
+            <ShieldCheck className="w-5 h-5 text-slate-400" />
           </div>
           <DialogTitle className="text-white" style={{ fontFamily: 'Outfit' }}>
             Enable two-factor authentication

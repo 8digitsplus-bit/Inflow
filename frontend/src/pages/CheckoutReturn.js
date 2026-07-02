@@ -46,7 +46,7 @@ const CheckoutReturn = () => {
     return (
       <div className="min-h-screen bg-[#050507] flex items-center justify-center px-4" data-testid="checkout-return-loading">
         <div className="text-center">
-          <Loader2 className="w-10 h-10 animate-spin text-indigo-400 mx-auto mb-4" />
+          <Loader2 className="w-10 h-10 animate-spin text-slate-400 mx-auto mb-4" />
           <p className="text-zinc-300 text-base font-medium">Confirming your payment…</p>
           <p className="text-zinc-500 text-sm mt-1">This usually takes a few seconds.</p>
         </div>

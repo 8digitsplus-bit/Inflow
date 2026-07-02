@@ -100,14 +100,14 @@ const NotificationBell = () => {
     if (type === 'deal_update') {
       return <TrendingDown className="w-4 h-4 text-cyan-400" />;
     }
-    return <Info className="w-4 h-4 text-indigo-400" />;
+    return <Info className="w-4 h-4 text-slate-400" />;
   };
 
   const getPriorityBorder = (priority) => {
     switch (priority) {
       case 'critical': return 'border-l-red-500';
       case 'high': return 'border-l-amber-500';
-      case 'medium': return 'border-l-indigo-500';
+      case 'medium': return 'border-l-slate-500';
       default: return 'border-l-zinc-600';
     }
   };
@@ -158,7 +158,7 @@ const NotificationBell = () => {
             {unreadCount > 0 && (
               <button
                 onClick={markAllAsRead}
-                className="text-xs text-indigo-400 hover:text-indigo-300 transition-colors"
+                className="text-xs text-slate-400 hover:text-slate-300 transition-colors"
               >
                 Mark all as read
               </button>
@@ -200,7 +200,7 @@ const NotificationBell = () => {
                         {!notification.read && (
                           <button
                             onClick={() => markAsRead(notification.notification_id)}
-                            className="text-xs text-indigo-400 hover:text-indigo-300"
+                            className="text-xs text-slate-400 hover:text-slate-300"
                           >
                             Mark as read
                           </button>

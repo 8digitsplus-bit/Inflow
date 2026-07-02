@@ -231,7 +231,7 @@ const Dashboard = () => {
           <div className="flex items-center gap-3">
             <span className={`px-3 py-1.5 rounded-full text-xs font-medium ${
               isEnterprise ? 'bg-purple-500/20 text-purple-400' :
-              isPro ? 'bg-indigo-500/20 text-indigo-400' :
+              isPro ? 'bg-slate-500/20 text-slate-400' :
               isEssential ? 'bg-cyan-500/20 text-cyan-400' :
               isTrial ? 'bg-amber-500/20 text-amber-400' :
               isExpired || isCancelled ? 'bg-red-500/20 text-red-400' :
@@ -268,10 +268,10 @@ const Dashboard = () => {
                 <DropdownMenuTrigger asChild>
                   <button
                     type="button"
-                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium bg-zinc-900 text-zinc-200 border border-zinc-800 hover:border-indigo-500/50 hover:bg-zinc-800 transition-colors"
+                    className="inline-flex items-center gap-2 px-3 py-1.5 rounded-md text-xs font-medium bg-zinc-900 text-zinc-200 border border-zinc-800 hover:border-slate-500/50 hover:bg-zinc-800 transition-colors"
                     data-testid="source-filter-trigger"
                   >
-                    <Filter className="w-3.5 h-3.5 text-indigo-400" />
+                    <Filter className="w-3.5 h-3.5 text-slate-400" />
                     <span>{triggerLabel}</span>
                     <ChevronDown className="w-3.5 h-3.5 text-zinc-500" />
                   </button>
@@ -288,7 +288,7 @@ const Dashboard = () => {
                   <button
                     type="button"
                     onClick={() => setSelectedSources([])}
-                    className={`w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-sm hover:bg-zinc-900 ${allActive ? 'text-indigo-400' : 'text-zinc-200'}`}
+                    className={`w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-sm hover:bg-zinc-900 ${allActive ? 'text-slate-400' : 'text-zinc-200'}`}
                     data-testid="source-filter-all"
                   >
                     <Check className={`w-3.5 h-3.5 ${allActive ? 'opacity-100' : 'opacity-0'}`} />
@@ -298,13 +298,13 @@ const Dashboard = () => {
                   {connectedSources.map(s => {
                     const active = selectedSources.includes(s.platform_id);
                     const role = s.revenue_role || s.default_revenue_role || 'revenue';
-                    const dotClass = role === 'revenue' ? 'bg-emerald-400' : role === 'pipeline' ? 'bg-indigo-400' : 'bg-amber-400';
+                    const dotClass = role === 'revenue' ? 'bg-emerald-400' : role === 'pipeline' ? 'bg-slate-400' : 'bg-amber-400';
                     return (
                       <DropdownMenuCheckboxItem
                         key={s.platform_id}
                         checked={active}
                         onCheckedChange={() => togglePlatform(s.platform_id)}
-                        className="text-sm focus:bg-zinc-900 focus:text-white data-[state=checked]:text-indigo-400"
+                        className="text-sm focus:bg-zinc-900 focus:text-white data-[state=checked]:text-slate-400"
                         data-testid={`source-filter-${s.platform_id}`}
                       >
                         <span className={`w-1.5 h-1.5 rounded-full mr-2 ${dotClass}`} />
@@ -317,7 +317,7 @@ const Dashboard = () => {
                   <button
                     type="button"
                     onClick={() => setSelectedSources(manualOnly ? [] : ['manual'])}
-                    className={`w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-sm hover:bg-zinc-900 ${manualOnly ? 'text-indigo-400' : 'text-zinc-200'}`}
+                    className={`w-full flex items-center gap-2 px-2 py-1.5 text-sm rounded-sm hover:bg-zinc-900 ${manualOnly ? 'text-slate-400' : 'text-zinc-200'}`}
                     data-testid="source-filter-manual"
                   >
                     <Check className={`w-3.5 h-3.5 ${manualOnly ? 'opacity-100' : 'opacity-0'}`} />
@@ -341,10 +341,10 @@ const Dashboard = () => {
 
         {/* Key Metrics - Available to all */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
-          <Card className="bg-zinc-950/50 border-white/10 hover:border-indigo-500/30 transition-colors" data-testid="metric-pipeline">
+          <Card className="bg-zinc-950/50 border-white/10 hover:border-slate-500/30 transition-colors" data-testid="metric-pipeline">
             <CardContent className="p-3 sm:p-5">
               <div className="flex items-center justify-between mb-3">
-                <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-400"><DollarSign className="w-5 h-5" /></div>
+                <div className="p-2 rounded-lg bg-slate-500/10 text-slate-400"><DollarSign className="w-5 h-5" /></div>
                 <span className="text-xs font-medium flex items-center gap-1 text-emerald-400"><TrendingUp className="w-3 h-3" /> +12.5%</span>
               </div>
               <div className="text-lg sm:text-2xl font-bold text-white truncate" style={{ fontFamily: 'Outfit' }}>{formatCurrency(analytics?.total_pipeline || 0)}</div>
@@ -385,14 +385,14 @@ const Dashboard = () => {
 
         {/* Main Charts Row */}
         <div className="grid lg:grid-cols-3 gap-6">
-          <Card className={`lg:col-span-2 bg-zinc-950/50 border-white/10 ${isGoalHighlighted('revenue_chart') ? 'ring-1 ring-indigo-500/30' : ''}`} data-testid="revenue-chart">
+          <Card className={`lg:col-span-2 bg-zinc-950/50 border-white/10 ${isGoalHighlighted('revenue_chart') ? 'ring-1 ring-slate-500/30' : ''}`} data-testid="revenue-chart">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
-                  <BarChart3 className="w-5 h-5 text-indigo-400" /> Revenue Trend
-                  {isGoalHighlighted('revenue_chart') && <span className="text-[10px] bg-indigo-500/20 text-indigo-400 px-2 py-0.5 rounded-full">Priority</span>}
+                  <BarChart3 className="w-5 h-5 text-slate-400" /> Revenue Trend
+                  {isGoalHighlighted('revenue_chart') && <span className="text-[10px] bg-slate-500/20 text-slate-400 px-2 py-0.5 rounded-full">Priority</span>}
                 </CardTitle>
-                <Link to="/revenue"><Button variant="ghost" size="sm" className="text-zinc-400 hover:text-indigo-400 hover:bg-indigo-500/10">View All <ArrowRight className="w-4 h-4 ml-1" /></Button></Link>
+                <Link to="/revenue"><Button variant="ghost" size="sm" className="text-zinc-400 hover:text-slate-400 hover:bg-slate-500/10">View All <ArrowRight className="w-4 h-4 ml-1" /></Button></Link>
               </div>
             </CardHeader>
             <CardContent>
@@ -401,7 +401,7 @@ const Dashboard = () => {
                   <AreaChart data={analytics?.monthly_data || []}>
                     <defs>
                       <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#6366F1" stopOpacity={0.3}/><stop offset="95%" stopColor="#6366F1" stopOpacity={0}/>
+                        <stop offset="5%" stopColor="#64748B" stopOpacity={0.3}/><stop offset="95%" stopColor="#64748B" stopOpacity={0}/>
                       </linearGradient>
                       <linearGradient id="colorForecast" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#10B981" stopOpacity={0.3}/><stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
@@ -411,7 +411,7 @@ const Dashboard = () => {
                     <XAxis dataKey="month" stroke="#71717A" fontSize={12} />
                     <YAxis stroke="#71717A" fontSize={12} tickFormatter={(v) => `$${v/1000}k`} />
                     <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#27272A' }} />
-                    <Area type="monotone" dataKey="revenue" stroke="#6366F1" fill="url(#colorRevenue)" strokeWidth={2} name="Revenue" />
+                    <Area type="monotone" dataKey="revenue" stroke="#64748B" fill="url(#colorRevenue)" strokeWidth={2} name="Revenue" />
                     <Area type="monotone" dataKey="forecast" stroke="#10B981" fill="url(#colorForecast)" strokeWidth={2} strokeDasharray="5 5" name="Forecast" />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -437,7 +437,7 @@ const Dashboard = () => {
                     <YAxis type="category" dataKey="stage" tick={{ fill: '#a1a1aa', fontSize: 12, textTransform: 'capitalize' }} width={80} tickFormatter={(v) => v.charAt(0).toUpperCase() + v.slice(1)} />
                     <Tooltip contentStyle={{ backgroundColor: '#0c0c10', border: '1px solid #3f3f46', borderRadius: '8px', color: '#fff' }} itemStyle={{ color: '#A1A1AA' }} formatter={(v) => [`${v} deals`, 'Count']} cursor={{ fill: 'rgba(39, 39, 42, 0.3)' }} />
                     <Bar dataKey="count" radius={[0, 6, 6, 0]} barSize={18}>
-                      {pieData.map((entry, index) => (<Cell key={`cell-${index}`} fill={stageColors[entry.stage] || '#6366F1'} />))}
+                      {pieData.map((entry, index) => (<Cell key={`cell-${index}`} fill={stageColors[entry.stage] || '#64748B'} />))}
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
@@ -526,7 +526,7 @@ const Dashboard = () => {
             if (section === 'ai_insights') {
               const locked = !hasAccess('ai_insights');
               return (
-                <Card key={section} className={`relative bg-gradient-to-br from-purple-500/10 to-indigo-500/5 ${locked ? 'border-zinc-800' : isGoalHighlighted('ai_insights') ? 'border-purple-500/40 ring-1 ring-purple-500/20' : 'border-purple-500/20'}`} data-testid="ai-insights-card">
+                <Card key={section} className={`relative bg-gradient-to-br from-purple-500/10 to-slate-500/5 ${locked ? 'border-zinc-800' : isGoalHighlighted('ai_insights') ? 'border-purple-500/40 ring-1 ring-purple-500/20' : 'border-purple-500/20'}`} data-testid="ai-insights-card">
                   {locked && <LockedOverlay requiredTier="Pro" />}
                   <CardHeader className="pb-2">
                     <CardTitle className="text-base font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
@@ -555,13 +555,13 @@ const Dashboard = () => {
 
         {/* Recent Deals & Quick Actions */}
         <div className="grid lg:grid-cols-3 gap-6">
-          <Card className={`lg:col-span-2 bg-zinc-950/50 border-white/10 ${isGoalHighlighted('recent_deals') ? 'ring-1 ring-indigo-500/20' : ''}`} data-testid="recent-deals">
+          <Card className={`lg:col-span-2 bg-zinc-950/50 border-white/10 ${isGoalHighlighted('recent_deals') ? 'ring-1 ring-slate-500/20' : ''}`} data-testid="recent-deals">
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-lg font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
-                  <Clock className="w-5 h-5 text-indigo-400" /> Recent Deals
+                  <Clock className="w-5 h-5 text-slate-400" /> Recent Deals
                 </CardTitle>
-                <Link to="/pipeline"><Button variant="ghost" size="sm" className="text-zinc-400 hover:text-indigo-400 hover:bg-indigo-500/10">View All <ArrowRight className="w-4 h-4 ml-1" /></Button></Link>
+                <Link to="/pipeline"><Button variant="ghost" size="sm" className="text-zinc-400 hover:text-slate-400 hover:bg-slate-500/10">View All <ArrowRight className="w-4 h-4 ml-1" /></Button></Link>
               </div>
             </CardHeader>
             <CardContent>
@@ -570,7 +570,7 @@ const Dashboard = () => {
                   {recentDeals.map((deal, i) => (
                     <div key={i} className="flex items-center justify-between p-2 sm:p-3 bg-zinc-900/50 rounded-lg border border-zinc-800/50 hover:border-zinc-700 transition-colors">
                       <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-                        <div className="w-1 h-10 rounded-full flex-shrink-0" style={{ backgroundColor: stageColors[deal.stage] || '#6366F1' }} />
+                        <div className="w-1 h-10 rounded-full flex-shrink-0" style={{ backgroundColor: stageColors[deal.stage] || '#64748B' }} />
                         <div className="min-w-0">
                           <h4 className="text-white font-medium text-xs sm:text-sm truncate">{deal.name}</h4>
                           <p className="text-zinc-400 text-[10px] sm:text-xs truncate">{deal.company}</p>
@@ -599,8 +599,8 @@ const Dashboard = () => {
             </CardHeader>
             <CardContent className="space-y-2">
               <Link to="/pipeline" className="block">
-                <Button variant="outline" className="w-full justify-start border-zinc-800 hover:bg-zinc-900 hover:border-indigo-500/30">
-                  <Target className="w-4 h-4 mr-2 text-indigo-400" /> Add New Deal
+                <Button variant="outline" className="w-full justify-start border-zinc-800 hover:bg-zinc-900 hover:border-slate-500/30">
+                  <Target className="w-4 h-4 mr-2 text-slate-400" /> Add New Deal
                 </Button>
               </Link>
               {(isPro || isEnterprise) && (

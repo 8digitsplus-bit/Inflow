@@ -117,9 +117,9 @@ const Checkout = () => {
 
       {/* Ambient glass glows — matches Hero / Auth aesthetic */}
       <div aria-hidden className="pointer-events-none absolute inset-0 overflow-hidden -z-0">
-        <div className="absolute left-1/2 top-0 -translate-x-1/2 h-[36rem] w-[40rem] rounded-full bg-indigo-500/10 blur-[130px]" />
+        <div className="absolute left-1/2 top-0 -translate-x-1/2 h-[36rem] w-[40rem] rounded-full bg-slate-500/10 blur-[130px]" />
         <div className="absolute left-0 top-32 h-[24rem] w-[16rem] -rotate-45 rounded-full bg-cyan-500/[0.05] blur-[110px]" />
-        <div className="absolute right-0 bottom-0 h-[28rem] w-[18rem] rotate-45 rounded-full bg-indigo-600/[0.06] blur-[110px]" />
+        <div className="absolute right-0 bottom-0 h-[28rem] w-[18rem] rotate-45 rounded-full bg-slate-600/[0.06] blur-[110px]" />
       </div>
 
       {/* Header */}
@@ -275,7 +275,7 @@ const Checkout = () => {
           >
             <div className="relative" data-testid="embedded-checkout-wrapper">
               {/* Glass halo */}
-              <div aria-hidden className="pointer-events-none absolute -inset-px rounded-2xl bg-gradient-to-br from-white/25 via-white/5 to-indigo-500/20 blur-xl opacity-70" />
+              <div aria-hidden className="pointer-events-none absolute -inset-px rounded-2xl bg-gradient-to-br from-white/25 via-white/5 to-slate-500/20 blur-xl opacity-70" />
               {/* Card — Stripe's embedded UI is light-themed, kept on a clean surface */}
               <div className="relative bg-white rounded-2xl overflow-hidden ring-1 ring-white/20 shadow-[0_8px_60px_-15px_rgba(0,0,0,0.7)]">
                 <EmbeddedCheckoutProvider

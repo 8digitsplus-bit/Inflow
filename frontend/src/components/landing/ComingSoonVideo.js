@@ -36,7 +36,7 @@ export const ComingSoonVideo = () => {
 
       <div className="relative z-10 max-w-3xl mx-auto text-center">
         <div className={`transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8'}`}>
-          <span className="inline-block px-4 py-1.5 rounded-full bg-indigo-500/15 border border-indigo-500/25 text-indigo-400 text-xs font-semibold uppercase tracking-widest mb-6" data-testid="coming-soon-badge">
+          <span className="inline-block px-4 py-1.5 rounded-full bg-slate-500/15 border border-slate-500/25 text-slate-400 text-xs font-semibold uppercase tracking-widest mb-6" data-testid="coming-soon-badge">
             Coming Soon
           </span>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-white leading-tight mb-5" style={{ fontFamily: 'Outfit' }} data-testid="coming-soon-heading">

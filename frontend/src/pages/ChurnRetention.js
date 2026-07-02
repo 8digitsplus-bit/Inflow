@@ -142,9 +142,9 @@ const ChurnRetention = () => {
             <CardContent className="p-4">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-zinc-400 text-xs">Net Revenue Retention</span>
-                <DollarSign className="w-4 h-4 text-indigo-400" />
+                <DollarSign className="w-4 h-4 text-slate-400" />
               </div>
-              <div className="text-lg sm:text-2xl font-bold font-mono truncate text-indigo-400">{data?.nrr || 100}%</div>
+              <div className="text-lg sm:text-2xl font-bold font-mono truncate text-slate-400">{data?.nrr || 100}%</div>
               <div className="text-[10px] text-zinc-500 mt-1">Target: {'>'}100%</div>
             </CardContent>
           </Card>
@@ -195,7 +195,7 @@ const ChurnRetention = () => {
                     <Legend />
                     <Area type="monotone" dataKey="retention_rate" stroke="#10B981" fill="url(#retGrad)" strokeWidth={2} name="Retention" />
                     <Line type="monotone" dataKey="churn_rate" stroke="#EF4444" strokeWidth={2} dot={{ fill: '#EF4444', r: 3 }} name="Churn" />
-                    <Line type="monotone" dataKey="nrr" stroke="#6366F1" strokeWidth={2} strokeDasharray="5 5" dot={false} name="NRR" />
+                    <Line type="monotone" dataKey="nrr" stroke="#64748B" strokeWidth={2} strokeDasharray="5 5" dot={false} name="NRR" />
                   </ComposedChart>
                 </ResponsiveContainer>
               </div>
@@ -230,7 +230,7 @@ const ChurnRetention = () => {
                         return (
                           <div style={{ backgroundColor: '#0c0c10', border: '1px solid #3f3f46', borderRadius: '0.5rem', padding: '0.75rem' }}>
                             <p className="text-sm font-medium text-white">{d.status}</p>
-                            <p className="text-indigo-400 text-sm font-mono">{d.count} customers ({pct}%)</p>
+                            <p className="text-slate-400 text-sm font-mono">{d.count} customers ({pct}%)</p>
                           </div>
                         );
                       }} 
@@ -296,7 +296,7 @@ const ChurnRetention = () => {
                         className="h-full rounded-full transition-all duration-700"
                         style={{
                           width: `${r.pct}%`,
-                          backgroundColor: ['#EF4444', '#F59E0B', '#6366F1', '#06B6D4', '#8B5CF6'][i]
+                          backgroundColor: ['#EF4444', '#F59E0B', '#64748B', '#06B6D4', '#8B5CF6'][i]
                         }}
                       />
                     </div>
@@ -311,7 +311,7 @@ const ChurnRetention = () => {
         <Card className="bg-zinc-950/50 border-white/10" data-testid="risk-by-segment">
           <CardHeader>
             <CardTitle className="text-lg font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
-              <Shield className="w-5 h-5 text-indigo-400" /> Risk by Deal Value Segment
+              <Shield className="w-5 h-5 text-slate-400" /> Risk by Deal Value Segment
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -377,7 +377,7 @@ const ChurnRetention = () => {
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-purple-500/10 to-indigo-500/5 border-purple-500/20" data-testid="ai-prediction-card">
+          <Card className="bg-gradient-to-br from-purple-500/10 to-slate-500/5 border-purple-500/20" data-testid="ai-prediction-card">
             <CardHeader>
               <CardTitle className="text-lg font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
                 <Sparkles className="w-5 h-5 text-purple-400" /> AI Churn Prediction
@@ -406,7 +406,7 @@ const ChurnRetention = () => {
         <Card className="bg-zinc-950/50 border-white/10" data-testid="cohort-analysis-card">
           <CardHeader>
             <CardTitle className="text-lg font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
-              <Users className="w-5 h-5 text-indigo-400" /> Cohort Retention Analysis
+              <Users className="w-5 h-5 text-slate-400" /> Cohort Retention Analysis
             </CardTitle>
           </CardHeader>
           <CardContent>

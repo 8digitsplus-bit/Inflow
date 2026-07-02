@@ -23,7 +23,7 @@ export const ConnectBusinessSection = () => {
         <div className="grid lg:grid-cols-2 gap-16 items-center">
           <div>
             <div className="reveal-left">
-              <span className="text-indigo-400 text-sm font-medium uppercase tracking-widest">Live Integration</span>
+              <span className="text-slate-400 text-sm font-medium uppercase tracking-widest">Live Integration</span>
               <h2 className="mt-4 text-3xl sm:text-4xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>
                 Plug in your tools. Get real insights.
               </h2>
@@ -35,11 +35,11 @@ export const ConnectBusinessSection = () => {
             <div className="mt-10 space-y-6">
               {benefits.map((b, i) => (
                 <div key={i} className={`flex gap-4 group cursor-default reveal reveal-delay-${i + 1}`}>
-                  <div className="w-10 h-10 rounded-lg bg-indigo-500/10 flex items-center justify-center shrink-0 group-hover:bg-indigo-500/20 transition-colors">
-                    <b.icon className="w-5 h-5 text-indigo-400" />
+                  <div className="w-10 h-10 rounded-lg bg-slate-500/10 flex items-center justify-center shrink-0 group-hover:bg-slate-500/20 transition-colors">
+                    <b.icon className="w-5 h-5 text-slate-400" />
                   </div>
                   <div>
-                    <h3 className="text-sm font-semibold text-white mb-1 group-hover:text-indigo-300 transition-colors" style={{ fontFamily: 'Outfit' }}>{b.title}</h3>
+                    <h3 className="text-sm font-semibold text-white mb-1 group-hover:text-slate-300 transition-colors" style={{ fontFamily: 'Outfit' }}>{b.title}</h3>
                     <p className="text-zinc-400 text-sm leading-relaxed">{b.desc}</p>
                   </div>
                 </div>
@@ -51,12 +51,12 @@ export const ConnectBusinessSection = () => {
             <div className="absolute -inset-4 bg-white/[0.04] blur-3xl rounded-3xl" />
             <div className="relative bg-white/[0.03] border border-white/[0.08] rounded-2xl p-6 backdrop-blur-xl">
               <div className="flex items-center gap-2 mb-5">
-                <Zap className="w-4 h-4 text-indigo-400" />
+                <Zap className="w-4 h-4 text-slate-400" />
                 <span className="text-sm font-medium text-white" style={{ fontFamily: 'Outfit' }}>Your Integrations</span>
               </div>
               <div className="space-y-3">
                 {platforms.map((p, i) => (
-                  <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] backdrop-blur-lg hover:border-indigo-500/20 hover:bg-white/[0.04] transition-all group">
+                  <div key={i} className="flex items-center gap-3 p-3 rounded-xl bg-white/[0.02] border border-white/[0.06] backdrop-blur-lg hover:border-slate-500/20 hover:bg-white/[0.04] transition-all group">
                     <div className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0" style={{ backgroundColor: `${p.color}18` }}>
                       <p.icon className="w-4 h-4" style={{ color: p.color }} />
                     </div>

@@ -12,7 +12,7 @@
   --card-foreground: 0 0% 98%;
   --popover: 240 5% 5%;
   --popover-foreground: 0 0% 98%;
-  --primary: 239 84% 67%;
+  --primary: 215 16% 47%;
   --primary-foreground: 0 0% 100%;
   --secondary: 160 84% 39%;
   --secondary-foreground: 0 0% 100%;
@@ -24,10 +24,10 @@
   --destructive-foreground: 0 0% 98%;
   --border: 240 4% 12%;
   --input: 240 4% 12%;
-  --ring: 239 84% 67%;
+  --ring: 215 16% 47%;
   --radius: 0.5rem;
   
-  --chart-1: 239 84% 67%;
+  --chart-1: 215 16% 47%;
   --chart-2: 160 84% 39%;
   --chart-3: 187 94% 43%;
   --chart-4: 271 81% 56%;
@@ -237,7 +237,7 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Gradient text */
 .gradient-text {
-  background: linear-gradient(135deg, #6366F1 0%, #06B6D4 100%);
+  background: linear-gradient(135deg, #64748B 0%, #06B6D4 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -256,7 +256,7 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Hero glow */
 .hero-glow {
-  background: radial-gradient(circle at center, rgba(99, 102, 241, 0.15) 0%, transparent 70%);
+  background: radial-gradient(circle at center, rgba(100, 116, 139, 0.15) 0%, transparent 70%);
 }
 
 /* Card hover effect */
@@ -265,7 +265,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 .card-hover:hover {
-  border-color: rgba(99, 102, 241, 0.3);
+  border-color: rgba(100, 116, 139, 0.3);
   transform: translateY(-2px);
 }
 
@@ -317,20 +317,20 @@ h1, h2, h3, h4, h5, h6 {
 
 .pricing-card:hover {
   transform: translateY(-6px);
-  border-color: rgba(99, 102, 241, 0.3);
+  border-color: rgba(100, 116, 139, 0.3);
   background: rgba(255, 255, 255, 0.05);
-  box-shadow: 0 20px 60px -15px rgba(99, 102, 241, 0.15);
+  box-shadow: 0 20px 60px -15px rgba(100, 116, 139, 0.15);
 }
 
 .pricing-card.featured {
-  border-color: rgba(99, 102, 241, 0.2);
-  background: linear-gradient(180deg, rgba(99, 102, 241, 0.06) 0%, rgba(255, 255, 255, 0.03) 100%);
+  border-color: rgba(100, 116, 139, 0.2);
+  background: linear-gradient(180deg, rgba(100, 116, 139, 0.06) 0%, rgba(255, 255, 255, 0.03) 100%);
 }
 
 .pricing-card.featured:hover {
-  border-color: rgba(99, 102, 241, 0.5);
-  background: linear-gradient(180deg, rgba(99, 102, 241, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
-  box-shadow: 0 20px 60px -10px rgba(99, 102, 241, 0.25);
+  border-color: rgba(100, 116, 139, 0.5);
+  background: linear-gradient(180deg, rgba(100, 116, 139, 0.1) 0%, rgba(255, 255, 255, 0.05) 100%);
+  box-shadow: 0 20px 60px -10px rgba(100, 116, 139, 0.25);
 }
 
 /* Toggle pill animation */
@@ -356,9 +356,9 @@ h1, h2, h3, h4, h5, h6 {
 
 .feature-card:hover {
   transform: translateY(-4px);
-  border-color: rgba(99, 102, 241, 0.2);
+  border-color: rgba(100, 116, 139, 0.2);
   background: rgba(255, 255, 255, 0.05);
-  box-shadow: 0 12px 40px -10px rgba(99, 102, 241, 0.1);
+  box-shadow: 0 12px 40px -10px rgba(100, 116, 139, 0.1);
 }
 
 /* Step hover in How It Works */
@@ -377,7 +377,7 @@ h1, h2, h3, h4, h5, h6 {
 
 .cta-card:hover {
   transform: scale(1.01);
-  box-shadow: 0 0 80px rgba(99, 102, 241, 0.12);
+  box-shadow: 0 0 80px rgba(100, 116, 139, 0.12);
 }
 
 /* Footer social icon hover */
@@ -393,7 +393,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* Pipeline stages */
-.pipeline-lead { border-left-color: #6366F1; }
+.pipeline-lead { border-left-color: #64748B; }
 .pipeline-qualified { border-left-color: #8B5CF6; }
 .pipeline-proposal { border-left-color: #06B6D4; }
 .pipeline-negotiation { border-left-color: #F59E0B; }

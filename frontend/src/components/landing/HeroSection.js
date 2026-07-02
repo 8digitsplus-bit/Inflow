@@ -39,7 +39,7 @@ export const HeroSection = ({ handleGetStarted }) => {
           >
             <span className="text-sm text-zinc-300">Flow AI Chat Assist</span>
             <span className="block h-4 w-px bg-white/20" />
-            <div className="size-6 overflow-hidden rounded-full bg-indigo-600">
+            <div className="size-6 overflow-hidden rounded-full bg-slate-600">
               <div className="flex w-12 -translate-x-1/2 duration-500 ease-in-out group-hover:translate-x-0">
                 <span className="flex size-6"><ArrowRight className="m-auto size-3 text-white" /></span>
                 <span className="flex size-6"><ArrowRight className="m-auto size-3 text-white" /></span>

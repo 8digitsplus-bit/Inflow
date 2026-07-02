@@ -114,8 +114,8 @@ const CustomApiModal = ({ onClose, onSuccess }) => {
         {/* Header */}
         <div className="flex items-center justify-between p-5 border-b border-zinc-800 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-indigo-500/15 flex items-center justify-center">
-              <Globe className="w-5 h-5 text-indigo-400" />
+            <div className="w-10 h-10 rounded-xl bg-slate-500/15 flex items-center justify-center">
+              <Globe className="w-5 h-5 text-slate-400" />
             </div>
             <div>
               <h3 className="text-lg font-semibold text-white" style={{ fontFamily: 'Outfit' }}>Connect Custom API</h3>
@@ -141,13 +141,13 @@ const CustomApiModal = ({ onClose, onSuccess }) => {
               <div>
                 <label className="text-xs font-medium text-zinc-400 block mb-1.5">Connection Name</label>
                 <input value={config.name} onChange={e => updateConfig('name', e.target.value)}
-                  className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:border-indigo-500"
+                  className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:border-slate-500"
                   placeholder="e.g., My CRM API" data-testid="api-name-input" />
               </div>
               <div>
                 <label className="text-xs font-medium text-zinc-400 block mb-1.5">API Endpoint</label>
                 <input value={config.endpoint} onChange={e => updateConfig('endpoint', e.target.value)}
-                  className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:border-indigo-500"
+                  className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:border-slate-500"
                   placeholder="https://api.example.com/v1/data" data-testid="api-endpoint-input" />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -155,7 +155,7 @@ const CustomApiModal = ({ onClose, onSuccess }) => {
                   <label className="text-xs font-medium text-zinc-400 block mb-1.5">Method</label>
                   <div className="relative">
                     <select value={config.method} onChange={e => updateConfig('method', e.target.value)}
-                      className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm appearance-none focus:outline-none focus:border-indigo-500"
+                      className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm appearance-none focus:outline-none focus:border-slate-500"
                       data-testid="api-method-select">
                       <option value="GET">GET</option>
                       <option value="POST">POST</option>
@@ -167,7 +167,7 @@ const CustomApiModal = ({ onClose, onSuccess }) => {
                   <label className="text-xs font-medium text-zinc-400 block mb-1.5">Authentication</label>
                   <div className="relative">
                     <select value={config.auth_type} onChange={e => updateConfig('auth_type', e.target.value)}
-                      className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm appearance-none focus:outline-none focus:border-indigo-500"
+                      className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm appearance-none focus:outline-none focus:border-slate-500"
                       data-testid="api-auth-select">
                       {AUTH_TYPES.map(a => <option key={a.value} value={a.value}>{a.label}</option>)}
                     </select>
@@ -179,7 +179,7 @@ const CustomApiModal = ({ onClose, onSuccess }) => {
                 <div>
                   <label className="text-xs font-medium text-zinc-400 block mb-1.5">API Key / Token</label>
                   <input type="password" value={config.api_key} onChange={e => updateConfig('api_key', e.target.value)}
-                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:border-indigo-500"
+                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:border-slate-500"
                     placeholder="Your API key or token" data-testid="api-key-input" />
                 </div>
               )}
@@ -189,7 +189,7 @@ const CustomApiModal = ({ onClose, onSuccess }) => {
                     {config.auth_type === 'header' ? 'Header Name' : 'Query Parameter Name'}
                   </label>
                   <input value={config.auth_key_name} onChange={e => updateConfig('auth_key_name', e.target.value)}
-                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:border-indigo-500"
+                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:border-slate-500"
                     placeholder={config.auth_type === 'header' ? 'X-API-Key' : 'api_key'} />
                 </div>
               )}
@@ -228,7 +228,7 @@ const CustomApiModal = ({ onClose, onSuccess }) => {
                     Data Path <span className="text-zinc-600">(dot notation to the data array, e.g., "data.items")</span>
                   </label>
                   <input value={config.data_path} onChange={e => updateConfig('data_path', e.target.value)}
-                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:border-indigo-500"
+                    className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:border-slate-500"
                     placeholder="Leave blank if response is already an array" data-testid="api-data-path" />
                 </div>
               )}
@@ -245,7 +245,7 @@ const CustomApiModal = ({ onClose, onSuccess }) => {
                         </span>
                         <div className="relative flex-1">
                           <select value={mapping[key] || ''} onChange={e => setMapping(m => ({ ...m, [key]: e.target.value || null }))}
-                            className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm appearance-none focus:outline-none focus:border-indigo-500"
+                            className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm appearance-none focus:outline-none focus:border-slate-500"
                             data-testid={`api-map-${key}`}>
                             <option value="">-- Skip --</option>
                             {fields.map(f => <option key={f} value={f}>{f}</option>)}
@@ -274,7 +274,7 @@ const CustomApiModal = ({ onClose, onSuccess }) => {
                 <p className="text-xs text-zinc-500">Field Mapping:</p>
                 <div className="mt-1 flex flex-wrap gap-2">
                   {INFLOW_FIELDS.filter(f => mapping[f.key]).map(f => (
-                    <span key={f.key} className="px-2 py-0.5 rounded-full text-[11px] bg-indigo-500/10 text-indigo-400">
+                    <span key={f.key} className="px-2 py-0.5 rounded-full text-[11px] bg-slate-500/10 text-slate-400">
                       {f.label} → {mapping[f.key]}
                     </span>
                   ))}

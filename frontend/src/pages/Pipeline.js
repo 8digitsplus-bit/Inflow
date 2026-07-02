@@ -59,7 +59,7 @@ import {
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
 const STAGES = [
-  { id: 'lead', label: 'Lead', color: STAGE_COLORS.lead, bg: 'bg-indigo-500' },
+  { id: 'lead', label: 'Lead', color: STAGE_COLORS.lead, bg: 'bg-slate-500' },
   { id: 'qualified', label: 'Qualified', color: STAGE_COLORS.qualified, bg: 'bg-violet-500' },
   { id: 'proposal', label: 'Proposal', color: STAGE_COLORS.proposal, bg: 'bg-cyan-500' },
   { id: 'negotiation', label: 'Negotiation', color: STAGE_COLORS.negotiation, bg: 'bg-amber-500' },
@@ -243,7 +243,7 @@ const Pipeline = () => {
             <CardContent className="p-3 sm:p-5">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-zinc-400 text-sm">Pipeline Value</span>
-                <div className="p-1.5 rounded bg-indigo-500/10"><DollarSign className="w-4 h-4 text-indigo-400" /></div>
+                <div className="p-1.5 rounded bg-slate-500/10"><DollarSign className="w-4 h-4 text-slate-400" /></div>
               </div>
               <div className="text-lg sm:text-2xl font-bold font-mono text-white">{fmt(stats.total)}</div>
               <div className="text-zinc-500 text-xs mt-1">{stats.activeCount} active deals</div>
@@ -296,7 +296,7 @@ const Pipeline = () => {
           <Card className="bg-zinc-950/50 border-white/10" data-testid="velocity-section">
             <CardHeader className="pb-3">
               <CardTitle className="text-sm font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
-                <Layers className="w-4 h-4 text-indigo-400" /> Stage Velocity
+                <Layers className="w-4 h-4 text-slate-400" /> Stage Velocity
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -312,7 +312,7 @@ const Pipeline = () => {
                       cursor={{ stroke: '#27272A' }}
                       formatter={(v, name) => [name === 'avg_days' ? `${v} days avg` : `${v} deals`, name === 'avg_days' ? 'Velocity' : 'Deals']}
                     />
-                    <Line type="monotone" dataKey="avg_days" name="avg_days" stroke="#6366F1" strokeWidth={2} dot={{ r: 5, fill: '#6366F1', stroke: '#0c0c10', strokeWidth: 2 }} activeDot={{ r: 7, stroke: '#6366F1', strokeWidth: 2 }} />
+                    <Line type="monotone" dataKey="avg_days" name="avg_days" stroke="#64748B" strokeWidth={2} dot={{ r: 5, fill: '#64748B', stroke: '#0c0c10', strokeWidth: 2 }} activeDot={{ r: 7, stroke: '#64748B', strokeWidth: 2 }} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -335,7 +335,7 @@ const Pipeline = () => {
             <CardContent className="space-y-3">
               {(pipelineData?.conversion_rates || []).map((c, i) => {
                 const stageObj = STAGES.find(s => s.id === c.from_stage?.toLowerCase()?.replace(/\s/g, '_'));
-                const barColor = stageObj?.color || '#6366F1';
+                const barColor = stageObj?.color || '#64748B';
                 return (
                 <div key={i}>
                   <div className="flex items-center justify-between text-xs mb-1">
@@ -360,7 +360,7 @@ const Pipeline = () => {
           <Card className="bg-zinc-950/50 border-white/10 lg:col-span-2" data-testid="pipeline-funnel-chart">
             <CardHeader>
               <CardTitle className="text-lg font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
-                <Filter className="w-5 h-5 text-indigo-400" /> Pipeline by Stage
+                <Filter className="w-5 h-5 text-slate-400" /> Pipeline by Stage
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -478,7 +478,7 @@ const Pipeline = () => {
         {/* Kanban Board */}
         {loading ? (
           <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-8 h-8 animate-spin text-indigo-400" />
+            <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
           </div>
         ) : (
           <div className="flex gap-3 overflow-x-auto pb-4 -mx-2 px-2 snap-x" data-testid="kanban-board">
@@ -489,7 +489,7 @@ const Pipeline = () => {
                 <div
                   key={stage.id}
                   className={`flex-shrink-0 w-[240px] sm:w-[280px] rounded-xl transition-all duration-200 snap-start ${
-                    isDragOver ? 'bg-white/[0.04] ring-1 ring-indigo-500/30' : 'bg-zinc-950/30'
+                    isDragOver ? 'bg-white/[0.04] ring-1 ring-slate-500/30' : 'bg-zinc-950/30'
                   }`}
                   onDragOver={(e) => handleDragOver(e, stage.id)}
                   onDragLeave={handleDragLeave}

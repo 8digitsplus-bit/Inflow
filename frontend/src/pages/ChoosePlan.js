@@ -118,7 +118,7 @@ const ChoosePlan = () => {
         <div className="flex flex-col items-center mb-10">
           <div className="inline-flex items-center p-1 bg-zinc-900 rounded-full border border-zinc-800 relative">
             <div
-              className="absolute top-1 bottom-1 rounded-full bg-indigo-600 shadow-lg shadow-indigo-500/25 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
+              className="absolute top-1 bottom-1 rounded-full bg-slate-600 shadow-lg shadow-slate-500/25 transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
               style={{
                 width: 'calc(50% - 4px)',
                 left: billingPeriod === 'monthly' ? '4px' : 'calc(50%)',
@@ -151,7 +151,7 @@ const ChoosePlan = () => {
         {/* Global seats control — quick presets + stepper + free input — applies to every tier */}
         <div className="flex flex-col items-center gap-3 mb-8">
           <div className="inline-flex items-center gap-3 bg-zinc-900/80 rounded-xl px-4 py-2.5 border border-white/[0.06]" data-testid="seats-stepper">
-            <Users className="w-4 h-4 text-indigo-400" />
+            <Users className="w-4 h-4 text-slate-400" />
             <span className="text-zinc-400 text-sm">Seats</span>
             <div className="flex items-center gap-1.5 ml-1">
               <button
@@ -175,7 +175,7 @@ const ChoosePlan = () => {
                   const n = parseInt(e.target.value, 10);
                   if (Number.isNaN(n) || n < 1) setEnterpriseUsers(1);
                 }}
-                className="w-14 h-7 rounded-md bg-zinc-950 border border-zinc-800 text-white text-sm font-semibold text-center focus:outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-14 h-7 rounded-md bg-zinc-950 border border-zinc-800 text-white text-sm font-semibold text-center focus:outline-none focus:border-slate-500 focus:ring-1 focus:ring-slate-500 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 data-testid="seats-input"
                 aria-label="Number of seats"
               />
@@ -197,7 +197,7 @@ const ChoosePlan = () => {
                 onClick={() => setEnterpriseUsers(n)}
                 className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
                   enterpriseUsers === n
-                    ? 'bg-indigo-600 text-white'
+                    ? 'bg-slate-600 text-white'
                     : 'bg-zinc-900 text-zinc-400 hover:bg-zinc-800 border border-zinc-800'
                 }`}
                 data-testid={`seats-preset-${n}`}
@@ -224,14 +224,14 @@ const ChoosePlan = () => {
                 key={plan.key}
                 className={`relative rounded-2xl border p-6 transition-all ${
                   plan.popular
-                    ? 'border-indigo-500/40 bg-indigo-500/[0.03] shadow-lg shadow-indigo-500/5'
+                    ? 'border-slate-500/40 bg-slate-500/[0.03] shadow-lg shadow-slate-500/5'
                     : 'border-white/10 bg-zinc-950/60 hover:border-zinc-700'
                 } ${current ? 'ring-2 ring-emerald-500/30' : ''}`}
                 data-testid={`plan-card-${plan.key}`}
               >
                 {plan.popular && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="px-3 py-1 bg-indigo-600 text-white text-[11px] font-semibold rounded-full shadow-lg shadow-indigo-500/30">
+                    <span className="px-3 py-1 bg-slate-600 text-white text-[11px] font-semibold rounded-full shadow-lg shadow-slate-500/30">
                       Most Popular
                     </span>
                   </div>
@@ -247,7 +247,7 @@ const ChoosePlan = () => {
 
                 <div className="mb-5">
                   <div className="flex items-center gap-2 mb-1">
-                    <div className="w-2 h-2 rounded-full bg-indigo-500" />
+                    <div className="w-2 h-2 rounded-full bg-slate-500" />
                     <h3 className="text-lg font-bold text-white" style={{ fontFamily: 'Outfit' }}>{plan.name}</h3>
                   </div>
                   <p className="text-xs text-zinc-500">{plan.tagline}</p>
@@ -262,7 +262,7 @@ const ChoosePlan = () => {
                       <span className="text-sm text-zinc-600 line-through">${originalPrice.toLocaleString()}</span>
                     )}
                   </div>
-                  <p className="text-indigo-400 text-xs mt-1">
+                  <p className="text-slate-400 text-xs mt-1">
                     ${perUser.toLocaleString()}/user · {enterpriseUsers} {enterpriseUsers === 1 ? 'seat' : 'seats'}
                   </p>
                   {billingPeriod === 'yearly' && (

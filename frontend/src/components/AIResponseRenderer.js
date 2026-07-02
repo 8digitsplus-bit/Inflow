@@ -31,7 +31,7 @@ export const AIResponseRenderer = ({ text, className = '' }) => {
         if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
           return (
             <div key={i} className="flex items-start gap-2 text-[13px] text-zinc-300 pl-1">
-              <span className="text-indigo-400 mt-0.5 flex-shrink-0 leading-none">&#8226;</span>
+              <span className="text-slate-400 mt-0.5 flex-shrink-0 leading-none">&#8226;</span>
               <span className="leading-relaxed">{renderInline(trimmed.slice(2))}</span>
             </div>
           );

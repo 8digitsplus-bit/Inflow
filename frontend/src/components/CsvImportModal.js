@@ -145,7 +145,7 @@ const CsvImportModal = ({ onClose, onSuccess }) => {
               onDrop={handleDrop}
               onDragOver={(e) => e.preventDefault()}
               onClick={() => fileRef.current?.click()}
-              className="border-2 border-dashed border-zinc-700 hover:border-indigo-500/50 rounded-xl p-12 text-center cursor-pointer transition-colors"
+              className="border-2 border-dashed border-zinc-700 hover:border-slate-500/50 rounded-xl p-12 text-center cursor-pointer transition-colors"
               data-testid="csv-drop-zone"
             >
               <Upload className="w-10 h-10 text-zinc-600 mx-auto mb-4" />
@@ -170,7 +170,7 @@ const CsvImportModal = ({ onClose, onSuccess }) => {
                 <input
                   value={sourceName}
                   onChange={(e) => setSourceName(e.target.value)}
-                  className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:border-indigo-500"
+                  className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm focus:outline-none focus:border-slate-500"
                   placeholder="e.g., My CRM Export"
                   data-testid="csv-source-name"
                 />
@@ -188,7 +188,7 @@ const CsvImportModal = ({ onClose, onSuccess }) => {
                         <select
                           value={mapping[key] || ''}
                           onChange={(e) => setMapping(m => ({ ...m, [key]: e.target.value || null }))}
-                          className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm appearance-none focus:outline-none focus:border-indigo-500"
+                          className="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-sm appearance-none focus:outline-none focus:border-slate-500"
                           data-testid={`csv-map-${key}`}
                         >
                           <option value="">-- Skip --</option>
@@ -215,7 +215,7 @@ const CsvImportModal = ({ onClose, onSuccess }) => {
                           <select
                             value={stageMapping[val.toLowerCase()] || ''}
                             onChange={(e) => setStageMapping(m => ({ ...m, [val.toLowerCase()]: e.target.value }))}
-                            className="w-full px-3 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-xs appearance-none focus:outline-none focus:border-indigo-500"
+                            className="w-full px-3 py-1.5 bg-zinc-800 border border-zinc-700 rounded-lg text-white text-xs appearance-none focus:outline-none focus:border-slate-500"
                           >
                             <option value="">Auto-detect</option>
                             <option value="lead">Lead</option>
@@ -277,7 +277,7 @@ const CsvImportModal = ({ onClose, onSuccess }) => {
                   <p className="text-xs text-zinc-500">Field Mapping:</p>
                   <div className="mt-1 flex flex-wrap gap-2">
                     {INFLOW_FIELDS.filter(f => mapping[f.key]).map(f => (
-                      <span key={f.key} className="px-2 py-0.5 rounded-full text-[11px] bg-indigo-500/10 text-indigo-400">
+                      <span key={f.key} className="px-2 py-0.5 rounded-full text-[11px] bg-slate-500/10 text-slate-400">
                         {f.label} → {mapping[f.key]}
                       </span>
                     ))}

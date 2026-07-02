@@ -13,6 +13,10 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
+### Brand Color: Indigo → Slate #64748b (Jun 2026) — UI
+- Global theme swap from indigo to slate (`#64748b` = slate-500). index.css/App.css: `--primary`/`--ring`/`--chart-1` HSL `239 84% 67%`→`215 16% 47%`, all `rgba(99,102,241,·)`→`rgba(100,116,139,·)` (+ the paired violet `rgba(139,92,246)` in one shared gradient), `.gradient-text` + `.pipeline-lead` hex `#6366F1`→`#64748B`. JS/JSX: mapped the full indigo scale to slate (`indigo-100..700`→`slate-100..700`, 308 utilities across 38 files) and indigo hex → slate hex (`#6366F1→#64748B`, `#818cf8→#94A3B8`, `#a5b4fc→#CBD5E1`, `#4f46e5→#475569`, `#4338ca→#334155`), incl. `constants/colors.js` lead stage color. Left the distinct Violet `#8B5CF6` (Qualified chart stage) intact. Compiles clean; landing verified.
+- NOT changed: the `inflow-logo.png` asset still has a baked-in indigo/purple icon (image, not CSS) — needs regeneration to fully match slate.
+
 ### Floating Glass Pill Navbar (Jun 2026) — UI
 - Bug fix (verified iteration_42, 100%): the Get Started CTA overflowed the pill at 1024-1200px because a `fixed left-1/2 -translate-x-1/2` element with `w-auto` is capped at 50vw. Fixed by centering via a full-width wrapper (`fixed inset-x-0 flex justify-center pointer-events-none`) + pill `pointer-events-auto w-full lg:w-auto max-w-full`; CTA now sits 25px inside the pill at all widths 1024-1920, click-through to hero preserved. Inline nav/CTAs are `lg:flex`, hamburger `lg:hidden`.
 - Scroll behavior: shrinks + stronger blur (`bg-white/[0.08]`, `backdrop-blur-2xl`) past 20px, hides on scroll-down / reveals on scroll-up (translate-y), stays visible when mobile menu open.

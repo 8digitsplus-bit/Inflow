@@ -25,7 +25,7 @@ const ProtectedRoute = ({ children }) => {
     return (
       <div className="min-h-screen bg-[#050507] flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin text-indigo-500 mx-auto mb-4" />
+          <Loader2 className="w-8 h-8 animate-spin text-slate-500 mx-auto mb-4" />
           <p className="text-zinc-400">Loading...</p>
         </div>
       </div>
