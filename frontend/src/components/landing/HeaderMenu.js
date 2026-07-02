@@ -81,7 +81,7 @@ export const Header = ({ handleGetStarted, handleMenuClick, isAuthenticated }) =
         {/* Logo */}
         <a href="/" className="group flex shrink-0 items-center" data-testid="header-logo">
           <img
-            src="/inflow-logo.png?v=3"
+            src="/inflow-logo.png?v=4"
             alt="InFlow"
             className="h-6 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
           />
