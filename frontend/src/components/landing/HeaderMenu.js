@@ -51,7 +51,7 @@ export const Header = ({ handleGetStarted, handleMenuClick, isAuthenticated }) =
       {/* top sheen */}
       <div aria-hidden className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
 
-      <div className="flex items-center justify-between w-full gap-x-4 lg:gap-x-8">
+      <div className="flex items-center justify-between w-full lg:w-auto gap-x-4 lg:gap-x-8">
         {/* Logo */}
         <a href="/" className="group flex shrink-0 items-center" data-testid="header-logo">
           <img

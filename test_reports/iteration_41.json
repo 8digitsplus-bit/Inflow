@@ -1,0 +1,60 @@
+{
+  "summary": "Re-tested the HeaderMenu.js pill/CTA overflow bug from iteration_40. The applied fix (adding `lg:w-auto` to the inner flex row) did NOT resolve the issue. The Get Started CTA still overflows the frosted pill's right edge by 5.8-57.8px at desktop widths 1024-1200. Mobile flows (900/768/390) and functionality (nav scroll, /auth navigation) are working correctly.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "HeaderMenu.js (pill header)",
+        "issue": "PRIMARY BUG NOT FIXED — Get Started CTA overflows the pill's right edge at desktop widths 1024-1200. Measured overflow: 1024→+57.84px, 1050→+57.84px, 1100→+55.84px, 1150→+30.84px, 1200→+5.84px. Widths 1250/1280/1440/1920 PASS (CTA inside pill by 10-25px). Log In button stays inside at all widths (it sits further left). Pill remains horizontally centered and does not overflow the viewport (scrollWidth == innerWidth at all widths).",
+        "selector": "[data-testid=\"header-cta-btn\"] vs [data-testid=\"main-header\"]",
+        "priority": "HIGH"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/.screenshots/pill_1100.png", "/app/.screenshots/header_pill_1024.png"],
+  "action_items": [
+    "Root cause: the pill uses `fixed left-1/2 -translate-x-1/2 ... lg:w-auto`. For a fixed element with only `left: 50%` set (no explicit `right`), the CSS containing-block width available to `width: auto` is `100vw - 50% = 50vw`. So the pill's shrink-to-fit width is capped at ~50vw. At 1024/1100/1150/1200 the required content width (~655px) exceeds 50vw (512/550/575/600), pinning pill_w to exactly 50vw and letting inner children (specifically the right-most CTA) spill outside the visual pill boundary. Data confirms it — pill_w is exactly viewport/2 at widths 1100 (550), 1150 (575), 1200 (600), 1250 (625), 1280 (640); only ≥1440 does pill_w plateau to its true content width (~654.8).",
+    "Suggested fix (any of):",
+    "  1) Replace `fixed left-1/2 -translate-x-1/2 lg:w-auto` with `fixed inset-x-0 mx-auto w-fit lg:w-fit` (or `w-max`) so containing block is full viewport and auto-width can grow to content up to `max-w-[calc(100vw-1.5rem)]`.",
+    "  2) OR wrap the pill in a `fixed inset-x-0 top-4 sm:top-6 z-50 flex justify-center pointer-events-none` container and make the pill itself `pointer-events-auto inline-flex w-auto max-w-...` — this centers via flex, not translate, so `w-auto` gets the full viewport as containing block.",
+    "  3) OR give the header an explicit min-width via `lg:min-w-[max-content]` combined with `lg:max-w-[calc(100vw-1.5rem)]`, though (1) or (2) are cleaner.",
+    "Note: the `w-full lg:w-auto` change to the inner row is a no-op for this bug — the constraint is on the header's own containing block, not on the inner row."
+  ],
+  "critical_code_review_comments": [
+    "HeaderMenu.js line 48: `fixed left-1/2 -translate-x-1/2 ... lg:w-auto` is an anti-pattern for auto-width centered fixed elements — always caps available width at 50vw. Use `inset-x-0 mx-auto w-fit` centering pattern instead.",
+    "Mobile CTA click currently uses `window.location.href = '/auth?mode=login'` which does a full page reload — consider React Router `navigate()` for consistency with SPA.",
+    "Console shows 6× 401 errors from /api/auth/me on landing page load. Harmless (user not logged in) but noisy — consider suppressing 401 log or gating the call on a token check."
+  ],
+  "verification_matrix_desktop": {
+    "1024": {"pill_w": 548, "pill_r": 786, "cta_r": 843.8, "cta_inside": false, "overflow_px": 57.84, "login_inside": true, "centered": true, "no_viewport_overflow": true},
+    "1050": {"pill_w": 548, "pill_r": 799, "cta_r": 856.8, "cta_inside": false, "overflow_px": 57.84, "login_inside": true, "centered": true, "no_viewport_overflow": true},
+    "1100": {"pill_w": 550, "pill_r": 825, "cta_r": 880.8, "cta_inside": false, "overflow_px": 55.84, "login_inside": true, "centered": true, "no_viewport_overflow": true},
+    "1150": {"pill_w": 575, "pill_r": 862.5, "cta_r": 893.3, "cta_inside": false, "overflow_px": 30.84, "login_inside": true, "centered": true, "no_viewport_overflow": true},
+    "1200": {"pill_w": 600, "pill_r": 900, "cta_r": 905.8, "cta_inside": false, "overflow_px": 5.84, "login_inside": true, "centered": true, "no_viewport_overflow": true},
+    "1250": {"pill_w": 625, "pill_r": 937.5, "cta_r": 918.3, "cta_inside": true, "overflow_px": -19.16, "login_inside": true, "centered": true, "no_viewport_overflow": true},
+    "1280": {"pill_w": 640, "pill_r": 960, "cta_r": 949.8, "cta_inside": true, "overflow_px": -10.16, "login_inside": true, "centered": true, "no_viewport_overflow": true},
+    "1440": {"pill_w": 654.8, "pill_r": 1047.4, "cta_r": 1022.4, "cta_inside": true, "overflow_px": -25.0, "login_inside": true, "centered": true, "no_viewport_overflow": true},
+    "1920": {"pill_w": 654.8, "pill_r": 1287.4, "cta_r": 1262.4, "cta_inside": true, "overflow_px": -25.0, "login_inside": true, "centered": true, "no_viewport_overflow": true}
+  },
+  "verification_matrix_mobile": {
+    "900": {"pill_w": 876, "pill_range": "12-888", "no_overflow": true, "mobile_cta_inside_pill_when_open": true},
+    "768": {"pill_w": 744, "pill_range": "12-756", "no_overflow": true, "mobile_cta_inside_pill_when_open": true},
+    "390": {"pill_w": 366, "pill_range": "12-378", "no_overflow": true, "mobile_cta_inside_pill_when_open": true}
+  },
+  "functionality_regression": {
+    "nav_pricing_smooth_scroll@1440": "PASS (scrollY 0 → 3670)",
+    "header_cta_btn_navigates_to_/auth": "PASS (goes to /auth?trial=true)",
+    "header_login_btn_navigates_to_/auth?mode=login": "PASS",
+    "console_errors": "Only 401 errors from /api/auth/me (unauthenticated user probing), unrelated to this bug"
+  },
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (skipped)", "frontend": "60% (5 of 9 desktop widths FAIL on CTA-inside-pill; mobile & functionality PASS)"},
+  "test_credentials": "Not needed for landing page tests",
+  "seed_data_creation": "None",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "The iteration_40 → iteration_41 fix (adding `lg:w-auto` on the inner row) did NOT solve the overflow. The header itself is width-capped at 50vw because of `fixed left-1/2 -translate-x-1/2` combined with `lg:w-auto`. On re-test after the real fix, verify pill_w >= content width and cta.right <= pill.right at all widths 1024..1920. Screenshots at /app/.screenshots/pill_1100.png (visual proof: Get Started button visibly extends past the frosted pill's right rounded edge).",
+  "rca of the issue": "For a `position: fixed` element whose only inset properties are `left: 50%` (via `left-1/2`) with `transform: translateX(-50%)`, the CSS `width: auto` computation uses the containing block from `left` to `right` — since `right` is unset, the browser treats the available width as `100vw - left = 50vw`. Consequently `lg:w-auto` cannot grow the pill beyond half the viewport. When rendered content needs >50vw (which happens for the desktop nav+CTAs at 1024-1200), the pill remains 50vw wide and its `justify-between` inner row (or the shrink-0 CTA container) is pushed outside the pill's visual bounds. Reproduction: open https://inflow-preview-1.preview.emergentagent.com/ at 1100px viewport → the Get Started button visibly protrudes past the frosted pill's right rounded edge (see /app/.screenshots/pill_1100.png). Mitigation: use a full-width centering wrapper (inset-x-0 flex justify-center) or `inset-x-0 mx-auto w-fit` on the pill so the containing block is 100vw and `w-auto`/`w-fit` can grow to real content width."
+}
