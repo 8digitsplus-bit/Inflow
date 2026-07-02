@@ -26,7 +26,10 @@ const AnimatedNavLink = ({ onClick, children, testid }) => (
 export const Header = ({ handleGetStarted, handleMenuClick, isAuthenticated }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [shapeClass, setShapeClass] = useState('rounded-full');
+  const [scrolled, setScrolled] = useState(false);
+  const [visible, setVisible] = useState(true);
   const shapeTimeout = useRef(null);
+  const lastScroll = useRef(0);
 
   // Morph the pill to a rounded panel while the mobile menu is open.
   useEffect(() => {
@@ -39,14 +42,36 @@ export const Header = ({ handleGetStarted, handleMenuClick, isAuthenticated }) =
     return () => shapeTimeout.current && clearTimeout(shapeTimeout.current);
   }, [isOpen]);
 
+  // Shrink + stronger blur on scroll; hide on scroll-down, reveal on scroll-up.
+  useEffect(() => {
+    const onScroll = () => {
+      const y = window.scrollY;
+      setScrolled(y > 20);
+      setVisible(y < lastScroll.current || y < 120);
+      lastScroll.current = y;
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
   const onNav = (target) => { setIsOpen(false); handleMenuClick(target); };
   const onLogin = () => { setIsOpen(false); window.location.href = '/auth?mode=login'; };
   const onCta = () => { setIsOpen(false); handleGetStarted(); };
 
+  const showBar = visible || isOpen;
+
   return (
-    <div className="fixed inset-x-0 top-4 sm:top-6 z-50 flex justify-center px-3 pointer-events-none">
+    <div
+      className={`fixed inset-x-0 top-4 sm:top-6 z-50 flex justify-center px-3 pointer-events-none transition-transform duration-500 ease-out ${
+        showBar ? 'translate-y-0' : '-translate-y-[150%]'
+      }`}
+    >
     <header
-      className={`pointer-events-auto relative flex flex-col items-center px-4 sm:px-6 py-3 border border-white/10 bg-white/[0.05] backdrop-blur-xl shadow-[0_8px_40px_-12px_rgba(0,0,0,0.7)] w-full lg:w-auto max-w-full transition-[border-radius] duration-300 ease-in-out ${shapeClass}`}
+      className={`pointer-events-auto relative flex flex-col items-center border border-white/10 max-w-full w-full lg:w-auto transition-[border-radius,padding,background-color,backdrop-filter] duration-300 ease-in-out ${shapeClass} ${
+        scrolled
+          ? 'px-4 sm:px-5 py-2 bg-white/[0.08] backdrop-blur-2xl shadow-[0_10px_50px_-12px_rgba(0,0,0,0.85)]'
+          : 'px-4 sm:px-6 py-3 bg-white/[0.05] backdrop-blur-xl shadow-[0_8px_40px_-12px_rgba(0,0,0,0.7)]'
+      }`}
       data-testid="main-header"
     >
       {/* top sheen */}
