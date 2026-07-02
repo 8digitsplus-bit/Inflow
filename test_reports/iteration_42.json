@@ -1,0 +1,54 @@
+{
+  "summary": "PRIMARY BUG FIXED — re-verified the HeaderMenu.js pill/CTA overflow bug after the wrapper-centered fix (outer full-width `fixed inset-x-0 flex justify-center px-3 pointer-events-none` + inner `<header pointer-events-auto ... w-full lg:w-auto max-w-full>`). At ALL 9 desktop widths 1024/1050/1100/1150/1200/1250/1280/1440/1920 the Get Started CTA and Log In button are fully inside the frosted pill (overflow_px = -25.00 at every width, i.e., CTA sits 25px INSIDE the pill's right edge). Pill grows to its natural content width (~630.8px at lg / ~654.8px at xl) instead of being capped at 50vw. Pill stays centered (|pill.left - (iw - pill.right)| < 3), no viewport horizontal overflow. Click-through verified: the full-width centering wrapper has `pointer-events: none` and only the pill has `pointer-events: auto`, so hero content behind the wrapper remains clickable (View Pricing click scrolled 0->3670). Mobile responsive (900/768/390) + functionality (nav-pricing, /auth, /auth?mode=login) all PASS.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/.screenshots/pill_fix_1100.png", "/app/.screenshots/pill_fix_1200.png"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Optional cleanup: the ghost 401 errors from /api/auth/me on the public landing page still fire 6 times. Non-blocking, but consider gating that call on presence of an auth token to reduce noise (unchanged from iteration_41).",
+    "Optional: onLogin uses window.location.href for a full page reload while onCta uses handleGetStarted (SPA nav via React Router). Consider unifying to navigate() for consistency (unchanged from iteration_41)."
+  ],
+  "verification_matrix_desktop": {
+    "1024": {"iw": 1024, "pill_l": 196.58, "pill_r": 827.42, "pill_w": 630.84, "cta_l": 705.42, "cta_r": 802.42, "overflow_px": -25.0, "cta_inside": true, "login_inside": true, "centered": true, "no_viewport_overflow": true},
+    "1050": {"iw": 1050, "pill_l": 209.58, "pill_r": 840.42, "pill_w": 630.84, "cta_l": 718.42, "cta_r": 815.42, "overflow_px": -25.0, "cta_inside": true, "login_inside": true, "centered": true, "no_viewport_overflow": true},
+    "1100": {"iw": 1100, "pill_l": 234.58, "pill_r": 865.42, "pill_w": 630.84, "cta_l": 743.42, "cta_r": 840.42, "overflow_px": -25.0, "cta_inside": true, "login_inside": true, "centered": true, "no_viewport_overflow": true},
+    "1150": {"iw": 1150, "pill_l": 259.58, "pill_r": 890.42, "pill_w": 630.84, "cta_l": 768.42, "cta_r": 865.42, "overflow_px": -25.0, "cta_inside": true, "login_inside": true, "centered": true, "no_viewport_overflow": true},
+    "1200": {"iw": 1200, "pill_l": 284.58, "pill_r": 915.42, "pill_w": 630.84, "cta_l": 793.42, "cta_r": 890.42, "overflow_px": -25.0, "cta_inside": true, "login_inside": true, "centered": true, "no_viewport_overflow": true},
+    "1250": {"iw": 1250, "pill_l": 309.58, "pill_r": 940.42, "pill_w": 630.84, "cta_l": 818.42, "cta_r": 915.42, "overflow_px": -25.0, "cta_inside": true, "login_inside": true, "centered": true, "no_viewport_overflow": true},
+    "1280": {"iw": 1280, "pill_l": 312.58, "pill_r": 967.42, "pill_w": 654.84, "cta_l": 845.42, "cta_r": 942.42, "overflow_px": -25.0, "cta_inside": true, "login_inside": true, "centered": true, "no_viewport_overflow": true},
+    "1440": {"iw": 1440, "pill_l": 392.58, "pill_r": 1047.42, "pill_w": 654.84, "cta_l": 925.42, "cta_r": 1022.42, "overflow_px": -25.0, "cta_inside": true, "login_inside": true, "centered": true, "no_viewport_overflow": true},
+    "1920": {"iw": 1920, "pill_l": 632.58, "pill_r": 1287.42, "pill_w": 654.84, "cta_l": 1165.42, "cta_r": 1262.42, "overflow_px": -25.0, "cta_inside": true, "login_inside": true, "centered": true, "no_viewport_overflow": true}
+  },
+  "click_through_verification": {
+    "wrapper_pointer_events": "none",
+    "header_pointer_events": "auto",
+    "elementFromPoint_left_at_pill_y@1440": "SECTION.landing-hero (NOT wrapper) -> click-through OK",
+    "elementFromPoint_right_at_pill_y@1440": "SECTION.landing-hero (NOT wrapper) -> click-through OK",
+    "elementFromPoint_center_at_pill_y@1440": "SPAN (inside pill) -> pill catches its own clicks",
+    "hero_view_pricing_click": "PASS (scrollY 0 -> 3670)",
+    "hero_start_14day_free_trial_visible": true
+  },
+  "verification_matrix_mobile": {
+    "900": {"pill_w": 876.0, "no_viewport_overflow": true, "hamburger_visible": true, "desktop_cta_hidden": true, "mobile_menu_opens": true, "mobile_cta_inside_pill": true},
+    "768": {"pill_w": 744.0, "no_viewport_overflow": true, "hamburger_visible": true, "desktop_cta_hidden": true, "mobile_menu_opens": true, "mobile_cta_inside_pill": true},
+    "390": {"pill_w": 366.0, "no_viewport_overflow": true, "hamburger_visible": true, "desktop_cta_hidden": true, "mobile_menu_opens": true, "mobile_cta_inside_pill": true}
+  },
+  "functionality_regression": {
+    "nav_pricing_smooth_scroll@1440": "PASS (scrollY 0 -> 3670)",
+    "header_cta_btn_navigates_to_/auth": "PASS (/auth?trial=true)",
+    "header_login_btn_navigates_to_/auth?mode=login": "PASS",
+    "console_errors": "Only 6x 401 from /api/auth/me (unauthenticated user, unrelated to this bug)"
+  },
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (skipped)", "frontend": "100% (9/9 desktop widths PASS on CTA-inside-pill, 3/3 mobile widths PASS, click-through PASS, all functionality PASS)"},
+  "test_credentials": "Not needed for landing page tests",
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "The wrapper-centered fix (outer full-width `fixed inset-x-0 flex justify-center px-3 pointer-events-none` + inner header with `pointer-events-auto ... w-full lg:w-auto max-w-full`) fully resolves the 50vw containing-block cap. All 9 desktop widths 1024-1920 now show Get Started INSIDE the pill by 25px. Click-through confirmed: wrapper pointer-events:none, header pointer-events:auto; hero content behind the wrapper is still clickable. Bug closed. Screenshots at /app/.screenshots/pill_fix_1100.png and /app/.screenshots/pill_fix_1200.png visually confirm the fix.",
+  "rca of the issue": "Original root cause (confirmed in iteration_41): a `position: fixed` element using `left-1/2 -translate-x-1/2` with `lg:w-auto` gets a containing block width of 50vw (100vw - left), so its shrink-to-fit `w-auto` is capped at 50vw. When the pill's natural content width (~655px) exceeded 50vw (at widths 1024-1200 where 50vw is 512-600px), the pill was clipped to 50vw and the right-most flex child (Get Started CTA) overflowed the visual pill boundary by up to 57.84px. FIX applied in iteration_42: wrap the pill in a full-width `<div class='fixed inset-x-0 top-4 sm:top-6 z-50 flex justify-center px-3 pointer-events-none'>` and make the pill itself `pointer-events-auto ... w-full lg:w-auto max-w-full`. Now the pill's containing block is the full viewport (via the wrapper's flex layout, not translate), so `w-auto` can grow to real content width. Additionally, `pointer-events-none` on the wrapper + `pointer-events-auto` on the pill ensures the transparent 100vw wrapper does not block clicks to hero content behind it. Verified: 9/9 widths PASS with 25px inset, click-through works, no viewport overflow."
+}

@@ -44,8 +44,9 @@ export const Header = ({ handleGetStarted, handleMenuClick, isAuthenticated }) =
   const onCta = () => { setIsOpen(false); handleGetStarted(); };
 
   return (
+    <div className="fixed inset-x-0 top-4 sm:top-6 z-50 flex justify-center px-3 pointer-events-none">
     <header
-      className={`fixed top-4 sm:top-6 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center px-4 sm:px-6 py-3 border border-white/10 bg-white/[0.05] backdrop-blur-xl shadow-[0_8px_40px_-12px_rgba(0,0,0,0.7)] w-[calc(100%-1.5rem)] lg:w-auto max-w-[calc(100vw-1.5rem)] transition-[border-radius] duration-300 ease-in-out ${shapeClass}`}
+      className={`pointer-events-auto relative flex flex-col items-center px-4 sm:px-6 py-3 border border-white/10 bg-white/[0.05] backdrop-blur-xl shadow-[0_8px_40px_-12px_rgba(0,0,0,0.7)] w-full lg:w-auto max-w-full transition-[border-radius] duration-300 ease-in-out ${shapeClass}`}
       data-testid="main-header"
     >
       {/* top sheen */}
@@ -137,5 +138,6 @@ export const Header = ({ handleGetStarted, handleMenuClick, isAuthenticated }) =
         </div>
       </div>
     </header>
+    </div>
   );
 };
