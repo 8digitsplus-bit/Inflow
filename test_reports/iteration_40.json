@@ -1,0 +1,32 @@
+{
+  "summary": "Frontend-only verification of the HeaderMenu (floating glass pill) bug fix across widths 1920, 1440, 1280, 1024, 900, 820, 768, 390. FUNCTIONALITY is intact (nav smooth-scroll works, Get Started -> /auth?trial=true, Log In -> /auth?mode=login, hamburger opens/closes mobile dropdown, mobile CTA navigates). NO horizontal viewport overflow at any tested width (docScrollWidth == vw). HOWEVER, the primary bug is NOT fully fixed: at desktop widths 1024-1200 the 'Get Started' button visually overflows the frosted pill's right edge (button.right > pill.right by 30-100px), so the CTA appears OUTSIDE the pill's frosted background. At >=1250 the CTA is inside the pill. The user-reported clipping/off-pill behavior therefore still reproduces on common laptop widths.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "HeaderMenu (main-header pill)",
+        "issue": "At widths 1024-1200 the pill is sized smaller than its content, so the Get Started button (header-cta-btn) visually overflows the pill's right edge. Measured bounding rects (window.innerWidth / pill.width / pill.right / cta.right): 1024/548/786/843.84 (overflow 57.8px), 1050/548/799/856.84 (overflow 57.8px), 1100/550/825/880.84 (overflow 55.8px), 1150/575/862.5/893.34 (overflow 30.8px), 1200/600/900/905.84 (overflow 5.8px), 1250 -> inside pill. Pill (data-testid=main-header) does NOT overflow the viewport itself; docScrollWidth==window.innerWidth at every width. Login button also visually sits just inside/outside depending on width. Screenshot at 1200 clearly shows 'Get Started' floating OUTSIDE the glass pill on the right.",
+        "selector": "[data-testid='header-cta-btn'] and [data-testid='main-header']",
+        "priority": "HIGH"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Fix HeaderMenu.js pill sizing so the CTA is always inside the pill at widths >= 1024. Root cause: header has `flex flex-col items-center w-[calc(100%-1.5rem)] lg:w-auto`, and its inner row uses `w-full`. At lg, parent is w-auto (shrink-to-fit) while the child forces w-full, creating a circular width dependency; the browser resolves it using the min-content of the flex row (~498px), which is smaller than the natural content width (~700-780px depending on gaps), so children overflow the pill visually. Suggested fix (1-line): change the inner row in HeaderMenu.js from `<div className=\"flex items-center justify-between w-full gap-x-4 lg:gap-x-8\">` to `<div className=\"flex items-center justify-between w-full lg:w-auto gap-x-4 lg:gap-x-8\">`. Alternative: on the outer header replace `flex flex-col items-center` with `flex flex-col items-stretch lg:items-center` and keep it — or drop the outer flex-col at lg (use only for mobile dropdown). Verify at 1024/1100/1200 that button.right <= pill.right - 12."
+  ],
+  "critical_code_review_comments": [
+    "HeaderMenu.js line 54: `<div className=\"flex items-center justify-between w-full ...\">` inside a `w-auto` parent (at lg) creates a circular width dependency. Either drop `w-full` at lg or drop `w-auto` on the parent at lg.",
+    "HeaderMenu.js line 48: `max-w-[calc(100vw-1.5rem)]` is fine, but `w-[calc(100%-1.5rem)]` fights `lg:w-auto` intent because the inner `w-full` still stretches to 100% of that base sizing on lg. Consider consolidating width rules.",
+    "12 console 401s appear on the public landing page from background API probes (mostly harmless but noisy). Consider gating those calls on authenticated state."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (skipped)", "frontend": "60% (layout bug at 1024-1200 remains; all functionality passes)"},
+  "seed_data_creation": "None",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Re-verify at widths 1024, 1050, 1100, 1150, 1200, 1250, 1280, 1440, 1920 using window.getComputedStyle + getBoundingClientRect on data-testid='main-header' and data-testid='header-cta-btn'. Acceptance: button.right <= pill.right at every desktop width, AND pill horizontally centered (|pill.left - (vw - pill.right)| < 2). Mobile flows (hamburger, mobile CTA) already verified passing at 390/768/820/900 — no re-verification needed unless HeaderMenu structural changes are made. Cookie banner accept step can be skipped for header measurements (it does not affect header layout).",
+  "rca_of_the_issue": "Root cause: In HeaderMenu.js, the header uses `flex flex-col items-center ... w-[calc(100%-1.5rem)] lg:w-auto` while the inner flex row uses `w-full`. At lg the parent is intended to shrink-to-fit its content, but the child forces itself to 100% of the parent. The browser resolves this circular constraint using the min-content width of the flex row (~498px), so the pill is drawn narrower than its natural content width (~700-780px). Fixed-min-width children (Get Started button) then overflow the pill on the right. Reproduction: open https://inflow-preview-1.preview.emergentagent.com/ at 1024x900 and measure `document.querySelector('[data-testid=header-cta-btn]').getBoundingClientRect().right` vs `document.querySelector('[data-testid=main-header]').getBoundingClientRect().right`. Mitigation: add `lg:w-auto` to the inner flex row OR drop the outer flex-col wrapper on lg breakpoints. Docs/window.innerWidth never overflows (docScrollWidth == vw), so it's a visual pill-clipping bug, not a horizontal-scroll bug — but visually the button appears outside the frosted pill on typical 13\"-15\" laptops (~1280-1440 with browser chrome resulting in effective vw of ~1024-1200)."
+}

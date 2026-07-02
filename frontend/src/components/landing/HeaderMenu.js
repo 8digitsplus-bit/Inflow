@@ -45,13 +45,13 @@ export const Header = ({ handleGetStarted, handleMenuClick, isAuthenticated }) =
 
   return (
     <header
-      className={`fixed top-4 sm:top-6 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center px-5 sm:px-6 py-3 border border-white/10 bg-white/[0.05] backdrop-blur-xl shadow-[0_8px_40px_-12px_rgba(0,0,0,0.7)] w-[calc(100%-1.5rem)] sm:w-auto transition-[border-radius] duration-300 ease-in-out ${shapeClass}`}
+      className={`fixed top-4 sm:top-6 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center px-4 sm:px-6 py-3 border border-white/10 bg-white/[0.05] backdrop-blur-xl shadow-[0_8px_40px_-12px_rgba(0,0,0,0.7)] w-[calc(100%-1.5rem)] lg:w-auto max-w-[calc(100vw-1.5rem)] transition-[border-radius] duration-300 ease-in-out ${shapeClass}`}
       data-testid="main-header"
     >
       {/* top sheen */}
       <div aria-hidden className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
 
-      <div className="flex items-center justify-between w-full gap-x-6 sm:gap-x-10">
+      <div className="flex items-center justify-between w-full gap-x-4 lg:gap-x-8">
         {/* Logo */}
         <a href="/" className="group flex shrink-0 items-center" data-testid="header-logo">
           <img
@@ -62,7 +62,7 @@ export const Header = ({ handleGetStarted, handleMenuClick, isAuthenticated }) =
         </a>
 
         {/* Center nav (desktop) */}
-        <nav className="hidden items-center gap-6 sm:flex lg:gap-8">
+        <nav className="hidden items-center gap-6 lg:flex xl:gap-8">
           {navLinks.map((l) => (
             <AnimatedNavLink key={l.label} onClick={() => onNav(l.target)} testid={`nav-${l.label.toLowerCase()}`}>
               {l.label}
@@ -71,7 +71,7 @@ export const Header = ({ handleGetStarted, handleMenuClick, isAuthenticated }) =
         </nav>
 
         {/* CTAs (desktop) */}
-        <div className="hidden shrink-0 items-center gap-2 sm:flex">
+        <div className="hidden shrink-0 items-center gap-2 lg:flex">
           <Button
             variant="ghost"
             className="h-8 px-4 text-xs text-zinc-300 hover:text-white"
@@ -91,7 +91,7 @@ export const Header = ({ handleGetStarted, handleMenuClick, isAuthenticated }) =
 
         {/* Mobile toggle */}
         <button
-          className="flex h-8 w-8 items-center justify-center text-zinc-300 hover:text-white focus:outline-none sm:hidden"
+          className="flex h-8 w-8 items-center justify-center text-zinc-300 hover:text-white focus:outline-none lg:hidden"
           onClick={() => setIsOpen(!isOpen)}
           aria-label={isOpen ? 'Close Menu' : 'Open Menu'}
           data-testid="hamburger-menu-btn"
@@ -102,7 +102,7 @@ export const Header = ({ handleGetStarted, handleMenuClick, isAuthenticated }) =
 
       {/* Mobile dropdown */}
       <div
-        className={`flex w-full flex-col items-center overflow-hidden transition-all duration-300 ease-in-out sm:hidden ${
+        className={`flex w-full flex-col items-center overflow-hidden transition-all duration-300 ease-in-out lg:hidden ${
           isOpen ? 'max-h-[420px] pt-4 opacity-100' : 'pointer-events-none max-h-0 pt-0 opacity-0'
         }`}
       >
