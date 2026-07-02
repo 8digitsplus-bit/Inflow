@@ -50,7 +50,7 @@ const Onboarding = () => {
       <div className="relative z-10 w-full max-w-md">
         <div className="flex items-center justify-center mb-6">
           <div className="h-8 overflow-hidden">
-            <img src="/inflow-logo.png?v=5" alt="InFlow" className="h-full w-auto object-contain" />
+            <img src="/inflow-logo.png?v=6" alt="InFlow" className="h-full w-auto object-contain" />
           </div>
         </div>
 

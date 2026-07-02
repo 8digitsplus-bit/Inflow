@@ -104,7 +104,7 @@ const ChoosePlan = () => {
         {/* Header */}
         <div className="text-center mb-10">
           <div className="flex items-center justify-center mb-4">
-            <img src="/inflow-logo.png?v=5" alt="InFlow" className="h-7 w-auto object-contain" />
+            <img src="/inflow-logo.png?v=6" alt="InFlow" className="h-7 w-auto object-contain" />
           </div>
           <h1 className="text-3xl sm:text-4xl font-bold text-white mb-3" style={{ fontFamily: 'Outfit' }}>
             Choose your plan

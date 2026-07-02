@@ -128,7 +128,7 @@ const Checkout = () => {
           <button onClick={() => navigate('/choose-plan')} className="flex items-center gap-2 text-zinc-400 hover:text-white text-xs transition-colors" data-testid="back-btn">
             <ArrowLeft className="w-3.5 h-3.5" /> Back
           </button>
-          <img src="/inflow-logo.png?v=5" alt="InFlow" className="h-4 w-auto" />
+          <img src="/inflow-logo.png?v=6" alt="InFlow" className="h-4 w-auto" />
           <div className="flex items-center gap-1.5 text-zinc-500 text-xs">
             <Lock className="w-3 h-3" /> Secure
           </div>
