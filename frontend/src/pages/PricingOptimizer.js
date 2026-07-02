@@ -222,7 +222,7 @@ const PricingOptimizer = () => {
                             itemStyle={{ color: '#e4e4e7', fontSize: '11px' }}
                           />
                           <Legend wrapperStyle={{ fontSize: 11 }} />
-                          <Line type="monotone" dataKey="current_margin" name="Current Margin" stroke="#64748B" strokeWidth={2.5} dot={{ r: 5, fill: '#64748B', stroke: '#0c0c10', strokeWidth: 2 }} activeDot={{ r: 7 }} />
+                          <Line type="monotone" dataKey="current_margin" name="Current Margin" stroke="#0052FF" strokeWidth={2.5} dot={{ r: 5, fill: '#0052FF', stroke: '#0c0c10', strokeWidth: 2 }} activeDot={{ r: 7 }} />
                           <Line type="monotone" dataKey="optimal_margin" name="Optimal Margin" stroke="#10B981" strokeWidth={2.5} dot={{ r: 5, fill: '#10B981', stroke: '#0c0c10', strokeWidth: 2 }} activeDot={{ r: 7 }} />
                           <Line type="monotone" dataKey="target_margin" name="Target Margin" stroke="#F59E0B" strokeWidth={2.5} dot={{ r: 5, fill: '#F59E0B', stroke: '#0c0c10', strokeWidth: 2 }} activeDot={{ r: 7 }} />
                         </LineChart>
@@ -256,7 +256,7 @@ const PricingOptimizer = () => {
                             cursor={{ fill: 'rgba(39, 39, 42, 0.15)' }}
                           />
                           <Legend wrapperStyle={{ fontSize: 11 }} />
-                          <Bar dataKey="current_price" name="Current Price" fill="#64748B" radius={[4, 4, 0, 0]} maxBarSize={32} />
+                          <Bar dataKey="current_price" name="Current Price" fill="#0052FF" radius={[4, 4, 0, 0]} maxBarSize={32} />
                           <Bar dataKey="optimal_price" name="Optimal Price" fill="#10B981" radius={[4, 4, 0, 0]} maxBarSize={32} />
                         </ComposedChart>
                       </ResponsiveContainer>

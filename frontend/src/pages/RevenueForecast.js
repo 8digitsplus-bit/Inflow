@@ -66,7 +66,7 @@ const RevenueForecast = () => {
   );
 
   const scenarioData = data.scenarios?.[scenario] || {};
-  const scenarioColors = { best: '#10B981', expected: '#64748B', worst: '#F59E0B' };
+  const scenarioColors = { best: '#10B981', expected: '#0052FF', worst: '#F59E0B' };
   const scenarioLabels = { best: 'Best Case', expected: 'Expected', worst: 'Conservative' };
 
   return (
@@ -129,8 +129,8 @@ const RevenueForecast = () => {
                     <stop offset="100%" stopColor="#10B981" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="gradExpected" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#64748B" stopOpacity={0.3} />
-                    <stop offset="100%" stopColor="#64748B" stopOpacity={0} />
+                    <stop offset="0%" stopColor="#0052FF" stopOpacity={0.3} />
+                    <stop offset="100%" stopColor="#0052FF" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="gradWorst" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="0%" stopColor="#F59E0B" stopOpacity={0.3} />
@@ -145,7 +145,7 @@ const RevenueForecast = () => {
                   cursor={{ stroke: '#27272A', fill: 'none' }}
                 />
                 <Area type="monotone" dataKey="best" name="Best Case" stroke="#10B981" fill="url(#gradBest)" strokeWidth={scenario === 'best' ? 2.5 : 1} strokeOpacity={scenario === 'best' ? 1 : 0.3} fillOpacity={scenario === 'best' ? 1 : 0.1} />
-                <Area type="monotone" dataKey="expected" name="Expected" stroke="#64748B" fill="url(#gradExpected)" strokeWidth={scenario === 'expected' ? 2.5 : 1} strokeOpacity={scenario === 'expected' ? 1 : 0.3} fillOpacity={scenario === 'expected' ? 1 : 0.1} />
+                <Area type="monotone" dataKey="expected" name="Expected" stroke="#0052FF" fill="url(#gradExpected)" strokeWidth={scenario === 'expected' ? 2.5 : 1} strokeOpacity={scenario === 'expected' ? 1 : 0.3} fillOpacity={scenario === 'expected' ? 1 : 0.1} />
                 <Area type="monotone" dataKey="worst" name="Conservative" stroke="#F59E0B" fill="url(#gradWorst)" strokeWidth={scenario === 'worst' ? 2.5 : 1} strokeOpacity={scenario === 'worst' ? 1 : 0.3} fillOpacity={scenario === 'worst' ? 1 : 0.1} />
               </ComposedChart>
             </ResponsiveContainer>

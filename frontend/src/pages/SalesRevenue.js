@@ -133,8 +133,8 @@ const SalesRevenue = () => {
                   <AreaChart data={data?.monthly_revenue || []}>
                     <defs>
                       <linearGradient id="revGrad" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#64748B" stopOpacity={0.3} />
-                        <stop offset="95%" stopColor="#64748B" stopOpacity={0} />
+                        <stop offset="5%" stopColor="#0052FF" stopOpacity={0.3} />
+                        <stop offset="95%" stopColor="#0052FF" stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#27272A" />
@@ -142,7 +142,7 @@ const SalesRevenue = () => {
                     <YAxis stroke="#71717A" fontSize={12} tickFormatter={(v) => `$${(v/1000).toFixed(0)}k`} />
                     <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#27272A' }} />
                     <Area type="monotone" dataKey="target" stroke="#3f3f46" fill="none" strokeDasharray="5 5" strokeWidth={1.5} name="Target" />
-                    <Area type="monotone" dataKey="revenue" stroke="#64748B" fill="url(#revGrad)" strokeWidth={2} name="Revenue" />
+                    <Area type="monotone" dataKey="revenue" stroke="#0052FF" fill="url(#revGrad)" strokeWidth={2} name="Revenue" />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>

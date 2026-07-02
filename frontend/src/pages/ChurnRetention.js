@@ -195,7 +195,7 @@ const ChurnRetention = () => {
                     <Legend />
                     <Area type="monotone" dataKey="retention_rate" stroke="#10B981" fill="url(#retGrad)" strokeWidth={2} name="Retention" />
                     <Line type="monotone" dataKey="churn_rate" stroke="#EF4444" strokeWidth={2} dot={{ fill: '#EF4444', r: 3 }} name="Churn" />
-                    <Line type="monotone" dataKey="nrr" stroke="#64748B" strokeWidth={2} strokeDasharray="5 5" dot={false} name="NRR" />
+                    <Line type="monotone" dataKey="nrr" stroke="#0052FF" strokeWidth={2} strokeDasharray="5 5" dot={false} name="NRR" />
                   </ComposedChart>
                 </ResponsiveContainer>
               </div>
@@ -296,7 +296,7 @@ const ChurnRetention = () => {
                         className="h-full rounded-full transition-all duration-700"
                         style={{
                           width: `${r.pct}%`,
-                          backgroundColor: ['#EF4444', '#F59E0B', '#64748B', '#06B6D4', '#8B5CF6'][i]
+                          backgroundColor: ['#EF4444', '#F59E0B', '#0052FF', '#06B6D4', '#8B5CF6'][i]
                         }}
                       />
                     </div>

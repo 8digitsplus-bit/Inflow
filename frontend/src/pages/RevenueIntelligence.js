@@ -199,8 +199,8 @@ const RevenueIntelligence = () => {
                         <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
                       </linearGradient>
                       <linearGradient id="riPipe" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#64748B" stopOpacity={0.2} />
-                        <stop offset="95%" stopColor="#64748B" stopOpacity={0} />
+                        <stop offset="5%" stopColor="#0052FF" stopOpacity={0.2} />
+                        <stop offset="95%" stopColor="#0052FF" stopOpacity={0} />
                       </linearGradient>
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#27272A" />
@@ -209,7 +209,7 @@ const RevenueIntelligence = () => {
                     <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#27272A' }} />
                     <Legend />
                     <Area type="monotone" dataKey="revenue" stroke="#10B981" fill="url(#riRev)" strokeWidth={2} name="Revenue" />
-                    <Area type="monotone" dataKey="pipeline_added" stroke="#64748B" fill="url(#riPipe)" strokeWidth={2} name="Pipeline Added" />
+                    <Area type="monotone" dataKey="pipeline_added" stroke="#0052FF" fill="url(#riPipe)" strokeWidth={2} name="Pipeline Added" />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>

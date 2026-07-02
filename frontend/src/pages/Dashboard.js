@@ -401,7 +401,7 @@ const Dashboard = () => {
                   <AreaChart data={analytics?.monthly_data || []}>
                     <defs>
                       <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#64748B" stopOpacity={0.3}/><stop offset="95%" stopColor="#64748B" stopOpacity={0}/>
+                        <stop offset="5%" stopColor="#0052FF" stopOpacity={0.3}/><stop offset="95%" stopColor="#0052FF" stopOpacity={0}/>
                       </linearGradient>
                       <linearGradient id="colorForecast" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#10B981" stopOpacity={0.3}/><stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
@@ -411,7 +411,7 @@ const Dashboard = () => {
                     <XAxis dataKey="month" stroke="#71717A" fontSize={12} />
                     <YAxis stroke="#71717A" fontSize={12} tickFormatter={(v) => `$${v/1000}k`} />
                     <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#27272A' }} />
-                    <Area type="monotone" dataKey="revenue" stroke="#64748B" fill="url(#colorRevenue)" strokeWidth={2} name="Revenue" />
+                    <Area type="monotone" dataKey="revenue" stroke="#0052FF" fill="url(#colorRevenue)" strokeWidth={2} name="Revenue" />
                     <Area type="monotone" dataKey="forecast" stroke="#10B981" fill="url(#colorForecast)" strokeWidth={2} strokeDasharray="5 5" name="Forecast" />
                   </AreaChart>
                 </ResponsiveContainer>
@@ -437,7 +437,7 @@ const Dashboard = () => {
                     <YAxis type="category" dataKey="stage" tick={{ fill: '#a1a1aa', fontSize: 12, textTransform: 'capitalize' }} width={80} tickFormatter={(v) => v.charAt(0).toUpperCase() + v.slice(1)} />
                     <Tooltip contentStyle={{ backgroundColor: '#0c0c10', border: '1px solid #3f3f46', borderRadius: '8px', color: '#fff' }} itemStyle={{ color: '#A1A1AA' }} formatter={(v) => [`${v} deals`, 'Count']} cursor={{ fill: 'rgba(39, 39, 42, 0.3)' }} />
                     <Bar dataKey="count" radius={[0, 6, 6, 0]} barSize={18}>
-                      {pieData.map((entry, index) => (<Cell key={`cell-${index}`} fill={stageColors[entry.stage] || '#64748B'} />))}
+                      {pieData.map((entry, index) => (<Cell key={`cell-${index}`} fill={stageColors[entry.stage] || '#0052FF'} />))}
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
@@ -570,7 +570,7 @@ const Dashboard = () => {
                   {recentDeals.map((deal, i) => (
                     <div key={i} className="flex items-center justify-between p-2 sm:p-3 bg-zinc-900/50 rounded-lg border border-zinc-800/50 hover:border-zinc-700 transition-colors">
                       <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-                        <div className="w-1 h-10 rounded-full flex-shrink-0" style={{ backgroundColor: stageColors[deal.stage] || '#64748B' }} />
+                        <div className="w-1 h-10 rounded-full flex-shrink-0" style={{ backgroundColor: stageColors[deal.stage] || '#0052FF' }} />
                         <div className="min-w-0">
                           <h4 className="text-white font-medium text-xs sm:text-sm truncate">{deal.name}</h4>
                           <p className="text-zinc-400 text-[10px] sm:text-xs truncate">{deal.company}</p>

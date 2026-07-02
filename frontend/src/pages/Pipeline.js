@@ -312,7 +312,7 @@ const Pipeline = () => {
                       cursor={{ stroke: '#27272A' }}
                       formatter={(v, name) => [name === 'avg_days' ? `${v} days avg` : `${v} deals`, name === 'avg_days' ? 'Velocity' : 'Deals']}
                     />
-                    <Line type="monotone" dataKey="avg_days" name="avg_days" stroke="#64748B" strokeWidth={2} dot={{ r: 5, fill: '#64748B', stroke: '#0c0c10', strokeWidth: 2 }} activeDot={{ r: 7, stroke: '#64748B', strokeWidth: 2 }} />
+                    <Line type="monotone" dataKey="avg_days" name="avg_days" stroke="#0052FF" strokeWidth={2} dot={{ r: 5, fill: '#0052FF', stroke: '#0c0c10', strokeWidth: 2 }} activeDot={{ r: 7, stroke: '#0052FF', strokeWidth: 2 }} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -335,7 +335,7 @@ const Pipeline = () => {
             <CardContent className="space-y-3">
               {(pipelineData?.conversion_rates || []).map((c, i) => {
                 const stageObj = STAGES.find(s => s.id === c.from_stage?.toLowerCase()?.replace(/\s/g, '_'));
-                const barColor = stageObj?.color || '#64748B';
+                const barColor = stageObj?.color || '#0052FF';
                 return (
                 <div key={i}>
                   <div className="flex items-center justify-between text-xs mb-1">
