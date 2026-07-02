@@ -355,7 +355,7 @@ const Contact = () => {
           {/* LEFT — logo (clickable, goes home) */}
           <a href="/" className="flex items-center group justify-self-start" data-testid="contact-logo" aria-label="InFlow home">
             <div className={`overflow-hidden flex items-center justify-center transition-all duration-500 group-hover:scale-105 ${scrolled ? 'h-5' : 'h-6'}`}>
-              <img src="/inflow-logo.png?v=4" alt="InFlow" className="h-full w-auto object-contain" />
+              <img src="/inflow-logo.png?v=5" alt="InFlow" className="h-full w-auto object-contain" />
             </div>
           </a>
 

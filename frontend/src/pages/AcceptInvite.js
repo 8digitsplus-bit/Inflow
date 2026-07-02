@@ -126,7 +126,7 @@ export default function AcceptInvite() {
 
       <div className="relative z-10 max-w-md w-full">
         <div className="text-center mb-8">
-          <img src="/inflow-logo.png?v=4" alt="InFlow" className="h-6 mx-auto mb-6" />
+          <img src="/inflow-logo.png?v=5" alt="InFlow" className="h-6 mx-auto mb-6" />
           <div className="w-14 h-14 rounded-2xl bg-slate-500/10 flex items-center justify-center mx-auto mb-5">
             <Users className="w-7 h-7 text-slate-400" />
           </div>

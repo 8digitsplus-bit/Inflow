@@ -216,7 +216,7 @@ const AuthPage = () => {
       <div className="w-full max-w-sm relative z-10 animate-fade-in">
         <div className="flex items-center justify-center mb-8">
           <div className="h-8 overflow-hidden">
-            <img src="/inflow-logo.png?v=4" alt="InFlow" className="h-full w-auto object-contain" />
+            <img src="/inflow-logo.png?v=5" alt="InFlow" className="h-full w-auto object-contain" />
           </div>
         </div>
 

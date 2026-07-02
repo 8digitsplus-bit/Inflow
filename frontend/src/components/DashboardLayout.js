@@ -123,7 +123,7 @@ const DashboardLayout = ({ children }) => {
           <div className={`h-12 flex items-center flex-shrink-0 border-b border-white/[0.06] ${collapsed ? 'justify-center px-2' : 'justify-between px-3'}`}>
             {!collapsed && (
               <Link to="/dashboard" className="flex items-center">
-                <img src="/inflow-logo.png?v=4" alt="InFlow" className="h-5 w-auto object-contain" />
+                <img src="/inflow-logo.png?v=5" alt="InFlow" className="h-5 w-auto object-contain" />
               </Link>
             )}
             <button
@@ -216,7 +216,7 @@ const DashboardLayout = ({ children }) => {
             <Menu className="w-5 h-5" />
           </button>
           <div className="flex items-center ml-3">
-            <img src="/inflow-logo.png?v=4" alt="InFlow" className="h-4 w-auto object-contain" />
+            <img src="/inflow-logo.png?v=5" alt="InFlow" className="h-4 w-auto object-contain" />
           </div>
         </div>
         <div className="lg:pt-0 pt-12">
