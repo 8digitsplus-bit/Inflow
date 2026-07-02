@@ -1,124 +1,139 @@
-import { useState, useEffect } from 'react';
-import { ArrowRight, X, Menu } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { X, Menu } from 'lucide-react';
 import { Button } from '../ui/button';
 
-export const FullScreenMenu = ({ menuOpen, setMenuOpen, handleMenuClick, handleGetStarted, isAuthenticated }) => (
-  <div
-    className={`fixed inset-0 z-[60] transition-all duration-500 ease-out ${menuOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}
-    style={{ background: 'rgba(9, 9, 11, 0.60)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}
+const navLinks = [
+  { label: 'Features', target: '#features' },
+  { label: 'Pricing', target: '#pricing' },
+  { label: 'FAQs', target: '#faq' },
+  { label: 'Contact', target: '/contact' },
+];
+
+// Nav link with a slide-up reveal on hover (gray -> white).
+const AnimatedNavLink = ({ onClick, children, testid }) => (
+  <button
+    onClick={onClick}
+    data-testid={testid}
+    className="group relative inline-block h-5 overflow-hidden align-middle text-sm font-medium leading-5"
   >
-    <button className="absolute top-5 right-6 p-2 rounded-full text-zinc-400 hover:text-white hover:bg-white/10 transition-all" onClick={() => setMenuOpen(false)} data-testid="menu-close-btn">
-      <X className="w-6 h-6" />
-    </button>
-    <div className="h-full flex flex-col items-center justify-center">
-      <nav className="flex flex-col items-center gap-2">
-        {[
-          { label: 'Features', action: '#features', delay: '100ms' },
-          { label: 'Pricing', action: '#pricing', delay: '150ms' },
-          { label: 'FAQs', action: '#faq', delay: '200ms' },
-          { label: 'Contact', action: '/contact', delay: '250ms' },
-        ].map((item) => (
-          <button key={item.label} onClick={() => handleMenuClick(item.action)}
-            className={`group px-8 py-5 rounded-2xl transition-all duration-300 hover:bg-white/5 hover:shadow-[0_0_40px_rgba(255,255,255,0.25)] ${menuOpen ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}
-            style={{ transitionDelay: item.delay }}
-            data-testid={`menu-${item.label.toLowerCase()}`}
-          >
-            <span className="text-2xl font-semibold text-zinc-300 group-hover:text-white transition-colors" style={{ fontFamily: 'Outfit' }}>{item.label}</span>
-          </button>
-        ))}
-        <div className={`w-24 h-px bg-gradient-to-r from-transparent via-zinc-700 to-transparent my-4 transition-all duration-300 ${menuOpen ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-0'}`} style={{ transitionDelay: '350ms' }} />
-        <button onClick={() => handleMenuClick('signin')}
-          className={`group px-8 py-5 rounded-2xl transition-all duration-300 hover:bg-white/5 hover:shadow-[0_0_40px_rgba(255,255,255,0.25)] ${menuOpen ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`}
-          style={{ transitionDelay: '400ms' }}
-          data-testid="menu-signin"
-        >
-          <span className="text-2xl font-semibold text-zinc-300 group-hover:text-white transition-colors" style={{ fontFamily: 'Outfit' }}>
-            {isAuthenticated ? 'Dashboard' : 'Sign In'}
-          </span>
-        </button>
-      </nav>
-      <div className={`mt-10 transition-all duration-300 ${menuOpen ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0'}`} style={{ transitionDelay: '450ms' }}>
-        <Button className="bg-white/10 hover:bg-white/20 text-white btn-glow px-3 py-2.5 text-sm" onClick={() => { setMenuOpen(false); handleGetStarted(); }}>
-          Start Free Trial <ArrowRight className="w-5 h-5 ml-2" />
-        </Button>
-      </div>
-    </div>
-  </div>
+    <span className="block transition-transform duration-300 ease-out group-hover:-translate-y-5">
+      <span className="block h-5 text-zinc-400">{children}</span>
+      <span className="block h-5 text-white">{children}</span>
+    </span>
+  </button>
 );
 
-export const Header = ({ setMenuOpen, menuOpen, handleGetStarted }) => {
-  const [scrolled, setScrolled] = useState(false);
-  const [visible, setVisible] = useState(true);
-  const [lastScroll, setLastScroll] = useState(0);
+export const Header = ({ handleGetStarted, handleMenuClick, isAuthenticated }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const [shapeClass, setShapeClass] = useState('rounded-full');
+  const shapeTimeout = useRef(null);
 
+  // Morph the pill to a rounded panel while the mobile menu is open.
   useEffect(() => {
-    const onScroll = () => {
-      const y = window.scrollY;
-      setScrolled(y > 20);
-      setVisible(y < lastScroll || y < 80);
-      setLastScroll(y);
-    };
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, [lastScroll]);
+    if (shapeTimeout.current) clearTimeout(shapeTimeout.current);
+    if (isOpen) {
+      setShapeClass('rounded-3xl');
+    } else {
+      shapeTimeout.current = setTimeout(() => setShapeClass('rounded-full'), 300);
+    }
+    return () => shapeTimeout.current && clearTimeout(shapeTimeout.current);
+  }, [isOpen]);
 
-  const scrollTo = (id) => {
-    document.querySelector(id)?.scrollIntoView({ behavior: 'smooth' });
-  };
+  const onNav = (target) => { setIsOpen(false); handleMenuClick(target); };
+  const onLogin = () => { setIsOpen(false); window.location.href = '/auth?mode=login'; };
+  const onCta = () => { setIsOpen(false); handleGetStarted(); };
 
   return (
     <header
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ease-out ${
-        visible ? 'translate-y-0' : '-translate-y-full'
-      }`}
-      style={{
-        background: scrolled ? 'rgba(9, 9, 11, 0.85)' : 'transparent',
-        backdropFilter: scrolled ? 'blur(20px) saturate(180%)' : 'none',
-        WebkitBackdropFilter: scrolled ? 'blur(20px) saturate(180%)' : 'none',
-      }}
+      className={`fixed top-4 sm:top-6 left-1/2 -translate-x-1/2 z-50 flex flex-col items-center px-5 sm:px-6 py-3 border border-white/10 bg-white/[0.05] backdrop-blur-xl shadow-[0_8px_40px_-12px_rgba(0,0,0,0.7)] w-[calc(100%-1.5rem)] sm:w-auto transition-[border-radius] duration-300 ease-in-out ${shapeClass}`}
       data-testid="main-header"
     >
-      {/* Animated bottom border */}
-      <div className={`absolute bottom-0 left-0 right-0 h-px transition-opacity duration-500 ${scrolled ? 'opacity-100' : 'opacity-0'}`}>
-        <div className="h-full bg-gradient-to-r from-transparent via-indigo-500/40 to-transparent" />
+      {/* top sheen */}
+      <div aria-hidden className="pointer-events-none absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+
+      <div className="flex items-center justify-between w-full gap-x-6 sm:gap-x-10">
+        {/* Logo */}
+        <a href="/" className="group flex shrink-0 items-center" data-testid="header-logo">
+          <img
+            src="/inflow-logo.png?v=3"
+            alt="InFlow"
+            className="h-6 w-auto object-contain transition-transform duration-300 group-hover:scale-105"
+          />
+        </a>
+
+        {/* Center nav (desktop) */}
+        <nav className="hidden items-center gap-6 sm:flex lg:gap-8">
+          {navLinks.map((l) => (
+            <AnimatedNavLink key={l.label} onClick={() => onNav(l.target)} testid={`nav-${l.label.toLowerCase()}`}>
+              {l.label}
+            </AnimatedNavLink>
+          ))}
+        </nav>
+
+        {/* CTAs (desktop) */}
+        <div className="hidden shrink-0 items-center gap-2 sm:flex">
+          <Button
+            variant="ghost"
+            className="h-8 px-4 text-xs text-zinc-300 hover:text-white"
+            onClick={onLogin}
+            data-testid="header-login-btn"
+          >
+            Log In
+          </Button>
+          <Button
+            className="btn-glow h-8 bg-white/10 px-4 text-xs text-white hover:bg-white/20"
+            onClick={onCta}
+            data-testid="header-cta-btn"
+          >
+            {isAuthenticated ? 'Dashboard' : 'Get Started'}
+          </Button>
+        </div>
+
+        {/* Mobile toggle */}
+        <button
+          className="flex h-8 w-8 items-center justify-center text-zinc-300 hover:text-white focus:outline-none sm:hidden"
+          onClick={() => setIsOpen(!isOpen)}
+          aria-label={isOpen ? 'Close Menu' : 'Open Menu'}
+          data-testid="hamburger-menu-btn"
+        >
+          {isOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </button>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className={`flex items-center justify-between transition-all duration-500 ${scrolled ? 'h-14' : 'h-20'}`}>
-          {/* Logo */}
-          <a href="/" className="flex items-center group" data-testid="header-logo">
-            <div className={`overflow-hidden flex items-center justify-center transition-all duration-500 group-hover:scale-105 ${scrolled ? 'h-6' : 'h-7'}`}>
-              <img src="/inflow-logo.png?v=3" alt="InFlow" className="h-full w-auto object-contain" />
-            </div>
-          </a>
-
-          {/* Center hamburger */}
-          <button
-            className={`absolute left-1/2 -translate-x-1/2 flex items-center justify-center rounded-lg text-zinc-400 hover:text-white hover:bg-white/10 transition-all duration-300 ${scrolled ? 'w-8 h-8' : 'w-9 h-9'}`}
-            onClick={() => setMenuOpen(!menuOpen)}
-            data-testid="hamburger-menu-btn"
+      {/* Mobile dropdown */}
+      <div
+        className={`flex w-full flex-col items-center overflow-hidden transition-all duration-300 ease-in-out sm:hidden ${
+          isOpen ? 'max-h-[420px] pt-4 opacity-100' : 'pointer-events-none max-h-0 pt-0 opacity-0'
+        }`}
+      >
+        <nav className="flex w-full flex-col items-center gap-4">
+          {navLinks.map((l) => (
+            <button
+              key={l.label}
+              onClick={() => onNav(l.target)}
+              className="w-full text-center text-sm text-zinc-300 transition-colors hover:text-white"
+              data-testid={`nav-mobile-${l.label.toLowerCase()}`}
+            >
+              {l.label}
+            </button>
+          ))}
+        </nav>
+        <div className="mt-4 flex w-full flex-col items-center gap-3 px-1">
+          <Button
+            variant="ghost"
+            className="h-9 w-full text-sm text-zinc-300 hover:text-white"
+            onClick={onLogin}
+            data-testid="header-login-btn-mobile"
           >
-            <Menu className="w-5 h-5" />
-          </button>
-
-          {/* Right side CTAs */}
-          <div className="hidden sm:flex items-center gap-3">
-            <Button
-              variant="ghost"
-              className={`text-zinc-400 hover:text-white hover:bg-white/10 transition-all duration-500 ${scrolled ? 'h-8 text-xs px-4' : 'h-9 text-sm px-5'}`}
-              onClick={() => window.location.href = '/auth?mode=login'}
-              data-testid="header-login-btn"
-            >
-              Log In
-            </Button>
-            <Button
-              className={`bg-white/10 hover:bg-white/20 text-white btn-glow transition-all duration-500 ${scrolled ? 'h-8 text-xs px-4' : 'h-9 text-sm px-5'}`}
-              onClick={handleGetStarted}
-              data-testid="header-cta-btn"
-            >
-              Get Started
-            </Button>
-          </div>
+            Log In
+          </Button>
+          <Button
+            className="btn-glow h-9 w-full bg-white/10 text-sm text-white hover:bg-white/20"
+            onClick={onCta}
+            data-testid="header-cta-btn-mobile"
+          >
+            {isAuthenticated ? 'Dashboard' : 'Get Started'}
+          </Button>
         </div>
       </div>
     </header>

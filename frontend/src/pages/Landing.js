@@ -1,7 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Header, FullScreenMenu } from '../components/landing/HeaderMenu';
+import { Header } from '../components/landing/HeaderMenu';
 import { HeroSection } from '../components/landing/HeroSection';
 import { FeaturesSection } from '../components/landing/FeaturesSection';
 import { ConnectBusinessSection, CustomIntegrationSection } from '../components/landing/HowItWorks';
@@ -13,7 +13,6 @@ import { Toaster } from '../components/ui/sonner';
 const Landing = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
-  const [menuOpen, setMenuOpen] = useState(false);
   const mainRef = useRef(null);
 
   // Scroll-reveal observer
@@ -45,7 +44,6 @@ const Landing = () => {
   const handleStartTrial = () => navigate(isAuthenticated ? '/dashboard' : '/auth?trial=true');
   const handleScrollToPricing = () => document.querySelector('#pricing')?.scrollIntoView({ behavior: 'smooth' });
   const handleMenuClick = (target) => {
-    setMenuOpen(false);
     if (target === 'signin') { navigate(isAuthenticated ? '/dashboard' : '/auth'); return; }
     // Route paths (start with "/") use react-router; anchors scroll on the landing page.
     if (typeof target === 'string' && target.startsWith('/')) { navigate(target); return; }
@@ -55,8 +53,7 @@ const Landing = () => {
   return (
     <div ref={mainRef} className="min-h-screen bg-[#050507] text-white overflow-x-hidden relative">
       <Toaster position="top-center" />
-      <Header setMenuOpen={setMenuOpen} menuOpen={menuOpen} handleGetStarted={handleStartTrial} />
-      <FullScreenMenu menuOpen={menuOpen} setMenuOpen={setMenuOpen} handleMenuClick={handleMenuClick} handleGetStarted={handleStartTrial} isAuthenticated={isAuthenticated} />
+      <Header handleGetStarted={handleStartTrial} handleMenuClick={handleMenuClick} isAuthenticated={isAuthenticated} />
       <HeroSection handleGetStarted={handleStartTrial} />
       <FeaturesSection />
       <ConnectBusinessSection />

@@ -13,6 +13,10 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
+### Floating Glass Pill Navbar (Jun 2026) — UI
+- Rebuilt `/app/frontend/src/components/landing/HeaderMenu.js` as a centered floating glass pill (21st.dev port): `fixed top-6 left-1/2 -translate-x-1/2`, `bg-white/[0.05]` + `backdrop-blur-xl` + border + top-sheen, morphs `rounded-full`→`rounded-3xl` when the mobile menu opens. Inline animated nav links (slide-up gray→white reveal): Features/Pricing/FAQs/Contact. Kept the InFlow logo and the existing glass Log In (ghost) + Get Started buttons. Self-contained mobile hamburger dropdown.
+- Removed the old `FullScreenMenu` (overlay) — its nav handler `handleMenuClick` is reused by the new inline links. Updated `Landing.js`: dropped `FullScreenMenu`/`menuOpen` state and the stale `setMenuOpen(false)` call (would have crashed nav clicks). Verified: desktop pill renders, nav links click without JS errors (browser console clean), mobile toggle works; compiles clean.
+
 ### Sitewide Liquid-Glass Buttons (Jun 2026) — UI
 - Rewrote shared `/app/frontend/src/components/ui/button.jsx` into a frosted liquid-glass button: translucent white bg + layered inset box-shadow "glass lens" (`GLASS_LENS`) + `backdrop-blur` + hover scale, `rounded-full`. Kept the full shadcn API (variants default/destructive/outline/secondary = glass; ghost/link = minimal text; sizes default/sm/lg/icon; `asChild`). The SVG displacement filter from the source was omitted (Firefox-only; no visible effect in Chrome/Safari/Edge). Verified clickable + non-blocking (testing_agent iteration_39, 5/5 flows pass).
 - Neutralized explicit non-glass overrides site-wide so every button matches: `bg-indigo-600 hover:bg-indigo-500` (35 spots) + `bg-violet-600`/`bg-purple-600 hover:bg-purple-500` (AI/action buttons) + white pills `bg-white text-zinc-950 hover:bg-zinc-200` (auth submit, featured pricing CTA) → `bg-white/10 hover:bg-white/20 text-white`. Gutted `.btn-glow` in `index.css` (removed its box-shadow/transform overrides that hid the lens; kept the shine-streak). Google OAuth button kept white (brand).
