@@ -63,6 +63,7 @@ class Deal(BaseModel):
     value: float
     stage: str = "lead"
     probability: int = 20
+    source: Optional[str] = None
     expected_close_date: Optional[str] = None
     notes: Optional[str] = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
