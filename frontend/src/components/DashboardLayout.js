@@ -18,6 +18,7 @@ import {
   Tag,
   LineChart,
   MessageCircle,
+  Radar,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from './ui/alert-dialog';
@@ -60,6 +61,7 @@ const navGroups = [
     label: 'Tools',
     items: [
       { name: 'Integration', href: '/connect-business', icon: Plug, minTier: 0 },
+      { name: 'Revenue Leaks', href: '/revenue-leaks', icon: Radar, minTier: 3 },
       { name: 'Smart Assist', href: '/support', icon: Headphones, minTier: 0 },
       { name: 'Settings', href: '/settings', icon: Settings, minTier: 0 },
     ]

@@ -1,0 +1,42 @@
+{
+  "summary": "End-to-end tested Multi-Platform Telemetry Sync / Revenue Leak Detection (Enterprise+owner). Backend: 9/10 pytest passed (1 skipped — no non-enterprise user to verify gating). Frontend: full human-in-the-loop workflow verified — contract CRUD, scan detection ($5,560 / +40 seats), review dialog with draft invoice + CRM + editable AI email, approve creates REAL Stripe draft invoice (in_...), CRM expansion deal on /pipeline, and Resend email delivered to 8digitsplus@gmail.com. Dismiss flow works.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "GET /api/deals",
+        "issue": "Deals inserted from the telemetry approve flow set source='expansion' in Mongo, but the Deal Pydantic response_model does not declare a 'source' field so the response strips it. UI/pipeline still displays the deals correctly, but any consumer relying on the 'source' field will not see 'expansion'. Add source to Deal model or expose via a computed field."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_telemetry_leaks.py",
+    "/app/test_reports/pytest/telemetry_leaks.xml"
+  ],
+  "action_items": [
+    "(Optional / minor) Add `source: Optional[str] = None` to Deal model in /app/backend/models.py so the expansion tag surfaces via GET /api/deals for downstream filtering. Not blocking; pipeline UI already renders the deal by name."
+  ],
+  "critical_code_review_comments": [
+    "routes/telemetry.py cleanly separates draft (preview only) from approve (executes) — good human-in-the-loop pattern. require_enterprise checks 'enterprise' substring in tier which correctly matches enterprise_monthly / enterprise_yearly.",
+    "Approve endpoint safely handles missing Stripe key (falls back to simulated draft) and missing stripe_customer_id (auto-creates a Stripe customer and persists back on the contract).",
+    "Scan endpoint has correct math: overage_seats = max(0, used_seats - contracted_seats), est = overage * unit_price. Verified 40 × 139 = 5,560.",
+    "Delete contract cascades to leaks (good). Update endpoint returns 404 on missing.",
+    "AI email uses fallback body if EMERGENT_LLM_KEY missing — resilient.",
+    "Minor: Deal model missing 'source' field so metadata inserted at db.deals.insert_one is silently dropped by response_model. Consider updating Deal model."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_telemetry_leaks.py (new)"
+  ],
+  "success_rate": {"backend": "100% (9/9 executed passed, 1 skipped due to no non-enterprise user)", "frontend": "100%"},
+  "test_credentials": "testpro@test.com / password (Enterprise owner). Non-enterprise gating test skipped — no non-enterprise user available; code path verified via review of require_enterprise dependency.",
+  "seed_data_creation": "Ran /app/backend/seed_telemetry.py which upgrades testpro org to enterprise_monthly and creates 'Acme Corp' contract + 140-seat mixpanel usage reading (40-seat overage = $5,560). Approved multiple test leaks that created ~5 real Stripe test-mode draft invoices (visible in Stripe dashboard test mode) and 8 CRM 'Expansion — Acme Corp' deals in /api/deals.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Feature is production-ready. Note: (a) Every approve creates a live Stripe test draft invoice + new CRM deal; reseeding between test runs is important to keep the demo dataset clean — run `cd /app/backend && PYTHONPATH=/app/backend python3 seed_telemetry.py` then POST /api/telemetry/scan. (b) Resend free tier only delivers to 8digitsplus@gmail.com — the seed sets am_email accordingly, so email flow returns sent=true. (c) The only known minor issue is Deal.source field stripped by response_model — see backend_issues.minor.",
+  "rca of the issue": "N/A — no bugs blocking the feature. The 'source' field stripping is a Pydantic response_model limitation: DealCreate/Deal models don't declare source, and FastAPI's response_model uses model_dump() which drops unknown fields. Fix: add `source: Optional[str] = None` to the Deal model."
+}

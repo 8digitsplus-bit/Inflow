@@ -25,6 +25,7 @@ import CookiePolicy from './pages/CookiePolicy';
 import Terms from './pages/Terms';
 import AcceptInvite from './pages/AcceptInvite';
 import Contact from './pages/Contact';
+import RevenueLeaks from './pages/RevenueLeaks';
 import GlowPreview from './pages/GlowPreview';
 import TrialNotification from './components/TrialNotification';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -173,6 +174,16 @@ const AppRouter = () => {
         element={
           <ProtectedRoute>
             <ConnectBusiness />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/revenue-leaks" 
+        element={
+          <ProtectedRoute>
+            <TierGate requiredLevel={3}>
+              <RevenueLeaks />
+            </TierGate>
           </ProtectedRoute>
         } 
       />

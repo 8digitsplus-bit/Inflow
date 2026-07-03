@@ -1,12 +1,20 @@
 # Test Credentials
 
-## Main Test Account (Org owner — Pro Monthly)
+## Main Test Account (Org owner — NOW Enterprise Monthly)
 - Email: testpro@test.com
 - Password: password
 - user_id: user_393ea5f333cb
 - org_id: org_15337f4cefc9 (name: "Test Pro User's Team")
 - Role: owner
-- Subscription: pro_monthly (org + user)
+- Subscription: enterprise_monthly (org + user) — upgraded from pro_monthly by /app/backend/seed_telemetry.py so the Enterprise-gated Multi-Platform Telemetry Sync (Revenue Leaks) feature is reachable.
+
+## Multi-Platform Telemetry Sync / Revenue Leaks (Jun 2026)
+- Page: /revenue-leaks (Enterprise-tier + owner only). Sidebar: Tools → "Revenue Leaks".
+- Seed: `cd /app/backend && PYTHONPATH=/app/backend python3 seed_telemetry.py` then POST /api/telemetry/scan.
+  Seeds contract "Acme Corp" (100 seats @ $139, usage_source=mixpanel, am_email=8digitsplus@gmail.com) + a telemetry_usage reading (140 seats) → 40-seat leak (~$5,560/mo).
+- The AM email is set to 8digitsplus@gmail.com because Resend free-tier only delivers to that verified address in this env.
+- Live Stripe draft invoice creation WORKS at runtime (platform injects a real sk_test key; the .env sentinel `sk_test_emergent` is swapped at runtime). Approve auto-creates a Stripe customer if none set.
+
 
 ## Demo Account
 - Email: testdemo@inflow.com
