@@ -75,7 +75,6 @@ export const PricingSection = ({ handleGetStarted, isAuthenticated }) => {
                 <Plan>
                   <PlanName>
                     {plan.name}
-                    {plan.featured && <Badge className="border-white/30 text-white">Popular</Badge>}
                   </PlanName>
                   {plan.savings && (
                     <Badge className="border-emerald-400/30 bg-emerald-500/10 text-emerald-300">{plan.savings}</Badge>
