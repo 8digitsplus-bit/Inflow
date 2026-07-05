@@ -58,6 +58,18 @@ def _before_send(event, hint):
     return event
 
 
+def _before_send_log(log, hint):
+    # Scrub PII from structured logs before they leave the server
+    if isinstance(log, dict):
+        body = log.get("body")
+        if isinstance(body, str):
+            log["body"] = EMAIL_RE.sub("[email]", body)
+        attrs = log.get("attributes")
+        if isinstance(attrs, dict):
+            log["attributes"] = _redact(attrs)
+    return log
+
+
 def init_sentry():
     dsn = os.environ.get("SENTRY_DSN")
     if not dsn:
@@ -67,6 +79,8 @@ def init_sentry():
         environment=os.environ.get("SENTRY_ENVIRONMENT", "production"),
         send_default_pii=False,
         traces_sample_rate=0.1,
+        enable_logs=True,
         before_send=_before_send,
+        before_send_log=_before_send_log,
     )
-    logger.info("Sentry initialized (backend)")
+    logger.info("Sentry initialized (backend, logs enabled)")

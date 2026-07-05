@@ -30,8 +30,12 @@ export function initSentry() {
   Sentry.init({
     dsn,
     environment: process.env.REACT_APP_SENTRY_ENVIRONMENT || 'production',
-    integrations: [Sentry.browserTracingIntegration()],
+    integrations: [
+      Sentry.browserTracingIntegration(),
+      Sentry.consoleLoggingIntegration({ levels: ['warn', 'error'] }),
+    ],
     tracesSampleRate: 0.1,
+    enableLogs: true, // structured logs (console.warn/error forwarded)
     sendDefaultPii: false, // do not attach IP / cookies / user identifiers
     beforeSend(event) {
       if (event.request) {
@@ -51,6 +55,11 @@ export function initSentry() {
         delete event.user.username;
       }
       return event;
+    },
+    beforeSendLog(log) {
+      if (log && typeof log.body === 'string') log.body = log.body.replace(EMAIL_RE, '[email]');
+      if (log && log.attributes) log.attributes = redact(log.attributes);
+      return log;
     },
   });
 }

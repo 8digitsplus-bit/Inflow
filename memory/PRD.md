@@ -17,6 +17,8 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 - Frontend: `@sentry/react@10.63.0` (EU). Init `/app/frontend/src/lib/sentry.js` → called in `index.js`; app wrapped in `<Sentry.ErrorBoundary>`. Env: `REACT_APP_SENTRY_DSN` + `REACT_APP_SENTRY_ENVIRONMENT`. Verified live (envelope delivered).
 - Backend: `sentry-sdk==2.64.0` (EU). Init `/app/backend/utils/sentry_config.py` → `init_sentry()` called in `server.py` before `app = FastAPI()` (FastAPI/Starlette integrations auto-enable, unhandled 500s captured). Env: `SENTRY_DSN` + `SENTRY_ENVIRONMENT` in backend/.env. Verified live (envelope delivered to project 4511682844360794, host o4511682676785152.ingest.de.sentry.io).
 - PII scrubbing on BOTH: `send_default_pii=False` + a `before_send` redactor — strips cookies + Authorization/Cookie/X-Api-Key headers, masks emails, filters keys containing password/token/session_token/api_key/secret/stripe_customer_id/encryption_key/etc., drops user email/ip/username. `traces_sample_rate=0.1`.
+- Structured LOGS enabled on both (Jul 2026): backend `enable_logs=True` + `before_send_log` scrubber; frontend `enableLogs: true` + `Sentry.consoleLoggingIntegration(['warn','error'])` + `beforeSendLog` scrubber. Verified `log_item` envelopes deliver to both EU projects. (Using Sentry Logs instead of BetterStack Logs to avoid tool overlap.)
+- BetterStack: to be used for Uptime monitoring + Status page only (Sentry covers errors + logs). Not yet wired into code.
 - Two separate EU projects (frontend "Browser JavaScript" + backend "FastAPI"). GitHub repo authorized in Sentry for suspect-commit/source linking. DSNs from env only (frontend DSN is public by design).
 
 
