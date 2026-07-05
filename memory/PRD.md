@@ -13,6 +13,15 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
+### Sentry Error Monitoring — Frontend (Jul 2026)
+- Integrated `@sentry/react@10.63.0` (EU region) for the React frontend. Init in `/app/frontend/src/lib/sentry.js` (`initSentry()`), called from `/app/frontend/src/index.js` before render; app wrapped in `<Sentry.ErrorBoundary>` with a branded dark fallback.
+- DSN from env only: `REACT_APP_SENTRY_DSN` + `REACT_APP_SENTRY_ENVIRONMENT` (=preview here) in frontend/.env. (Frontend DSNs are public by design — not a secret.)
+- PII scrubbing: `sendDefaultPii: false` + a `beforeSend` redactor that strips cookies, Authorization/Cookie/X-Api-Key headers, masks emails, and filters keys containing password/token/session_token/api_key/secret/stripe_customer_id/etc.; drops user email/ip/username. `tracesSampleRate: 0.1`.
+- VERIFIED live: uncaught error captured + delivered (2 envelope POSTs to o4511682676785152.ingest.de.sentry.io) — events reach the user's EU project.
+- GitHub repo authorized in Sentry (suspect-commits / source linking).
+- PENDING: Backend (FastAPI) Sentry via `sentry-sdk` — awaiting a backend project DSN from the user (recommended: separate project).
+
+
 ### Multi-Platform Telemetry Sync — Revenue Leak Detection (Jun 2026) — P1, Enterprise-tier + owner
 - Cross-references product usage (Mixpanel / Amplitude) against billing contracts (Stripe) to catch unbilled overage revenue, then recovers it via a HUMAN-IN-THE-LOOP one-click flow (nothing auto-executes).
 - Backend `/app/backend/routes/telemetry.py` (gated by `require_enterprise` = owner + tier contains 'enterprise'):
