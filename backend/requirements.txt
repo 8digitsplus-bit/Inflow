@@ -19,7 +19,7 @@ distro==1.9.0
 dnspython==2.8.0
 ecdsa==0.19.1
 email-validator==2.3.0
-emergentintegrations @ https://d33sy5i8bnduwe.cloudfront.net/simple/emergentintegrations/emergentintegrations-0.1.0-py3-none-any.whl
+emergentintegrations==0.1.0
 fastapi==0.110.1
 fastuuid==0.14.0
 filelock==3.24.3
@@ -108,6 +108,7 @@ rpds-py==0.30.0
 rsa==4.9.1
 s3transfer==0.16.0
 s5cmd==0.2.0
+sentry-sdk==2.64.0
 shellingham==1.5.4
 ShopifyAPI==12.7.0
 six==1.17.0

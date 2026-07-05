@@ -13,13 +13,11 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
-### Sentry Error Monitoring — Frontend (Jul 2026)
-- Integrated `@sentry/react@10.63.0` (EU region) for the React frontend. Init in `/app/frontend/src/lib/sentry.js` (`initSentry()`), called from `/app/frontend/src/index.js` before render; app wrapped in `<Sentry.ErrorBoundary>` with a branded dark fallback.
-- DSN from env only: `REACT_APP_SENTRY_DSN` + `REACT_APP_SENTRY_ENVIRONMENT` (=preview here) in frontend/.env. (Frontend DSNs are public by design — not a secret.)
-- PII scrubbing: `sendDefaultPii: false` + a `beforeSend` redactor that strips cookies, Authorization/Cookie/X-Api-Key headers, masks emails, and filters keys containing password/token/session_token/api_key/secret/stripe_customer_id/etc.; drops user email/ip/username. `tracesSampleRate: 0.1`.
-- VERIFIED live: uncaught error captured + delivered (2 envelope POSTs to o4511682676785152.ingest.de.sentry.io) — events reach the user's EU project.
-- GitHub repo authorized in Sentry (suspect-commits / source linking).
-- PENDING: Backend (FastAPI) Sentry via `sentry-sdk` — awaiting a backend project DSN from the user (recommended: separate project).
+### Sentry Error Monitoring — Frontend + Backend (Jul 2026)
+- Frontend: `@sentry/react@10.63.0` (EU). Init `/app/frontend/src/lib/sentry.js` → called in `index.js`; app wrapped in `<Sentry.ErrorBoundary>`. Env: `REACT_APP_SENTRY_DSN` + `REACT_APP_SENTRY_ENVIRONMENT`. Verified live (envelope delivered).
+- Backend: `sentry-sdk==2.64.0` (EU). Init `/app/backend/utils/sentry_config.py` → `init_sentry()` called in `server.py` before `app = FastAPI()` (FastAPI/Starlette integrations auto-enable, unhandled 500s captured). Env: `SENTRY_DSN` + `SENTRY_ENVIRONMENT` in backend/.env. Verified live (envelope delivered to project 4511682844360794, host o4511682676785152.ingest.de.sentry.io).
+- PII scrubbing on BOTH: `send_default_pii=False` + a `before_send` redactor — strips cookies + Authorization/Cookie/X-Api-Key headers, masks emails, filters keys containing password/token/session_token/api_key/secret/stripe_customer_id/encryption_key/etc., drops user email/ip/username. `traces_sample_rate=0.1`.
+- Two separate EU projects (frontend "Browser JavaScript" + backend "FastAPI"). GitHub repo authorized in Sentry for suspect-commit/source linking. DSNs from env only (frontend DSN is public by design).
 
 
 ### Multi-Platform Telemetry Sync — Revenue Leak Detection (Jun 2026) — P1, Enterprise-tier + owner

@@ -26,12 +26,16 @@ from routes.contact import router as contact_router
 from routes.legal import router as legal_router
 from routes.telemetry import router as telemetry_router
 from migrations.orgs import migrate_users_to_orgs
+from utils.sentry_config import init_sentry
 
 # Configure logging
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
+
+# Initialize Sentry (no-op if SENTRY_DSN unset) — before app creation for auto-instrumentation
+init_sentry()
 
 # Create the main app
 app = FastAPI()
