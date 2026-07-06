@@ -65,7 +65,7 @@ const PricingSwitch = ({ options, value, onChange, layoutId, testidPrefix }) => 
           {active && (
             <motion.span
               layoutId={layoutId}
-              className="absolute inset-0 rounded-full border-2 border-[#0052ff] bg-gradient-to-t from-[#0038b3] via-[#0052ff] to-[#0038b3] shadow-lg shadow-[#0052ff]/30"
+              className="absolute inset-0 rounded-full border border-white/25 bg-gradient-to-b from-white/[0.16] to-white/[0.05] backdrop-blur-xl shadow-lg shadow-black/30 ring-1 ring-inset ring-white/10"
               transition={{ type: 'spring', stiffness: 500, damping: 30 }}
             />
           )}

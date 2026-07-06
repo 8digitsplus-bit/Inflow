@@ -1,8 +1,8 @@
-import { BarChart3, DollarSign, Shield, TrendingUp, Users, Zap } from 'lucide-react';
+import { BarChart3, Swords, Shield, TrendingUp, Users, Zap } from 'lucide-react';
 import { GradientCard } from '../ui/gradient-card';
 
 const features = [
-  { icon: DollarSign, name: 'Pricing Optimizer', desc: 'AI-recommended optimal pricing strategies based on market and competitor data.' },
+  { icon: Swords, name: 'Competitor Intelligence', desc: 'Auto-track competitors\u2019 public pricing, detect changes over time, and benchmark against your own plans.' },
   { icon: TrendingUp, name: 'Sales Performance', desc: 'Track win rates, deal velocity, and team effectiveness in real time.' },
   { icon: BarChart3, name: 'Revenue Intelligence', desc: 'Unified overview combining pipeline, performance, and revenue insights.' },
   { icon: Zap, name: 'Conversion Optimization', desc: 'Identify funnel bottlenecks, run A/B tests, and boost conversions.' },
