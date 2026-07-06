@@ -112,7 +112,7 @@ const ChoosePlan = () => {
 
       <div className="relative z-10 max-w-6xl mx-auto px-4 py-10">
         <button
-          onClick={() => navigate('/settings?tab=subscription')}
+          onClick={() => navigate('/')}
           className="flex items-center gap-2 text-zinc-400 hover:text-white text-sm mb-6 transition-colors"
           data-testid="back-btn"
         >

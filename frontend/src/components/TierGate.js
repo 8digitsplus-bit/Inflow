@@ -107,11 +107,6 @@ const TierGate = ({ requiredLevel, children }) => {
               }`}
               data-testid={`upgrade-tier-${t.name.toLowerCase()}`}
             >
-              {t.popular && (
-                <span className="absolute -top-2.5 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-cyan-500/20 text-cyan-400 text-[10px] font-semibold uppercase tracking-wider">
-                  Most Popular
-                </span>
-              )}
               <div className="mb-4">
                 <h3 className="text-base font-semibold text-white" style={{ fontFamily: 'Outfit' }}>{t.name}</h3>
                 <div className="mt-2 flex items-baseline gap-0.5">
