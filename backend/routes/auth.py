@@ -116,7 +116,6 @@ async def create_session(request: Request, response: Response):
             "owner_user_id": user_id,
             "subscription_tier": "trial",
             "subscription_status": "active",
-            "seat_count": 1,
             "created_at": now_iso,
         })
         await db.users.insert_one({
@@ -234,7 +233,6 @@ async def register_with_email(request: Request, req: RegisterRequest, response: 
         "owner_user_id": user_id,
         "subscription_tier": "trial",
         "subscription_status": "active",
-        "seat_count": 1,
         "created_at": now_iso,
     })
 

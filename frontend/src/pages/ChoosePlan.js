@@ -203,22 +203,8 @@ const ChoosePlan = () => {
               />
             </TimelineContent>
 
-            <TimelineContent as="div" animationNum={5} timelineRef={pageRef} customVariants={revealVariants}>
-              <h4 className="font-semibold text-white mb-1">Unlimited team</h4>
-              <p className="text-sm text-zinc-400 mb-2">Every plan includes unlimited team members</p>
-              <div className="flex items-center gap-3 bg-white/[0.04] rounded-2xl px-4 py-3 border border-white/10 backdrop-blur-md" data-testid="unlimited-seats-note">
-                <div className="w-9 h-9 rounded-full bg-[#0052ff]/15 flex items-center justify-center flex-shrink-0">
-                  <Check className="w-4 h-4 text-[#4d8bff]" strokeWidth={3} />
-                </div>
-                <div>
-                  <p className="text-sm text-white font-medium">Unlimited seats included</p>
-                  <p className="text-[11px] text-zinc-500">Invite your whole team at no extra cost</p>
-                </div>
-              </div>
-            </TimelineContent>
-
             {/* Price + purchase */}
-            <TimelineContent as="div" animationNum={6} timelineRef={pageRef} customVariants={revealVariants} className="grid grid-cols-2 items-center gap-3 pt-2">
+            <TimelineContent as="div" animationNum={5} timelineRef={pageRef} customVariants={revealVariants} className="grid grid-cols-2 items-center gap-3 pt-2">
               <div className="flex items-baseline">
                 <span className="text-5xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>
                   $<NumberFlow value={price} />
@@ -244,8 +230,8 @@ const ChoosePlan = () => {
               </button>
               <p className="col-span-2 text-xs text-[#4d8bff]">
                 {billingPeriod === 'monthly'
-                  ? 'Billed monthly · unlimited team members'
-                  : `Billed yearly · unlimited team members · save $${(plan.yearlyOriginal - plan.yearly).toLocaleString()} vs monthly`}
+                  ? 'Billed monthly · cancel anytime'
+                  : `Billed yearly · save $${(plan.yearlyOriginal - plan.yearly).toLocaleString()} vs monthly`}
               </p>
             </TimelineContent>
           </div>

@@ -47,10 +47,8 @@ const Checkout = () => {
 
   const planKey = searchParams.get('plan') || 'pro_monthly';
   const plan = PLANS[planKey];
-  const usersParam = parseInt(searchParams.get('users')) || 1;
-  const userCount = plan?.perUser ? Math.max(1, usersParam) : 1;
-  const totalPrice = plan ? plan.price * userCount : 0;
-  const totalOriginal = plan?.originalPrice ? plan.originalPrice * userCount : null;
+  const totalPrice = plan ? plan.price : 0;
+  const totalOriginal = plan?.originalPrice ? plan.originalPrice : null;
 
   // Compute remaining trial days from the user's actual trial_end (if any).
   // If they have time left, we honor it; otherwise they're charged immediately.
@@ -186,7 +184,6 @@ const Checkout = () => {
                     </p>
                     <p className="text-zinc-400 text-[11px] capitalize">
                       {plan.period}ly subscription
-                      {plan.perUser && userCount > 1 && ` · ${userCount} seats`}
                     </p>
                   </div>
                   <div className="text-right shrink-0">
@@ -213,12 +210,6 @@ const Checkout = () => {
 
                 {/* Subtotal lines */}
                 <div className="space-y-1.5 mb-4">
-                  {plan.perUser && userCount > 1 && (
-                    <div className="flex justify-between text-[11px]">
-                      <span className="text-zinc-400">${plan.price.toLocaleString()} × {userCount} seats</span>
-                      <span className="text-zinc-200">${totalPrice.toLocaleString()}</span>
-                    </div>
-                  )}
                   <div className="flex justify-between text-[11px]">
                     <span className="text-zinc-400">Subtotal</span>
                     <span className="text-zinc-200">${(totalOriginal || totalPrice).toLocaleString()}</span>

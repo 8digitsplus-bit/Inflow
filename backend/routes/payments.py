@@ -16,37 +16,31 @@ SUBSCRIPTION_PLANS = {
     "essential_monthly": {
         "price": 99.0, "name": "Essential", "period": "monthly",
         "interval": "month",
-        "per_user": False,
         "features": ["Sales Pipeline", "Core analytics", "2 live integrations", "Churn monitoring", "Email support"]
     },
     "essential_yearly": {
         "price": 830.0, "name": "Essential", "period": "yearly",
         "interval": "year",
-        "per_user": False,
         "features": ["Sales Pipeline", "Core analytics", "2 live integrations", "Churn monitoring", "Email support"]
     },
     "pro_monthly": {
         "price": 149.0, "name": "Pro", "period": "monthly",
         "interval": "month",
-        "per_user": False,
         "features": ["4 live integrations", "CSV import", "AI insights", "CRO analysis", "Revenue forecasting", "Priority support"]
     },
     "pro_yearly": {
         "price": 1250.0, "name": "Pro", "period": "yearly",
         "interval": "year",
-        "per_user": False,
         "features": ["4 live integrations", "CSV import", "AI insights", "CRO analysis", "Revenue forecasting", "Priority support"]
     },
     "enterprise_monthly": {
         "price": 400.0, "name": "Enterprise", "period": "monthly",
         "interval": "month",
-        "per_user": False,
         "features": ["Unlimited integrations", "Custom API access", "Smart Assist AI", "Revenue Intelligence", "Competitor Intelligence", "Dedicated support"]
     },
     "enterprise_yearly": {
         "price": 3360.0, "name": "Enterprise", "period": "yearly",
         "interval": "year",
-        "per_user": False,
         "features": ["Unlimited integrations", "Custom API access", "Smart Assist AI", "Revenue Intelligence", "Competitor Intelligence", "Dedicated support"]
     }
 }
@@ -57,16 +51,6 @@ _stripe_price_cache = {}
 
 def is_real_stripe_key(key: str) -> bool:
     return key and (key.startswith("sk_live_") or key.startswith("sk_test_")) and key != "sk_test_emergent"
-
-
-async def sync_stripe_seat_count(org_id: str) -> dict:
-    """No-op under flat per-workspace pricing.
-
-    Plans are billed at a single flat rate with unlimited seats, so there is no
-    per-seat quantity to keep in sync with Stripe. Kept as a stub so existing
-    callers (member add/remove, invite accept) continue to work unchanged.
-    """
-    return {"synced": False, "reason": "flat_pricing", "new_quantity": None, "sub_id": None}
 
 
 async def get_or_create_stripe_price(plan_key: str, plan: dict) -> str:
@@ -129,7 +113,7 @@ async def get_or_create_coupon() -> str:
     return coupon.id
 
 
-async def create_subscription_checkout(plan_key: str, plan: dict, user: User, origin_url: str, quantity: int = 1):
+async def create_subscription_checkout(plan_key: str, plan: dict, user: User, origin_url: str):
     """Create a Stripe Checkout Session in subscription + embedded mode.
 
     Embedded mode renders Stripe's hosted checkout form inside an iframe on our
@@ -144,7 +128,7 @@ async def create_subscription_checkout(plan_key: str, plan: dict, user: User, or
     """
     price_id = await get_or_create_stripe_price(plan_key, plan)
 
-    # Preserve plan + users in the return URL so the post-payment screen can
+    # Preserve plan in the return URL so the post-payment screen can
     # render the correct order summary even after the redirect.
     return_url = f"{origin_url}/checkout/return?session_id={{CHECKOUT_SESSION_ID}}"
 
@@ -152,7 +136,6 @@ async def create_subscription_checkout(plan_key: str, plan: dict, user: User, or
         "metadata": {
             "user_id": user.user_id,
             "plan": plan_key,
-            "quantity": str(quantity),
         }
     }
 
@@ -183,14 +166,13 @@ async def create_subscription_checkout(plan_key: str, plan: dict, user: User, or
         "mode": "subscription",
         "ui_mode": "embedded",
         "return_url": return_url,
-        "line_items": [{"price": price_id, "quantity": quantity}],
+        "line_items": [{"price": price_id, "quantity": 1}],
         "customer_email": user.email,
         "subscription_data": subscription_data,
         "metadata": {
             "user_id": user.user_id,
             "plan": plan_key,
             "user_email": user.email,
-            "quantity": str(quantity)
         }
     }
 
@@ -244,9 +226,6 @@ async def create_checkout_session(request: Request, user: User = Depends(require
 
     plan_key = data.get("plan", "pro_monthly")
     origin_url = data.get("origin_url")
-    users = int(data.get("users", 1))
-    if users < 1:
-        users = 1
 
     if not origin_url:
         raise HTTPException(status_code=400, detail="origin_url required")
@@ -254,9 +233,7 @@ async def create_checkout_session(request: Request, user: User = Depends(require
         raise HTTPException(status_code=400, detail="Invalid plan")
 
     plan = SUBSCRIPTION_PLANS[plan_key]
-    is_per_user = plan.get("per_user", False)
-    quantity = users if is_per_user else 1
-    final_price = plan["price"] * quantity
+    final_price = plan["price"]
 
     api_key = os.environ.get("STRIPE_API_KEY")
     if not api_key:
@@ -265,7 +242,7 @@ async def create_checkout_session(request: Request, user: User = Depends(require
     try:
         if is_real_stripe_key(api_key):
             stripe_sdk.api_key = api_key
-            session = await create_subscription_checkout(plan_key, plan, user, origin_url, quantity=quantity)
+            session = await create_subscription_checkout(plan_key, plan, user, origin_url)
             session_id = session.id
             session_url = None
             client_secret = session.client_secret  # embedded mode
@@ -284,7 +261,7 @@ async def create_checkout_session(request: Request, user: User = Depends(require
             currency="usd",
             plan=plan_key,
             payment_status="pending",
-            metadata={"plan": plan_key, "mode": mode, "quantity": str(quantity)}
+            metadata={"plan": plan_key, "mode": mode}
         )
         txn_dict = txn.model_dump()
         txn_dict["created_at"] = txn_dict["created_at"].isoformat()
@@ -370,13 +347,11 @@ async def get_session_status(session_id: str, user: User = Depends(get_current_u
             }}
         )
         if user.org_id:
-            quantity = int(transaction.get("metadata", {}).get("quantity", 1))
             await db.organizations.update_one(
                 {"org_id": user.org_id},
                 {"$set": {
                     "subscription_tier": plan,
                     "subscription_status": "active",
-                    "seat_count": quantity,
                     "stripe_subscription_id": subscription_id,
                     "stripe_customer_id": customer_id,
                     "updated_at": now,
@@ -526,13 +501,11 @@ async def get_payment_status(session_id: str, request: Request, user: User = Dep
                 {"user_id": user.user_id}, {"$set": user_update}
             )
 
-            # Sync the organization's subscription + seat count
+            # Sync the organization's subscription
             if user.org_id:
-                quantity = int(transaction.get("metadata", {}).get("quantity", 1))
                 org_update = {
                     "subscription_tier": plan,
                     "subscription_status": "active",
-                    "seat_count": quantity,
                     "updated_at": datetime.now(timezone.utc).isoformat(),
                 }
                 if subscription_id:
@@ -636,11 +609,9 @@ async def stripe_webhook(request: Request):
                         {"user_id": metadata["user_id"]}, {"_id": 0, "org_id": 1}
                     )
                     if u_doc and u_doc.get("org_id"):
-                        quantity = int(metadata.get("quantity", 1))
                         org_update = {
                             "subscription_tier": plan,
                             "subscription_status": "active",
-                            "seat_count": quantity,
                         }
                         if subscription_id:
                             org_update["stripe_subscription_id"] = subscription_id
@@ -649,12 +620,10 @@ async def stripe_webhook(request: Request):
                         )
 
             elif event_type == "customer.subscription.updated":
-                # Fires when plan or seat count changes via the Stripe Customer Portal.
+                # Fires when the plan changes via the Stripe Customer Portal.
                 # Without this handler the DB silently drifts from Stripe.
                 sub_id = data_obj.get("id")
                 status = data_obj.get("status")  # active / past_due / canceled / etc
-                items = (data_obj.get("items") or {}).get("data") or []
-                seat_qty = items[0].get("quantity") if items else None
                 # Plan key was stored on the subscription's metadata at checkout time.
                 plan = (data_obj.get("metadata") or {}).get("plan")
 
@@ -675,8 +644,6 @@ async def stripe_webhook(request: Request):
                             o_set = {"subscription_status": status} if status else {}
                             if plan:
                                 o_set["subscription_tier"] = plan
-                            if seat_qty:
-                                o_set["seat_count"] = int(seat_qty)
                             if o_set:
                                 await db.organizations.update_one(
                                     {"org_id": user_doc["org_id"]}, {"$set": o_set}

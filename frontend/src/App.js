@@ -23,7 +23,6 @@ import AuthCallback from './pages/AuthCallback';
 import PrivacyPolicy from './pages/PrivacyPolicy';
 import CookiePolicy from './pages/CookiePolicy';
 import Terms from './pages/Terms';
-import AcceptInvite from './pages/AcceptInvite';
 import Contact from './pages/Contact';
 import RevenueLeaks from './pages/RevenueLeaks';
 import CompetitorIntel from './pages/CompetitorIntel';
@@ -51,7 +50,6 @@ const AppRouter = () => {
       <Route path="/cookies" element={<CookiePolicy />} />
       <Route path="/terms" element={<Terms />} />
       <Route path="/contact" element={<Contact />} />
-      <Route path="/accept-invite/:token" element={<AcceptInvite />} />
       <Route path="/onboarding" element={
         <ProtectedRoute>
           <Onboarding />

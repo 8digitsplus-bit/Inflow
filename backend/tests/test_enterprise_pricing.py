@@ -58,7 +58,8 @@ def test_subscription_plans_are_flat():
     for key, price in expected.items():
         assert key in plans, f"missing {key}"
         assert plans[key]["price"] == price, f"{key} price {plans[key]['price']} != {price}"
-        assert plans[key].get("per_user") is False, f"{key} should be flat (per_user False)"
+        # per-user pricing fully removed — the flag should no longer exist
+        assert "per_user" not in plans[key], f"{key} should not carry a per_user flag"
 
 
 # ----- Enterprise is flat regardless of the users field -----

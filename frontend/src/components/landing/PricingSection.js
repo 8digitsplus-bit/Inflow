@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Check, ChevronRight, Users } from 'lucide-react';
+import { Check, ChevronRight } from 'lucide-react';
 import { Button } from '../ui/button';
 import { cn } from '../../lib/utils';
 import {
@@ -13,7 +13,6 @@ import {
   MainPrice,
   Period,
   OriginalPrice,
-  Description,
   Body,
   List,
   ListItem,
@@ -85,9 +84,6 @@ export const PricingSection = ({ handleGetStarted, isAuthenticated }) => {
                   {plan.originalPrice && <OriginalPrice>${plan.originalPrice}</OriginalPrice>}
                   <Period>{plan.period}</Period>
                 </Price>
-                <Description className="flex items-center gap-1.5">
-                  <Users className="w-3.5 h-3.5" /> Unlimited team members
-                </Description>
               </Header>
               <Body>
                 <List className="flex-1">
