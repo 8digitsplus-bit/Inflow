@@ -1,4 +1,4 @@
-import { CreditCard, ShoppingBag, Users, Cloud, Calculator, Zap, Database, RefreshCw, Code2, FileSpreadsheet, Shield, Gauge } from 'lucide-react';
+import { CreditCard, ShoppingBag, Users, Cloud, Calculator, Zap, Database, RefreshCw, Code2, FileSpreadsheet, Radar, Gauge } from 'lucide-react';
 import { GradientCard } from '../ui/gradient-card';
 
 const platforms = [
@@ -85,7 +85,7 @@ export const ConnectBusinessSection = () => {
 const customBenefits = [
   { icon: Code2, title: 'Connect Any REST API', desc: 'Point InFlow at any internal or third-party API endpoint. Your data, your schema, your rules.', color: 'text-purple-400', bg: 'bg-purple-500/10' },
   { icon: FileSpreadsheet, title: 'CSV Import for Pro', desc: 'Pro and Enterprise plans can upload CSV files to bring in historical data, forecasts, or custom datasets — up to 5,000 rows per import.', color: 'text-cyan-400', bg: 'bg-cyan-500/10' },
-  { icon: Shield, title: 'Secure by Default', desc: 'All credentials are encrypted at rest. OAuth tokens auto-refresh. Your integration keys never leave our servers.', color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
+  { icon: Radar, title: 'Multi-Platform Telemetry Sync', desc: 'Cross-reference product usage against billing contracts to catch unbilled overage — then recover it with a one-click Stripe invoice, CRM deal, and AM alert.', color: 'text-emerald-400', bg: 'bg-emerald-500/10' },
   { icon: Gauge, title: 'Unified Analytics', desc: 'No matter the source — platform, API, or CSV — your data feeds into every dashboard, forecast, and AI insight.', color: 'text-amber-400', bg: 'bg-amber-500/10' },
 ];
 
