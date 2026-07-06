@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { Check, ArrowLeft, Zap, Shield, Clock, Minus, Plus, Users } from 'lucide-react';
+import { Check, ArrowLeft, Zap, Shield, Clock } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
 import NumberFlow from '@number-flow/react';
@@ -13,17 +13,17 @@ import { VerticalCutReveal } from '../components/ui/vertical-cut-reveal';
 const PLANS = {
   essential: {
     key: 'essential', name: 'Essential', tagline: 'For small teams getting started',
-    perUserMonthly: 59, perUserYearly: 499, perUserYearlyOriginal: 708,
+    monthly: 99, yearly: 830, yearlyOriginal: 1188,
     features: ['Sales Pipeline', 'Core analytics', '2 live integrations', 'Churn monitoring'],
   },
   pro: {
     key: 'pro', name: 'Pro', tagline: 'For growing businesses',
-    perUserMonthly: 139, perUserYearly: 1170, perUserYearlyOriginal: 1668,
+    monthly: 149, yearly: 1250, yearlyOriginal: 1788,
     features: ['Everything in Essential', '4 live integrations', 'CSV import', 'AI insights', 'CRO analysis', 'Revenue forecasting', 'Priority support'],
   },
   enterprise: {
     key: 'enterprise', name: 'Enterprise', tagline: 'For scaling organizations',
-    perUserMonthly: 260, perUserYearly: 2184, perUserYearlyOriginal: 3120,
+    monthly: 400, yearly: 3360, yearlyOriginal: 4800,
     features: ['Everything in Pro', 'Unlimited integrations', 'Custom API access', 'Smart Assist AI', 'Revenue Intelligence', 'Competitor Intelligence'],
   },
 };
@@ -87,17 +87,15 @@ const ChoosePlan = () => {
   const pageRef = useRef(null);
   const [planKey, setPlanKey] = useState('pro');
   const [billingPeriod, setBillingPeriod] = useState('monthly');
-  const [seats, setSeats] = useState(1);
 
   const plan = PLANS[planKey];
-  const perUser = billingPeriod === 'monthly' ? plan.perUserMonthly : plan.perUserYearly;
-  const price = perUser * seats;
-  const originalPrice = billingPeriod === 'yearly' ? plan.perUserYearlyOriginal * seats : null;
+  const price = billingPeriod === 'monthly' ? plan.monthly : plan.yearly;
+  const originalPrice = billingPeriod === 'yearly' ? plan.yearlyOriginal : null;
   const isCurrent = user?.subscription_tier === `${planKey}_${billingPeriod}`;
 
   const handlePurchase = () => {
     if (isCurrent) return;
-    const params = new URLSearchParams({ plan: `${planKey}_${billingPeriod}`, users: String(seats) });
+    const params = new URLSearchParams({ plan: `${planKey}_${billingPeriod}` });
     navigate(`/checkout?${params.toString()}`);
   };
 
@@ -138,7 +136,7 @@ const ChoosePlan = () => {
             </VerticalCutReveal>
           </h1>
           <TimelineContent as="p" animationNum={1} timelineRef={pageRef} customVariants={revealVariants} className="text-lg text-zinc-400">
-            Pick a plan, set your seats — billing starts today, cancel anytime.
+            Pick a plan — billing starts today, cancel anytime.
           </TimelineContent>
         </div>
 
@@ -206,29 +204,16 @@ const ChoosePlan = () => {
             </TimelineContent>
 
             <TimelineContent as="div" animationNum={5} timelineRef={pageRef} customVariants={revealVariants}>
-              <h4 className="font-semibold text-white mb-1">Team size</h4>
-              <p className="text-sm text-zinc-400 mb-2">Number of seats you need</p>
-              <div className="flex items-center justify-between gap-3 bg-white/[0.04] rounded-full px-4 py-2 border border-white/10 backdrop-blur-md" data-testid="seats-stepper">
-                <div className="flex items-center gap-2 text-zinc-300">
-                  <Users className="w-4 h-4 text-[#4d8bff]" /> <span className="text-sm">Seats</span>
+              <h4 className="font-semibold text-white mb-1">Unlimited team</h4>
+              <p className="text-sm text-zinc-400 mb-2">Every plan includes unlimited team members</p>
+              <div className="flex items-center gap-3 bg-white/[0.04] rounded-2xl px-4 py-3 border border-white/10 backdrop-blur-md" data-testid="unlimited-seats-note">
+                <div className="w-9 h-9 rounded-full bg-[#0052ff]/15 flex items-center justify-center flex-shrink-0">
+                  <Check className="w-4 h-4 text-[#4d8bff]" strokeWidth={3} />
                 </div>
-                <div className="flex items-center gap-2">
-                  <button onClick={() => setSeats(Math.max(1, seats - 1))} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-zinc-200 transition-colors" data-testid="seats-minus" aria-label="Decrease seats"><Minus className="w-4 h-4" /></button>
-                  <input
-                    type="number" min="1" value={seats}
-                    onChange={(e) => { const n = parseInt(e.target.value, 10); if (!Number.isNaN(n) && n >= 1) setSeats(n); else if (e.target.value === '') setSeats(1); }}
-                    onBlur={(e) => { const n = parseInt(e.target.value, 10); if (Number.isNaN(n) || n < 1) setSeats(1); }}
-                    className="w-16 h-9 rounded-lg bg-black/40 border border-white/10 text-white text-sm font-semibold text-center focus:outline-none focus:border-[#0052ff] focus:ring-1 focus:ring-[#0052ff] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                    data-testid="seats-input" aria-label="Number of seats"
-                  />
-                  <button onClick={() => setSeats(seats + 1)} className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-zinc-200 transition-colors" data-testid="seats-plus" aria-label="Increase seats"><Plus className="w-4 h-4" /></button>
+                <div>
+                  <p className="text-sm text-white font-medium">Unlimited seats included</p>
+                  <p className="text-[11px] text-zinc-500">Invite your whole team at no extra cost</p>
                 </div>
-              </div>
-              <div className="flex items-center gap-1.5 mt-3">
-                <span className="text-[11px] text-zinc-500 mr-1 uppercase tracking-wider">Quick</span>
-                {[1, 3, 5, 10, 25].map((n) => (
-                  <button key={n} onClick={() => setSeats(n)} className={cn('px-2.5 py-1 rounded-md text-xs font-medium transition-colors border', seats === n ? 'bg-[#0052ff] text-white border-[#0052ff]' : 'bg-white/[0.03] text-zinc-400 hover:bg-white/10 border-white/10')} data-testid={`seats-preset-${n}`}>{n}</button>
-                ))}
               </div>
             </TimelineContent>
 
@@ -258,8 +243,9 @@ const ChoosePlan = () => {
                 {isCurrent ? 'Current Plan' : 'Purchase'}
               </button>
               <p className="col-span-2 text-xs text-[#4d8bff]">
-                ${perUser.toLocaleString()}/user · {seats} {seats === 1 ? 'seat' : 'seats'}
-                {billingPeriod === 'yearly' && ` · save $${((plan.perUserYearlyOriginal - plan.perUserYearly) * seats).toLocaleString()} first year`}
+                {billingPeriod === 'monthly'
+                  ? 'Billed monthly · unlimited team members'
+                  : `Billed yearly · unlimited team members · save $${(plan.yearlyOriginal - plan.yearly).toLocaleString()} vs monthly`}
               </p>
             </TimelineContent>
           </div>

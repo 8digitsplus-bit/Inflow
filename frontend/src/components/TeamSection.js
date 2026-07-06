@@ -75,7 +75,7 @@ export default function TeamSection() {
   };
 
   const handleRemove = async (userId, name) => {
-    if (!window.confirm(`Remove ${name} from your team? They will lose access immediately. The seat is freed at the next renewal.`)) return;
+    if (!window.confirm(`Remove ${name} from your team? They will lose access immediately.`)) return;
     const res = await fetch(`${API_URL}/api/org/members/${userId}`, {
       method: 'DELETE',
       credentials: 'include',
@@ -85,14 +85,7 @@ export default function TeamSection() {
       toast.error(data.detail || 'Remove failed');
       return;
     }
-    if (data.stripe_sync?.synced) {
-      toast.success(
-        `${name} removed. Subscription will decrease to ${data.stripe_sync.new_quantity} seats at next renewal.`,
-        { duration: 6000 }
-      );
-    } else {
-      toast.success(`${name} removed from the team`);
-    }
+    toast.success(`${name} removed from the team`);
     loadAll();
   };
 
@@ -138,19 +131,16 @@ export default function TeamSection() {
           <div>
             <p className="text-sm text-zinc-300 font-medium">{org?.name}</p>
             <p className="text-xs text-zinc-500 capitalize">
-              {org?.subscription_tier?.replace('_', ' ') || 'trial'} · {seats?.members}/{seats?.seats} seats used
+              {org?.subscription_tier?.replace('_', ' ') || 'trial'}
+              {seats?.unlimited
+                ? ` · ${seats?.members} member${seats?.members === 1 ? '' : 's'} · unlimited seats`
+                : ` · ${seats?.members}/${seats?.seats} seats used`}
             </p>
           </div>
           {isEnterprise && (
-            <div className="flex items-center gap-2 text-xs">
-              <div className="w-32 h-1.5 bg-zinc-900 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-slate-500 to-purple-500 transition-all"
-                  style={{ width: `${Math.min(100, ((seats?.members + seats?.pending_invites) / Math.max(1, seats?.seats)) * 100)}%` }}
-                />
-              </div>
-              <span className="text-zinc-500">{seats?.available} available</span>
-            </div>
+            <span className="px-2.5 py-1 rounded-full bg-purple-500/10 text-purple-300 border border-purple-500/20 text-xs font-medium" data-testid="unlimited-seats-badge">
+              Unlimited seats
+            </span>
           )}
         </div>
 
@@ -163,7 +153,7 @@ export default function TeamSection() {
                 <h4 className="text-sm font-semibold text-white mb-1">Team collaboration is an Enterprise feature</h4>
                 <p className="text-xs text-zinc-400 mb-3">
                   Invite teammates, share deals and integrations, and collaborate on AI-powered revenue intelligence.
-                  Enterprise starts at $260/user/month.
+                  Enterprise is $400/month — flat rate, unlimited team members.
                 </p>
                 <Button
                   size="sm"

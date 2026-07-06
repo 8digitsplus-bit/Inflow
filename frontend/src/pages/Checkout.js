@@ -21,12 +21,12 @@ const STRIPE_PUBLISHABLE_KEY = process.env.REACT_APP_STRIPE_PUBLISHABLE_KEY;
 const stripePromise = STRIPE_PUBLISHABLE_KEY ? loadStripe(STRIPE_PUBLISHABLE_KEY) : null;
 
 const PLANS = {
-  essential_monthly: { name: 'Essential', price: 59, period: 'month', perUser: true, features: ['Sales Pipeline', 'Core Analytics', '2 live integrations', 'Churn Monitoring'] },
-  essential_yearly: { name: 'Essential', price: 499, period: 'year', perUser: true, originalPrice: 708, features: ['Sales Pipeline', 'Core Analytics', '2 live integrations', 'Churn Monitoring'] },
-  pro_monthly: { name: 'Pro', price: 139, period: 'month', perUser: true, features: ['4 live integrations', 'CSV import', 'AI Insights', 'CRO Analysis'] },
-  pro_yearly: { name: 'Pro', price: 1170, period: 'year', perUser: true, originalPrice: 1668, features: ['4 live integrations', 'CSV import', 'AI Insights', 'CRO Analysis'] },
-  enterprise_monthly: { name: 'Enterprise', price: 260, period: 'month', perUser: true, features: ['Unlimited integrations', 'Custom API access', 'Smart Assist AI'] },
-  enterprise_yearly: { name: 'Enterprise', price: 2184, period: 'year', perUser: true, originalPrice: 3120, features: ['Unlimited integrations', 'Custom API access', 'Smart Assist AI'] },
+  essential_monthly: { name: 'Essential', price: 99, period: 'month', features: ['Sales Pipeline', 'Core Analytics', '2 live integrations', 'Churn Monitoring'] },
+  essential_yearly: { name: 'Essential', price: 830, period: 'year', originalPrice: 1188, features: ['Sales Pipeline', 'Core Analytics', '2 live integrations', 'Churn Monitoring'] },
+  pro_monthly: { name: 'Pro', price: 149, period: 'month', features: ['4 live integrations', 'CSV import', 'AI Insights', 'CRO Analysis'] },
+  pro_yearly: { name: 'Pro', price: 1250, period: 'year', originalPrice: 1788, features: ['4 live integrations', 'CSV import', 'AI Insights', 'CRO Analysis'] },
+  enterprise_monthly: { name: 'Enterprise', price: 400, period: 'month', features: ['Unlimited integrations', 'Custom API access', 'Smart Assist AI', 'Competitor Intelligence'] },
+  enterprise_yearly: { name: 'Enterprise', price: 3360, period: 'year', originalPrice: 4800, features: ['Unlimited integrations', 'Custom API access', 'Smart Assist AI', 'Competitor Intelligence'] },
 };
 
 // Framer Motion blur-in reveal — matches the sitewide glass aesthetic.

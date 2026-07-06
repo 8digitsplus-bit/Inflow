@@ -52,10 +52,11 @@ INFLOW FEATURES (only reference these):
 - Live Integration: Integrate Stripe, Shopify, HubSpot, Salesforce, QuickBooks to sync data
 - Smart Assist: AI chat (this) + ticket system
 
-PRICING (exact values, do not modify):
-- Essential: $299/month or $2,512/year (30% off 1st year, renews $3,588/yr) — Sales Pipeline, Core analytics, Email support, Churn alerts
-- Pro: $699/month or $5,872/year (30% off 1st year, renews $8,388/yr) — Everything in Essential + Sales Performance, Priority support, Advanced analytics, Revenue forecasting, Churn prediction, CRO tools
-- Enterprise: $260/user/month or $2,184/user/year (30% off 1st year, renews $3,120/user/yr). Per-user billing — customer picks any number of seats on the /choose-plan page. Includes Everything in Pro + Sales Revenue, Revenue Intelligence, Custom integrations, API access
+PRICING (exact values, do not modify — flat per workspace, unlimited team members):
+- Essential: $99/month or $830/year (save ~30% with annual billing) — Sales Pipeline, Core analytics, Email support, Churn alerts
+- Pro: $149/month or $1,250/year (save ~30% with annual billing) — Everything in Essential + Sales Performance, Priority support, Advanced analytics, Revenue forecasting, Churn prediction, CRO tools
+- Enterprise: $400/month or $3,360/year (save ~30% with annual billing) — Everything in Pro + Sales Revenue, Revenue Intelligence, Competitor Intelligence, Custom integrations, API access, unlimited team seats
+- Pricing is flat per workspace (NOT per user) — one price covers the whole team with unlimited members.
 - 14-Day Free Trial: Full access, no credit card required, unlimited usage on all plans
 
 ACTIONS YOU CAN PERFORM:

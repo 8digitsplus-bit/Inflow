@@ -21,14 +21,14 @@ import {
 
 const plans = {
   monthly: [
-    { name: 'Essential', price: '59', period: '/user', perUser: true, features: ['Sales Pipeline', 'Core analytics', '2 live integrations', 'Churn monitoring'], cta: 'Unlock Access', featured: false, planId: 'essential_monthly' },
-    { name: 'Pro', price: '139', period: '/user', perUser: true, features: ['Everything in Essential', '4 live integrations', 'CSV import', 'AI insights', 'CRO analysis', 'Revenue forecasting', 'Priority support'], cta: 'Scale Up', featured: true, planId: 'pro_monthly' },
-    { name: 'Enterprise', price: '260', period: '/user', perUser: true, features: ['Everything in Pro', 'Unlimited integrations', 'Custom API access', 'Smart Assist AI', 'Revenue Intelligence', 'Competitor Intelligence'], cta: 'Maximise', featured: false, planId: 'enterprise_monthly' }
+    { name: 'Essential', price: '99', period: '/mo', features: ['Sales Pipeline', 'Core analytics', '2 live integrations', 'Churn monitoring'], cta: 'Unlock Access', featured: false, planId: 'essential_monthly' },
+    { name: 'Pro', price: '149', period: '/mo', features: ['Everything in Essential', '4 live integrations', 'CSV import', 'AI insights', 'CRO analysis', 'Revenue forecasting', 'Priority support'], cta: 'Scale Up', featured: true, planId: 'pro_monthly' },
+    { name: 'Enterprise', price: '400', period: '/mo', features: ['Everything in Pro', 'Unlimited integrations', 'Custom API access', 'Smart Assist AI', 'Revenue Intelligence', 'Competitor Intelligence'], cta: 'Maximise', featured: false, planId: 'enterprise_monthly' }
   ],
   yearly: [
-    { name: 'Essential', price: '499', originalPrice: '708', period: '/user', perUser: true, features: ['Sales Pipeline', 'Core analytics', '2 live integrations', 'Churn monitoring'], cta: 'Unlock Access', featured: false, planId: 'essential_yearly', savings: '30% off 1st year' },
-    { name: 'Pro', price: '1,170', originalPrice: '1,668', period: '/user', perUser: true, features: ['Everything in Essential', '4 live integrations', 'CSV import', 'AI insights', 'CRO analysis', 'Revenue forecasting', 'Priority support'], cta: 'Scale Up', featured: true, planId: 'pro_yearly', savings: '30% off 1st year' },
-    { name: 'Enterprise', price: '2,184', originalPrice: '3,120', period: '/user', perUser: true, features: ['Everything in Pro', 'Unlimited integrations', 'Custom API access', 'Smart Assist AI', 'Revenue Intelligence', 'Competitor Intelligence'], cta: 'Maximise', featured: false, planId: 'enterprise_yearly', savings: '30% off 1st year' }
+    { name: 'Essential', price: '830', originalPrice: '1,188', period: '/yr', features: ['Sales Pipeline', 'Core analytics', '2 live integrations', 'Churn monitoring'], cta: 'Unlock Access', featured: false, planId: 'essential_yearly', savings: 'Save 30%' },
+    { name: 'Pro', price: '1,250', originalPrice: '1,788', period: '/yr', features: ['Everything in Essential', '4 live integrations', 'CSV import', 'AI insights', 'CRO analysis', 'Revenue forecasting', 'Priority support'], cta: 'Scale Up', featured: true, planId: 'pro_yearly', savings: 'Save 30%' },
+    { name: 'Enterprise', price: '3,360', originalPrice: '4,800', period: '/yr', features: ['Everything in Pro', 'Unlimited integrations', 'Custom API access', 'Smart Assist AI', 'Revenue Intelligence', 'Competitor Intelligence'], cta: 'Maximise', featured: false, planId: 'enterprise_yearly', savings: 'Save 30%' }
   ]
 };
 
@@ -85,11 +85,9 @@ export const PricingSection = ({ handleGetStarted, isAuthenticated }) => {
                   {plan.originalPrice && <OriginalPrice>${plan.originalPrice}</OriginalPrice>}
                   <Period>{plan.period}</Period>
                 </Price>
-                {plan.perUser && (
-                  <Description className="flex items-center gap-1.5">
-                    <Users className="w-3.5 h-3.5" /> Choose any number of seats
-                  </Description>
-                )}
+                <Description className="flex items-center gap-1.5">
+                  <Users className="w-3.5 h-3.5" /> Unlimited team members
+                </Description>
               </Header>
               <Body>
                 <List className="flex-1">

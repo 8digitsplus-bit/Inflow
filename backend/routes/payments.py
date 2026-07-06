@@ -14,43 +14,40 @@ router = APIRouter()
 
 SUBSCRIPTION_PLANS = {
     "essential_monthly": {
-        "price": 59.0, "name": "Essential", "period": "monthly",
+        "price": 99.0, "name": "Essential", "period": "monthly",
         "interval": "month",
-        "per_user": True,
+        "per_user": False,
         "features": ["Sales Pipeline", "Core analytics", "2 live integrations", "Churn monitoring", "Email support"]
     },
     "essential_yearly": {
-        "price": 499.0, "name": "Essential", "period": "yearly",
+        "price": 830.0, "name": "Essential", "period": "yearly",
         "interval": "year",
-        "renewal_price": 708.0, "first_year_discount": True,
-        "per_user": True,
+        "per_user": False,
         "features": ["Sales Pipeline", "Core analytics", "2 live integrations", "Churn monitoring", "Email support"]
     },
     "pro_monthly": {
-        "price": 139.0, "name": "Pro", "period": "monthly",
+        "price": 149.0, "name": "Pro", "period": "monthly",
         "interval": "month",
-        "per_user": True,
+        "per_user": False,
         "features": ["4 live integrations", "CSV import", "AI insights", "CRO analysis", "Revenue forecasting", "Priority support"]
     },
     "pro_yearly": {
-        "price": 1170.0, "name": "Pro", "period": "yearly",
+        "price": 1250.0, "name": "Pro", "period": "yearly",
         "interval": "year",
-        "renewal_price": 1668.0, "first_year_discount": True,
-        "per_user": True,
+        "per_user": False,
         "features": ["4 live integrations", "CSV import", "AI insights", "CRO analysis", "Revenue forecasting", "Priority support"]
     },
     "enterprise_monthly": {
-        "price": 260.0, "name": "Enterprise", "period": "monthly",
+        "price": 400.0, "name": "Enterprise", "period": "monthly",
         "interval": "month",
-        "per_user": True,
-        "features": ["Unlimited integrations", "Custom API access", "Smart Assist AI", "Revenue Intelligence", "Dedicated support"]
+        "per_user": False,
+        "features": ["Unlimited integrations", "Custom API access", "Smart Assist AI", "Revenue Intelligence", "Competitor Intelligence", "Dedicated support"]
     },
     "enterprise_yearly": {
-        "price": 2184.0, "name": "Enterprise", "period": "yearly",
+        "price": 3360.0, "name": "Enterprise", "period": "yearly",
         "interval": "year",
-        "renewal_price": 3120.0, "first_year_discount": True,
-        "per_user": True,
-        "features": ["Unlimited integrations", "Custom API access", "Smart Assist AI", "Revenue Intelligence", "Dedicated support"]
+        "per_user": False,
+        "features": ["Unlimited integrations", "Custom API access", "Smart Assist AI", "Revenue Intelligence", "Competitor Intelligence", "Dedicated support"]
     }
 }
 
@@ -63,72 +60,13 @@ def is_real_stripe_key(key: str) -> bool:
 
 
 async def sync_stripe_seat_count(org_id: str) -> dict:
-    """Align the org's Stripe subscription quantity to its current member count.
-    The change is deferred to the next renewal cycle (proration_behavior='none'),
-    so the owner keeps paid-for seats through the end of the current period.
+    """No-op under flat per-workspace pricing.
 
-    Returns a dict describing what happened. Never raises — any failure is logged
-    so business flows (member removal, invite accept) complete regardless.
+    Plans are billed at a single flat rate with unlimited seats, so there is no
+    per-seat quantity to keep in sync with Stripe. Kept as a stub so existing
+    callers (member add/remove, invite accept) continue to work unchanged.
     """
-    result = {"synced": False, "reason": None, "new_quantity": None, "sub_id": None}
-
-    org = await db.organizations.find_one({"org_id": org_id}, {"_id": 0})
-    if not org:
-        result["reason"] = "org_not_found"
-        return result
-
-    sub_id = org.get("stripe_subscription_id")
-    if not sub_id:
-        result["reason"] = "no_subscription"
-        return result
-
-    tier = org.get("subscription_tier", "")
-    if not tier.startswith("enterprise_"):
-        # Non-enterprise plans are flat-rate, quantity is always 1
-        result["reason"] = "not_per_user"
-        return result
-
-    api_key = os.environ.get("STRIPE_API_KEY")
-    if not is_real_stripe_key(api_key):
-        result["reason"] = "sandbox_mode"
-        return result
-
-    member_count = await db.users.count_documents({"org_id": org_id})
-    new_quantity = max(1, member_count)
-
-    try:
-        stripe_sdk.api_key = api_key
-        subscription = stripe_sdk.Subscription.retrieve(sub_id)
-        items = subscription.get("items", {}).get("data", [])
-        if not items:
-            result["reason"] = "no_items"
-            return result
-        item_id = items[0]["id"]
-        current_qty = items[0].get("quantity", 1)
-
-        if current_qty == new_quantity:
-            result["reason"] = "already_synced"
-            result["new_quantity"] = new_quantity
-            result["sub_id"] = sub_id
-            return result
-
-        stripe_sdk.Subscription.modify(
-            sub_id,
-            items=[{"id": item_id, "quantity": new_quantity}],
-            proration_behavior="none",
-        )
-        result.update({
-            "synced": True,
-            "new_quantity": new_quantity,
-            "previous_quantity": current_qty,
-            "sub_id": sub_id,
-        })
-        logger.info("Stripe seat sync for %s: %d → %d (effective at renewal)", org_id, current_qty, new_quantity)
-    except Exception as e:
-        result["reason"] = f"stripe_error: {e}"
-        logger.error("Stripe seat sync failed for %s: %s", org_id, e)
-
-    return result
+    return {"synced": False, "reason": "flat_pricing", "new_quantity": None, "sub_id": None}
 
 
 async def get_or_create_stripe_price(plan_key: str, plan: dict) -> str:

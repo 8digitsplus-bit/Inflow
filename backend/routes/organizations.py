@@ -42,11 +42,16 @@ async def _get_seat_usage(org_id: str) -> dict:
     })
     seats = org.get("seat_count", 1)
     tier = org.get("subscription_tier", "trial")
+    unlimited = _enterprise_tier(tier)
+    # Flat per-workspace pricing: Enterprise includes unlimited seats.
+    if unlimited:
+        seats = 999999
     return {
         "org_id": org_id,
         "org_name": org.get("name"),
         "subscription_tier": tier,
-        "is_enterprise": _enterprise_tier(tier),
+        "is_enterprise": unlimited,
+        "unlimited": unlimited,
         "seats": seats,
         "members": members,
         "pending_invites": pending_invites,

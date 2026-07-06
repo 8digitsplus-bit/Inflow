@@ -187,12 +187,7 @@ const Settings = () => {
 
   const handleUpgrade = async (planId) => {
     if (planId === user?.subscription_tier) return;
-    // Per-user (Enterprise) tiers need the seat selector on /choose-plan
-    if (planId.startsWith('enterprise_')) {
-      navigate('/choose-plan');
-      return;
-    }
-    // All other plans use the embedded Stripe checkout page
+    // Flat per-workspace pricing — all plans go straight to embedded checkout.
     navigate(`/checkout?plan=${planId}`);
   };
 
@@ -271,14 +266,14 @@ const Settings = () => {
 
   const planConfig = {
     monthly: [
-      { key: 'essential_monthly', name: 'Essential', price: 299 },
-      { key: 'pro_monthly', name: 'Pro', price: 699, featured: true },
-      { key: 'enterprise_monthly', name: 'Enterprise', price: 260, perUser: true }
+      { key: 'essential_monthly', name: 'Essential', price: 99 },
+      { key: 'pro_monthly', name: 'Pro', price: 149, featured: true },
+      { key: 'enterprise_monthly', name: 'Enterprise', price: 400 }
     ],
     yearly: [
-      { key: 'essential_yearly', name: 'Essential', price: 2512, originalPrice: 3588, savings: 1076 },
-      { key: 'pro_yearly', name: 'Pro', price: 5872, originalPrice: 8388, featured: true, savings: 2516 },
-      { key: 'enterprise_yearly', name: 'Enterprise', price: 2184, originalPrice: 3120, perUser: true, savings: 936 }
+      { key: 'essential_yearly', name: 'Essential', price: 830, originalPrice: 1188, savings: 358 },
+      { key: 'pro_yearly', name: 'Pro', price: 1250, originalPrice: 1788, featured: true, savings: 538 },
+      { key: 'enterprise_yearly', name: 'Enterprise', price: 3360, originalPrice: 4800, savings: 1440 }
     ]
   };
 
@@ -531,7 +526,7 @@ const Settings = () => {
                   Yearly <span className={`ml-1 transition-colors duration-300 ${billingPeriod === 'yearly' ? 'text-emerald-300' : 'text-emerald-400'}`}>Save more</span>
                 </button>
               </div>
-              <p className="text-xs text-zinc-500 mt-2">*1st year only, renews at full price</p>
+              <p className="text-xs text-zinc-500 mt-2">*Save 30% vs. paying monthly</p>
             </div>
 
             <div className="grid md:grid-cols-3 gap-4">
@@ -578,7 +573,7 @@ const Settings = () => {
                     </div>
 
                     {plan.savings && (
-                      <p className="text-emerald-400 text-xs mt-1">30% off 1st year (save ${plan.savings})</p>
+                      <p className="text-emerald-400 text-xs mt-1">{`Save 30% — save $${plan.savings.toLocaleString()}/yr`}</p>
                     )}
                     
                     <ul className="mt-4 space-y-2">

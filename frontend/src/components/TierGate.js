@@ -20,7 +20,7 @@ const TIER_LEVEL = {
 const TIERS = [
   {
     name: 'Essential',
-    price: '$59',
+    price: '$99',
     period: '/mo',
     level: 1,
     color: 'indigo',
@@ -47,7 +47,7 @@ const TIERS = [
   },
   {
     name: 'Enterprise',
-    price: '$249',
+    price: '$400',
     period: '/mo',
     level: 3,
     color: 'purple',
