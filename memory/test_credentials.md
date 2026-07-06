@@ -19,6 +19,7 @@
 ## Demo Account
 - Email: testdemo@inflow.com
 - Password: password
+- **Note (Jul 2026):** Downgraded from `enterprise_monthly` to `trial` by testing agent (iteration 44) to properly exercise the Competitor Intelligence Enterprise tier gate. Trial has expired, so this account also exercises the trial-expired gate.
 
 ## Org / Team Management Notes (Feb 2026)
 - Invite emails require RESEND_API_KEY in /app/backend/.env. If empty, the /api/org/invite endpoint still works — it returns the `accept_url` in the JSON response so the flow is testable without Resend. User needs to set the key for production email sending.

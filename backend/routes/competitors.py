@@ -178,6 +178,74 @@ async def competitors_status(user: User = Depends(get_current_user)):
     return {"is_enterprise": "enterprise" in (tier or ""), "is_owner": user.role == "owner"}
 
 
+# ---------------------------------------------------------------- my pricing + benchmark
+# NOTE: These specific routes MUST be declared BEFORE the /{competitor_id} routes,
+# otherwise FastAPI matches "my-pricing" / "benchmark" as a competitor_id.
+@router.get("/competitors/my-pricing")
+async def get_my_pricing(user: User = Depends(require_enterprise)):
+    doc = await db.org_pricing.find_one({"org_id": user.org_id}, {"_id": 0})
+    return doc or {"org_id": user.org_id, "plans": []}
+
+
+@router.put("/competitors/my-pricing")
+async def set_my_pricing(body: MyPricing, user: User = Depends(require_enterprise)):
+    now = datetime.now(timezone.utc).isoformat()
+    plans = [p.model_dump() for p in body.plans]
+    await db.org_pricing.update_one(
+        {"org_id": user.org_id},
+        {"$set": {"org_id": user.org_id, "plans": plans, "updated_at": now}},
+        upsert=True,
+    )
+    return {"org_id": user.org_id, "plans": plans}
+
+
+def _avg_price(plans: list) -> Optional[float]:
+    vals = [p["price"] for p in plans if p.get("price") is not None]
+    return round(sum(vals) / len(vals), 2) if vals else None
+
+
+@router.get("/competitors/benchmark")
+async def benchmark(user: User = Depends(require_enterprise)):
+    competitors = await db.competitors.find(org_filter(user), {"_id": 0}).to_list(200)
+    my = await db.org_pricing.find_one({"org_id": user.org_id}, {"_id": 0})
+    my_plans = (my or {}).get("plans", [])
+    my_avg = _avg_price(my_plans)
+
+    comp_summary = []
+    for c in competitors:
+        c_avg = _avg_price(c.get("plans", []))
+        position = None
+        if my_avg is not None and c_avg is not None:
+            if c_avg > my_avg * 1.05:
+                position = "you are cheaper"
+            elif c_avg < my_avg * 0.95:
+                position = "you are pricier"
+            else:
+                position = "priced in line"
+        comp_summary.append({
+            "competitor_id": c["competitor_id"], "name": c["name"], "url": c["url"],
+            "avg_price": c_avg, "plan_count": len(c.get("plans", [])),
+            "position_vs_you": position, "positioning_summary": c.get("positioning_summary", ""),
+        })
+
+    market_avg = _avg_price([{"price": cs["avg_price"]} for cs in comp_summary if cs["avg_price"] is not None])
+    overall = None
+    if my_avg is not None and market_avg is not None:
+        if my_avg < market_avg * 0.95:
+            overall = "below"
+        elif my_avg > market_avg * 1.05:
+            overall = "above"
+        else:
+            overall = "inline"
+    return {
+        "my_plans": my_plans,
+        "my_avg": my_avg,
+        "market_avg": market_avg,
+        "position": overall,
+        "competitors": comp_summary,
+    }
+
+
 # ---------------------------------------------------------------- CRUD + extract
 @router.get("/competitors")
 async def list_competitors(user: User = Depends(require_enterprise)):
@@ -281,69 +349,3 @@ async def delete_competitor(competitor_id: str, user: User = Depends(require_ent
     if res.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Competitor not found")
     return {"status": "deleted"}
-
-
-# ---------------------------------------------------------------- my pricing + benchmark
-@router.get("/competitors/my-pricing")
-async def get_my_pricing(user: User = Depends(require_enterprise)):
-    doc = await db.org_pricing.find_one({"org_id": user.org_id}, {"_id": 0})
-    return doc or {"org_id": user.org_id, "plans": []}
-
-
-@router.put("/competitors/my-pricing")
-async def set_my_pricing(body: MyPricing, user: User = Depends(require_enterprise)):
-    now = datetime.now(timezone.utc).isoformat()
-    plans = [p.model_dump() for p in body.plans]
-    await db.org_pricing.update_one(
-        {"org_id": user.org_id},
-        {"$set": {"org_id": user.org_id, "plans": plans, "updated_at": now}},
-        upsert=True,
-    )
-    return {"org_id": user.org_id, "plans": plans}
-
-
-def _avg_price(plans: list) -> Optional[float]:
-    vals = [p["price"] for p in plans if p.get("price") is not None]
-    return round(sum(vals) / len(vals), 2) if vals else None
-
-
-@router.get("/competitors/benchmark")
-async def benchmark(user: User = Depends(require_enterprise)):
-    competitors = await db.competitors.find(org_filter(user), {"_id": 0}).to_list(200)
-    my = await db.org_pricing.find_one({"org_id": user.org_id}, {"_id": 0})
-    my_plans = (my or {}).get("plans", [])
-    my_avg = _avg_price(my_plans)
-
-    comp_summary = []
-    for c in competitors:
-        c_avg = _avg_price(c.get("plans", []))
-        position = None
-        if my_avg is not None and c_avg is not None:
-            if c_avg > my_avg * 1.05:
-                position = "you are cheaper"
-            elif c_avg < my_avg * 0.95:
-                position = "you are pricier"
-            else:
-                position = "priced in line"
-        comp_summary.append({
-            "competitor_id": c["competitor_id"], "name": c["name"], "url": c["url"],
-            "avg_price": c_avg, "plan_count": len(c.get("plans", [])),
-            "position_vs_you": position, "positioning_summary": c.get("positioning_summary", ""),
-        })
-
-    market_avg = _avg_price([{"price": cs["avg_price"]} for cs in comp_summary if cs["avg_price"] is not None])
-    overall = None
-    if my_avg is not None and market_avg is not None:
-        if my_avg < market_avg * 0.95:
-            overall = "below"
-        elif my_avg > market_avg * 1.05:
-            overall = "above"
-        else:
-            overall = "inline"
-    return {
-        "my_plans": my_plans,
-        "my_avg": my_avg,
-        "market_avg": market_avg,
-        "position": overall,
-        "competitors": comp_summary,
-    }

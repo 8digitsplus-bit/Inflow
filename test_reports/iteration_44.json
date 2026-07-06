@@ -1,0 +1,44 @@
+{
+  "summary": "End-to-end test of Competitor Intelligence (Enterprise, owner-only). Backend: 16/16 pytest passing after fixing a route-ordering bug. Frontend: full flow verified — sidebar nav, page load, empty state, Add Competitor with real Buffer scrape + Claude LLM extraction (5 plans + positioning), Rescan, Edit (status becomes 'manual'), My Pricing (benchmark updates: Your $19 vs Market $49 → Below), Delete, and Basic-tier gate. Two real bugs found and fixed.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "PUT /api/competitors/my-pricing", "issue": "Route ordering collision with PUT /api/competitors/{competitor_id} — 'my-pricing' was being matched as a competitor_id, returning 404. FIXED by moving my-pricing + benchmark routes above /{competitor_id} routes.", "priority": "HIGH"}
+    ],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "PlanEditor (CompetitorIntel.js)", "issue": "emptyPlan() initialized price as empty string '' which fails Pydantic float validation → PUT /api/competitors/{id} returned 422 and dialog never closed when user added a plan without entering a price. FIXED by using null instead of ''.", "selector": "edit-plans-add-plan / my-plans-add-plan", "priority": "HIGH"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_competitor_intel.py",
+    "/app/test_reports/pytest/pytest_competitor_intel.xml"
+  ],
+  "action_items": [
+    "Both bugs already fixed by testing agent (route ordering in /app/backend/routes/competitors.py and emptyPlan default in /app/frontend/src/pages/CompetitorIntel.js). Main agent should verify these fixes align with intent and consider making the frontend also gracefully coerce price='' → null before PUT for defence in depth (currently the number input's onChange does this, but the initial state now uses null, which is the proper fix)."
+  ],
+  "critical_code_review_comments": [
+    "Route ordering: FastAPI matches routes in declaration order. Specific paths (my-pricing, benchmark) MUST be declared before {competitor_id} catch-all. Add an inline comment (done) to prevent regressions.",
+    "Plan.price is Optional[float]; the frontend should never send price as an empty string. Consider a Pydantic validator that coerces '' → None, or use Field(default=None) with strict type.",
+    "handleAdd (CompetitorIntel.js line 108): success toast reads c.plans.length before verifying c.plans exists — if backend returned status='error' with no plans array this would throw. Currently safe because backend always returns plans=[] on error, but a defensive `c.plans?.length || 0` would be safer.",
+    "Delete has no confirmation dialog — a single misclick permanently removes a competitor + its price-history. Consider AlertDialog like the logout flow.",
+    "In basic-tier gating: /competitor-intel currently shows either the app-wide TierGate OR the in-page ci-gate depending on tier vs role. When trial is expired, the trial-expired modal takes precedence, which is fine but worth noting — the ci-gate testid may not always be reachable for tests.",
+    "PlanEditor keys use array index `key={i}` — can cause React reconciliation issues when removing middle rows. Use a stable id (e.g., uuid on plan creation)."
+  ],
+  "updated_files": [
+    "/app/backend/routes/competitors.py",
+    "/app/frontend/src/pages/CompetitorIntel.js",
+    "/app/backend/tests/test_competitor_intel.py",
+    "/app/memory/test_credentials.md"
+  ],
+  "success_rate": {"backend": "100% (16/16)", "frontend": "100% (all 9 review-request scenarios verified)"},
+  "test_credentials": "Enterprise: testpro@test.com / password. Basic (trial/expired): testdemo@inflow.com / password. Downgraded testdemo from enterprise_monthly → trial in this iteration to properly test the tier gate; noted in /app/memory/test_credentials.md.",
+  "seed_data_creation": "No seed data required. Downgraded testdemo@inflow.com's user.subscription_tier and organization.subscription_tier from 'enterprise_monthly' to 'trial' via a one-off DB script to exercise the Enterprise tier gate.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Both Competitor Intelligence bugs are fixed and verified. Backend pytest at /app/backend/tests/test_competitor_intel.py covers CRUD, tier-gating, my-pricing, benchmark. If re-testing the LLM extraction, note the Buffer scrape + Claude call typically takes 10-30s. If testdemo@inflow.com is later re-upgraded to enterprise for other tests, that will break test_basic_user_status / TestTierGate here — those tests use pytest.skip if login fails and hard-assert 403/is_enterprise=False otherwise.",
+  "rca of the issue": "Bug 1 (backend 404 on PUT my-pricing): FastAPI route matcher picks the first route whose path pattern matches, in declaration order. PUT /competitors/{competitor_id} was declared before PUT /competitors/my-pricing, so 'my-pricing' was captured as a competitor_id and the org filter returned 404. Reproduce with `curl -X PUT $BASE/api/competitors/my-pricing -d '{\"plans\":[]}'` — before fix: 404; after fix: 200. Mitigation: declare specific paths before dynamic ones + add module-level comment. Bug 2 (frontend 422 on adding empty plan): emptyPlan() returned price:'' which serialized to \"\" in the PUT body; Pydantic's Optional[float] rejected the empty string. Reproduce: open Edit dialog → click 'Add plan' → click Save without entering price → 422 error in console, dialog stays open. Mitigation: change emptyPlan default to null; verified with UI test — dialog now closes, status becomes 'manual'."
+}

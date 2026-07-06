@@ -17,7 +17,7 @@ const API_URL = process.env.REACT_APP_BACKEND_URL;
 const glass = 'bg-white/[0.04] border border-white/10 backdrop-blur-xl';
 const money = (n, cur = 'USD') =>
   n == null ? '—' : new Intl.NumberFormat('en-US', { style: 'currency', currency: (cur || 'USD').toUpperCase(), maximumFractionDigits: 0 }).format(n);
-const emptyPlan = () => ({ name: '', price: '', period: 'monthly', currency: 'USD', features: [] });
+const emptyPlan = () => ({ name: '', price: null, period: 'monthly', currency: 'USD', features: [] });
 
 // Reusable plan editor (used for competitor plans + your own pricing)
 const PlanEditor = ({ plans, setPlans, testid }) => (
@@ -85,7 +85,7 @@ export default function CompetitorIntel() {
   }, []);
 
   const refresh = useCallback(async () => {
-    const [c, b] = await Promise.all([req('/'), req('/benchmark')]);
+    const [c, b] = await Promise.all([req(''), req('/benchmark')]);
     setCompetitors(c || []);
     setBench(b);
   }, [req]);
@@ -104,7 +104,7 @@ export default function CompetitorIntel() {
     if (!addForm.name.trim() || !addForm.url.trim()) { toast.error('Name and URL are required'); return; }
     setBusy('add');
     try {
-      const c = await req('/', { method: 'POST', body: JSON.stringify(addForm) });
+      const c = await req('', { method: 'POST', body: JSON.stringify(addForm) });
       if (c.status === 'error' || c.status === 'empty') toast.warning(c.error || 'Added — add plans manually');
       else toast.success(`Extracted ${c.plans.length} plan(s) from ${c.name}`);
       setAddOpen(false); setAddForm({ name: '', url: '' });

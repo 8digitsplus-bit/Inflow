@@ -26,6 +26,7 @@ import Terms from './pages/Terms';
 import AcceptInvite from './pages/AcceptInvite';
 import Contact from './pages/Contact';
 import RevenueLeaks from './pages/RevenueLeaks';
+import CompetitorIntel from './pages/CompetitorIntel';
 import GlowPreview from './pages/GlowPreview';
 import TrialNotification from './components/TrialNotification';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -183,6 +184,16 @@ const AppRouter = () => {
           <ProtectedRoute>
             <TierGate requiredLevel={3}>
               <RevenueLeaks />
+            </TierGate>
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/competitor-intel" 
+        element={
+          <ProtectedRoute>
+            <TierGate requiredLevel={3}>
+              <CompetitorIntel />
             </TierGate>
           </ProtectedRoute>
         } 
