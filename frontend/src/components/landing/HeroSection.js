@@ -102,7 +102,7 @@ export const HeroSection = ({ handleGetStarted }) => {
               className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-32 bg-gradient-to-b from-transparent to-[#050507]"
             />
             <img
-              src="/dashboard-preview.png?v=5"
+              src="/dashboard-preview.png?v=6"
               alt="InFlow Analytics Dashboard"
               className="relative w-full rounded-xl border border-white/5"
             />

@@ -55,6 +55,7 @@ const TIERS = [
       'Everything in Pro',
       'Sales Revenue Analytics',
       'Revenue Intelligence',
+      'Competitor Intelligence',
       'Smart Assist',
       'Custom Integrations',
     ],

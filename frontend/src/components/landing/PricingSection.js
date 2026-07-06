@@ -23,12 +23,12 @@ const plans = {
   monthly: [
     { name: 'Essential', price: '59', period: '/user', perUser: true, features: ['Sales Pipeline', 'Core analytics', '2 live integrations', 'Churn monitoring'], cta: 'Unlock Access', featured: false, planId: 'essential_monthly' },
     { name: 'Pro', price: '139', period: '/user', perUser: true, features: ['Everything in Essential', '4 live integrations', 'CSV import', 'AI insights', 'CRO analysis', 'Revenue forecasting', 'Priority support'], cta: 'Scale Up', featured: true, planId: 'pro_monthly' },
-    { name: 'Enterprise', price: '260', period: '/user', perUser: true, features: ['Everything in Pro', 'Unlimited integrations', 'Custom API access', 'Smart Assist AI', 'Revenue Intelligence'], cta: 'Maximise', featured: false, planId: 'enterprise_monthly' }
+    { name: 'Enterprise', price: '260', period: '/user', perUser: true, features: ['Everything in Pro', 'Unlimited integrations', 'Custom API access', 'Smart Assist AI', 'Revenue Intelligence', 'Competitor Intelligence'], cta: 'Maximise', featured: false, planId: 'enterprise_monthly' }
   ],
   yearly: [
     { name: 'Essential', price: '499', originalPrice: '708', period: '/user', perUser: true, features: ['Sales Pipeline', 'Core analytics', '2 live integrations', 'Churn monitoring'], cta: 'Unlock Access', featured: false, planId: 'essential_yearly', savings: '30% off 1st year' },
     { name: 'Pro', price: '1,170', originalPrice: '1,668', period: '/user', perUser: true, features: ['Everything in Essential', '4 live integrations', 'CSV import', 'AI insights', 'CRO analysis', 'Revenue forecasting', 'Priority support'], cta: 'Scale Up', featured: true, planId: 'pro_yearly', savings: '30% off 1st year' },
-    { name: 'Enterprise', price: '2,184', originalPrice: '3,120', period: '/user', perUser: true, features: ['Everything in Pro', 'Unlimited integrations', 'Custom API access', 'Smart Assist AI', 'Revenue Intelligence'], cta: 'Maximise', featured: false, planId: 'enterprise_yearly', savings: '30% off 1st year' }
+    { name: 'Enterprise', price: '2,184', originalPrice: '3,120', period: '/user', perUser: true, features: ['Everything in Pro', 'Unlimited integrations', 'Custom API access', 'Smart Assist AI', 'Revenue Intelligence', 'Competitor Intelligence'], cta: 'Maximise', featured: false, planId: 'enterprise_yearly', savings: '30% off 1st year' }
   ]
 };
 

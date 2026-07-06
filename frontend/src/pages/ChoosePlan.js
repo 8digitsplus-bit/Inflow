@@ -24,7 +24,7 @@ const PLANS = {
   enterprise: {
     key: 'enterprise', name: 'Enterprise', tagline: 'For scaling organizations',
     perUserMonthly: 260, perUserYearly: 2184, perUserYearlyOriginal: 3120,
-    features: ['Everything in Pro', 'Unlimited integrations', 'Custom API access', 'Smart Assist AI', 'Revenue Intelligence'],
+    features: ['Everything in Pro', 'Unlimited integrations', 'Custom API access', 'Smart Assist AI', 'Revenue Intelligence', 'Competitor Intelligence'],
   },
 };
 
