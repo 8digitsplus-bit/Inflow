@@ -233,7 +233,8 @@ All AI responses: no emojis, clean plain-text formatting, rendered via shared AI
 - Email-Scheduled Forecast Reports / Daily AI Briefing
 
 ## Recently Shipped (Jul 2026)
-- **Competitor Intelligence** (Enterprise, owner-only): add competitor + pricing-page URL → BS4 scrape + Claude AI extraction of structured plans + positioning summary. Editable, rescannable with price-change history, benchmarked vs org's own reference pricing. Route `/competitor-intel` (sidebar 'Competitors' under Analytics, minTier 3). Backend `/api/competitors/*`. Tested end-to-end (iteration_44: backend 16/16, frontend 100%). Fixed route-ordering (my-pricing/benchmark before {competitor_id}) and emptyPlan price null default.
+- **Integrations page layout**: Converted the "Live Integration" (/connect-business) "Available Platforms" and "Your Data Sources" from a jagged 3-column grid into a clean single-column vertical stack of uniform horizontal rows (identity/description left, actions right).
+- **Competitor Intelligence** (Enterprise, owner-only): add competitor + pricing-page URL → BS4 scrape + Claude AI extraction of structured plans + positioning summary. Editable, rescannable with price-change history, benchmarked vs org's own reference pricing. Route `/competitor-intel` (sidebar 'Competitors' under Analytics, minTier 3). Backend `/api/competitors/*`. Tested end-to-end (iteration_44: backend 16/16, frontend 100%).
 
 ## Key API Endpoints
 - `/api/competitors` (+ /status, /benchmark, /my-pricing, POST create+extract, /{id}/rescan, PUT, DELETE) - Competitor Intelligence

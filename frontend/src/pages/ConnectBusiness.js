@@ -351,7 +351,7 @@ const ConnectBusiness = () => {
             {customSources.length > 0 && (
               <div className="space-y-4">
                 <h2 className="text-sm font-medium text-zinc-500 uppercase tracking-wider">Your Data Sources</h2>
-                <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+                <div className="space-y-3" data-testid="custom-sources-stack">
                   {customSources.map(source => {
                     const isCsv = source.platform === 'csv_import';
                     const isSyncing = actionLoading === `sync-custom-${source.connection_id}`;
@@ -360,42 +360,40 @@ const ConnectBusiness = () => {
                       <Card key={source.connection_id}
                         className="bg-zinc-950/50 border border-emerald-500/30 transition-all duration-300 hover:border-zinc-600"
                         data-testid={`custom-source-${source.connection_id}`}>
-                        <CardContent className="p-5">
-                          <div className="flex items-start justify-between mb-3">
-                            <div className="flex items-center gap-3">
-                              <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${isCsv ? 'bg-emerald-500/10' : 'bg-slate-500/10'}`}>
-                                {isCsv ? <FileSpreadsheet className="w-5 h-5 text-emerald-400" /> : <Globe className="w-5 h-5 text-slate-400" />}
-                              </div>
-                              <div>
+                        <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center gap-4">
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <div className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${isCsv ? 'bg-emerald-500/10' : 'bg-slate-500/10'}`}>
+                              {isCsv ? <FileSpreadsheet className="w-5 h-5 text-emerald-400" /> : <Globe className="w-5 h-5 text-slate-400" />}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
                                 <h3 className="text-white font-semibold text-sm" style={{ fontFamily: 'Outfit' }}>{source.source_name}</h3>
                                 <span className="text-[11px] text-zinc-500 font-medium">{isCsv ? 'CSV Import' : 'Custom API'}</span>
+                                <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium flex items-center gap-1 ${source.is_live ? 'bg-slate-500/20 text-slate-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
+                                  {source.is_live ? <><Zap className="w-2.5 h-2.5" /> Live</> : <><Check className="w-2.5 h-2.5" /> Imported</>}
+                                </span>
+                              </div>
+                              <div className="flex items-center gap-3 text-[11px] text-zinc-500 mt-1 flex-wrap">
+                                <span>{source.records_synced} records synced</span>
+                                <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{formatDate(source.last_synced)}</span>
                               </div>
                             </div>
-                            <span className={`px-2 py-0.5 rounded-full text-[11px] font-medium flex items-center gap-1 ${source.is_live ? 'bg-slate-500/20 text-slate-400' : 'bg-emerald-500/20 text-emerald-400'}`}>
-                              {source.is_live ? <><Zap className="w-3 h-3" /> Live</> : <><Check className="w-3 h-3" /> Imported</>}
-                            </span>
                           </div>
-                          <p className="text-zinc-400 text-xs mb-3">{source.records_synced} records synced</p>
-                          <div className="space-y-3">
-                            <div className="flex items-center gap-4 text-[11px] text-zinc-500">
-                              <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{formatDate(source.last_synced)}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {source.can_sync && (
-                                <Button size="sm" variant="outline"
-                                  className="flex-1 border-zinc-700 text-zinc-300 hover:bg-slate-500/10 hover:text-slate-400 hover:border-slate-500/30 text-xs h-8"
-                                  onClick={() => handleCustomSync(source.connection_id)} disabled={isSyncing}
-                                  data-testid={`sync-custom-${source.connection_id}`}>
-                                  {isSyncing ? <Loader2 className="w-3 h-3 animate-spin mr-1.5" /> : <RefreshCw className="w-3 h-3 mr-1.5" />} Re-sync
-                                </Button>
-                              )}
-                              <Button size="sm" variant="ghost"
-                                className="text-zinc-500 hover:text-red-400 hover:bg-red-500/10 text-xs h-8 px-3"
-                                onClick={() => handleCustomDisconnect(source.connection_id)} disabled={isDisconnecting}
-                                data-testid={`disconnect-custom-${source.connection_id}`}>
-                                {isDisconnecting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Unplug className="w-3 h-3" />}
+                          <div className="flex items-center gap-2 shrink-0 sm:pl-4 sm:border-l sm:border-white/5">
+                            {source.can_sync && (
+                              <Button size="sm" variant="outline"
+                                className="border-zinc-700 text-zinc-300 hover:bg-slate-500/10 hover:text-slate-400 hover:border-slate-500/30 text-xs h-8"
+                                onClick={() => handleCustomSync(source.connection_id)} disabled={isSyncing}
+                                data-testid={`sync-custom-${source.connection_id}`}>
+                                {isSyncing ? <Loader2 className="w-3 h-3 animate-spin mr-1.5" /> : <RefreshCw className="w-3 h-3 mr-1.5" />} Re-sync
                               </Button>
-                            </div>
+                            )}
+                            <Button size="sm" variant="ghost"
+                              className="text-zinc-500 hover:text-red-400 hover:bg-red-500/10 text-xs h-8 px-3"
+                              onClick={() => handleCustomDisconnect(source.connection_id)} disabled={isDisconnecting}
+                              data-testid={`disconnect-custom-${source.connection_id}`}>
+                              {isDisconnecting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Unplug className="w-3 h-3" />}
+                            </Button>
                           </div>
                         </CardContent>
                       </Card>
@@ -440,7 +438,7 @@ const ConnectBusiness = () => {
                   </div>
                 )}
               </div>
-              <div className="grid md:grid-cols-2 xl:grid-cols-3 gap-4">
+              <div className="space-y-3" data-testid="platforms-stack">
                 {platforms.map((platform) => {
                   const Icon = ICON_MAP[platform.icon] || Database;
                   const isConnecting = actionLoading === platform.platform_id;
@@ -450,55 +448,48 @@ const ConnectBusiness = () => {
                     <Card key={platform.platform_id}
                       className={`bg-zinc-950/50 border transition-all duration-300 hover:border-zinc-600 ${platform.connected ? 'border-emerald-500/30' : 'border-white/10'}`}
                       data-testid={`platform-card-${platform.platform_id}`}>
-                      <CardContent className="p-5">
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex items-center gap-3">
-                            <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${platform.color}18` }}>
-                              <Icon className="w-5 h-5" style={{ color: platform.color }} />
-                            </div>
-                            <div>
+                      <CardContent className="p-4 flex flex-col sm:flex-row sm:items-center gap-4">
+                        {/* Identity + meta */}
+                        <div className="flex items-start gap-3 flex-1 min-w-0">
+                          <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${platform.color}18` }}>
+                            <Icon className="w-5 h-5" style={{ color: platform.color }} />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
                               <h3 className="text-white font-semibold text-sm" style={{ fontFamily: 'Outfit' }}>{platform.name}</h3>
                               <span className="text-[11px] text-zinc-500 font-medium">{platform.category}</span>
-                            </div>
-                          </div>
-                          {platform.connected && (
-                            <span className="bg-slate-500/20 text-slate-400 px-2 py-0.5 rounded-full text-[11px] font-medium flex items-center gap-1 shrink-0"
-                              data-testid={`connected-badge-${platform.platform_id}`}>
-                              <Zap className="w-3 h-3" /> Live
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-zinc-400 text-xs leading-relaxed mb-3">{platform.description}</p>
-                        {platform.connected && platform.account_name && (
-                          <div className="flex items-center gap-1.5 mb-3 px-2.5 py-1.5 rounded-lg bg-slate-500/5 border border-slate-500/10">
-                            <Shield className="w-3 h-3 text-slate-400" />
-                            <span className="text-[11px] text-slate-300">{platform.account_name}</span>
-                          </div>
-                        )}
-                        {platform.connected && platform.stats && (
-                          <div className="grid grid-cols-2 gap-2 mb-3">
-                            {Object.entries(platform.stats).slice(0, 4).map(([key, val]) => (
-                              <div key={key} className="bg-zinc-900/60 rounded-lg px-2.5 py-1.5">
-                                <span className="text-[10px] text-zinc-500 block capitalize">{key.replace(/_/g, ' ')}</span>
-                                <span className="text-sm font-semibold text-white">
-                                  {key === 'revenue' ? `$${(val || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}` : val}
+                              {platform.connected && (
+                                <span className="bg-slate-500/20 text-slate-400 px-2 py-0.5 rounded-full text-[10px] font-medium flex items-center gap-1"
+                                  data-testid={`connected-badge-${platform.platform_id}`}>
+                                  <Zap className="w-2.5 h-2.5" /> Live
                                 </span>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                        <div className="flex flex-wrap gap-1.5 mb-4">
-                          {platform.data_types?.map(dt => (
-                            <span key={dt} className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-zinc-800 text-zinc-400 capitalize">{dt}</span>
-                          ))}
-                        </div>
-                        {platform.connected ? (
-                          <div className="space-y-3">
-                            <div className="flex items-center justify-between gap-2 flex-wrap">
-                              <div className="flex items-center gap-3 text-[11px] text-zinc-500">
+                              )}
+                            </div>
+                            <p className="text-zinc-400 text-xs leading-relaxed mt-0.5 line-clamp-1">{platform.description}</p>
+                            {platform.connected ? (
+                              <div className="flex items-center gap-x-3 gap-y-1 text-[11px] text-zinc-500 mt-1.5 flex-wrap">
+                                {platform.account_name && (
+                                  <span className="flex items-center gap-1 text-slate-300"><Shield className="w-3 h-3 text-slate-400" />{platform.account_name}</span>
+                                )}
                                 <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{formatDate(platform.last_synced)}</span>
                                 <span>{platform.records_synced} records</span>
+                                {platform.stats && Object.entries(platform.stats).slice(0, 3).map(([key, val]) => (
+                                  <span key={key} className="capitalize">{key.replace(/_/g, ' ')}: <span className="text-zinc-300 font-medium">{key === 'revenue' ? `$${(val || 0).toLocaleString(undefined, { maximumFractionDigits: 0 })}` : val}</span></span>
+                                ))}
                               </div>
+                            ) : (
+                              <div className="flex flex-wrap gap-1.5 mt-2">
+                                {platform.data_types?.map(dt => (
+                                  <span key={dt} className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-zinc-800 text-zinc-400 capitalize">{dt}</span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                        {/* Actions */}
+                        <div className="flex items-center gap-2 shrink-0 sm:pl-4 sm:border-l sm:border-white/5">
+                          {platform.connected ? (
+                            <>
                               <select
                                 value={platform.revenue_role || platform.default_revenue_role || 'revenue'}
                                 onChange={async (e) => {
@@ -512,7 +503,7 @@ const ConnectBusiness = () => {
                                   if (r.ok) { toast.success(`Role updated to ${role}`); fetchData(); }
                                   else { const d = await r.json(); toast.error(d.detail || 'Failed to update role'); }
                                 }}
-                                className="text-[11px] px-2 py-0.5 rounded-md bg-zinc-900 border border-zinc-700 text-zinc-300 focus:outline-none focus:border-slate-500"
+                                className="text-[11px] px-2 py-1.5 rounded-md bg-zinc-900 border border-zinc-700 text-zinc-300 focus:outline-none focus:border-slate-500"
                                 data-testid={`role-select-${platform.platform_id}`}
                                 title="Defines whether this source counts toward Revenue, Pipeline, or is treated as Signal-only"
                               >
@@ -520,10 +511,8 @@ const ConnectBusiness = () => {
                                 <option value="pipeline">Pipeline</option>
                                 <option value="signal">Signal only</option>
                               </select>
-                            </div>
-                            <div className="flex items-center gap-2">
                               <Button size="sm" variant="outline"
-                                className="flex-1 border-zinc-700 text-zinc-300 hover:bg-slate-500/10 hover:text-slate-400 hover:border-slate-500/30 text-xs h-8"
+                                className="border-zinc-700 text-zinc-300 hover:bg-slate-500/10 hover:text-slate-400 hover:border-slate-500/30 text-xs h-8"
                                 onClick={() => handleSync(platform.platform_id)} disabled={isSyncing}
                                 data-testid={`sync-${platform.platform_id}`}>
                                 {isSyncing ? <Loader2 className="w-3 h-3 animate-spin mr-1.5" /> : <RefreshCw className="w-3 h-3 mr-1.5" />} Re-sync
@@ -534,21 +523,21 @@ const ConnectBusiness = () => {
                                 data-testid={`disconnect-${platform.platform_id}`}>
                                 {isDisconnecting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Unplug className="w-3 h-3" />}
                               </Button>
-                            </div>
-                          </div>
-                        ) : (
-                          <Button className="w-full bg-white/10 hover:bg-white/20 text-xs h-9 disabled:opacity-40 disabled:cursor-not-allowed"
-                            onClick={() => openConnectModal(platform)} disabled={isConnecting || (usage?.at_limit)}
-                            data-testid={`connect-${platform.platform_id}`}>
-                            {isConnecting ? (
-                              <><Loader2 className="w-3.5 h-3.5 animate-spin mr-2" />Connecting...</>
-                            ) : usage?.at_limit ? (
-                              <><Lock className="w-3 h-3 mr-1.5" />Limit reached</>
-                            ) : (
-                              <><Key className="w-3.5 h-3.5 mr-2" />Connect with API Key</>
-                            )}
-                          </Button>
-                        )}
+                            </>
+                          ) : (
+                            <Button className="bg-white/10 hover:bg-white/20 text-xs h-9 px-4 whitespace-nowrap disabled:opacity-40 disabled:cursor-not-allowed"
+                              onClick={() => openConnectModal(platform)} disabled={isConnecting || (usage?.at_limit)}
+                              data-testid={`connect-${platform.platform_id}`}>
+                              {isConnecting ? (
+                                <><Loader2 className="w-3.5 h-3.5 animate-spin mr-2" />Connecting...</>
+                              ) : usage?.at_limit ? (
+                                <><Lock className="w-3 h-3 mr-1.5" />Limit reached</>
+                              ) : (
+                                <><Key className="w-3.5 h-3.5 mr-2" />Connect with API Key</>
+                              )}
+                            </Button>
+                          )}
+                        </div>
                       </CardContent>
                     </Card>
                   );
