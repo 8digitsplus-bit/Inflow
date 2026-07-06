@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { Check, ArrowLeft, Zap, Shield, Clock, Minus, Plus, Users, ChevronRight } from 'lucide-react';
@@ -7,6 +7,8 @@ import { Toaster } from '../components/ui/sonner';
 import { cn } from '../lib/utils';
 import { motion } from 'framer-motion';
 import NumberFlow from '@number-flow/react';
+import { TimelineContent } from '../components/ui/timeline-animation';
+import { VerticalCutReveal } from '../components/ui/vertical-cut-reveal';
 
 // Features kept in exact parity with the landing pricing cards (PricingSection.js)
 const PLANS = [
@@ -50,18 +52,69 @@ const Tick = () => (
   </span>
 );
 
-const container = {
-  hidden: {},
-  visible: { transition: { staggerChildren: 0.12, delayChildren: 0.1 } },
+const revealVariants = {
+  visible: (i) => ({
+    y: 0,
+    opacity: 1,
+    filter: 'blur(0px)',
+    transition: { delay: i * 0.15, duration: 0.5 },
+  }),
+  hidden: { filter: 'blur(10px)', y: -20, opacity: 0 },
 };
-const reveal = {
-  hidden: { opacity: 0, y: 20, filter: 'blur(10px)' },
-  visible: { opacity: 1, y: 0, filter: 'blur(0px)', transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] } },
+const cardVariants = {
+  visible: (i) => ({
+    y: 0,
+    opacity: 1,
+    filter: 'blur(0px)',
+    transition: { delay: 0.4 + i * 0.18, duration: 0.55, ease: [0.16, 1, 0.3, 1] },
+  }),
+  hidden: { filter: 'blur(10px)', y: 24, opacity: 0 },
+};
+
+// Bold sliding pill switch (from the provided design), adapted to InFlow's brand blue.
+const BillingSwitch = ({ value, onChange }) => {
+  const options = [
+    { key: 'monthly', label: 'Monthly' },
+    { key: 'yearly', label: 'Yearly' },
+  ];
+  return (
+    <div className="relative z-10 flex w-full max-w-sm mx-auto rounded-full bg-white/[0.04] border border-white/10 p-1 backdrop-blur-md">
+      {options.map((opt) => {
+        const active = value === opt.key;
+        return (
+          <button
+            key={opt.key}
+            onClick={() => onChange(opt.key)}
+            className={cn(
+              'relative z-10 w-full h-12 rounded-full font-semibold transition-colors',
+              active ? 'text-white' : 'text-zinc-400 hover:text-white',
+            )}
+            data-testid={`toggle-${opt.key}`}
+          >
+            {active && (
+              <motion.span
+                layoutId="billing-pill"
+                className="absolute inset-0 rounded-full border-2 border-[#0052ff] bg-gradient-to-t from-[#0038b3] via-[#0052ff] to-[#0038b3] shadow-lg shadow-[#0052ff]/30"
+                transition={{ type: 'spring', stiffness: 500, damping: 30 }}
+              />
+            )}
+            <span className="relative flex items-center justify-center gap-2">
+              {opt.label}
+              {opt.key === 'yearly' && (
+                <span className={cn('text-[10px] px-1.5 py-0.5 rounded-full font-bold', active ? 'bg-white/25 text-white' : 'bg-emerald-500/15 text-emerald-400')}>-30%</span>
+              )}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
 };
 
 const ChoosePlan = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const pageRef = useRef(null);
   const [billingPeriod, setBillingPeriod] = useState('monthly');
   const [seats, setSeats] = useState(1);
 
@@ -74,8 +127,12 @@ const ChoosePlan = () => {
   const isCurrentPlan = (plan) => user?.subscription_tier === `${plan.key}_${billingPeriod}`;
 
   return (
-    <div className="min-h-screen bg-[#050507] flex flex-col items-center px-4 py-12 relative overflow-hidden">
-      <div className="absolute inset-0 hero-glow pointer-events-none" />
+    <div ref={pageRef} className="min-h-screen bg-[#050507] flex flex-col items-center px-4 py-12 relative overflow-hidden">
+      {/* Blue radial ambience (from the provided design), tuned for dark theme */}
+      <div
+        className="absolute inset-0 z-0 pointer-events-none opacity-70"
+        style={{ background: 'radial-gradient(125% 125% at 50% 100%, #050507 45%, #0052ff 130%)' }}
+      />
       <Toaster position="top-center" richColors />
 
       <div className="relative z-10 w-full max-w-5xl">
@@ -87,54 +144,41 @@ const ChoosePlan = () => {
           <ArrowLeft className="w-4 h-4" /> Back
         </button>
 
-        {/* Header */}
-        <motion.div variants={container} initial="hidden" animate="visible" className="text-center mb-10">
-          <motion.div variants={reveal} className="flex items-center justify-center mb-4">
+        {/* Animated hero */}
+        <div className="text-center mb-10">
+          <TimelineContent as="div" animationNum={0} timelineRef={pageRef} customVariants={revealVariants} className="flex items-center justify-center mb-4">
             <img src="/inflow-logo.png?v=6" alt="InFlow" className="h-7 w-auto object-contain" />
-          </motion.div>
-          <motion.div variants={reveal} className="flex items-center justify-center gap-2 mb-3">
-            <Zap className="h-4 w-4 text-slate-400 fill-slate-400" />
-            <span className="text-slate-400 text-sm font-medium uppercase tracking-widest">Choose your plan</span>
-          </motion.div>
-          <motion.h1 variants={reveal} className="text-3xl sm:text-4xl font-bold text-white mb-3" style={{ fontFamily: 'Outfit' }}>
-            Pick the plan that fits your team
-          </motion.h1>
-          <motion.p variants={reveal} className="text-zinc-400 text-sm max-w-md mx-auto">
+          </TimelineContent>
+          <TimelineContent as="div" animationNum={1} timelineRef={pageRef} customVariants={revealVariants} className="flex items-center justify-center gap-2 mb-3">
+            <Zap className="h-4 w-4 text-[#0052ff] fill-[#0052ff]" />
+            <span className="text-[#4d8bff] text-sm font-medium uppercase tracking-widest">Choose your plan</span>
+          </TimelineContent>
+          <h1 className="text-3xl sm:text-5xl font-bold text-white mb-4" style={{ fontFamily: 'Outfit' }}>
+            <VerticalCutReveal
+              splitBy="words"
+              staggerDuration={0.12}
+              staggerFrom="first"
+              reverse
+              containerClassName="justify-center"
+              transition={{ type: 'spring', stiffness: 250, damping: 40, delay: 0.3 }}
+            >
+              Pick the plan that fits your team
+            </VerticalCutReveal>
+          </h1>
+          <TimelineContent as="p" animationNum={2} timelineRef={pageRef} customVariants={revealVariants} className="text-zinc-400 text-base max-w-md mx-auto">
             Billing starts today — cancel anytime.
-          </motion.p>
-        </motion.div>
-
-        {/* Billing toggle (glass) */}
-        <div className="flex flex-col items-center mb-8">
-          <div className="inline-flex items-center p-1 bg-white/[0.04] rounded-full border border-white/10 backdrop-blur-md relative" data-testid="billing-toggle">
-            <div
-              className="absolute top-1 bottom-1 rounded-full bg-white/15 border border-white/20 backdrop-blur-sm transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)]"
-              style={{ width: 'calc(50% - 4px)', left: billingPeriod === 'monthly' ? '4px' : 'calc(50%)' }}
-            />
-            <button
-              onClick={() => setBillingPeriod('monthly')}
-              className={`relative z-10 w-32 py-2 rounded-full text-sm font-medium transition-colors text-center ${billingPeriod === 'monthly' ? 'text-white' : 'text-zinc-400 hover:text-zinc-200'}`}
-              data-testid="toggle-monthly"
-            >
-              Monthly
-            </button>
-            <button
-              onClick={() => setBillingPeriod('yearly')}
-              className={`relative z-10 w-32 py-2 rounded-full text-sm font-medium transition-colors text-center ${billingPeriod === 'yearly' ? 'text-white' : 'text-zinc-400 hover:text-zinc-200'}`}
-              data-testid="toggle-yearly"
-            >
-              Yearly
-            </button>
-          </div>
-          {billingPeriod === 'yearly' && (
-            <p className="text-emerald-400 text-xs mt-2 font-medium">Save 30% with yearly billing</p>
-          )}
+          </TimelineContent>
         </div>
 
+        {/* Billing switch */}
+        <TimelineContent as="div" animationNum={3} timelineRef={pageRef} customVariants={revealVariants} className="mb-8">
+          <BillingSwitch value={billingPeriod} onChange={setBillingPeriod} />
+        </TimelineContent>
+
         {/* Seats control (glass) */}
-        <div className="flex flex-col items-center gap-3 mb-10">
+        <TimelineContent as="div" animationNum={4} timelineRef={pageRef} customVariants={revealVariants} className="flex flex-col items-center gap-3 mb-10">
           <div className="inline-flex items-center gap-3 bg-white/[0.04] rounded-xl px-4 py-2.5 border border-white/10 backdrop-blur-md" data-testid="seats-stepper">
-            <Users className="w-4 h-4 text-slate-400" />
+            <Users className="w-4 h-4 text-[#4d8bff]" />
             <span className="text-zinc-400 text-sm">Seats</span>
             <div className="flex items-center gap-1.5 ml-1">
               <button
@@ -158,7 +202,7 @@ const ChoosePlan = () => {
                   const n = parseInt(e.target.value, 10);
                   if (Number.isNaN(n) || n < 1) setSeats(1);
                 }}
-                className="w-14 h-7 rounded-md bg-black/40 border border-white/10 text-white text-sm font-semibold text-center focus:outline-none focus:border-slate-400 focus:ring-1 focus:ring-slate-400 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-14 h-7 rounded-md bg-black/40 border border-white/10 text-white text-sm font-semibold text-center focus:outline-none focus:border-[#0052ff] focus:ring-1 focus:ring-[#0052ff] [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 data-testid="seats-input"
                 aria-label="Number of seats"
               />
@@ -178,22 +222,21 @@ const ChoosePlan = () => {
               <button
                 key={n}
                 onClick={() => setSeats(n)}
-                className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors border ${
-                  seats === n
-                    ? 'bg-white/15 text-white border-white/20'
-                    : 'bg-white/[0.03] text-zinc-400 hover:bg-white/10 border-white/10'
-                }`}
+                className={cn(
+                  'px-2.5 py-1 rounded-md text-xs font-medium transition-colors border',
+                  seats === n ? 'bg-[#0052ff] text-white border-[#0052ff]' : 'bg-white/[0.03] text-zinc-400 hover:bg-white/10 border-white/10',
+                )}
                 data-testid={`seats-preset-${n}`}
               >
                 {n}
               </button>
             ))}
           </div>
-        </div>
+        </TimelineContent>
 
-        {/* Plans Grid */}
-        <motion.div variants={container} initial="hidden" animate="visible" className="grid md:grid-cols-3 gap-5 items-stretch">
-          {PLANS.map((plan) => {
+        {/* Plans Grid — staggered reveal */}
+        <div className="grid md:grid-cols-3 gap-5 items-stretch">
+          {PLANS.map((plan, idx) => {
             const perUser = billingPeriod === 'monthly' ? plan.perUserMonthly : plan.perUserYearly;
             const perUserOriginal = billingPeriod === 'yearly' ? plan.perUserYearlyOriginal : null;
             const price = perUser * seats;
@@ -201,13 +244,16 @@ const ChoosePlan = () => {
             const current = isCurrentPlan(plan);
 
             return (
-              <motion.div
+              <TimelineContent
                 key={plan.key}
-                variants={reveal}
+                as="div"
+                animationNum={idx}
+                timelineRef={pageRef}
+                customVariants={cardVariants}
                 className={cn(
                   'relative flex flex-col rounded-2xl border p-6 backdrop-blur-xl transition-all duration-300',
                   plan.popular
-                    ? 'border-white/25 bg-white/[0.07] shadow-2xl shadow-black/40'
+                    ? 'border-[#0052ff]/40 bg-[#0052ff]/[0.06] shadow-2xl shadow-[#0052ff]/10'
                     : 'border-white/10 bg-white/[0.04] hover:border-white/20 hover:bg-white/[0.06]',
                   current && 'ring-2 ring-emerald-500/40',
                 )}
@@ -215,7 +261,7 @@ const ChoosePlan = () => {
               >
                 {plan.popular && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                    <span className="px-3 py-1 bg-white/15 border border-white/20 backdrop-blur-md text-white text-[11px] font-semibold rounded-full shadow-lg">
+                    <span className="px-3 py-1 bg-gradient-to-t from-[#0038b3] via-[#0052ff] to-[#0038b3] border border-[#0052ff] text-white text-[11px] font-semibold rounded-full shadow-lg shadow-[#0052ff]/40">
                       Most Popular
                     </span>
                   </div>
@@ -230,7 +276,7 @@ const ChoosePlan = () => {
 
                 <div className="mb-5">
                   <div className="flex items-center gap-2 mb-1">
-                    <div className="w-2 h-2 rounded-full bg-slate-400" />
+                    <div className="w-2 h-2 rounded-full bg-[#0052ff]" />
                     <h3 className="text-lg font-bold text-white" style={{ fontFamily: 'Outfit' }}>{plan.name}</h3>
                   </div>
                   <p className="text-xs text-zinc-500">{plan.tagline}</p>
@@ -238,7 +284,7 @@ const ChoosePlan = () => {
 
                 <div className="mb-5">
                   <div className="flex items-baseline gap-2">
-                    <span className="text-3xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>
+                    <span className="text-4xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>
                       $<NumberFlow value={price} />
                     </span>
                     {originalPrice && (
@@ -247,7 +293,7 @@ const ChoosePlan = () => {
                       </span>
                     )}
                   </div>
-                  <p className="text-slate-400 text-xs mt-1">
+                  <p className="text-[#4d8bff] text-xs mt-1">
                     ${perUser.toLocaleString()}/user · {seats} {seats === 1 ? 'seat' : 'seats'}
                   </p>
                   {billingPeriod === 'yearly' && (
@@ -270,10 +316,12 @@ const ChoosePlan = () => {
 
                 <Button
                   className={cn(
-                    'w-full h-11 text-sm font-medium',
+                    'w-full h-11 text-sm font-semibold',
                     current
                       ? 'bg-white/5 text-zinc-500 cursor-not-allowed hover:bg-white/5'
-                      : 'bg-white/10 hover:bg-white/20 text-white border border-white/15 backdrop-blur-sm',
+                      : plan.popular
+                        ? 'text-white border-2 border-[#0052ff] bg-gradient-to-t from-[#0038b3] via-[#0052ff] to-[#0038b3] shadow-lg shadow-[#0052ff]/30 hover:brightness-110'
+                        : 'bg-white/10 hover:bg-white/20 text-white border border-white/15 backdrop-blur-sm',
                   )}
                   disabled={current}
                   onClick={() => handleSelectPlan(plan)}
@@ -281,10 +329,10 @@ const ChoosePlan = () => {
                 >
                   {current ? 'Current Plan' : (<>{plan.cta} <ChevronRight className="w-4 h-4 ml-1" /></>)}
                 </Button>
-              </motion.div>
+              </TimelineContent>
             );
           })}
-        </motion.div>
+        </div>
 
         {/* Trust badges */}
         <div className="flex flex-wrap items-center justify-center gap-6 mt-10 text-zinc-600 text-xs">

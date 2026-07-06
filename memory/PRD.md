@@ -14,10 +14,9 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 ## What's Been Implemented
 
 ### Choose Your Plan page redesign (Jul 2026)
-- Rebuilt `/app/frontend/src/pages/ChoosePlan.js` in the dark-glass theme: translucent backdrop-blur cards, glass billing toggle + seat stepper, framer-motion staggered blur-reveal entrance, animated prices via `@number-flow/react` (added), glass "Most Popular" badge.
-- Ticks now match the landing pricing cards exactly (glass circle + white `Check` strokeWidth 3).
-- Fixed feature mismatch: ChoosePlan feature lists are now in exact parity with the landing `PricingSection.js` (removed stray "Pricing Optimization"; aligned wording/order).
-- Preserved all wiring: checkout handoff `/checkout?plan={key}_{period}&users={seats}`, seat count, billing period, current-plan detection, data-testids. Verified E2E (Pro yearly → checkout $1,170 w/ Stripe Embedded loaded).
+- Rebuilt `/app/frontend/src/pages/ChoosePlan.js` to adopt the user-provided animated design on InFlow's dark-glass theme: blue radial ambience, animated cut-reveal heading (`components/ui/vertical-cut-reveal.jsx`), scroll-staggered reveals (`components/ui/timeline-animation.jsx`), a bold sliding pill billing switch (framer-motion `layoutId`, electric-blue gradient capsule + `-30%` badge), animated prices via `@number-flow/react`, electric-blue accents + "Scale Up" gradient CTA on the featured Pro card.
+- Glass ticks match the landing pricing cards exactly; feature lists in full parity with landing `PricingSection.js` (removed stray "Pricing Optimization").
+- Preserved all wiring: checkout handoff `/checkout?plan={key}_{period}&users={seats}`, seat stepper + presets, current-plan detection, data-testids (toggle-monthly/yearly, checkout-{key}-btn, seats-*). Verified E2E previously (Pro yearly → checkout $1,170, Stripe Embedded loaded).
 
 
 ### Sentry Error Monitoring — Frontend + Backend (Jul 2026)
