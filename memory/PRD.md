@@ -14,9 +14,9 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 ## What's Been Implemented
 
 ### Choose Your Plan page redesign (Jul 2026)
-- Rebuilt `/app/frontend/src/pages/ChoosePlan.js` to adopt the user-provided animated design on InFlow's dark-glass theme: blue radial ambience, animated cut-reveal heading (`components/ui/vertical-cut-reveal.jsx`), scroll-staggered reveals (`components/ui/timeline-animation.jsx`), a bold sliding pill billing switch (framer-motion `layoutId`, electric-blue gradient capsule + `-30%` badge), animated prices via `@number-flow/react`, electric-blue accents + "Scale Up" gradient CTA on the featured Pro card.
-- Glass ticks match the landing pricing cards exactly; feature lists in full parity with landing `PricingSection.js` (removed stray "Pricing Optimization").
-- Preserved all wiring: checkout handoff `/checkout?plan={key}_{period}&users={seats}`, seat stepper + presets, current-plan detection, data-testids (toggle-monthly/yearly, checkout-{key}-btn, seats-*). Verified E2E previously (Pro yearly → checkout $1,170, Stripe Embedded loaded).
+- Rebuilt `/app/frontend/src/pages/ChoosePlan.js` to the user-provided design's actual layout (PricingSection2): hero with `Zap` eyebrow + cut-reveal "Let's get started" heading + subtitle on a blue radial gradient, then a two-column "What's inside" section — LEFT = selected plan's feature list (glass ticks); RIGHT = sliding pill switches (`Choose your plan` Essential/Pro/Enterprise + `Billing period` Monthly/Yearly -30%), seat stepper + quick presets, big `NumberFlow` price with yearly strikethrough, and a single Purchase button.
+- Components: `components/ui/vertical-cut-reveal.jsx`, `components/ui/timeline-animation.jsx`, `@number-flow/react`, and an inline `PricingSwitch` (framer-motion `layoutId` electric-blue capsule, supports 2–3 options).
+- Glass ticks match landing cards; features in parity with landing `PricingSection.js`. State drives one dynamic price; Purchase → `/checkout?plan={planKey}_{period}&users={seats}` (checkout wiring unchanged). data-testids: plan-select-{key}, toggle-{monthly|yearly}, seats-*, purchase-btn, back-btn, feature-list. Verified via screenshots (plan/billing switches update features + price; current-plan disables Purchase).
 
 
 ### Sentry Error Monitoring — Frontend + Backend (Jul 2026)
