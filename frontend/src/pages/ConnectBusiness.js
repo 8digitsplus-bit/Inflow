@@ -6,7 +6,7 @@ import { useAuth } from '../contexts/AuthContext';
 import {
   CreditCard, ShoppingBag, Users, Cloud, Calculator, Check, Loader2, RefreshCw, Unplug,
   ArrowRight, Zap, Database, TrendingUp, Clock, Key, ExternalLink, Shield, X,
-  FileSpreadsheet, Globe, Sparkles, Upload, AlertTriangle, Lock, DollarSign, BarChart3,
+  FileSpreadsheet, Globe, Sparkles, Upload, AlertTriangle, Lock, DollarSign, BarChart3, Search,
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -28,6 +28,8 @@ const ConnectBusiness = () => {
   const [connectFields, setConnectFields] = useState({});
   const [csvModal, setCsvModal] = useState(false);
   const [apiModal, setApiModal] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const TIER_LEVEL = { trial: 0, expired: -1, cancelled: -1, free: 0, essential_monthly: 1, essential_yearly: 1, pro_monthly: 2, pro_yearly: 2, enterprise_monthly: 3, enterprise_yearly: 3 };
   const userTier = user?.subscription_tier || 'trial';
@@ -177,6 +179,17 @@ const ConnectBusiness = () => {
   };
 
   const connectedCount = platforms.filter(p => p.connected).length + customSources.length;
+
+  const categories = ['all', ...Array.from(new Set(platforms.map(p => p.category).filter(Boolean)))];
+  const searchLower = searchQuery.trim().toLowerCase();
+  const filteredPlatforms = platforms.filter((p) => {
+    const matchesCategory = categoryFilter === 'all' || p.category === categoryFilter;
+    const matchesSearch = !searchLower
+      || p.name.toLowerCase().includes(searchLower)
+      || (p.description || '').toLowerCase().includes(searchLower)
+      || (p.category || '').toLowerCase().includes(searchLower);
+    return matchesCategory && matchesSearch;
+  });
 
   const formatDate = (iso) => {
     if (!iso) return '--';
@@ -438,8 +451,52 @@ const ConnectBusiness = () => {
                   </div>
                 )}
               </div>
+              {/* Category filter + search */}
+              <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                <div className="flex items-center gap-2 flex-wrap flex-1" data-testid="category-filter">
+                  {categories.map((cat) => (
+                    <button
+                      key={cat}
+                      onClick={() => setCategoryFilter(cat)}
+                      className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all duration-200 border ${
+                        categoryFilter === cat
+                          ? 'bg-white/10 text-white border-white/20'
+                          : 'bg-white/[0.02] text-zinc-400 border-white/[0.06] hover:bg-white/[0.05] hover:text-zinc-200'
+                      }`}
+                      data-testid={`category-pill-${cat.toLowerCase().replace(/\s+/g, '-')}`}
+                    >
+                      {cat === 'all' ? 'All' : cat}
+                    </button>
+                  ))}
+                </div>
+                <div className="relative sm:w-64">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search integrations..."
+                    className="w-full pl-9 pr-8 py-2 bg-white/[0.03] border border-white/[0.08] rounded-lg text-white text-sm placeholder:text-zinc-600 focus:outline-none focus:border-slate-500/50 focus:ring-1 focus:ring-slate-500/20"
+                    data-testid="integration-search-input"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white"
+                      data-testid="integration-search-clear"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
               <div className="space-y-3" data-testid="platforms-stack">
-                {platforms.map((platform) => {
+                {filteredPlatforms.length === 0 && (
+                  <div className="text-center py-10 text-zinc-500 text-sm" data-testid="no-platforms-match">
+                    No integrations match your filters.
+                  </div>
+                )}
+                {filteredPlatforms.map((platform) => {
                   const Icon = ICON_MAP[platform.icon] || Database;
                   const isConnecting = actionLoading === platform.platform_id;
                   const isDisconnecting = actionLoading === `disconnect-${platform.platform_id}`;
