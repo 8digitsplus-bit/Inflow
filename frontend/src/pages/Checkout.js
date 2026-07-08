@@ -94,7 +94,9 @@ const Checkout = () => {
       return Math.max(0, Math.ceil(ms / (1000 * 60 * 60 * 24)));
     } catch { return 0; }
   })();
-  const hasTrialRemaining = authed ? realTrialDaysLeft >= 2 : true; // Stripe min trial = 48h
+  const trialAvailable = authed ? realTrialDaysLeft >= 2 : true; // Stripe min trial = 48h
+  const [useTrial, setUseTrial] = useState(true);
+  const trialActive = trialAvailable && useTrial;
   const trialDaysLeft = authed ? realTrialDaysLeft : 14;
   const trialEndDate = (() => {
     const base = (authed && user?.trial_end) ? new Date(user.trial_end) : new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
@@ -109,6 +111,7 @@ const Checkout = () => {
       body: JSON.stringify({
         plan: planKey,
         origin_url: window.location.origin,
+        trial: useTrial,
       }),
     });
     if (!response.ok) {
@@ -118,7 +121,7 @@ const Checkout = () => {
     const data = await response.json();
     if (!data.client_secret) throw new Error('No client_secret returned');
     return data.client_secret;
-  }, [planKey]);
+  }, [planKey, useTrial]);
 
   if (!plan) {
     return (
@@ -179,12 +182,12 @@ const Checkout = () => {
           animate={{ filter: 'blur(0px)', opacity: 1, y: 0, transition: { duration: 1.1, delay: 0.1 } }}
         >
           <h1 className="text-lg sm:text-xl font-bold text-white tracking-tight" style={{ fontFamily: 'Outfit' }}>
-            {authed ? 'Complete your subscription' : 'Start your 14-day free trial'}
+            {authed ? 'Complete your subscription' : (trialActive ? 'Start your 14-day free trial' : 'Subscribe to InFlow')}
           </h1>
           <p className="text-zinc-400 text-[11px] mt-0.5">
-            {hasTrialRemaining
+            {trialActive
               ? `${trialDaysLeft} days free · No charge today · Cancel anytime`
-              : 'No charge until you confirm · Cancel anytime'}
+              : 'Billed today · Cancel anytime'}
           </p>
         </motion.div>
 
@@ -257,24 +260,60 @@ const Checkout = () => {
                       <span className="text-emerald-300">-${(totalOriginal - totalPrice).toLocaleString()}</span>
                     </div>
                   )}
-                  <div className="flex justify-between text-[11px]">
-                    <span className="text-zinc-400">Free trial</span>
-                    <span className="text-emerald-300">
-                      {hasTrialRemaining ? `${trialDaysLeft} day${trialDaysLeft === 1 ? '' : 's'}` : 'No trial remaining'}
-                    </span>
-                  </div>
+                  {trialAvailable && (
+                    <div className="flex justify-between text-[11px]">
+                      <span className="text-zinc-400">Free trial</span>
+                      <span className={trialActive ? 'text-emerald-300' : 'text-zinc-500'}>
+                        {trialActive ? `${trialDaysLeft} day${trialDaysLeft === 1 ? '' : 's'}` : 'Skipped'}
+                      </span>
+                    </div>
+                  )}
                 </div>
+
+                {/* Billing option: start trial vs pay now */}
+                {trialAvailable && (
+                  <div className="grid grid-cols-2 gap-2 mb-4" data-testid="trial-option">
+                    <button
+                      type="button"
+                      onClick={() => setUseTrial(true)}
+                      className={`text-left rounded-xl border p-3 transition-all ${trialActive ? 'border-[#0052ff] bg-[#0052ff]/10' : 'border-white/10 bg-white/[0.02] hover:border-white/20'}`}
+                      data-testid="trial-option-trial"
+                    >
+                      <span className="flex items-center gap-1.5 text-white text-[12px] font-semibold">
+                        <span className={`h-3.5 w-3.5 rounded-full border flex items-center justify-center ${trialActive ? 'border-[#0052ff] bg-[#0052ff]' : 'border-white/30'}`}>
+                          {trialActive && <Check className="w-2 h-2 text-white" strokeWidth={4} />}
+                        </span>
+                        Start free trial
+                      </span>
+                      <span className="block text-[10px] text-zinc-400 mt-1">{trialDaysLeft} days free · $0 today</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setUseTrial(false)}
+                      className={`text-left rounded-xl border p-3 transition-all ${!trialActive ? 'border-[#0052ff] bg-[#0052ff]/10' : 'border-white/10 bg-white/[0.02] hover:border-white/20'}`}
+                      data-testid="trial-option-now"
+                    >
+                      <span className="flex items-center gap-1.5 text-white text-[12px] font-semibold">
+                        <span className={`h-3.5 w-3.5 rounded-full border flex items-center justify-center ${!trialActive ? 'border-[#0052ff] bg-[#0052ff]' : 'border-white/30'}`}>
+                          {!trialActive && <Check className="w-2 h-2 text-white" strokeWidth={4} />}
+                        </span>
+                        Subscribe now
+                      </span>
+                      <span className="block text-[10px] text-zinc-400 mt-1">Pay ${totalPrice.toLocaleString()} today</span>
+                    </button>
+                  </div>
+                )}
 
                 {/* Total today */}
                 <div className="flex items-center justify-between p-3 rounded-xl bg-white/[0.05] border border-white/[0.1] backdrop-blur-sm">
                   <span className="text-white font-semibold text-sm">Total today</span>
                   <span className="text-white font-bold text-xl" style={{ fontFamily: 'Outfit' }}>
-                    {hasTrialRemaining ? '$0.00' : `$${totalPrice.toLocaleString()}`}
+                    {trialActive ? '$0.00' : `$${totalPrice.toLocaleString()}`}
                   </span>
                 </div>
 
                 <p className="text-[10px] text-zinc-500 mt-3 leading-relaxed">
-                  {hasTrialRemaining ? (
+                  {trialActive ? (
                     <>You'll be charged <span className="text-zinc-300">${totalPrice.toLocaleString()}</span> on <span className="text-zinc-300">{trialEndDate}</span> when your trial ends. Cancel anytime in Settings — no charge during the trial.</>
                   ) : (
                     <>Charged today: <span className="text-zinc-300">${totalPrice.toLocaleString()}</span>. Cancel anytime from Settings.</>
@@ -309,6 +348,7 @@ const Checkout = () => {
                 /* Stripe's embedded UI is light-themed, kept on a clean surface */
                 <div className="relative bg-white rounded-2xl overflow-hidden ring-1 ring-white/20 shadow-[0_8px_60px_-15px_rgba(0,0,0,0.7)]" data-testid="embedded-checkout-wrapper">
                   <EmbeddedCheckoutProvider
+                    key={trialActive ? 'trial' : 'now'}
                     stripe={stripePromise}
                     options={{ fetchClientSecret }}
                   >

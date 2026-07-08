@@ -113,7 +113,7 @@ async def get_or_create_coupon() -> str:
     return coupon.id
 
 
-async def create_subscription_checkout(plan_key: str, plan: dict, user: User, origin_url: str):
+async def create_subscription_checkout(plan_key: str, plan: dict, user: User, origin_url: str, use_trial: bool = True):
     """Create a Stripe Checkout Session in subscription + embedded mode.
 
     Embedded mode renders Stripe's hosted checkout form inside an iframe on our
@@ -139,12 +139,12 @@ async def create_subscription_checkout(plan_key: str, plan: dict, user: User, or
         }
     }
 
-    # Honor remaining trial days: if user still has free trial time left, pass
-    # `trial_end` (Unix timestamp) so Stripe defers charging until that moment.
-    # Stripe requires `trial_end` to be at least 48 hours in the future, so we
-    # only set it if the remaining trial covers that minimum.
+    # Honor remaining trial days: if the user opted into the trial and still has
+    # free trial time left, pass `trial_end` (Unix timestamp) so Stripe defers
+    # charging until that moment. Stripe requires `trial_end` to be at least 48
+    # hours in the future, so we only set it if the remaining trial covers that.
     user_doc = await db.users.find_one({"user_id": user.user_id}, {"_id": 0, "trial_end": 1})
-    if user_doc and user_doc.get("trial_end"):
+    if use_trial and user_doc and user_doc.get("trial_end"):
         trial_end_raw = user_doc["trial_end"]
         try:
             if isinstance(trial_end_raw, str):
@@ -226,6 +226,7 @@ async def create_checkout_session(request: Request, user: User = Depends(require
 
     plan_key = data.get("plan", "pro_monthly")
     origin_url = data.get("origin_url")
+    use_trial = bool(data.get("trial", True))
 
     if not origin_url:
         raise HTTPException(status_code=400, detail="origin_url required")
@@ -242,7 +243,7 @@ async def create_checkout_session(request: Request, user: User = Depends(require
     try:
         if is_real_stripe_key(api_key):
             stripe_sdk.api_key = api_key
-            session = await create_subscription_checkout(plan_key, plan, user, origin_url)
+            session = await create_subscription_checkout(plan_key, plan, user, origin_url, use_trial=use_trial)
             session_id = session.id
             session_url = None
             client_secret = session.client_secret  # embedded mode
