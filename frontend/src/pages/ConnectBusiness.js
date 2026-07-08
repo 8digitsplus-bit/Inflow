@@ -547,27 +547,6 @@ const ConnectBusiness = () => {
                         <div className="flex items-center gap-2 shrink-0 sm:pl-4 sm:border-l sm:border-white/5">
                           {platform.connected ? (
                             <>
-                              <select
-                                value={platform.revenue_role || platform.default_revenue_role || 'revenue'}
-                                onChange={async (e) => {
-                                  const role = e.target.value;
-                                  const r = await fetch(`${API_URL}/api/business/connection/${platform.platform_id}/role`, {
-                                    method: 'PUT',
-                                    credentials: 'include',
-                                    headers: { 'Content-Type': 'application/json' },
-                                    body: JSON.stringify({ role }),
-                                  });
-                                  if (r.ok) { toast.success(`Role updated to ${role}`); fetchData(); }
-                                  else { const d = await r.json(); toast.error(d.detail || 'Failed to update role'); }
-                                }}
-                                className="text-[11px] px-2 py-1.5 rounded-md bg-zinc-900 border border-zinc-700 text-zinc-300 focus:outline-none focus:border-slate-500"
-                                data-testid={`role-select-${platform.platform_id}`}
-                                title="Defines whether this source counts toward Revenue, Pipeline, or is treated as Signal-only"
-                              >
-                                <option value="revenue">Revenue</option>
-                                <option value="pipeline">Pipeline</option>
-                                <option value="signal">Signal only</option>
-                              </select>
                               <Button size="sm" variant="outline"
                                 className="border-zinc-700 text-zinc-300 hover:bg-slate-500/10 hover:text-slate-400 hover:border-slate-500/30 text-xs h-8"
                                 onClick={() => handleSync(platform.platform_id)} disabled={isSyncing}
