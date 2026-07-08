@@ -18,6 +18,11 @@ from routes.amplitude_integration import validate_amplitude_creds, fetch_amplitu
 from routes.mixpanel_integration import validate_mixpanel_creds, fetch_mixpanel_data
 from routes.zoho_integration import validate_zoho_credentials, fetch_zoho_data
 from routes.xero_integration import validate_xero_credentials, fetch_xero_data
+from routes.square_integration import validate_square_key, fetch_square_data
+from routes.paddle_integration import validate_paddle_key, fetch_paddle_data
+from routes.checkout_integration import validate_checkout_key, fetch_checkout_data
+from routes.sumup_integration import validate_sumup_key, fetch_sumup_data
+from routes.airwallex_integration import validate_airwallex_credentials, fetch_airwallex_data
 
 router = APIRouter()
 
@@ -198,6 +203,90 @@ PLATFORMS = {
         ],
         "key_help_url": "https://developer.xero.com/app/manage",
         "key_help_text": "In the Xero Developer portal, create a Web/Mobile app, complete OAuth2 once to obtain a refresh_token and the Tenant ID of the organisation you want to sync.",
+    },
+    "square": {
+        "default_revenue_role": "revenue",
+        "platform_id": "square",
+        "name": "Square",
+        "description": "Sync payments and revenue from your Square account across all locations.",
+        "icon": "CreditCard",
+        "color": "#00D632",
+        "category": "Payments",
+        "data_types": ["payments", "revenue", "customers"],
+        "requires_key": True,
+        "key_fields": [
+            {"name": "api_key", "label": "Access Token", "placeholder": "Production or Sandbox access token", "type": "password"},
+            {"name": "sandbox", "label": "Use Sandbox", "type": "checkbox"},
+        ],
+        "key_help_url": "https://developer.squareup.com/apps",
+        "key_help_text": "Create an application in the Square Developer Dashboard, then copy its Access Token (Production or Sandbox).",
+    },
+    "paddle": {
+        "default_revenue_role": "revenue",
+        "platform_id": "paddle",
+        "name": "Paddle",
+        "description": "Sync subscription transactions and revenue from your Paddle Billing account.",
+        "icon": "CreditCard",
+        "color": "#FFDD00",
+        "category": "Payments",
+        "data_types": ["transactions", "subscriptions", "revenue"],
+        "requires_key": True,
+        "key_fields": [
+            {"name": "api_key", "label": "API Key", "placeholder": "Paddle server-side API key", "type": "password"},
+            {"name": "sandbox", "label": "Use Sandbox", "type": "checkbox"},
+        ],
+        "key_help_url": "https://developer.paddle.com/api-reference/about/authentication",
+        "key_help_text": "In Paddle > Developer Tools > Authentication, generate a server-side API key with read access to transactions.",
+    },
+    "checkout": {
+        "default_revenue_role": "revenue",
+        "platform_id": "checkout",
+        "name": "Checkout.com",
+        "description": "Sync payments and revenue from your Checkout.com account (live or sandbox auto-detected).",
+        "icon": "CreditCard",
+        "color": "#4B45FF",
+        "category": "Payments",
+        "data_types": ["payments", "revenue"],
+        "requires_key": True,
+        "key_fields": [
+            {"name": "api_key", "label": "Secret Key", "placeholder": "sk_... or sk_sbox_...", "type": "password"},
+        ],
+        "key_help_url": "https://www.checkout.com/docs/developer-resources/api/manage-api-keys",
+        "key_help_text": "Copy your Secret Key (sk_...) from the Checkout.com Dashboard > Developer > Keys. Sandbox keys (sk_sbox_...) are detected automatically.",
+    },
+    "sumup": {
+        "default_revenue_role": "revenue",
+        "platform_id": "sumup",
+        "name": "SumUp",
+        "description": "Sync in-person and online transaction revenue from your SumUp merchant account.",
+        "icon": "CreditCard",
+        "color": "#3F97DC",
+        "category": "Payments",
+        "data_types": ["transactions", "revenue"],
+        "requires_key": True,
+        "key_fields": [
+            {"name": "api_key", "label": "Secret API Key", "placeholder": "sk_... (from SumUp Developer settings)", "type": "password"},
+        ],
+        "key_help_url": "https://developer.sumup.com/api",
+        "key_help_text": "Create an API key at me.sumup.com/settings/developer with the transactions.history scope, then paste it here.",
+    },
+    "airwallex": {
+        "default_revenue_role": "revenue",
+        "platform_id": "airwallex",
+        "name": "Airwallex",
+        "description": "Sync payment intents and revenue from your Airwallex account.",
+        "icon": "CreditCard",
+        "color": "#FF4438",
+        "category": "Payments",
+        "data_types": ["payments", "revenue"],
+        "requires_key": True,
+        "key_fields": [
+            {"name": "client_id", "label": "Client ID", "placeholder": "Airwallex Client ID", "type": "text"},
+            {"name": "api_key", "label": "API Key", "placeholder": "Airwallex API Key", "type": "password"},
+            {"name": "sandbox", "label": "Use Demo Environment", "type": "checkbox"},
+        ],
+        "key_help_url": "https://www.airwallex.com/docs/developer-tools/api/manage-api-keys",
+        "key_help_text": "In Airwallex > Developer > API keys, create credentials to get a Client ID and API Key with read access.",
     },
 }
 
@@ -457,6 +546,116 @@ async def _connect_xero(body: ConnectRequest, user_id: str, now: str):
     return data, connection, validation.get("account_name")
 
 
+async def _connect_square(body: ConnectRequest, user_id: str, now: str):
+    if not body.api_key:
+        raise HTTPException(status_code=400, detail="Square Access Token is required")
+    sandbox = body.sandbox or False
+    validation = await validate_square_key(body.api_key, sandbox)
+    if not validation["valid"]:
+        raise HTTPException(status_code=400, detail=validation.get("error", "Invalid Square credentials"))
+    data = await fetch_square_data(body.api_key, user_id, sandbox)
+    connection = {
+        "connection_id": f"conn_{uuid.uuid4().hex[:12]}",
+        "user_id": user_id, "platform": "square",
+        "connected_at": now, "last_synced": now,
+        "records_synced": data["total_records"], "sync_status": "synced",
+        "account_name": validation.get("account_name", "Square Account"),
+        "api_key_last4": body.api_key[-4:],
+        "api_key_encrypted": encrypt(body.api_key),
+        "sandbox": sandbox,
+        "stats": data["stats"], "is_live": True,
+    }
+    return data, connection, validation.get("account_name")
+
+
+async def _connect_paddle(body: ConnectRequest, user_id: str, now: str):
+    if not body.api_key:
+        raise HTTPException(status_code=400, detail="Paddle API Key is required")
+    sandbox = body.sandbox or False
+    validation = await validate_paddle_key(body.api_key, sandbox)
+    if not validation["valid"]:
+        raise HTTPException(status_code=400, detail=validation.get("error", "Invalid Paddle credentials"))
+    data = await fetch_paddle_data(body.api_key, user_id, sandbox)
+    connection = {
+        "connection_id": f"conn_{uuid.uuid4().hex[:12]}",
+        "user_id": user_id, "platform": "paddle",
+        "connected_at": now, "last_synced": now,
+        "records_synced": data["total_records"], "sync_status": "synced",
+        "account_name": validation.get("account_name", "Paddle Account"),
+        "api_key_last4": body.api_key[-4:],
+        "api_key_encrypted": encrypt(body.api_key),
+        "sandbox": sandbox,
+        "stats": data["stats"], "is_live": True,
+    }
+    return data, connection, validation.get("account_name")
+
+
+async def _connect_checkout(body: ConnectRequest, user_id: str, now: str):
+    if not body.api_key:
+        raise HTTPException(status_code=400, detail="Checkout.com Secret Key is required")
+    validation = await validate_checkout_key(body.api_key)
+    if not validation["valid"]:
+        raise HTTPException(status_code=400, detail=validation.get("error", "Invalid Checkout.com credentials"))
+    data = await fetch_checkout_data(body.api_key, user_id)
+    connection = {
+        "connection_id": f"conn_{uuid.uuid4().hex[:12]}",
+        "user_id": user_id, "platform": "checkout",
+        "connected_at": now, "last_synced": now,
+        "records_synced": data["total_records"], "sync_status": "synced",
+        "account_name": validation.get("account_name", "Checkout.com Account"),
+        "api_key_last4": body.api_key[-4:],
+        "api_key_encrypted": encrypt(body.api_key),
+        "sandbox": validation.get("sandbox", False),
+        "stats": data["stats"], "is_live": True,
+    }
+    return data, connection, validation.get("account_name")
+
+
+async def _connect_sumup(body: ConnectRequest, user_id: str, now: str):
+    if not body.api_key:
+        raise HTTPException(status_code=400, detail="SumUp API Key is required")
+    validation = await validate_sumup_key(body.api_key)
+    if not validation["valid"]:
+        raise HTTPException(status_code=400, detail=validation.get("error", "Invalid SumUp credentials"))
+    merchant_code = validation.get("merchant_code", "")
+    data = await fetch_sumup_data(body.api_key, merchant_code, user_id)
+    connection = {
+        "connection_id": f"conn_{uuid.uuid4().hex[:12]}",
+        "user_id": user_id, "platform": "sumup",
+        "connected_at": now, "last_synced": now,
+        "records_synced": data["total_records"], "sync_status": "synced",
+        "account_name": validation.get("account_name", "SumUp Account"),
+        "api_key_last4": body.api_key[-4:],
+        "api_key_encrypted": encrypt(body.api_key),
+        "company_id": merchant_code,  # store merchant_code for re-sync
+        "stats": data["stats"], "is_live": True,
+    }
+    return data, connection, validation.get("account_name")
+
+
+async def _connect_airwallex(body: ConnectRequest, user_id: str, now: str):
+    if not body.client_id or not body.api_key:
+        raise HTTPException(status_code=400, detail="Airwallex Client ID and API Key are required")
+    sandbox = body.sandbox or False
+    validation = await validate_airwallex_credentials(body.client_id, body.api_key, sandbox)
+    if not validation["valid"]:
+        raise HTTPException(status_code=400, detail=validation.get("error", "Invalid Airwallex credentials"))
+    data = await fetch_airwallex_data(body.client_id, body.api_key, user_id, sandbox)
+    connection = {
+        "connection_id": f"conn_{uuid.uuid4().hex[:12]}",
+        "user_id": user_id, "platform": "airwallex",
+        "connected_at": now, "last_synced": now,
+        "records_synced": data["total_records"], "sync_status": "synced",
+        "account_name": validation.get("account_name", "Airwallex Account"),
+        "api_key_last4": body.api_key[-4:],
+        "api_key_encrypted": encrypt(body.api_key),
+        "client_id": body.client_id,
+        "sandbox": sandbox,
+        "stats": data["stats"], "is_live": True,
+    }
+    return data, connection, validation.get("account_name")
+
+
 CONNECT_HANDLERS = {
     "stripe": _connect_stripe,
     "shopify": _connect_shopify,
@@ -468,6 +667,11 @@ CONNECT_HANDLERS = {
     "mixpanel": _connect_mixpanel,
     "zoho": _connect_zoho,
     "xero": _connect_xero,
+    "square": _connect_square,
+    "paddle": _connect_paddle,
+    "checkout": _connect_checkout,
+    "sumup": _connect_sumup,
+    "airwallex": _connect_airwallex,
 }
 
 
@@ -689,6 +893,21 @@ async def sync_platform(platform: str, current_user: User = Depends(require_owne
                 client_secret,
                 connection.get("company_id", ""),
                 current_user.user_id,
+            )
+        elif platform == "square":
+            data = await fetch_square_data(api_key, current_user.user_id, connection.get("sandbox", False))
+        elif platform == "paddle":
+            data = await fetch_paddle_data(api_key, current_user.user_id, connection.get("sandbox", False))
+        elif platform == "checkout":
+            data = await fetch_checkout_data(api_key, current_user.user_id)
+        elif platform == "sumup":
+            data = await fetch_sumup_data(api_key, connection.get("company_id", ""), current_user.user_id)
+        elif platform == "airwallex":
+            data = await fetch_airwallex_data(
+                connection.get("client_id", ""),
+                api_key,
+                current_user.user_id,
+                connection.get("sandbox", False),
             )
         else:
             raise HTTPException(status_code=400, detail="Sync not supported for this platform")
