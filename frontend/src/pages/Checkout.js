@@ -1,8 +1,8 @@
-import { useCallback } from 'react';
+import { useCallback, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  Check, ArrowLeft, Lock, Zap, ShieldCheck,
+  Check, ArrowLeft, Lock, Zap, ShieldCheck, Loader2, Mail, KeyRound, User as UserIcon,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Toaster } from '../components/ui/sonner';
@@ -43,16 +43,50 @@ const reveal = {
 const Checkout = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { user } = useAuth();
+  const { user, registerWithEmail } = useAuth();
 
   const planKey = searchParams.get('plan') || 'pro_monthly';
   const plan = PLANS[planKey];
   const totalPrice = plan ? plan.price : 0;
   const totalOriginal = plan?.originalPrice ? plan.originalPrice : null;
 
-  // Compute remaining trial days from the user's actual trial_end (if any).
-  // If they have time left, we honor it; otherwise they're charged immediately.
-  const trialDaysLeft = (() => {
+  const authed = !!user;
+
+  // Inline account creation (checkout-first flow) for logged-out visitors.
+  const [form, setForm] = useState({ name: '', email: '', password: '' });
+  const [creating, setCreating] = useState(false);
+  const [formError, setFormError] = useState(null);
+  const [emailExists, setEmailExists] = useState(false);
+
+  const handleCreateAccount = async (e) => {
+    e.preventDefault();
+    setFormError(null);
+    setEmailExists(false);
+    if (!form.name.trim() || !form.email.trim() || form.password.length < 8) {
+      setFormError('Enter your name, email, and a password (at least 8 characters).');
+      return;
+    }
+    setCreating(true);
+    try {
+      // On success the session cookie is set and `user` is populated, which
+      // swaps the right column over to the Stripe embedded payment form.
+      await registerWithEmail(form.name.trim(), form.email.trim().toLowerCase(), form.password);
+    } catch (err) {
+      const msg = err?.message || 'Could not create your account. Please try again.';
+      if (/already registered|already exists|exists/i.test(msg)) {
+        setEmailExists(true);
+        setFormError('An account with this email already exists.');
+      } else {
+        setFormError(msg);
+      }
+    } finally {
+      setCreating(false);
+    }
+  };
+
+  // Trial: existing users honor their real remaining trial; brand-new signups
+  // always start a fresh 14-day trial (card captured, $0 charged today).
+  const realTrialDaysLeft = (() => {
     if (!user?.trial_end) return 0;
     try {
       const end = new Date(user.trial_end);
@@ -60,10 +94,12 @@ const Checkout = () => {
       return Math.max(0, Math.ceil(ms / (1000 * 60 * 60 * 24)));
     } catch { return 0; }
   })();
-  const hasTrialRemaining = trialDaysLeft >= 2; // Stripe min trial = 48h
-  const trialEndDate = hasTrialRemaining
-    ? new Date(user.trial_end).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })
-    : null;
+  const hasTrialRemaining = authed ? realTrialDaysLeft >= 2 : true; // Stripe min trial = 48h
+  const trialDaysLeft = authed ? realTrialDaysLeft : 14;
+  const trialEndDate = (() => {
+    const base = (authed && user?.trial_end) ? new Date(user.trial_end) : new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
+    return base.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
+  })();
 
   const fetchClientSecret = useCallback(async () => {
     const response = await fetch(`${API_URL}/api/payments/create-checkout`, {
@@ -73,7 +109,6 @@ const Checkout = () => {
       body: JSON.stringify({
         plan: planKey,
         origin_url: window.location.origin,
-        users: userCount,
       }),
     });
     if (!response.ok) {
@@ -83,7 +118,7 @@ const Checkout = () => {
     const data = await response.json();
     if (!data.client_secret) throw new Error('No client_secret returned');
     return data.client_secret;
-  }, [planKey, userCount]);
+  }, [planKey]);
 
   if (!plan) {
     return (
@@ -108,6 +143,8 @@ const Checkout = () => {
       </div>
     );
   }
+
+  const inputClass = 'w-full h-11 rounded-xl bg-black/40 border border-white/10 pl-10 pr-3 text-sm text-white placeholder-zinc-500 transition-colors focus:outline-none focus:border-[#0052ff] focus:ring-1 focus:ring-[#0052ff]';
 
   return (
     <div className="min-h-screen bg-[#050507] relative overflow-hidden flex flex-col">
@@ -142,16 +179,16 @@ const Checkout = () => {
           animate={{ filter: 'blur(0px)', opacity: 1, y: 0, transition: { duration: 1.1, delay: 0.1 } }}
         >
           <h1 className="text-lg sm:text-xl font-bold text-white tracking-tight" style={{ fontFamily: 'Outfit' }}>
-            Complete your subscription
+            {authed ? 'Complete your subscription' : 'Start your 14-day free trial'}
           </h1>
           <p className="text-zinc-400 text-[11px] mt-0.5">
             {hasTrialRemaining
-              ? `${trialDaysLeft} days left in your free trial · No charge today · Cancel anytime`
+              ? `${trialDaysLeft} days free · No charge today · Cancel anytime`
               : 'No charge until you confirm · Cancel anytime'}
           </p>
         </motion.div>
 
-        {/* Two-column: Summary (left) + Stripe iframe (right) */}
+        {/* Two-column: Summary (left) + account/payment (right) */}
         <div className="grid lg:grid-cols-12 gap-4 lg:gap-5 items-start">
 
           {/* Left: Summary card */}
@@ -216,14 +253,14 @@ const Checkout = () => {
                   </div>
                   {totalOriginal && (
                     <div className="flex justify-between text-[11px]">
-                      <span className="text-emerald-300">First-year discount (30%)</span>
+                      <span className="text-emerald-300">Annual discount (30%)</span>
                       <span className="text-emerald-300">-${(totalOriginal - totalPrice).toLocaleString()}</span>
                     </div>
                   )}
                   <div className="flex justify-between text-[11px]">
                     <span className="text-zinc-400">Free trial</span>
                     <span className="text-emerald-300">
-                      {hasTrialRemaining ? `${trialDaysLeft} day${trialDaysLeft === 1 ? '' : 's'} left` : 'No trial remaining'}
+                      {hasTrialRemaining ? `${trialDaysLeft} day${trialDaysLeft === 1 ? '' : 's'}` : 'No trial remaining'}
                     </span>
                   </div>
                 </div>
@@ -256,7 +293,7 @@ const Checkout = () => {
             </div>
           </motion.div>
 
-          {/* Right: Stripe iframe */}
+          {/* Right: account creation (logged out) OR Stripe payment (logged in) */}
           <motion.div
             className="lg:col-span-6 order-1 lg:order-2"
             variants={reveal}
@@ -264,18 +301,93 @@ const Checkout = () => {
             animate="visible"
             custom={2}
           >
-            <div className="relative" data-testid="embedded-checkout-wrapper">
+            <div className="relative" data-testid="checkout-right-column">
               {/* Glass halo */}
               <div aria-hidden className="pointer-events-none absolute -inset-px rounded-2xl bg-gradient-to-br from-white/25 via-white/5 to-slate-500/20 blur-xl opacity-70" />
-              {/* Card — Stripe's embedded UI is light-themed, kept on a clean surface */}
-              <div className="relative bg-white rounded-2xl overflow-hidden ring-1 ring-white/20 shadow-[0_8px_60px_-15px_rgba(0,0,0,0.7)]">
-                <EmbeddedCheckoutProvider
-                  stripe={stripePromise}
-                  options={{ fetchClientSecret }}
-                >
-                  <EmbeddedCheckout />
-                </EmbeddedCheckoutProvider>
-              </div>
+
+              {authed ? (
+                /* Stripe's embedded UI is light-themed, kept on a clean surface */
+                <div className="relative bg-white rounded-2xl overflow-hidden ring-1 ring-white/20 shadow-[0_8px_60px_-15px_rgba(0,0,0,0.7)]" data-testid="embedded-checkout-wrapper">
+                  <EmbeddedCheckoutProvider
+                    stripe={stripePromise}
+                    options={{ fetchClientSecret }}
+                  >
+                    <EmbeddedCheckout />
+                  </EmbeddedCheckoutProvider>
+                </div>
+              ) : (
+                <div className="relative bg-white/[0.04] backdrop-blur-2xl border border-white/[0.08] rounded-2xl p-6 shadow-[0_8px_40px_-12px_rgba(0,0,0,0.6)]" data-testid="checkout-account-form">
+                  <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+                  <h2 className="text-white font-semibold text-base" style={{ fontFamily: 'Outfit' }}>Create your account</h2>
+                  <p className="text-zinc-400 text-xs mt-1 mb-4">Set up your login, then add payment on the next step. No charge today.</p>
+
+                  <form onSubmit={handleCreateAccount} className="space-y-3">
+                    <div className="relative">
+                      <UserIcon className="w-4 h-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text" autoComplete="name" placeholder="Full name"
+                        value={form.name}
+                        onChange={(e) => setForm({ ...form, name: e.target.value })}
+                        className={inputClass}
+                        data-testid="checkout-name-input"
+                      />
+                    </div>
+                    <div className="relative">
+                      <Mail className="w-4 h-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="email" autoComplete="email" placeholder="Work email"
+                        value={form.email}
+                        onChange={(e) => setForm({ ...form, email: e.target.value })}
+                        className={inputClass}
+                        data-testid="checkout-email-input"
+                      />
+                    </div>
+                    <div className="relative">
+                      <KeyRound className="w-4 h-4 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="password" autoComplete="new-password" placeholder="Password (min 8 characters)"
+                        value={form.password}
+                        onChange={(e) => setForm({ ...form, password: e.target.value })}
+                        className={inputClass}
+                        data-testid="checkout-password-input"
+                      />
+                    </div>
+
+                    {formError && (
+                      <p className="text-red-400 text-xs" data-testid="checkout-form-error">{formError}</p>
+                    )}
+
+                    {emailExists ? (
+                      <Button
+                        type="button"
+                        onClick={() => navigate('/auth')}
+                        className="w-full h-11 bg-[#0052ff] hover:bg-[#0047e0] text-white font-semibold"
+                        data-testid="checkout-login-instead-btn"
+                      >
+                        Log in instead
+                      </Button>
+                    ) : (
+                      <Button
+                        type="submit"
+                        disabled={creating}
+                        className="w-full h-11 bg-[#0052ff] hover:bg-[#0047e0] text-white font-semibold disabled:opacity-60"
+                        data-testid="checkout-create-account-btn"
+                      >
+                        {creating ? (
+                          <><Loader2 className="w-4 h-4 animate-spin mr-2" />Creating account…</>
+                        ) : (
+                          <>Continue to payment</>
+                        )}
+                      </Button>
+                    )}
+                  </form>
+
+                  <p className="text-zinc-500 text-xs mt-4 text-center">
+                    Already have an account?{' '}
+                    <button onClick={() => navigate('/auth')} className="text-[#4d8bff] hover:text-white transition-colors" data-testid="checkout-login-link">Log in</button>
+                  </p>
+                </div>
+              )}
             </div>
           </motion.div>
         </div>

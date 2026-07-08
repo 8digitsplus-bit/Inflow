@@ -55,21 +55,9 @@ const AppRouter = () => {
           <Onboarding />
         </ProtectedRoute>
       } />
-      <Route path="/choose-plan" element={
-        <ProtectedRoute>
-          <ChoosePlan />
-        </ProtectedRoute>
-      } />
-      <Route path="/checkout" element={
-        <ProtectedRoute>
-          <Checkout />
-        </ProtectedRoute>
-      } />
-      <Route path="/checkout/return" element={
-        <ProtectedRoute>
-          <CheckoutReturn />
-        </ProtectedRoute>
-      } />
+      <Route path="/choose-plan" element={<ChoosePlan />} />
+      <Route path="/checkout" element={<Checkout />} />
+      <Route path="/checkout/return" element={<CheckoutReturn />} />
       <Route 
         path="/dashboard" 
         element={

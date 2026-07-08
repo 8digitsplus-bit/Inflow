@@ -40,8 +40,8 @@ const Landing = () => {
     return () => observer.disconnect();
   }, []);
 
-  const handleGetStarted = () => navigate(isAuthenticated ? '/dashboard' : '/auth');
-  const handleStartTrial = () => navigate(isAuthenticated ? '/dashboard' : '/auth?trial=true');
+  const handleGetStarted = () => navigate(isAuthenticated ? '/dashboard' : '/choose-plan');
+  const handleStartTrial = () => navigate(isAuthenticated ? '/dashboard' : '/choose-plan');
   const handleScrollToPricing = () => document.querySelector('#pricing')?.scrollIntoView({ behavior: 'smooth' });
   const handleMenuClick = (target) => {
     if (target === 'signin') { navigate(isAuthenticated ? '/dashboard' : '/auth'); return; }

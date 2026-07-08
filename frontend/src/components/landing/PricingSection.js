@@ -36,11 +36,7 @@ export const PricingSection = ({ handleGetStarted, isAuthenticated }) => {
   const [billingPeriod, setBillingPeriod] = useState('monthly');
 
   const handlePlanClick = (plan) => {
-    if (!isAuthenticated) {
-      handleGetStarted();
-      return;
-    }
-    navigate(`/choose-plan`);
+    navigate(`/checkout?plan=${plan.planId}`);
   };
 
   return (
