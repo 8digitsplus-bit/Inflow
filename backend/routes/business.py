@@ -23,6 +23,11 @@ from routes.paddle_integration import validate_paddle_key, fetch_paddle_data
 from routes.checkout_integration import validate_checkout_key, fetch_checkout_data
 from routes.sumup_integration import validate_sumup_key, fetch_sumup_data
 from routes.airwallex_integration import validate_airwallex_credentials, fetch_airwallex_data
+from routes.woocommerce_integration import validate_woocommerce_key, fetch_woocommerce_data
+from routes.squarespace_integration import validate_squarespace_key, fetch_squarespace_data
+from routes.square_online_integration import validate_square_online_key, fetch_square_online_data
+from routes.opencart_integration import validate_opencart_key, fetch_opencart_data
+from routes.volusion_integration import validate_volusion_credentials, fetch_volusion_data
 
 router = APIRouter()
 
@@ -287,6 +292,92 @@ PLATFORMS = {
         ],
         "key_help_url": "https://www.airwallex.com/docs/developer-tools/api/manage-api-keys",
         "key_help_text": "In Airwallex > Developer > API keys, create credentials to get a Client ID and API Key with read access.",
+    },
+    "woocommerce": {
+        "default_revenue_role": "revenue",
+        "platform_id": "woocommerce",
+        "name": "WooCommerce",
+        "description": "Sync store orders and revenue from your WooCommerce (WordPress) store.",
+        "icon": "ShoppingBag",
+        "color": "#96588A",
+        "category": "E-Commerce",
+        "data_types": ["orders", "revenue", "customers"],
+        "requires_key": True,
+        "key_fields": [
+            {"name": "store_url", "label": "Store URL", "placeholder": "https://mystore.com", "type": "text"},
+            {"name": "client_id", "label": "Consumer Key", "placeholder": "ck_...", "type": "text"},
+            {"name": "api_key", "label": "Consumer Secret", "placeholder": "cs_...", "type": "password"},
+        ],
+        "key_help_url": "https://woocommerce.com/document/woocommerce-rest-api/",
+        "key_help_text": "In WooCommerce > Settings > Advanced > REST API, add a key with Read access and copy the Consumer Key and Secret.",
+    },
+    "squarespace": {
+        "default_revenue_role": "revenue",
+        "platform_id": "squarespace",
+        "name": "Squarespace",
+        "description": "Sync commerce orders and revenue from your Squarespace store (Commerce Advanced).",
+        "icon": "ShoppingBag",
+        "color": "#B5B5B5",
+        "category": "E-Commerce",
+        "data_types": ["orders", "revenue"],
+        "requires_key": True,
+        "key_fields": [
+            {"name": "api_key", "label": "API Key", "placeholder": "Squarespace Commerce API key", "type": "password"},
+        ],
+        "key_help_url": "https://support.squarespace.com/hc/en-us/articles/236297987-Squarespace-API-keys",
+        "key_help_text": "In Squarespace > Settings > Developer API Keys, generate a key with the Orders permission (requires a Commerce Advanced plan).",
+    },
+    "square_online": {
+        "default_revenue_role": "revenue",
+        "platform_id": "square_online",
+        "name": "Square Online",
+        "description": "Sync online store orders and revenue from your Square Online / Square Orders account.",
+        "icon": "ShoppingBag",
+        "color": "#00A94F",
+        "category": "E-Commerce",
+        "data_types": ["orders", "revenue"],
+        "requires_key": True,
+        "key_fields": [
+            {"name": "api_key", "label": "Access Token", "placeholder": "Square Production or Sandbox access token", "type": "password"},
+            {"name": "sandbox", "label": "Use Sandbox", "type": "checkbox"},
+        ],
+        "key_help_url": "https://developer.squareup.com/apps",
+        "key_help_text": "Use a Square access token with ORDERS_READ permission (Square Online is built on Square).",
+    },
+    "opencart": {
+        "default_revenue_role": "revenue",
+        "platform_id": "opencart",
+        "name": "OpenCart",
+        "description": "Sync store orders and revenue from your OpenCart store via the REST API.",
+        "icon": "ShoppingBag",
+        "color": "#23A1D9",
+        "category": "E-Commerce",
+        "data_types": ["orders", "revenue"],
+        "requires_key": True,
+        "key_fields": [
+            {"name": "store_url", "label": "Store URL", "placeholder": "https://mystore.com", "type": "text"},
+            {"name": "api_key", "label": "API Key", "placeholder": "OpenCart API user key", "type": "password"},
+        ],
+        "key_help_url": "https://docs.opencart.com/en-gb/system/users/api/",
+        "key_help_text": "In OpenCart admin > System > Users > API, create an API user with 'order' access and copy its API Key.",
+    },
+    "volusion": {
+        "default_revenue_role": "revenue",
+        "platform_id": "volusion",
+        "name": "Volusion",
+        "description": "Sync store orders and revenue from your Volusion store via the Generic XML export API.",
+        "icon": "ShoppingBag",
+        "color": "#0FB8AD",
+        "category": "E-Commerce",
+        "data_types": ["orders", "revenue"],
+        "requires_key": True,
+        "key_fields": [
+            {"name": "store_url", "label": "Store URL", "placeholder": "https://mystore.volusion.com", "type": "text"},
+            {"name": "client_id", "label": "Login (Admin Email)", "placeholder": "admin@mystore.com", "type": "text"},
+            {"name": "api_key", "label": "Encrypted Password", "placeholder": "Volusion EncryptedPassword", "type": "password"},
+        ],
+        "key_help_url": "https://helpcenter.volusion.com/s/article/ExportsOrdersExportDeveloper",
+        "key_help_text": "In Volusion admin > Inventory > Import/Export > Volusion API, run Generic\\Orders to get your Login and Encrypted Password from the generated URL.",
     },
 }
 
@@ -656,6 +747,116 @@ async def _connect_airwallex(body: ConnectRequest, user_id: str, now: str):
     return data, connection, validation.get("account_name")
 
 
+async def _connect_woocommerce(body: ConnectRequest, user_id: str, now: str):
+    if not body.store_url or not body.client_id or not body.api_key:
+        raise HTTPException(status_code=400, detail="WooCommerce Store URL, Consumer Key, and Consumer Secret are required")
+    validation = await validate_woocommerce_key(body.store_url, body.client_id, body.api_key)
+    if not validation["valid"]:
+        raise HTTPException(status_code=400, detail=validation.get("error", "Invalid WooCommerce credentials"))
+    store_url = validation.get("store_url", body.store_url)
+    data = await fetch_woocommerce_data(store_url, body.client_id, body.api_key, user_id)
+    connection = {
+        "connection_id": f"conn_{uuid.uuid4().hex[:12]}",
+        "user_id": user_id, "platform": "woocommerce",
+        "connected_at": now, "last_synced": now,
+        "records_synced": data["total_records"], "sync_status": "synced",
+        "account_name": validation.get("account_name", "WooCommerce Store"),
+        "api_key_last4": body.api_key[-4:],
+        "api_key_encrypted": encrypt(body.api_key),  # consumer_secret
+        "client_id": body.client_id,  # consumer_key
+        "store_url": store_url,
+        "stats": data["stats"], "is_live": True,
+    }
+    return data, connection, validation.get("account_name")
+
+
+async def _connect_squarespace(body: ConnectRequest, user_id: str, now: str):
+    if not body.api_key:
+        raise HTTPException(status_code=400, detail="Squarespace API Key is required")
+    validation = await validate_squarespace_key(body.api_key)
+    if not validation["valid"]:
+        raise HTTPException(status_code=400, detail=validation.get("error", "Invalid Squarespace credentials"))
+    data = await fetch_squarespace_data(body.api_key, user_id)
+    connection = {
+        "connection_id": f"conn_{uuid.uuid4().hex[:12]}",
+        "user_id": user_id, "platform": "squarespace",
+        "connected_at": now, "last_synced": now,
+        "records_synced": data["total_records"], "sync_status": "synced",
+        "account_name": validation.get("account_name", "Squarespace Store"),
+        "api_key_last4": body.api_key[-4:],
+        "api_key_encrypted": encrypt(body.api_key),
+        "stats": data["stats"], "is_live": True,
+    }
+    return data, connection, validation.get("account_name")
+
+
+async def _connect_square_online(body: ConnectRequest, user_id: str, now: str):
+    if not body.api_key:
+        raise HTTPException(status_code=400, detail="Square Access Token is required")
+    sandbox = body.sandbox or False
+    validation = await validate_square_online_key(body.api_key, sandbox)
+    if not validation["valid"]:
+        raise HTTPException(status_code=400, detail=validation.get("error", "Invalid Square credentials"))
+    data = await fetch_square_online_data(body.api_key, user_id, sandbox)
+    connection = {
+        "connection_id": f"conn_{uuid.uuid4().hex[:12]}",
+        "user_id": user_id, "platform": "square_online",
+        "connected_at": now, "last_synced": now,
+        "records_synced": data["total_records"], "sync_status": "synced",
+        "account_name": validation.get("account_name", "Square Online"),
+        "api_key_last4": body.api_key[-4:],
+        "api_key_encrypted": encrypt(body.api_key),
+        "sandbox": sandbox,
+        "stats": data["stats"], "is_live": True,
+    }
+    return data, connection, validation.get("account_name")
+
+
+async def _connect_opencart(body: ConnectRequest, user_id: str, now: str):
+    if not body.store_url or not body.api_key:
+        raise HTTPException(status_code=400, detail="OpenCart Store URL and API Key are required")
+    validation = await validate_opencart_key(body.store_url, body.api_key)
+    if not validation["valid"]:
+        raise HTTPException(status_code=400, detail=validation.get("error", "Invalid OpenCart credentials"))
+    store_url = validation.get("store_url", body.store_url)
+    data = await fetch_opencart_data(store_url, body.api_key, user_id)
+    connection = {
+        "connection_id": f"conn_{uuid.uuid4().hex[:12]}",
+        "user_id": user_id, "platform": "opencart",
+        "connected_at": now, "last_synced": now,
+        "records_synced": data["total_records"], "sync_status": "synced",
+        "account_name": validation.get("account_name", "OpenCart Store"),
+        "api_key_last4": body.api_key[-4:],
+        "api_key_encrypted": encrypt(body.api_key),
+        "store_url": store_url,
+        "stats": data["stats"], "is_live": True,
+    }
+    return data, connection, validation.get("account_name")
+
+
+async def _connect_volusion(body: ConnectRequest, user_id: str, now: str):
+    if not body.store_url or not body.client_id or not body.api_key:
+        raise HTTPException(status_code=400, detail="Volusion Store URL, Login, and Encrypted Password are required")
+    validation = await validate_volusion_credentials(body.store_url, body.client_id, body.api_key)
+    if not validation["valid"]:
+        raise HTTPException(status_code=400, detail=validation.get("error", "Invalid Volusion credentials"))
+    store_url = validation.get("store_url", body.store_url)
+    data = await fetch_volusion_data(store_url, body.client_id, body.api_key, user_id)
+    connection = {
+        "connection_id": f"conn_{uuid.uuid4().hex[:12]}",
+        "user_id": user_id, "platform": "volusion",
+        "connected_at": now, "last_synced": now,
+        "records_synced": data["total_records"], "sync_status": "synced",
+        "account_name": validation.get("account_name", "Volusion Store"),
+        "api_key_last4": body.api_key[-4:],
+        "api_key_encrypted": encrypt(body.api_key),  # encrypted password
+        "client_id": body.client_id,  # login email
+        "store_url": store_url,
+        "stats": data["stats"], "is_live": True,
+    }
+    return data, connection, validation.get("account_name")
+
+
 CONNECT_HANDLERS = {
     "stripe": _connect_stripe,
     "shopify": _connect_shopify,
@@ -672,6 +873,11 @@ CONNECT_HANDLERS = {
     "checkout": _connect_checkout,
     "sumup": _connect_sumup,
     "airwallex": _connect_airwallex,
+    "woocommerce": _connect_woocommerce,
+    "squarespace": _connect_squarespace,
+    "square_online": _connect_square_online,
+    "opencart": _connect_opencart,
+    "volusion": _connect_volusion,
 }
 
 
@@ -908,6 +1114,26 @@ async def sync_platform(platform: str, current_user: User = Depends(require_owne
                 api_key,
                 current_user.user_id,
                 connection.get("sandbox", False),
+            )
+        elif platform == "woocommerce":
+            data = await fetch_woocommerce_data(
+                connection.get("store_url", ""),
+                connection.get("client_id", ""),  # consumer_key
+                api_key,  # consumer_secret
+                current_user.user_id,
+            )
+        elif platform == "squarespace":
+            data = await fetch_squarespace_data(api_key, current_user.user_id)
+        elif platform == "square_online":
+            data = await fetch_square_online_data(api_key, current_user.user_id, connection.get("sandbox", False))
+        elif platform == "opencart":
+            data = await fetch_opencart_data(connection.get("store_url", ""), api_key, current_user.user_id)
+        elif platform == "volusion":
+            data = await fetch_volusion_data(
+                connection.get("store_url", ""),
+                connection.get("client_id", ""),  # login email
+                api_key,  # encrypted password
+                current_user.user_id,
             )
         else:
             raise HTTPException(status_code=400, detail="Sync not supported for this platform")
