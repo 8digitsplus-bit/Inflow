@@ -104,7 +104,7 @@ export const Footer = () => (
           </div>
         </a>
         <p className="text-zinc-500 text-sm leading-relaxed max-w-xs">
-          AI-powered revenue intelligence platform for modern B2B teams. Maximise deal value and accelerate growth.
+          Integrate your business data, uncover growth opportunities, and get clear, actionable recommendations—without hiring analysts, consultants, or advisors.
         </p>
         <p className="text-zinc-600 text-sm">
           &copy; {new Date().getFullYear()} InFlow. All rights reserved.
