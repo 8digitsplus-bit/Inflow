@@ -28,6 +28,11 @@ from routes.squarespace_integration import validate_squarespace_key, fetch_squar
 from routes.square_online_integration import validate_square_online_key, fetch_square_online_data
 from routes.opencart_integration import validate_opencart_key, fetch_opencart_data
 from routes.volusion_integration import validate_volusion_credentials, fetch_volusion_data
+from routes.pipedrive_integration import validate_pipedrive_key, fetch_pipedrive_data
+from routes.insightly_integration import validate_insightly_key, fetch_insightly_data
+from routes.freshsales_integration import validate_freshsales_key, fetch_freshsales_data
+from routes.oracle_cx_integration import validate_oracle_cx_credentials, fetch_oracle_cx_data
+from routes.monday_integration import validate_monday_key, fetch_monday_data
 
 router = APIRouter()
 
@@ -378,6 +383,92 @@ PLATFORMS = {
         ],
         "key_help_url": "https://helpcenter.volusion.com/s/article/ExportsOrdersExportDeveloper",
         "key_help_text": "In Volusion admin > Inventory > Import/Export > Volusion API, run Generic\\Orders to get your Login and Encrypted Password from the generated URL.",
+    },
+    "pipedrive": {
+        "default_revenue_role": "pipeline",
+        "platform_id": "pipedrive",
+        "name": "Pipedrive",
+        "description": "Sync deals and pipeline value from your Pipedrive CRM.",
+        "icon": "Users",
+        "color": "#0B8A3D",
+        "category": "CRM",
+        "data_types": ["deals", "pipeline"],
+        "requires_key": True,
+        "key_fields": [
+            {"name": "instance_url", "label": "Company Domain", "placeholder": "mycompany (from mycompany.pipedrive.com)", "type": "text"},
+            {"name": "api_key", "label": "API Token", "placeholder": "Pipedrive API token", "type": "password"},
+        ],
+        "key_help_url": "https://pipedrive.readme.io/docs/how-to-find-the-api-token",
+        "key_help_text": "In Pipedrive > Settings > Personal preferences > API, copy your personal API token, and use your company domain.",
+    },
+    "monday": {
+        "default_revenue_role": "pipeline",
+        "platform_id": "monday",
+        "name": "monday.com",
+        "description": "Sync CRM board items and deal values from your monday.com workspace.",
+        "icon": "Users",
+        "color": "#FF3D57",
+        "category": "CRM",
+        "data_types": ["deals", "pipeline"],
+        "requires_key": True,
+        "key_fields": [
+            {"name": "api_key", "label": "API Token", "placeholder": "monday.com personal API token", "type": "password"},
+            {"name": "company_id", "label": "Board ID (optional)", "placeholder": "e.g. 1234567890", "type": "text"},
+        ],
+        "key_help_url": "https://developer.monday.com/api-reference/docs/authentication",
+        "key_help_text": "In monday.com > Developers > My Access Tokens, copy your personal token. Add a Board ID to target your CRM/deals board.",
+    },
+    "insightly": {
+        "default_revenue_role": "pipeline",
+        "platform_id": "insightly",
+        "name": "Insightly",
+        "description": "Sync opportunities and pipeline value from your Insightly CRM.",
+        "icon": "Users",
+        "color": "#FCB100",
+        "category": "CRM",
+        "data_types": ["opportunities", "pipeline"],
+        "requires_key": True,
+        "key_fields": [
+            {"name": "instance_url", "label": "Pod", "placeholder": "na1 (or eu1, etc.)", "type": "text"},
+            {"name": "api_key", "label": "API Key", "placeholder": "Insightly API key", "type": "password"},
+        ],
+        "key_help_url": "https://support.insightly.com/hc/en-us/articles/360038905172-API-User-Guide",
+        "key_help_text": "In Insightly > User Settings > API Key, copy your key. Your pod (e.g. na1) is shown in your API URL.",
+    },
+    "oracle_cx": {
+        "default_revenue_role": "pipeline",
+        "platform_id": "oracle_cx",
+        "name": "Oracle CX Sales",
+        "description": "Sync opportunities and pipeline value from Oracle CX / Fusion Sales.",
+        "icon": "Users",
+        "color": "#C74634",
+        "category": "CRM",
+        "data_types": ["opportunities", "pipeline"],
+        "requires_key": True,
+        "key_fields": [
+            {"name": "instance_url", "label": "Instance URL", "placeholder": "https://instance.fa.region.oraclecloud.com", "type": "text"},
+            {"name": "client_id", "label": "Username", "placeholder": "Oracle Cloud username", "type": "text"},
+            {"name": "api_key", "label": "Password", "placeholder": "Oracle Cloud password", "type": "password"},
+        ],
+        "key_help_url": "https://docs.oracle.com/en/cloud/saas/sales/faaps/Quick_Start.html",
+        "key_help_text": "Use an Oracle Cloud service user (username + password) with permission to read opportunities via the crmRestApi.",
+    },
+    "freshsales": {
+        "default_revenue_role": "pipeline",
+        "platform_id": "freshsales",
+        "name": "Freshsales",
+        "description": "Sync deals and pipeline value from your Freshsales (Freshworks CRM).",
+        "icon": "Users",
+        "color": "#F5722C",
+        "category": "CRM",
+        "data_types": ["deals", "pipeline"],
+        "requires_key": True,
+        "key_fields": [
+            {"name": "instance_url", "label": "Domain", "placeholder": "mycompany (from mycompany.myfreshworks.com)", "type": "text"},
+            {"name": "api_key", "label": "API Key", "placeholder": "Freshsales API key", "type": "password"},
+        ],
+        "key_help_url": "https://support.freshsales.io/support/solutions/articles/220099-how-to-find-my-api-key-",
+        "key_help_text": "In Freshsales > Profile Settings > API Settings, copy your API key, and use your Freshworks domain.",
     },
 }
 
@@ -857,6 +948,112 @@ async def _connect_volusion(body: ConnectRequest, user_id: str, now: str):
     return data, connection, validation.get("account_name")
 
 
+async def _connect_pipedrive(body: ConnectRequest, user_id: str, now: str):
+    if not body.api_key:
+        raise HTTPException(status_code=400, detail="Pipedrive API Token is required")
+    validation = await validate_pipedrive_key(body.api_key, body.instance_url or "")
+    if not validation["valid"]:
+        raise HTTPException(status_code=400, detail=validation.get("error", "Invalid Pipedrive credentials"))
+    data = await fetch_pipedrive_data(body.api_key, body.instance_url or "", user_id)
+    connection = {
+        "connection_id": f"conn_{uuid.uuid4().hex[:12]}",
+        "user_id": user_id, "platform": "pipedrive",
+        "connected_at": now, "last_synced": now,
+        "records_synced": data["total_records"], "sync_status": "synced",
+        "account_name": validation.get("account_name", "Pipedrive"),
+        "api_key_last4": body.api_key[-4:],
+        "api_key_encrypted": encrypt(body.api_key),
+        "instance_url": body.instance_url or "",
+        "stats": data["stats"], "is_live": True,
+    }
+    return data, connection, validation.get("account_name")
+
+
+async def _connect_monday(body: ConnectRequest, user_id: str, now: str):
+    if not body.api_key:
+        raise HTTPException(status_code=400, detail="monday.com API Token is required")
+    validation = await validate_monday_key(body.api_key)
+    if not validation["valid"]:
+        raise HTTPException(status_code=400, detail=validation.get("error", "Invalid monday.com credentials"))
+    data = await fetch_monday_data(body.api_key, body.company_id or "", user_id)
+    connection = {
+        "connection_id": f"conn_{uuid.uuid4().hex[:12]}",
+        "user_id": user_id, "platform": "monday",
+        "connected_at": now, "last_synced": now,
+        "records_synced": data["total_records"], "sync_status": "synced",
+        "account_name": validation.get("account_name", "monday.com"),
+        "api_key_last4": body.api_key[-4:],
+        "api_key_encrypted": encrypt(body.api_key),
+        "company_id": body.company_id or "",
+        "stats": data["stats"], "is_live": True,
+    }
+    return data, connection, validation.get("account_name")
+
+
+async def _connect_insightly(body: ConnectRequest, user_id: str, now: str):
+    if not body.api_key:
+        raise HTTPException(status_code=400, detail="Insightly API Key is required")
+    validation = await validate_insightly_key(body.api_key, body.instance_url or "")
+    if not validation["valid"]:
+        raise HTTPException(status_code=400, detail=validation.get("error", "Invalid Insightly credentials"))
+    data = await fetch_insightly_data(body.api_key, body.instance_url or "", user_id)
+    connection = {
+        "connection_id": f"conn_{uuid.uuid4().hex[:12]}",
+        "user_id": user_id, "platform": "insightly",
+        "connected_at": now, "last_synced": now,
+        "records_synced": data["total_records"], "sync_status": "synced",
+        "account_name": validation.get("account_name", "Insightly"),
+        "api_key_last4": body.api_key[-4:],
+        "api_key_encrypted": encrypt(body.api_key),
+        "instance_url": body.instance_url or "",
+        "stats": data["stats"], "is_live": True,
+    }
+    return data, connection, validation.get("account_name")
+
+
+async def _connect_oracle_cx(body: ConnectRequest, user_id: str, now: str):
+    if not body.instance_url or not body.client_id or not body.api_key:
+        raise HTTPException(status_code=400, detail="Oracle CX Instance URL, Username, and Password are required")
+    validation = await validate_oracle_cx_credentials(body.instance_url, body.client_id, body.api_key)
+    if not validation["valid"]:
+        raise HTTPException(status_code=400, detail=validation.get("error", "Invalid Oracle CX credentials"))
+    data = await fetch_oracle_cx_data(body.instance_url, body.client_id, body.api_key, user_id)
+    connection = {
+        "connection_id": f"conn_{uuid.uuid4().hex[:12]}",
+        "user_id": user_id, "platform": "oracle_cx",
+        "connected_at": now, "last_synced": now,
+        "records_synced": data["total_records"], "sync_status": "synced",
+        "account_name": validation.get("account_name", "Oracle CX Sales"),
+        "api_key_last4": body.api_key[-4:],
+        "api_key_encrypted": encrypt(body.api_key),  # password
+        "client_id": body.client_id,  # username
+        "instance_url": body.instance_url,
+        "stats": data["stats"], "is_live": True,
+    }
+    return data, connection, validation.get("account_name")
+
+
+async def _connect_freshsales(body: ConnectRequest, user_id: str, now: str):
+    if not body.instance_url or not body.api_key:
+        raise HTTPException(status_code=400, detail="Freshsales Domain and API Key are required")
+    validation = await validate_freshsales_key(body.api_key, body.instance_url)
+    if not validation["valid"]:
+        raise HTTPException(status_code=400, detail=validation.get("error", "Invalid Freshsales credentials"))
+    data = await fetch_freshsales_data(body.api_key, body.instance_url, user_id)
+    connection = {
+        "connection_id": f"conn_{uuid.uuid4().hex[:12]}",
+        "user_id": user_id, "platform": "freshsales",
+        "connected_at": now, "last_synced": now,
+        "records_synced": data["total_records"], "sync_status": "synced",
+        "account_name": validation.get("account_name", "Freshsales"),
+        "api_key_last4": body.api_key[-4:],
+        "api_key_encrypted": encrypt(body.api_key),
+        "instance_url": body.instance_url,
+        "stats": data["stats"], "is_live": True,
+    }
+    return data, connection, validation.get("account_name")
+
+
 CONNECT_HANDLERS = {
     "stripe": _connect_stripe,
     "shopify": _connect_shopify,
@@ -878,6 +1075,11 @@ CONNECT_HANDLERS = {
     "square_online": _connect_square_online,
     "opencart": _connect_opencart,
     "volusion": _connect_volusion,
+    "pipedrive": _connect_pipedrive,
+    "monday": _connect_monday,
+    "insightly": _connect_insightly,
+    "oracle_cx": _connect_oracle_cx,
+    "freshsales": _connect_freshsales,
 }
 
 
@@ -1135,6 +1337,21 @@ async def sync_platform(platform: str, current_user: User = Depends(require_owne
                 api_key,  # encrypted password
                 current_user.user_id,
             )
+        elif platform == "pipedrive":
+            data = await fetch_pipedrive_data(api_key, connection.get("instance_url", ""), current_user.user_id)
+        elif platform == "monday":
+            data = await fetch_monday_data(api_key, connection.get("company_id", ""), current_user.user_id)
+        elif platform == "insightly":
+            data = await fetch_insightly_data(api_key, connection.get("instance_url", ""), current_user.user_id)
+        elif platform == "oracle_cx":
+            data = await fetch_oracle_cx_data(
+                connection.get("instance_url", ""),
+                connection.get("client_id", ""),  # username
+                api_key,  # password
+                current_user.user_id,
+            )
+        elif platform == "freshsales":
+            data = await fetch_freshsales_data(api_key, connection.get("instance_url", ""), current_user.user_id)
         else:
             raise HTTPException(status_code=400, detail="Sync not supported for this platform")
     except Exception as e:
