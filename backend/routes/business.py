@@ -33,6 +33,11 @@ from routes.insightly_integration import validate_insightly_key, fetch_insightly
 from routes.freshsales_integration import validate_freshsales_key, fetch_freshsales_data
 from routes.oracle_cx_integration import validate_oracle_cx_credentials, fetch_oracle_cx_data
 from routes.monday_integration import validate_monday_key, fetch_monday_data
+from routes.posthog_integration import validate_posthog_key, fetch_posthog_data
+from routes.ga4_integration import validate_ga4_credentials, fetch_ga4_data
+from routes.tableau_integration import validate_tableau_credentials, fetch_tableau_data
+from routes.adobe_analytics_integration import validate_adobe_credentials, fetch_adobe_data
+from routes.logrocket_integration import validate_logrocket_key, fetch_logrocket_data
 
 router = APIRouter()
 
@@ -469,6 +474,96 @@ PLATFORMS = {
         ],
         "key_help_url": "https://support.freshsales.io/support/solutions/articles/220099-how-to-find-my-api-key-",
         "key_help_text": "In Freshsales > Profile Settings > API Settings, copy your API key, and use your Freshworks domain.",
+    },
+    "posthog": {
+        "default_revenue_role": "signal",
+        "platform_id": "posthog",
+        "name": "PostHog",
+        "description": "Product analytics signal — 30-day event volume and engagement from PostHog.",
+        "icon": "BarChart3",
+        "color": "#1D4AFF",
+        "category": "Analytics",
+        "data_types": ["events", "engagement", "signal"],
+        "requires_key": True,
+        "key_fields": [
+            {"name": "instance_url", "label": "Region / Host", "placeholder": "us, eu, or your self-hosted URL", "type": "text"},
+            {"name": "company_id", "label": "Project ID", "placeholder": "PostHog project ID (number)", "type": "text"},
+            {"name": "api_key", "label": "Personal API Key", "placeholder": "phx_...", "type": "password"},
+        ],
+        "key_help_url": "https://posthog.com/docs/api/personal-api-keys",
+        "key_help_text": "In PostHog > My settings > Personal API Keys, create a key with query:read scope. Find the Project ID in project settings.",
+    },
+    "ga4": {
+        "default_revenue_role": "signal",
+        "platform_id": "ga4",
+        "name": "Google Analytics 4",
+        "description": "Web analytics signal — 30-day active users and sessions from GA4.",
+        "icon": "BarChart3",
+        "color": "#E8710A",
+        "category": "Analytics",
+        "data_types": ["users", "sessions", "signal"],
+        "requires_key": True,
+        "key_fields": [
+            {"name": "company_id", "label": "Property ID", "placeholder": "GA4 property ID (e.g. 123456789)", "type": "text"},
+            {"name": "api_key", "label": "Service Account JSON", "placeholder": "Paste the full service account JSON key", "type": "password"},
+        ],
+        "key_help_url": "https://developers.google.com/analytics/devguides/reporting/data/v1/quickstart",
+        "key_help_text": "Create a Google Cloud service account, download its JSON key, and add its email to your GA4 property as a Viewer.",
+    },
+    "adobe_analytics": {
+        "default_revenue_role": "signal",
+        "platform_id": "adobe_analytics",
+        "name": "Adobe Analytics",
+        "description": "Web analytics signal — 30-day visits from Adobe Analytics.",
+        "icon": "BarChart3",
+        "color": "#FA0F00",
+        "category": "Analytics",
+        "data_types": ["visits", "signal"],
+        "requires_key": True,
+        "key_fields": [
+            {"name": "client_id", "label": "Client ID", "placeholder": "Adobe OAuth Server-to-Server Client ID", "type": "text"},
+            {"name": "client_secret", "label": "Client Secret", "placeholder": "Adobe client secret", "type": "password"},
+            {"name": "company_id", "label": "Report Suite ID", "placeholder": "rsid (e.g. mycompany.prod)", "type": "text"},
+        ],
+        "key_help_url": "https://developer.adobe.com/developer-console/docs/guides/authentication/ServerToServerAuthentication/",
+        "key_help_text": "In the Adobe Developer Console, create an OAuth Server-to-Server credential for Adobe Analytics and copy the Client ID and Secret. Use your report suite ID (rsid).",
+    },
+    "tableau": {
+        "default_revenue_role": "signal",
+        "platform_id": "tableau",
+        "name": "Tableau",
+        "description": "BI usage signal — workbook, view counts and view usage from Tableau.",
+        "icon": "BarChart3",
+        "color": "#4E79A7",
+        "category": "Analytics",
+        "data_types": ["workbooks", "views", "signal"],
+        "requires_key": True,
+        "key_fields": [
+            {"name": "instance_url", "label": "Server URL", "placeholder": "https://10ax.online.tableau.com", "type": "text"},
+            {"name": "company_id", "label": "Site Content URL", "placeholder": "site name (blank for Default)", "type": "text"},
+            {"name": "client_id", "label": "PAT Name", "placeholder": "Personal Access Token name", "type": "text"},
+            {"name": "api_key", "label": "PAT Secret", "placeholder": "Personal Access Token secret", "type": "password"},
+        ],
+        "key_help_url": "https://help.tableau.com/current/server/en-us/security_personal_access_tokens.htm",
+        "key_help_text": "In Tableau > My Account Settings > Personal Access Tokens, create a token and copy its name and secret. Use the site content URL (blank for Default).",
+    },
+    "logrocket": {
+        "default_revenue_role": "signal",
+        "platform_id": "logrocket",
+        "name": "LogRocket",
+        "description": "Session replay & error-monitoring signal from LogRocket.",
+        "icon": "BarChart3",
+        "color": "#764ABC",
+        "category": "Analytics",
+        "data_types": ["sessions", "signal"],
+        "requires_key": True,
+        "key_fields": [
+            {"name": "instance_url", "label": "Org ID", "placeholder": "LogRocket organisation ID", "type": "text"},
+            {"name": "company_id", "label": "App ID", "placeholder": "LogRocket app ID", "type": "text"},
+            {"name": "api_key", "label": "API Key", "placeholder": "LogRocket API key", "type": "password"},
+        ],
+        "key_help_url": "https://docs.logrocket.com/docs/session-highlights-api",
+        "key_help_text": "In LogRocket > Settings > API Keys, create a key. Find your Org ID and App ID in your project URL/settings.",
     },
 }
 
@@ -1054,6 +1149,112 @@ async def _connect_freshsales(body: ConnectRequest, user_id: str, now: str):
     return data, connection, validation.get("account_name")
 
 
+async def _connect_posthog(body: ConnectRequest, user_id: str, now: str):
+    if not body.api_key or not body.company_id:
+        raise HTTPException(status_code=400, detail="PostHog Personal API Key and Project ID are required")
+    validation = await validate_posthog_key(body.api_key, body.company_id, body.instance_url or "")
+    if not validation["valid"]:
+        raise HTTPException(status_code=400, detail=validation.get("error", "Invalid PostHog credentials"))
+    data = await fetch_posthog_data(body.api_key, body.company_id, body.instance_url or "", user_id)
+    connection = {
+        "connection_id": f"conn_{uuid.uuid4().hex[:12]}",
+        "user_id": user_id, "platform": "posthog",
+        "connected_at": now, "last_synced": now,
+        "records_synced": data["total_records"], "sync_status": "synced",
+        "account_name": validation.get("account_name", "PostHog"),
+        "api_key_last4": body.api_key[-4:],
+        "api_key_encrypted": encrypt(body.api_key),
+        "company_id": body.company_id, "instance_url": body.instance_url or "",
+        "stats": data["stats"], "is_live": True,
+    }
+    return data, connection, validation.get("account_name")
+
+
+async def _connect_ga4(body: ConnectRequest, user_id: str, now: str):
+    if not body.api_key or not body.company_id:
+        raise HTTPException(status_code=400, detail="GA4 Service Account JSON and Property ID are required")
+    validation = await validate_ga4_credentials(body.api_key, body.company_id)
+    if not validation["valid"]:
+        raise HTTPException(status_code=400, detail=validation.get("error", "Invalid GA4 credentials"))
+    data = await fetch_ga4_data(body.api_key, body.company_id, user_id)
+    connection = {
+        "connection_id": f"conn_{uuid.uuid4().hex[:12]}",
+        "user_id": user_id, "platform": "ga4",
+        "connected_at": now, "last_synced": now,
+        "records_synced": data["total_records"], "sync_status": "synced",
+        "account_name": validation.get("account_name", "Google Analytics 4"),
+        "api_key_last4": body.api_key[-4:],
+        "api_key_encrypted": encrypt(body.api_key),  # service account JSON
+        "company_id": body.company_id,
+        "stats": data["stats"], "is_live": True,
+    }
+    return data, connection, validation.get("account_name")
+
+
+async def _connect_adobe_analytics(body: ConnectRequest, user_id: str, now: str):
+    if not body.client_id or not body.client_secret or not body.company_id:
+        raise HTTPException(status_code=400, detail="Adobe Client ID, Client Secret, and Report Suite ID are required")
+    validation = await validate_adobe_credentials(body.client_id, body.client_secret, body.company_id)
+    if not validation["valid"]:
+        raise HTTPException(status_code=400, detail=validation.get("error", "Invalid Adobe Analytics credentials"))
+    data = await fetch_adobe_data(body.client_id, body.client_secret, body.company_id, user_id)
+    connection = {
+        "connection_id": f"conn_{uuid.uuid4().hex[:12]}",
+        "user_id": user_id, "platform": "adobe_analytics",
+        "connected_at": now, "last_synced": now,
+        "records_synced": data["total_records"], "sync_status": "synced",
+        "account_name": validation.get("account_name", "Adobe Analytics"),
+        "api_key_last4": body.client_secret[-4:],
+        "api_key_encrypted": encrypt(body.client_secret),  # client secret
+        "client_id": body.client_id, "company_id": body.company_id,
+        "stats": data["stats"], "is_live": True,
+    }
+    return data, connection, validation.get("account_name")
+
+
+async def _connect_tableau(body: ConnectRequest, user_id: str, now: str):
+    if not body.instance_url or not body.client_id or not body.api_key:
+        raise HTTPException(status_code=400, detail="Tableau Server URL, PAT Name, and PAT Secret are required")
+    validation = await validate_tableau_credentials(body.instance_url, body.client_id, body.api_key, body.company_id or "")
+    if not validation["valid"]:
+        raise HTTPException(status_code=400, detail=validation.get("error", "Invalid Tableau credentials"))
+    data = await fetch_tableau_data(body.instance_url, body.client_id, body.api_key, body.company_id or "", user_id)
+    connection = {
+        "connection_id": f"conn_{uuid.uuid4().hex[:12]}",
+        "user_id": user_id, "platform": "tableau",
+        "connected_at": now, "last_synced": now,
+        "records_synced": data["total_records"], "sync_status": "synced",
+        "account_name": validation.get("account_name", "Tableau"),
+        "api_key_last4": body.api_key[-4:],
+        "api_key_encrypted": encrypt(body.api_key),  # PAT secret
+        "client_id": body.client_id,  # PAT name
+        "instance_url": body.instance_url, "company_id": body.company_id or "",
+        "stats": data["stats"], "is_live": True,
+    }
+    return data, connection, validation.get("account_name")
+
+
+async def _connect_logrocket(body: ConnectRequest, user_id: str, now: str):
+    if not body.api_key or not body.instance_url or not body.company_id:
+        raise HTTPException(status_code=400, detail="LogRocket API Key, Org ID, and App ID are required")
+    validation = await validate_logrocket_key(body.api_key, body.instance_url, body.company_id)
+    if not validation["valid"]:
+        raise HTTPException(status_code=400, detail=validation.get("error", "Invalid LogRocket credentials"))
+    data = await fetch_logrocket_data(body.api_key, body.instance_url, body.company_id, user_id)
+    connection = {
+        "connection_id": f"conn_{uuid.uuid4().hex[:12]}",
+        "user_id": user_id, "platform": "logrocket",
+        "connected_at": now, "last_synced": now,
+        "records_synced": data["total_records"], "sync_status": "synced",
+        "account_name": validation.get("account_name", "LogRocket"),
+        "api_key_last4": body.api_key[-4:],
+        "api_key_encrypted": encrypt(body.api_key),
+        "instance_url": body.instance_url, "company_id": body.company_id,
+        "stats": data["stats"], "is_live": True,
+    }
+    return data, connection, validation.get("account_name")
+
+
 CONNECT_HANDLERS = {
     "stripe": _connect_stripe,
     "shopify": _connect_shopify,
@@ -1080,6 +1281,11 @@ CONNECT_HANDLERS = {
     "insightly": _connect_insightly,
     "oracle_cx": _connect_oracle_cx,
     "freshsales": _connect_freshsales,
+    "posthog": _connect_posthog,
+    "ga4": _connect_ga4,
+    "adobe_analytics": _connect_adobe_analytics,
+    "tableau": _connect_tableau,
+    "logrocket": _connect_logrocket,
 }
 
 
@@ -1352,6 +1558,27 @@ async def sync_platform(platform: str, current_user: User = Depends(require_owne
             )
         elif platform == "freshsales":
             data = await fetch_freshsales_data(api_key, connection.get("instance_url", ""), current_user.user_id)
+        elif platform == "posthog":
+            data = await fetch_posthog_data(api_key, connection.get("company_id", ""), connection.get("instance_url", ""), current_user.user_id)
+        elif platform == "ga4":
+            data = await fetch_ga4_data(api_key, connection.get("company_id", ""), current_user.user_id)
+        elif platform == "adobe_analytics":
+            data = await fetch_adobe_data(
+                connection.get("client_id", ""),
+                api_key,  # client secret
+                connection.get("company_id", ""),  # rsid
+                current_user.user_id,
+            )
+        elif platform == "tableau":
+            data = await fetch_tableau_data(
+                connection.get("instance_url", ""),
+                connection.get("client_id", ""),  # PAT name
+                api_key,  # PAT secret
+                connection.get("company_id", ""),  # site content url
+                current_user.user_id,
+            )
+        elif platform == "logrocket":
+            data = await fetch_logrocket_data(api_key, connection.get("instance_url", ""), connection.get("company_id", ""), current_user.user_id)
         else:
             raise HTTPException(status_code=400, detail="Sync not supported for this platform")
     except Exception as e:
