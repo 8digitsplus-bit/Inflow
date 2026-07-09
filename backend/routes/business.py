@@ -38,6 +38,11 @@ from routes.ga4_integration import validate_ga4_credentials, fetch_ga4_data
 from routes.tableau_integration import validate_tableau_credentials, fetch_tableau_data
 from routes.adobe_analytics_integration import validate_adobe_credentials, fetch_adobe_data
 from routes.logrocket_integration import validate_logrocket_key, fetch_logrocket_data
+from routes.sage_integration import validate_sage_key, fetch_sage_data
+from routes.amazon_seller_integration import validate_amazon_credentials, fetch_amazon_data
+from routes.chargebee_integration import validate_chargebee_key, fetch_chargebee_data
+from routes.ramp_integration import validate_ramp_credentials, fetch_ramp_data
+from routes.brex_integration import validate_brex_key, fetch_brex_data
 
 router = APIRouter()
 
@@ -564,6 +569,92 @@ PLATFORMS = {
         ],
         "key_help_url": "https://docs.logrocket.com/docs/session-highlights-api",
         "key_help_text": "In LogRocket > Settings > API Keys, create a key. Find your Org ID and App ID in your project URL/settings.",
+    },
+    "sage": {
+        "default_revenue_role": "revenue",
+        "platform_id": "sage",
+        "name": "Sage Accounting",
+        "description": "Sync sales invoices and revenue from Sage Business Cloud Accounting.",
+        "icon": "Calculator",
+        "color": "#00A046",
+        "category": "Finance",
+        "data_types": ["invoices", "revenue"],
+        "requires_key": True,
+        "key_fields": [
+            {"name": "api_key", "label": "Access Token", "placeholder": "Sage OAuth2 access token (short-lived)", "type": "password"},
+        ],
+        "key_help_url": "https://developer.sage.com/accounting/",
+        "key_help_text": "Sage uses OAuth2 with short-lived tokens. Complete the Sage OAuth flow in the Developer portal and paste a fresh access token.",
+    },
+    "amazon_seller": {
+        "default_revenue_role": "revenue",
+        "platform_id": "amazon_seller",
+        "name": "Amazon Seller Central",
+        "description": "Sync marketplace orders and revenue from Amazon Seller Central (SP-API).",
+        "icon": "ShoppingBag",
+        "color": "#FF9900",
+        "category": "E-Commerce",
+        "data_types": ["orders", "revenue"],
+        "requires_key": True,
+        "key_fields": [
+            {"name": "client_id", "label": "LWA Client ID", "placeholder": "amzn1.application-oa2-client...", "type": "text"},
+            {"name": "client_secret", "label": "LWA Client Secret", "placeholder": "Login with Amazon client secret", "type": "password"},
+            {"name": "api_key", "label": "Refresh Token", "placeholder": "Atzr|... LWA refresh token", "type": "password"},
+            {"name": "instance_url", "label": "Region", "placeholder": "na, eu, or fe", "type": "text"},
+            {"name": "company_id", "label": "Marketplace ID (optional)", "placeholder": "e.g. ATVPDKIKX0DER (US)", "type": "text"},
+        ],
+        "key_help_url": "https://developer-docs.amazon.com/sp-api/docs/registering-your-application",
+        "key_help_text": "Register an SP-API app in Seller Central, authorise it, and provide the LWA Client ID/Secret and Refresh Token. No AWS keys are needed.",
+    },
+    "chargebee": {
+        "default_revenue_role": "revenue",
+        "platform_id": "chargebee",
+        "name": "Chargebee",
+        "description": "Sync subscription invoices and recurring revenue from Chargebee.",
+        "icon": "CreditCard",
+        "color": "#FF7846",
+        "category": "Payments",
+        "data_types": ["invoices", "subscriptions", "revenue"],
+        "requires_key": True,
+        "key_fields": [
+            {"name": "instance_url", "label": "Site", "placeholder": "mycompany (from mycompany.chargebee.com)", "type": "text"},
+            {"name": "api_key", "label": "API Key", "placeholder": "Chargebee full-access API key", "type": "password"},
+        ],
+        "key_help_url": "https://apidocs.chargebee.com/docs/api/getting-started",
+        "key_help_text": "In Chargebee > Settings > Configure Chargebee > API Keys, add a Full-Access key, and use your site name.",
+    },
+    "ramp": {
+        "default_revenue_role": "signal",
+        "platform_id": "ramp",
+        "name": "Ramp",
+        "description": "Corporate spend signal — 30-day card spend from Ramp (informs burn, not revenue).",
+        "icon": "DollarSign",
+        "color": "#B4D000",
+        "category": "Finance",
+        "data_types": ["spend", "transactions", "signal"],
+        "requires_key": True,
+        "key_fields": [
+            {"name": "client_id", "label": "Client ID", "placeholder": "Ramp developer app Client ID", "type": "text"},
+            {"name": "client_secret", "label": "Client Secret", "placeholder": "Ramp developer app Client Secret", "type": "password"},
+        ],
+        "key_help_url": "https://support.ramp.com/accessing-the-developer-api",
+        "key_help_text": "In Ramp > Company > Developer, create an app with the Client Credentials grant and transactions:read scope, then copy the Client ID and Secret.",
+    },
+    "brex": {
+        "default_revenue_role": "signal",
+        "platform_id": "brex",
+        "name": "Brex",
+        "description": "Corporate spend signal — 30-day card spend from Brex (informs burn, not revenue).",
+        "icon": "DollarSign",
+        "color": "#FF5C39",
+        "category": "Finance",
+        "data_types": ["spend", "transactions", "signal"],
+        "requires_key": True,
+        "key_fields": [
+            {"name": "api_key", "label": "API Token", "placeholder": "Brex API token (transactions.card.readonly)", "type": "password"},
+        ],
+        "key_help_url": "https://developer.brex.com/guides/quickstart",
+        "key_help_text": "In the Brex dashboard > Developer > Settings, create a token with the transactions.card.readonly scope and copy it immediately.",
     },
 }
 
@@ -1255,6 +1346,112 @@ async def _connect_logrocket(body: ConnectRequest, user_id: str, now: str):
     return data, connection, validation.get("account_name")
 
 
+async def _connect_sage(body: ConnectRequest, user_id: str, now: str):
+    if not body.api_key:
+        raise HTTPException(status_code=400, detail="Sage Access Token is required")
+    validation = await validate_sage_key(body.api_key)
+    if not validation["valid"]:
+        raise HTTPException(status_code=400, detail=validation.get("error", "Invalid Sage credentials"))
+    data = await fetch_sage_data(body.api_key, user_id)
+    connection = {
+        "connection_id": f"conn_{uuid.uuid4().hex[:12]}",
+        "user_id": user_id, "platform": "sage",
+        "connected_at": now, "last_synced": now,
+        "records_synced": data["total_records"], "sync_status": "synced",
+        "account_name": validation.get("account_name", "Sage Accounting"),
+        "api_key_last4": body.api_key[-4:],
+        "api_key_encrypted": encrypt(body.api_key),
+        "stats": data["stats"], "is_live": True,
+    }
+    return data, connection, validation.get("account_name")
+
+
+async def _connect_amazon_seller(body: ConnectRequest, user_id: str, now: str):
+    if not body.client_id or not body.client_secret or not body.api_key:
+        raise HTTPException(status_code=400, detail="Amazon LWA Client ID, Client Secret, and Refresh Token are required")
+    region = body.instance_url or "na"
+    validation = await validate_amazon_credentials(body.client_id, body.client_secret, body.api_key, region, body.company_id or "")
+    if not validation["valid"]:
+        raise HTTPException(status_code=400, detail=validation.get("error", "Invalid Amazon credentials"))
+    data = await fetch_amazon_data(body.client_id, body.client_secret, body.api_key, region, body.company_id or "", user_id)
+    connection = {
+        "connection_id": f"conn_{uuid.uuid4().hex[:12]}",
+        "user_id": user_id, "platform": "amazon_seller",
+        "connected_at": now, "last_synced": now,
+        "records_synced": data["total_records"], "sync_status": "synced",
+        "account_name": validation.get("account_name", "Amazon Seller Central"),
+        "api_key_last4": body.api_key[-4:],
+        "api_key_encrypted": encrypt(body.api_key),  # refresh token
+        "client_id": body.client_id,
+        "client_secret_encrypted": encrypt(body.client_secret),
+        "instance_url": region, "company_id": body.company_id or "",
+        "stats": data["stats"], "is_live": True,
+    }
+    return data, connection, validation.get("account_name")
+
+
+async def _connect_chargebee(body: ConnectRequest, user_id: str, now: str):
+    if not body.instance_url or not body.api_key:
+        raise HTTPException(status_code=400, detail="Chargebee Site and API Key are required")
+    validation = await validate_chargebee_key(body.api_key, body.instance_url)
+    if not validation["valid"]:
+        raise HTTPException(status_code=400, detail=validation.get("error", "Invalid Chargebee credentials"))
+    data = await fetch_chargebee_data(body.api_key, body.instance_url, user_id)
+    connection = {
+        "connection_id": f"conn_{uuid.uuid4().hex[:12]}",
+        "user_id": user_id, "platform": "chargebee",
+        "connected_at": now, "last_synced": now,
+        "records_synced": data["total_records"], "sync_status": "synced",
+        "account_name": validation.get("account_name", "Chargebee"),
+        "api_key_last4": body.api_key[-4:],
+        "api_key_encrypted": encrypt(body.api_key),
+        "instance_url": body.instance_url,
+        "stats": data["stats"], "is_live": True,
+    }
+    return data, connection, validation.get("account_name")
+
+
+async def _connect_ramp(body: ConnectRequest, user_id: str, now: str):
+    if not body.client_id or not body.client_secret:
+        raise HTTPException(status_code=400, detail="Ramp Client ID and Client Secret are required")
+    validation = await validate_ramp_credentials(body.client_id, body.client_secret)
+    if not validation["valid"]:
+        raise HTTPException(status_code=400, detail=validation.get("error", "Invalid Ramp credentials"))
+    data = await fetch_ramp_data(body.client_id, body.client_secret, user_id)
+    connection = {
+        "connection_id": f"conn_{uuid.uuid4().hex[:12]}",
+        "user_id": user_id, "platform": "ramp",
+        "connected_at": now, "last_synced": now,
+        "records_synced": data["total_records"], "sync_status": "synced",
+        "account_name": validation.get("account_name", "Ramp"),
+        "api_key_last4": body.client_secret[-4:],
+        "api_key_encrypted": encrypt(body.client_secret),
+        "client_id": body.client_id,
+        "stats": data["stats"], "is_live": True,
+    }
+    return data, connection, validation.get("account_name")
+
+
+async def _connect_brex(body: ConnectRequest, user_id: str, now: str):
+    if not body.api_key:
+        raise HTTPException(status_code=400, detail="Brex API Token is required")
+    validation = await validate_brex_key(body.api_key)
+    if not validation["valid"]:
+        raise HTTPException(status_code=400, detail=validation.get("error", "Invalid Brex credentials"))
+    data = await fetch_brex_data(body.api_key, user_id)
+    connection = {
+        "connection_id": f"conn_{uuid.uuid4().hex[:12]}",
+        "user_id": user_id, "platform": "brex",
+        "connected_at": now, "last_synced": now,
+        "records_synced": data["total_records"], "sync_status": "synced",
+        "account_name": validation.get("account_name", "Brex"),
+        "api_key_last4": body.api_key[-4:],
+        "api_key_encrypted": encrypt(body.api_key),
+        "stats": data["stats"], "is_live": True,
+    }
+    return data, connection, validation.get("account_name")
+
+
 CONNECT_HANDLERS = {
     "stripe": _connect_stripe,
     "shopify": _connect_shopify,
@@ -1286,6 +1483,11 @@ CONNECT_HANDLERS = {
     "adobe_analytics": _connect_adobe_analytics,
     "tableau": _connect_tableau,
     "logrocket": _connect_logrocket,
+    "sage": _connect_sage,
+    "amazon_seller": _connect_amazon_seller,
+    "chargebee": _connect_chargebee,
+    "ramp": _connect_ramp,
+    "brex": _connect_brex,
 }
 
 
@@ -1579,6 +1781,24 @@ async def sync_platform(platform: str, current_user: User = Depends(require_owne
             )
         elif platform == "logrocket":
             data = await fetch_logrocket_data(api_key, connection.get("instance_url", ""), connection.get("company_id", ""), current_user.user_id)
+        elif platform == "sage":
+            data = await fetch_sage_data(api_key, current_user.user_id)
+        elif platform == "amazon_seller":
+            client_secret = decrypt(connection.get("client_secret_encrypted", ""))
+            data = await fetch_amazon_data(
+                connection.get("client_id", ""),
+                client_secret,
+                api_key,  # refresh token
+                connection.get("instance_url", "na"),
+                connection.get("company_id", ""),
+                current_user.user_id,
+            )
+        elif platform == "chargebee":
+            data = await fetch_chargebee_data(api_key, connection.get("instance_url", ""), current_user.user_id)
+        elif platform == "ramp":
+            data = await fetch_ramp_data(connection.get("client_id", ""), api_key, current_user.user_id)
+        elif platform == "brex":
+            data = await fetch_brex_data(api_key, current_user.user_id)
         else:
             raise HTTPException(status_code=400, detail="Sync not supported for this platform")
     except Exception as e:
