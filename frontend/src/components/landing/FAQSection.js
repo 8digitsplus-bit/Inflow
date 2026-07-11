@@ -7,16 +7,16 @@ const faqs = [
     a: 'A revenue intelligence platform for B2B SaaS, e-commerce, and service teams. Founders, RevOps, and finance use it to unify pipeline + revenue data and run AI-powered analytics from one dashboard.',
   },
   {
-    q: 'How does the 14-day free trial work?',
-    a: 'Sign up with just your email — no credit card required. You get 14 days of full access to explore InFlow. When the trial ends, you choose a plan to continue using the service. Your data stays safe either way.',
+    q: 'How does the free trial and sign-up work?',
+    a: 'You pick a plan and create your account right on the checkout page. From there you can start an optional 14-day free trial — your card is saved but you’re charged $0 today and can cancel anytime before it ends — or subscribe and pay immediately. You’re always in control from Settings → Billing.',
   },
   {
     q: 'What data sources can I connect?',
-    a: '10 live integrations: Stripe, PayPal, Shopify, Xero, QuickBooks, HubSpot, Salesforce, Zoho CRM, Mixpanel, and Amplitude. Pro adds CSV import; Enterprise adds Custom API access.',
+    a: '35+ live integrations across five categories — Payments (Stripe, PayPal, Square, Chargebee…), E-Commerce (Shopify, WooCommerce, Amazon Seller…), CRM (HubSpot, Salesforce, Pipedrive…), Finance (QuickBooks, Xero, Sage…) and Analytics (GA4, Amplitude, Mixpanel, PostHog…). Your plan sets how many you can connect at once (Essential 2, Pro 4, Enterprise unlimited). Pro adds CSV import; Enterprise adds Custom API access.',
   },
   {
-    q: 'How does AI-powered pricing optimization work?',
-    a: 'Claude analyses your historical revenue and conversion data, then recommends an optimal price with a written rationale and projected revenue impact. It runs on demand — no surprise re-pricing.',
+    q: 'What can InFlow’s AI do?',
+    a: 'Claude powers a suite of tools: AI revenue insights and forecasting, automatic revenue-leak detection, pricing guidance with a written rationale and projected impact, and Competitor Intelligence — which auto-extracts competitors’ public pricing and benchmarks it against yours. Everything runs on demand, so nothing changes on your account without you.',
   },
   {
     q: "What's the difference between Essential, Pro & Enterprise?",
