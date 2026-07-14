@@ -12,6 +12,7 @@ bumped. Logged-in users who haven't acknowledged the latest version are shown an
 in-app notification banner (see GET /legal/updates + POST /legal/ack).
 """
 import re
+import time
 import logging
 import hashlib
 import asyncio
@@ -58,6 +59,11 @@ _POLICY_TO_TYPE = {d["policy_id"]: t for t, d in LEGAL_DOCS.items()}
 
 # How long a version record is trusted before we re-check Termly (background).
 STALE_SECONDS = 12 * 3600
+
+# In-memory cache of sanitised policy HTML so we don't hit Termly on every page
+# view (fast + resilient to Termly slowness/downtime). Keyed by policy_id.
+_CONTENT_CACHE: dict = {}
+_CONTENT_TTL = 6 * 3600  # serve cached HTML for up to 6h before refetching
 
 _UUID_RE = re.compile(r"^[0-9a-fA-F-]{36}$")
 # Termly hardcodes a black brand background + near-black text (meant for a white
@@ -155,18 +161,33 @@ def _is_stale(doc: dict) -> bool:
 
 @router.get("/legal/policy/{policy_id}")
 async def get_policy(policy_id: str):
-    """Return the rendered HTML of a Termly policy for in-page display."""
+    """Return the rendered HTML of a Termly policy for in-page display.
+
+    Served from an in-memory cache when fresh; on a Termly failure we fall back
+    to the last-known-good cached copy so the page never breaks for the user.
+    """
     if not _UUID_RE.match(policy_id) or policy_id not in ALLOWED_POLICY_IDS:
         raise HTTPException(status_code=404, detail="Policy not found")
+
+    now = time.time()
+    cached = _CONTENT_CACHE.get(policy_id)
+    if cached and (now - cached["ts"] < _CONTENT_TTL):
+        return {"html": cached["html"]}
 
     try:
         html = await _fetch_sanitised(policy_id)
     except Exception as e:
         logger.error("Failed to fetch Termly policy %s: %s", policy_id, e)
+        if cached:
+            return {"html": cached["html"]}
         raise HTTPException(status_code=502, detail="Could not load policy content")
 
     if not html:
+        if cached:
+            return {"html": cached["html"]}
         raise HTTPException(status_code=502, detail="Policy content was empty")
+
+    _CONTENT_CACHE[policy_id] = {"html": html, "ts": now}
 
     # Viewing a policy page keeps its version record current.
     try:
