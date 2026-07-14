@@ -74,12 +74,17 @@ export const AuthProvider = ({ children }) => {
   };
 
   const loginWithEmail = async (email, password) => {
-    const response = await fetch(`${API_URL}/api/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ email, password }),
-    });
+    let response;
+    try {
+      response = await fetch(`${API_URL}/api/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ email, password }),
+      });
+    } catch {
+      throw new Error("We couldn't reach the server. Please check your connection and try again.");
+    }
 
     const data = await safeJson(response);
 
@@ -98,12 +103,17 @@ export const AuthProvider = ({ children }) => {
   };
 
   const verify2FA = async (userId, code) => {
-    const response = await fetch(`${API_URL}/api/auth/2fa/verify`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ user_id: userId, code }),
-    });
+    let response;
+    try {
+      response = await fetch(`${API_URL}/api/auth/2fa/verify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ user_id: userId, code }),
+      });
+    } catch {
+      throw new Error("We couldn't reach the server. Please check your connection and try again.");
+    }
 
     const data = await safeJson(response);
 
@@ -117,12 +127,17 @@ export const AuthProvider = ({ children }) => {
   };
 
   const registerWithEmail = async (name, email, password) => {
-    const response = await fetch(`${API_URL}/api/auth/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ name, email, password }),
-    });
+    let response;
+    try {
+      response = await fetch(`${API_URL}/api/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ name, email, password }),
+      });
+    } catch {
+      throw new Error("We couldn't reach the server. Please check your connection and try again.");
+    }
 
     const data = await safeJson(response);
 
