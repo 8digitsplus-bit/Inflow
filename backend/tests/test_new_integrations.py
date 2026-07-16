@@ -8,7 +8,7 @@ import os
 import requests
 import pytest
 
-BASE_URL = os.environ.get("BASE_URL", "https://inflow-preview-1.preview.emergentagent.com")
+BASE_URL = os.environ.get("BASE_URL", "https://revenue-dash-40.preview.emergentagent.com")
 NEW_PLATFORMS = ["paypal", "amplitude", "mixpanel", "zoho", "xero"]
 
 
