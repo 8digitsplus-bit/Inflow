@@ -99,27 +99,28 @@ async def health_check():
 app.include_router(api_router)
 
 # Read allowed origins from env. Accept either CORS_ORIGINS (the canonical name)
-# or ALLOWED_ORIGINS for backwards compatibility. In production this MUST be a
-# comma-separated list of explicit origins because allow_credentials=True is
-# incompatible with allow_origins=["*"] under the CORS spec.
-_cors_env = os.environ.get("CORS_ORIGINS") or os.environ.get("ALLOWED_ORIGINS") or ""
-if _cors_env.strip() in ("", "*"):
-    # Local-dev fallback — preview + localhost so credentialed cookie flows still work.
-    origins = [
-        "http://localhost:3000",
-        "http://localhost:8001",
-        "https://inflow-preview-1.preview.emergentagent.com",
-    ]
+# or ALLOWED_ORIGINS for backwards compatibility. allow_credentials=True is
+# incompatible with allow_origins=["*"] under the CORS spec, so when no explicit
+# origins are configured we fall back to a credential-safe regex that matches
+# localhost plus any Emergent preview/production domain (works regardless of the
+# deployed app name — no hardcoded URLs).
+_cors_env = (os.environ.get("CORS_ORIGINS") or os.environ.get("ALLOWED_ORIGINS") or "").strip()
+if _cors_env and _cors_env != "*":
+    app.add_middleware(
+        CORSMiddleware,
+        allow_credentials=True,
+        allow_origins=[o.strip() for o in _cors_env.split(",") if o.strip()],
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 else:
-    origins = [o.strip() for o in _cors_env.split(",") if o.strip()]
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_credentials=True,
-    allow_origins=origins,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+    app.add_middleware(
+        CORSMiddleware,
+        allow_credentials=True,
+        allow_origin_regex=r"https?://(localhost(:\d+)?|127\.0\.0\.1(:\d+)?|.*\.preview\.emergentagent\.com|.*\.emergent\.host|.*\.emergentagent\.com)",
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
 
 
 @app.on_event("startup")
