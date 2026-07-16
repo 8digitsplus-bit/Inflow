@@ -11,6 +11,7 @@ document changes (e.g. the operator republishes in Termly), its version is
 bumped. Logged-in users who haven't acknowledged the latest version are shown an
 in-app notification banner (see GET /legal/updates + POST /legal/ack).
 """
+import os
 import re
 import time
 import logging
@@ -65,6 +66,14 @@ STALE_SECONDS = 12 * 3600
 _CONTENT_CACHE: dict = {}
 _CONTENT_TTL = 6 * 3600  # serve cached HTML for up to 6h before refetching
 
+# Committed last-known-good copies bundled with the backend (see /backend/legal_content).
+# These guarantee the legal pages render even when Termly is unreachable from the
+# deploy's egress — the production symptom was: preview works, live shows
+# "couldn't load / try again" because the live backend couldn't reach Termly.
+LEGAL_CONTENT_DIR = os.path.join(os.path.dirname(__file__), "..", "legal_content")
+_STATIC_CACHE: dict = {}
+_FALLBACK_RETRY = 600  # when serving a fallback copy, re-try Termly after ~10 min
+
 _UUID_RE = re.compile(r"^[0-9a-fA-F-]{36}$")
 # Termly hardcodes a black brand background + near-black text (meant for a white
 # page). Strip ALL colour/background declarations so the frontend can theme it.
@@ -104,7 +113,8 @@ async def _fetch_sanitised(policy_id: str) -> str:
 
 async def _apply_version(doc_type: str, html: str):
     """Update the stored version record for a doc given freshly-fetched html.
-    Bumps the version (and effective_date) only when the content hash changes."""
+    Bumps the version (and effective_date) only when the content hash changes.
+    Also persists the full sanitised HTML so it survives restarts/cold deploys."""
     now = datetime.now(timezone.utc).isoformat()
     new_hash = _text_hash(html)
     existing = await db.legal_documents.find_one({"doc_type": doc_type}, {"_id": 0})
@@ -113,6 +123,7 @@ async def _apply_version(doc_type: str, html: str):
             "doc_type": doc_type,
             "version": 1,
             "content_hash": new_hash,
+            "content_html": html,
             "effective_date": now,
             "last_checked_at": now,
         })
@@ -120,13 +131,13 @@ async def _apply_version(doc_type: str, html: str):
         await db.legal_documents.update_one(
             {"doc_type": doc_type},
             {
-                "$set": {"content_hash": new_hash, "effective_date": now, "last_checked_at": now},
+                "$set": {"content_hash": new_hash, "content_html": html, "effective_date": now, "last_checked_at": now},
                 "$inc": {"version": 1},
             },
         )
     else:
         await db.legal_documents.update_one(
-            {"doc_type": doc_type}, {"$set": {"last_checked_at": now}}
+            {"doc_type": doc_type}, {"$set": {"content_html": html, "last_checked_at": now}}
         )
 
 
@@ -159,33 +170,76 @@ def _is_stale(doc: dict) -> bool:
         return True
 
 
+def _static_fallback(policy_id: str):
+    """Last-resort committed copy of a policy, bundled with the backend so the
+    legal pages always render even when Termly is completely unreachable."""
+    doc_type = _POLICY_TO_TYPE.get(policy_id)
+    if not doc_type:
+        return None
+    if doc_type in _STATIC_CACHE:
+        return _STATIC_CACHE[doc_type]
+    try:
+        with open(os.path.join(LEGAL_CONTENT_DIR, f"{doc_type}.html"), "r", encoding="utf-8") as f:
+            html = f.read().strip() or None
+    except Exception:
+        html = None
+    _STATIC_CACHE[doc_type] = html
+    return html
+
+
 async def _get_policy_html(policy_id: str):
-    """Return sanitised policy HTML, served from an in-memory cache (6h TTL) with
-    stale-fallback so a Termly hiccup never breaks the page. Returns None only if
-    we have nothing at all to show."""
+    """Return sanitised policy HTML with a resilient fallback chain so the legal
+    pages ALWAYS render:
+      1. fresh in-memory cache (fast path)
+      2. live Termly fetch (refreshes cache + Mongo + version record)
+      3. stale in-memory cache
+      4. Mongo-persisted last-known-good copy (survives restarts/cold deploys)
+      5. bundled static copy committed with the backend
+    Returns None only if we truly have nothing anywhere."""
     now = time.time()
     cached = _CONTENT_CACHE.get(policy_id)
     if cached and (now - cached["ts"] < _CONTENT_TTL):
         return cached["html"]
 
+    html = None
     try:
         html = await _fetch_sanitised(policy_id)
     except Exception as e:
         logger.error("Failed to fetch Termly policy %s: %s", policy_id, e)
-        return cached["html"] if cached else None
 
-    if not html:
-        return cached["html"] if cached else None
+    if html:
+        _CONTENT_CACHE[policy_id] = {"html": html, "ts": now}
+        try:
+            await _apply_version(_POLICY_TO_TYPE[policy_id], html)
+        except Exception as e:
+            logger.warning("Version tracking failed for %s: %s", policy_id, e)
+        return html
 
-    _CONTENT_CACHE[policy_id] = {"html": html, "ts": now}
+    # Termly unreachable/empty — fall back through progressively older sources.
+    # Cache fallbacks briefly (re-try Termly after ~10 min rather than 6h).
+    fallback_ts = now - _CONTENT_TTL + _FALLBACK_RETRY
 
-    # Viewing a document keeps its version record current.
-    try:
-        await _apply_version(_POLICY_TO_TYPE[policy_id], html)
-    except Exception as e:
-        logger.warning("Version tracking failed for %s: %s", policy_id, e)
+    if cached:
+        return cached["html"]
 
-    return html
+    doc_type = _POLICY_TO_TYPE.get(policy_id)
+    if doc_type:
+        try:
+            doc = await db.legal_documents.find_one(
+                {"doc_type": doc_type}, {"_id": 0, "content_html": 1}
+            )
+            if doc and doc.get("content_html"):
+                _CONTENT_CACHE[policy_id] = {"html": doc["content_html"], "ts": fallback_ts}
+                return doc["content_html"]
+        except Exception as e:
+            logger.warning("Mongo legal fallback failed for %s: %s", policy_id, e)
+
+    static = _static_fallback(policy_id)
+    if static:
+        _CONTENT_CACHE[policy_id] = {"html": static, "ts": fallback_ts}
+        return static
+
+    return None
 
 
 @router.get("/legal/content/{doc_type}")
