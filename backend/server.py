@@ -117,7 +117,7 @@ else:
     app.add_middleware(
         CORSMiddleware,
         allow_credentials=True,
-        allow_origin_regex=r"https?://(localhost(:\d+)?|127\.0\.0\.1(:\d+)?|.*\.preview\.emergentagent\.com|.*\.emergent\.host|.*\.emergentagent\.com)",
+        allow_origin_regex=r"https?://(localhost(:\d+)?|127\.0\.0\.1(:\d+)?|.*\.preview\.emergentagent\.com|.*\.emergent\.host|.*\.emergentagent\.com|(.*\.)?inflowft\.com)",
         allow_methods=["*"],
         allow_headers=["*"],
     )
