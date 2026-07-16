@@ -9,7 +9,7 @@ const API = process.env.REACT_APP_BACKEND_URL;
 //  - StrictMode double-invoke dropping the resolved response (page stuck loading)
 //  - a stalled/never-resolving request (hard client-side timeout → error state)
 //  - transient backend/Termly hiccups (explicit "Try again" retry)
-export const LegalDocument = ({ policyId, title, docLabel, contactEmail, testId }) => {
+export const LegalDocument = ({ slug, title, docLabel, contactEmail, testId }) => {
   const navigate = useNavigate();
   const [html, setHtml] = useState('');
   const [status, setStatus] = useState('loading'); // loading | ready | error
@@ -28,7 +28,7 @@ export const LegalDocument = ({ policyId, title, docLabel, contactEmail, testId 
 
     (async () => {
       try {
-        const res = await fetch(`${API}/api/legal/policy/${policyId}`, { signal: ctrl.signal });
+        const res = await fetch(`${API}/api/legal/content/${slug}`, { signal: ctrl.signal });
         if (!res.ok) throw new Error('failed');
         const data = await res.json();
         if (!settled) {
@@ -51,7 +51,7 @@ export const LegalDocument = ({ policyId, title, docLabel, contactEmail, testId 
       clearTimeout(timer);
       ctrl.abort();
     };
-  }, [policyId, reloadKey]);
+  }, [slug, reloadKey]);
 
   const retry = () => {
     setStatus('loading');

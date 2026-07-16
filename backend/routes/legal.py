@@ -159,42 +159,64 @@ def _is_stale(doc: dict) -> bool:
         return True
 
 
-@router.get("/legal/policy/{policy_id}")
-async def get_policy(policy_id: str):
-    """Return the rendered HTML of a Termly policy for in-page display.
-
-    Served from an in-memory cache when fresh; on a Termly failure we fall back
-    to the last-known-good cached copy so the page never breaks for the user.
-    """
-    if not _UUID_RE.match(policy_id) or policy_id not in ALLOWED_POLICY_IDS:
-        raise HTTPException(status_code=404, detail="Policy not found")
-
+async def _get_policy_html(policy_id: str):
+    """Return sanitised policy HTML, served from an in-memory cache (6h TTL) with
+    stale-fallback so a Termly hiccup never breaks the page. Returns None only if
+    we have nothing at all to show."""
     now = time.time()
     cached = _CONTENT_CACHE.get(policy_id)
     if cached and (now - cached["ts"] < _CONTENT_TTL):
-        return {"html": cached["html"]}
+        return cached["html"]
 
     try:
         html = await _fetch_sanitised(policy_id)
     except Exception as e:
         logger.error("Failed to fetch Termly policy %s: %s", policy_id, e)
-        if cached:
-            return {"html": cached["html"]}
-        raise HTTPException(status_code=502, detail="Could not load policy content")
+        return cached["html"] if cached else None
 
     if not html:
-        if cached:
-            return {"html": cached["html"]}
-        raise HTTPException(status_code=502, detail="Policy content was empty")
+        return cached["html"] if cached else None
 
     _CONTENT_CACHE[policy_id] = {"html": html, "ts": now}
 
-    # Viewing a policy page keeps its version record current.
+    # Viewing a document keeps its version record current.
     try:
         await _apply_version(_POLICY_TO_TYPE[policy_id], html)
     except Exception as e:
         logger.warning("Version tracking failed for %s: %s", policy_id, e)
 
+    return html
+
+
+@router.get("/legal/content/{doc_type}")
+async def get_legal_content(doc_type: str):
+    """Ad-blocker-friendly legal content endpoint.
+
+    Some browser tracker-blockers (e.g. Opera's built-in blocker, uBlock lists)
+    match on URLs containing 'policy' and/or a bare tracking-style UUID and
+    silently block them — which broke our legal pages in those browsers. This
+    endpoint is keyed by a plain slug (privacy/terms/cookies) with no UUID and no
+    'policy' keyword, so blockers leave it alone.
+    """
+    info = LEGAL_DOCS.get(doc_type)
+    if not info:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    html = await _get_policy_html(info["policy_id"])
+    if not html:
+        raise HTTPException(status_code=502, detail="Could not load document content")
+    return {"html": html}
+
+
+@router.get("/legal/policy/{policy_id}")
+async def get_policy(policy_id: str):
+    """Legacy endpoint (kept for compatibility). Prefer /legal/content/{doc_type}."""
+    if not _UUID_RE.match(policy_id) or policy_id not in ALLOWED_POLICY_IDS:
+        raise HTTPException(status_code=404, detail="Policy not found")
+
+    html = await _get_policy_html(policy_id)
+    if not html:
+        raise HTTPException(status_code=502, detail="Could not load policy content")
     return {"html": html}
 
 
