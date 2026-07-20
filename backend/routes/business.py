@@ -1536,6 +1536,23 @@ async def set_connection_role(platform: str, request: Request, current_user: Use
     return {"status": "updated", "platform": platform, "revenue_role": role}
 
 
+@router.get("/business/deal-usage")
+async def get_deal_usage(current_user: User = Depends(get_current_user)):
+    """Deals tracked vs the org's volume limit (soft cap for usage-based pricing)."""
+    org = await db.organizations.find_one(
+        {"org_id": current_user.org_id}, {"_id": 0, "deal_limit": 1, "volume_units": 1}
+    ) if current_user.org_id else None
+    deal_limit = (org or {}).get("deal_limit")
+    volume_units = (org or {}).get("volume_units")
+    used = await db.deals.count_documents(org_filter(current_user))
+    return {
+        "used": used,
+        "limit": deal_limit,
+        "volume_units": volume_units,
+        "at_limit": (deal_limit is not None and used >= deal_limit),
+    }
+
+
 @router.get("/business/integration-usage")
 async def get_integration_usage(current_user: User = Depends(get_current_user)):
     """Returns integration quota + usage for the user's org tier."""
@@ -1587,9 +1604,15 @@ async def connect_platform(platform: str, body: ConnectRequest = ConnectRequest(
     connection["revenue_role"] = PLATFORMS[platform].get("default_revenue_role", "revenue")
 
     if data["deals"]:
-        for d in data["deals"]:
+        deals_to_add = data["deals"]
+        deal_limit = (org or {}).get("deal_limit")
+        if deal_limit:
+            used_deals = await db.deals.count_documents(org_filter(current_user))
+            deals_to_add = deals_to_add[:max(0, deal_limit - used_deals)]
+        for d in deals_to_add:
             d["org_id"] = current_user.org_id
-        await db.deals.insert_many(data["deals"])
+        if deals_to_add:
+            await db.deals.insert_many(deals_to_add)
 
     await db.business_connections.insert_one(connection)
     await db.users.update_one(
@@ -1805,9 +1828,16 @@ async def sync_platform(platform: str, current_user: User = Depends(require_owne
         raise HTTPException(status_code=400, detail=f"Sync failed: {str(e)}")
 
     if data["deals"]:
-        for d in data["deals"]:
+        deals_to_add = data["deals"]
+        _org = await db.organizations.find_one({"org_id": current_user.org_id}, {"_id": 0, "deal_limit": 1}) if current_user.org_id else None
+        deal_limit = (_org or {}).get("deal_limit")
+        if deal_limit:
+            used_deals = await db.deals.count_documents(org_filter(current_user))
+            deals_to_add = deals_to_add[:max(0, deal_limit - used_deals)]
+        for d in deals_to_add:
             d["org_id"] = current_user.org_id
-        await db.deals.insert_many(data["deals"])
+        if deals_to_add:
+            await db.deals.insert_many(deals_to_add)
 
     await db.business_connections.update_one(
         {**org_filter(current_user), "platform": platform},

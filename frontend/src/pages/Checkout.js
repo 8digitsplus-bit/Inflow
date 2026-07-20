@@ -12,6 +12,7 @@ import {
   EmbeddedCheckout,
 } from '@stripe/react-stripe-js';
 import { useAuth } from '../contexts/AuthContext';
+import { USAGE_PRICING, ALL_FEATURES, computePrice } from '../lib/pricing';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -45,8 +46,22 @@ const Checkout = () => {
   const [searchParams] = useSearchParams();
   const { user, registerWithEmail } = useAuth();
 
-  const planKey = searchParams.get('plan') || 'pro_monthly';
-  const plan = PLANS[planKey];
+  const planKey = searchParams.get('plan') || 'enterprise_monthly';
+  const isUsage = planKey === 'enterprise_monthly' || planKey === 'enterprise_yearly';
+  const billing = planKey.endsWith('yearly') ? 'yearly' : 'monthly';
+  const units = Math.max(
+    USAGE_PRICING.minUnits,
+    Math.min(USAGE_PRICING.maxUnits, parseInt(searchParams.get('units') || '3', 10) || 3),
+  );
+  const usagePlan = {
+    name: 'InFlow',
+    period: billing === 'yearly' ? 'year' : 'month',
+    price: computePrice(units, billing),
+    originalPrice: billing === 'yearly' ? computePrice(units, 'monthly') * 12 : null,
+    features: ALL_FEATURES,
+    dealsTracked: units * USAGE_PRICING.unitSize,
+  };
+  const plan = isUsage ? usagePlan : PLANS[planKey];
   const totalPrice = plan ? plan.price : 0;
   const totalOriginal = plan?.originalPrice ? plan.originalPrice : null;
 
@@ -110,6 +125,7 @@ const Checkout = () => {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         plan: planKey,
+        quantity: units,
         origin_url: window.location.origin,
         trial: useTrial,
       }),
@@ -121,7 +137,7 @@ const Checkout = () => {
     const data = await response.json();
     if (!data.client_secret) throw new Error('No client_secret returned');
     return data.client_secret;
-  }, [planKey, useTrial]);
+  }, [planKey, useTrial, units]);
 
   if (!plan) {
     return (
@@ -222,8 +238,8 @@ const Checkout = () => {
                     <p className="text-white font-semibold text-sm" style={{ fontFamily: 'Outfit' }}>
                       InFlow {plan.name}
                     </p>
-                    <p className="text-zinc-400 text-[11px] capitalize">
-                      {plan.period}ly subscription
+                    <p className="text-zinc-400 text-[11px]">
+                      {isUsage ? `${plan.dealsTracked / 1000}k deals tracked · ${plan.period}ly` : `${plan.period}ly subscription`}
                     </p>
                   </div>
                   <div className="text-right shrink-0">
@@ -256,7 +272,7 @@ const Checkout = () => {
                   </div>
                   {totalOriginal && (
                     <div className="flex justify-between text-[11px]">
-                      <span className="text-emerald-300">Annual discount (30%)</span>
+                      <span className="text-emerald-300">2 months free (yearly)</span>
                       <span className="text-emerald-300">-${(totalOriginal - totalPrice).toLocaleString()}</span>
                     </div>
                   )}

@@ -22,6 +22,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../components/ui/alert-dialog';
 import Enable2FADialog from '../components/Enable2FADialog';
 import { toast } from 'sonner';
+import { USAGE_PRICING, ALL_FEATURES, computePrice, dealsForUnits, formatDeals, planKeyFor } from '../lib/pricing';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -38,6 +39,55 @@ const Settings = () => {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [twoFAEnabled, setTwoFAEnabled] = useState(false);
   const [toggling2FA, setToggling2FA] = useState(false);
+  const [dealUsage, setDealUsage] = useState(null);
+  const [settingsUnits, setSettingsUnits] = useState(3);
+  const [updatingVolume, setUpdatingVolume] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch(`${API_URL}/api/business/deal-usage`, { credentials: 'include' });
+        if (res.ok) {
+          const d = await res.json();
+          setDealUsage(d);
+          if (d.volume_units) {
+            setSettingsUnits(Math.max(USAGE_PRICING.minUnits, Math.min(USAGE_PRICING.maxUnits, d.volume_units)));
+          }
+        }
+      } catch (e) { /* non-blocking */ }
+    })();
+  }, []);
+
+  const handleUpdateVolume = async () => {
+    const tier = user?.subscription_tier;
+    const isPaidUsage = tier === 'enterprise_monthly' || tier === 'enterprise_yearly';
+    if (!isPaidUsage) {
+      navigate(`/checkout?plan=${planKeyFor(billingPeriod)}&units=${settingsUnits}`);
+      return;
+    }
+    setUpdatingVolume(true);
+    try {
+      const res = await fetch(`${API_URL}/api/subscription/update-volume`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ quantity: settingsUnits }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success(`Volume updated to ${formatDeals(settingsUnits * USAGE_PRICING.unitSize)} deals tracked`);
+        if (refreshUser) await refreshUser();
+        const u = await fetch(`${API_URL}/api/business/deal-usage`, { credentials: 'include' });
+        if (u.ok) setDealUsage(await u.json());
+      } else {
+        toast.error(data.detail || 'Could not update your volume');
+      }
+    } catch (e) {
+      toast.error('Could not update your volume');
+    } finally {
+      setUpdatingVolume(false);
+    }
+  };
   const [show2FADialog, setShow2FADialog] = useState(false);
   const [org, setOrg] = useState(null);
   const [subDetails, setSubDetails] = useState(null);
@@ -184,12 +234,6 @@ const Settings = () => {
     }
   };
 
-  const handleUpgrade = async (planId) => {
-    if (planId === user?.subscription_tier) return;
-    // Flat per-workspace pricing — all plans go straight to embedded checkout.
-    navigate(`/checkout?plan=${planId}`);
-  };
-
   const handleCancelSubscription = async () => {
     setCancellingSubscription(true);
     try {
@@ -249,6 +293,7 @@ const Settings = () => {
     if (!tier || tier === 'cancelled') return 'Cancelled';
     if (tier === 'trial') return 'Trial';
     if (tier === 'expired') return 'Expired';
+    if (tier.startsWith('enterprise')) return 'InFlow';
     const parts = tier.split('_');
     return parts[0].charAt(0).toUpperCase() + parts[0].slice(1) + (parts[1] ? ` (${parts[1]})` : '');
   };
@@ -261,19 +306,6 @@ const Settings = () => {
     if (tier === 'trial') return 'bg-amber-500/20 text-amber-400';
     if (tier === 'expired' || tier === 'cancelled') return 'bg-red-500/20 text-red-400';
     return 'bg-zinc-700 text-zinc-300';
-  };
-
-  const planConfig = {
-    monthly: [
-      { key: 'essential_monthly', name: 'Essential', price: 99 },
-      { key: 'pro_monthly', name: 'Pro', price: 149, featured: true },
-      { key: 'enterprise_monthly', name: 'Enterprise', price: 400 }
-    ],
-    yearly: [
-      { key: 'essential_yearly', name: 'Essential', price: 830, originalPrice: 1188, savings: 358 },
-      { key: 'pro_yearly', name: 'Pro', price: 1250, originalPrice: 1788, featured: true, savings: 538 },
-      { key: 'enterprise_yearly', name: 'Enterprise', price: 3360, originalPrice: 4800, savings: 1440 }
-    ]
   };
 
   return (
@@ -522,90 +554,76 @@ const Settings = () => {
                   Yearly <span className={`ml-1 transition-colors duration-300 ${billingPeriod === 'yearly' ? 'text-emerald-300' : 'text-emerald-400'}`}>Save more</span>
                 </button>
               </div>
-              <p className="text-xs text-zinc-500 mt-2">*Save 30% vs. paying monthly</p>
+              <p className="text-xs text-zinc-500 mt-2">*Get 2 months free when you pay yearly</p>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-4">
-              {planConfig[billingPeriod].map((plan) => {
-                const planData = plans[plan.key];
-                const isCurrentPlan = user?.subscription_tier === plan.key;
-                
-                return (
-                  <div 
-                    key={plan.key}
-                    className={`relative p-5 rounded-xl border transition-all ${
-                      isCurrentPlan 
-                        ? 'bg-slate-500/10 border-slate-500/30' 
-                        : plan.featured
-                          ? 'bg-zinc-900/50 border-slate-500/20 hover:border-slate-500/40'
-                          : 'bg-zinc-900/50 border-zinc-800 hover:border-zinc-700'
-                    }`}
-                    data-testid={`plan-${plan.key}`}
-                  >
-                    {isCurrentPlan && (
-                      <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-600 text-white text-xs rounded-full">
-                          <Check className="w-3 h-3" /> Current
-                        </span>
-                      </div>
-                    )}
-                    
-                    <h3 className="text-lg font-semibold text-white" style={{ fontFamily: 'Outfit' }}>
-                      {plan.name}
-                    </h3>
-                    
-                    <div className="mt-2 flex items-baseline gap-2">
-                      <span className="text-2xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>
-                        ${plan.price.toLocaleString()}
-                      </span>
-                      {plan.originalPrice && (
-                        <span className="text-sm text-zinc-500 line-through">
-                          ${plan.originalPrice.toLocaleString()}
-                        </span>
-                      )}
-                      <span className="text-zinc-400 text-sm">
-                        {`/${billingPeriod === 'monthly' ? 'mo' : 'yr'}`}
-                      </span>
-                    </div>
+            <div className="p-6 rounded-xl border border-slate-500/20 bg-zinc-900/50" data-testid="volume-manager">
+              <div className="flex items-end justify-between mb-3">
+                <div>
+                  <h3 className="text-base font-semibold text-white" style={{ fontFamily: 'Outfit' }}>Deals &amp; revenue tracked</h3>
+                  <p className="text-zinc-400 text-xs">
+                    {dealUsage?.limit
+                      ? `Tracking ${(dealUsage.used ?? 0).toLocaleString()} of ${dealUsage.limit.toLocaleString()} deals`
+                      : 'Choose how much volume you want to track'}
+                  </p>
+                </div>
+                <span className="text-2xl font-bold text-white" style={{ fontFamily: 'Outfit' }} data-testid="settings-volume-value">
+                  {formatDeals(dealsForUnits(settingsUnits))}
+                </span>
+              </div>
+              <input
+                type="range"
+                min={USAGE_PRICING.minUnits}
+                max={USAGE_PRICING.maxUnits}
+                step={1}
+                value={settingsUnits}
+                onChange={(e) => setSettingsUnits(parseInt(e.target.value, 10))}
+                disabled={!canChangePlan}
+                className="w-full h-2 rounded-full appearance-none cursor-pointer bg-white/10 accent-[#0052ff] disabled:opacity-50"
+                data-testid="settings-volume-slider"
+              />
+              <div className="flex justify-between text-[11px] text-zinc-500 mt-2">
+                <span>1k</span>
+                <span>20k+</span>
+              </div>
 
-                    {plan.savings && (
-                      <p className="text-emerald-400 text-xs mt-1">{`Save 30% — save $${plan.savings.toLocaleString()}/yr`}</p>
-                    )}
-                    
-                    <ul className="mt-4 space-y-2">
-                      {planData?.features?.slice(0, 4).map((feature, i) => (
-                        <li key={i} className="flex items-center gap-2 text-sm text-zinc-300">
-                          <Check className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                          {feature}
-                        </li>
-                      ))}
-                    </ul>
-                    
-                    <Button
-                      className={`w-full mt-4 ${
-                        isCurrentPlan
-                          ? 'bg-zinc-800 text-zinc-400 cursor-not-allowed'
-                          : 'bg-white/10 hover:bg-white/20 btn-glow disabled:opacity-40'
-                      }`}
-                      disabled={isCurrentPlan || processingPayment || !canChangePlan}
-                      onClick={() => handleUpgrade(plan.key)}
-                      data-testid={`upgrade-${plan.key}-btn`}
-                    >
-                      {processingPayment ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : isCurrentPlan ? (
-                        'Current Plan'
-                      ) : !canChangePlan ? (
-                        'Owner only'
-                      ) : (
-                        <>
-                          Upgrade <ChevronRight className="w-4 h-4 ml-1" />
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                );
-              })}
+              {dealUsage?.at_limit && (
+                <p className="mt-3 text-amber-400 text-xs" data-testid="volume-at-limit">
+                  You've hit your volume — slide up to keep tracking new deals.
+                </p>
+              )}
+
+              <div className="mt-5 flex items-center justify-between gap-4">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-3xl font-bold text-white" style={{ fontFamily: 'Outfit' }} data-testid="settings-volume-price">
+                    ${computePrice(settingsUnits, billingPeriod).toLocaleString()}
+                  </span>
+                  <span className="text-zinc-400 text-sm">/{billingPeriod === 'monthly' ? 'mo' : 'yr'}</span>
+                </div>
+                <Button
+                  className="bg-gradient-to-t from-[#0038b3] via-[#0052ff] to-[#0038b3] text-white border border-[#0052ff] hover:brightness-110 disabled:opacity-40"
+                  disabled={updatingVolume || !canChangePlan}
+                  onClick={handleUpdateVolume}
+                  data-testid="update-volume-btn"
+                >
+                  {updatingVolume ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : hasActivePaidSub ? (
+                    <>Update volume <ChevronRight className="w-4 h-4 ml-1" /></>
+                  ) : (
+                    <>Get started <ChevronRight className="w-4 h-4 ml-1" /></>
+                  )}
+                </Button>
+              </div>
+
+              <ul className="mt-5 grid sm:grid-cols-2 gap-x-4 gap-y-2 pt-4 border-t border-zinc-800">
+                {ALL_FEATURES.map((f, i) => (
+                  <li key={i} className="flex items-center gap-2 text-sm text-zinc-300">
+                    <Check className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+                    {f}
+                  </li>
+                ))}
+              </ul>
             </div>
             
             <div className="mt-6 p-4 bg-zinc-900/50 border border-zinc-800 rounded-lg">
