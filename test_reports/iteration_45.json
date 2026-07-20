@@ -1,0 +1,49 @@
+{
+  "summary": "Full backend + frontend test of the discrete-tier USAGE_TIERS pricing migration. All 10 backend tests pass; all frontend flows (choose-plan, landing pricing section, checkout logged-out, checkout logged-in with real Stripe embedded iframe, settings volume-manager) work correctly. Prices match the 10-tier table exactly. Clamping works. One minor issue (duplicate data-testid) and one spec vs code discrepancy documented.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {
+        "component": "Settings billing tab",
+        "issue": "Duplicate data-testid=\"settings-volume-value\" — one on Settings.js:571 (outer summary span) and one inside <VolumeSlider testidPrefix=\"settings-volume\"> (VolumeSlider.jsx:24). Playwright strict-mode locator resolves to 2 elements. Cosmetic but breaks testability by test-id.",
+        "selector": "[data-testid='settings-volume-value']",
+        "priority": "LOW"
+      }
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_usage_tier_pricing.py",
+    "/app/test_reports/pytest/pytest_usage_tier_pricing.xml"
+  ],
+  "action_items": [
+    "OPTIONAL: Remove the redundant <span data-testid=\"settings-volume-value\"> in Settings.js:571 since VolumeSlider already exposes the same test-id via testidPrefix. Or rename one of them (e.g. testid=\"settings-volume-summary\") to keep both.",
+    "SPEC CLARIFICATION (no code change needed): The review request states checkout for enterprise_yearly units=9 should show '$468,000 with a strikethrough original of $354,000'. The actual UI shows strikethrough $561,600. This is intentional: Checkout.js computes originalPrice = monthly * 12 = 46,800 * 12 = 561,600, which correctly reflects '2 months free' vs paying monthly. The spec's $354,000 figure is tier-8 yearly, likely a copy/paste error in the spec — code is CORRECT."
+  ],
+  "critical_code_review_comments": [
+    "pricing.js (frontend) and USAGE_TIERS in payments.py (backend) are duplicated tables. Consider exposing /api/subscription/usage-pricing as the single source of truth and fetching it on the frontend (or generating pricing.js from the backend at build time) to eliminate the drift risk.",
+    "Duplicate data-testid=\"settings-volume-value\" (Settings.js:571 + VolumeSlider.jsx via testidPrefix=\"settings-volume\") — see UI bug above.",
+    "Checkout.js retains a stale legacy PLANS.enterprise_monthly/yearly block at lines 29-30 with prices $400/$3360 that is never used because isUsage branches around it. Should be removed to avoid confusion."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_usage_tier_pricing.py (new)"
+  ],
+  "success_rate": {
+    "backend": "100% (10/10)",
+    "frontend": "100% (7/7 flows)"
+  },
+  "test_credentials": "testpro@test.com / password (owner, enterprise_monthly)",
+  "seed_data_creation": "The backend tests created 8 pending payment_transactions rows for testpro (enterprise_monthly/yearly at various tiers). All are 'pending' status and harmless. Amounts verified directly against MongoDB.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Discrete-tier pricing migration is fully working. Backend: /api/subscription/usage-pricing returns the exact 10-tier table (min_tier=0, max_tier=9, yearly = 10x monthly for every tier). /api/payments/create-checkout persists the correct amount for each tier index and clamps out-of-range values. /api/subscription/update-volume returns 400 'No active subscription found.' for testpro (expected — no live Stripe sub) and never 500. Frontend: ChoosePlan, landing PricingSection, Checkout (both logged-out account-creation form and logged-in Stripe embedded iframe), and Settings volume-manager all render and interact correctly. Real Stripe test key is active so create-checkout returns client_secret and js.stripe.com embedded iframe mounts. NumberFlow (used on /choose-plan plan-price) renders animated digits in shadow DOM — DOM-text reads return only the '$' prefix; use screenshots to verify or read via .value attr / rely on backend tier math since same pricing.js drives both.",
+  "verified_amount_matrix": {
+    "enterprise_monthly": {"0": 50.0, "1": 259.0, "2": 500.0, "3": 1345.0, "9": 46800.0, "clamp_99": 46800.0, "clamp_-5": 50.0},
+    "enterprise_yearly": {"1": 2590.0}
+  },
+  "rca of the issue": "No bugs to root-cause. Migration was clean. Minor duplicate test-id and a spec typo in the review request (strikethrough amount was tier-8 yearly, not tier-9's monthly*12) — code is correct on both fronts."
+}

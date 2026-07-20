@@ -22,7 +22,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../components/ui/alert-dialog';
 import Enable2FADialog from '../components/Enable2FADialog';
 import { toast } from 'sonner';
-import { USAGE_PRICING, ALL_FEATURES, computePrice, dealsForUnits, formatDeals, planKeyFor } from '../lib/pricing';
+import { VolumeSlider } from '../components/VolumeSlider';
+import { ALL_FEATURES, computePrice, contractsForTier, formatDeals, planKeyFor, clampTier } from '../lib/pricing';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -40,7 +41,7 @@ const Settings = () => {
   const [twoFAEnabled, setTwoFAEnabled] = useState(false);
   const [toggling2FA, setToggling2FA] = useState(false);
   const [dealUsage, setDealUsage] = useState(null);
-  const [settingsUnits, setSettingsUnits] = useState(3);
+  const [settingsUnits, setSettingsUnits] = useState(2);
   const [updatingVolume, setUpdatingVolume] = useState(false);
 
   useEffect(() => {
@@ -50,8 +51,8 @@ const Settings = () => {
         if (res.ok) {
           const d = await res.json();
           setDealUsage(d);
-          if (d.volume_units) {
-            setSettingsUnits(Math.max(USAGE_PRICING.minUnits, Math.min(USAGE_PRICING.maxUnits, d.volume_units)));
+          if (d.volume_units !== undefined && d.volume_units !== null) {
+            setSettingsUnits(clampTier(d.volume_units));
           }
         }
       } catch (e) { /* non-blocking */ }
@@ -75,7 +76,7 @@ const Settings = () => {
       });
       const data = await res.json();
       if (res.ok) {
-        toast.success(`Volume updated to ${formatDeals(settingsUnits * USAGE_PRICING.unitSize)} deals tracked`);
+        toast.success(`Volume updated to ${formatDeals(contractsForTier(settingsUnits))} deals tracked`);
         if (refreshUser) await refreshUser();
         const u = await fetch(`${API_URL}/api/business/deal-usage`, { credentials: 'include' });
         if (u.ok) setDealUsage(await u.json());
@@ -568,24 +569,15 @@ const Settings = () => {
                   </p>
                 </div>
                 <span className="text-2xl font-bold text-white" style={{ fontFamily: 'Outfit' }} data-testid="settings-volume-value">
-                  {formatDeals(dealsForUnits(settingsUnits))}
+                  {formatDeals(contractsForTier(settingsUnits))}
                 </span>
               </div>
-              <input
-                type="range"
-                min={USAGE_PRICING.minUnits}
-                max={USAGE_PRICING.maxUnits}
-                step={1}
-                value={settingsUnits}
-                onChange={(e) => setSettingsUnits(parseInt(e.target.value, 10))}
+              <VolumeSlider
+                tier={settingsUnits}
+                onChange={setSettingsUnits}
+                testidPrefix="settings-volume"
                 disabled={!canChangePlan}
-                className="w-full h-2 rounded-full appearance-none cursor-pointer bg-white/10 accent-[#0052ff] disabled:opacity-50"
-                data-testid="settings-volume-slider"
               />
-              <div className="flex justify-between text-[11px] text-zinc-500 mt-2">
-                <span>1k</span>
-                <span>20k+</span>
-              </div>
 
               {dealUsage?.at_limit && (
                 <p className="mt-3 text-amber-400 text-xs" data-testid="volume-at-limit">
