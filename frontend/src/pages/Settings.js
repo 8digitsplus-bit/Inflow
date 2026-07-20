@@ -559,18 +559,13 @@ const Settings = () => {
             </div>
 
             <div className="p-6 rounded-xl border border-slate-500/20 bg-zinc-900/50" data-testid="volume-manager">
-              <div className="flex items-end justify-between mb-3">
-                <div>
-                  <h3 className="text-base font-semibold text-white" style={{ fontFamily: 'Outfit' }}>Deals &amp; revenue tracked</h3>
-                  <p className="text-zinc-400 text-xs">
-                    {dealUsage?.limit
-                      ? `Tracking ${(dealUsage.used ?? 0).toLocaleString()} of ${dealUsage.limit.toLocaleString()} deals`
-                      : 'Choose how much volume you want to track'}
-                  </p>
-                </div>
-                <span className="text-2xl font-bold text-white" style={{ fontFamily: 'Outfit' }} data-testid="settings-volume-value">
-                  {formatDeals(contractsForTier(settingsUnits))}
-                </span>
+              <div className="mb-4">
+                <h3 className="text-base font-semibold text-white" style={{ fontFamily: 'Outfit' }}>Deals &amp; revenue tracked</h3>
+                <p className="text-zinc-400 text-xs">
+                  {dealUsage?.limit
+                    ? `Tracking ${(dealUsage.used ?? 0).toLocaleString()} of ${dealUsage.limit.toLocaleString()} deals`
+                    : 'Choose how much volume you want to track'}
+                </p>
               </div>
               <VolumeSlider
                 tier={settingsUnits}

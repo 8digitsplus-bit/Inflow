@@ -13,6 +13,15 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
+### Discrete-Tier Volume Pricing + Ruler Slider (Jun 2026) — P0 billing overhaul
+- Migrated the self-serve plan from a linear "$50 base + $21 / additional 1k, 1k-20k" model to a **discrete 10-tier** value-metric model (deals & revenue tracked / month). Tiers (index → volume → monthly → yearly): 0=1K/$50/$500, 1=10K/$259/$2,590, 2=25K/$500/$5,000, 3=100K/$1,345/$13,450, 4=250K/$2,590/$25,900, 5=500K/$4,250/$42,500, 6=1M/$7,000/$70,000, 7=5M/$22,100/$221,000, 8=10M/$35,400/$354,000, 9=15M/$46,800/$468,000. Yearly = exactly 10x monthly (2 months free). Above tier 9 → Contact sales.
+- The slider position is a **TIER INDEX (0-9)** passed via URL param `units` and checkout body `quantity` (previously a count of 1k blocks). Each tier is billed in Stripe as its own FLAT recurring price (line-item quantity=1). update-volume swaps the subscription item's price to the new tier (prorated). The subscription.updated webhook reads the tier index from subscription metadata `quantity`.
+- New ruler-style slider component `/app/frontend/src/components/VolumeSlider.jsx` (dense tick marks fill up to the handle, floating value pill "25K per month", `<>` drag handle, tier labels below) — backed by a hidden native range input for drag + keyboard + a11y. Used on ChoosePlan, landing PricingSection, and Settings.
+- ChoosePlan redesigned to a centered layout: "Scale with flexible pricing" hero → slider → billing pill → price + Get started → all-features grid below.
+- Backend `/app/backend/routes/payments.py`: `USAGE_TIERS`, `_clamp_tier`, `compute_usage_amount(tier_index, period)`, `_volume_fields(tier_index)→{volume_units, deal_limit}`, `get_or_create_stripe_price(plan_key, plan, tier_index)`, `/subscription/usage-pricing` returns the 10-tier table. Frontend mirror in `/app/frontend/src/lib/pricing.js`.
+- Tested: iteration_45 (backend 10/10 pytest `test_usage_tier_pricing.py`, frontend 7/7 flows). Amounts verified exactly against the tier table incl. out-of-range clamping; real Stripe test key returns client_secret + embedded iframe mounts.
+
+
 ### Choose Your Plan page redesign (Jul 2026)
 - Rebuilt `/app/frontend/src/pages/ChoosePlan.js` to the user-provided design's actual layout (PricingSection2): hero with `Zap` eyebrow + cut-reveal "Let's get started" heading + subtitle on a blue radial gradient, then a two-column "What's inside" section — LEFT = selected plan's feature list (glass ticks); RIGHT = sliding pill switches (`Choose your plan` Essential/Pro/Enterprise + `Billing period` Monthly/Yearly -30%), seat stepper + quick presets, big `NumberFlow` price with yearly strikethrough, and a single Purchase button.
 - Components: `components/ui/vertical-cut-reveal.jsx`, `components/ui/timeline-animation.jsx`, `@number-flow/react`, and an inline `PricingSwitch` (framer-motion `layoutId` electric-blue capsule, supports 2–3 options).

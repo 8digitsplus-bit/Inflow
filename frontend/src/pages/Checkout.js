@@ -26,8 +26,6 @@ const PLANS = {
   essential_yearly: { name: 'Essential', price: 830, period: 'year', originalPrice: 1188, features: ['Sales Pipeline', 'Core Analytics', '2 live integrations', 'Churn Monitoring'] },
   pro_monthly: { name: 'Pro', price: 149, period: 'month', features: ['4 live integrations', 'CSV import', 'AI Insights', 'CRO Analysis'] },
   pro_yearly: { name: 'Pro', price: 1250, period: 'year', originalPrice: 1788, features: ['4 live integrations', 'CSV import', 'AI Insights', 'CRO Analysis'] },
-  enterprise_monthly: { name: 'Enterprise', price: 400, period: 'month', features: ['Unlimited integrations', 'Custom API access', 'Smart Assist AI', 'Competitor Intelligence'] },
-  enterprise_yearly: { name: 'Enterprise', price: 3360, period: 'year', originalPrice: 4800, features: ['Unlimited integrations', 'Custom API access', 'Smart Assist AI', 'Competitor Intelligence'] },
 };
 
 // Framer Motion blur-in reveal — matches the sitewide glass aesthetic.
