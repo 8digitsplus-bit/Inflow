@@ -1,0 +1,39 @@
+{
+  "summary": "Comprehensive testing of Retention Plays (Churn -> System of Action). Created pytest suite covering all 4 endpoints + org scoping: 17/17 backend tests passed. Frontend loop verified end-to-end: Protect dialog -> action-support -> AI drafted content (2423 chars) -> Mark saved -> Revenue Protected metric updated ($15k -> $110k, +$95k Tyrell Corp).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/retention/plays (outreach/offer/workflow)", "issue": "AI generation via LlmChat occasionally exceeds a 60s client-side timeout on re-runs. The server itself uses asyncio.wait_for(..., timeout=40) and falls back to template on failure. When running the parametric create-all-4-actions test back-to-back sequentially, one occasional client timeout was observed on 'workflow'. Full first run (17/17) passed cleanly. Consider raising client-side timeouts in production usage or streaming responses."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "/churn (ChurnRetention.js)", "issues": ["React hydration/DOM nesting warnings (console): '<span> cannot be a child of <tr>/<td>/<tbody>' and '<th> span' in the Cohort Retention Analysis table (span badges nested improperly). Non-functional but pollutes the console. Likely stems from lines ~572-586 where Badge/span elements are rendered inside <tr>/<td>. Should wrap correctly."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_retention_plays.py",
+    "/app/test_reports/pytest/retention_plays.xml"
+  ],
+  "action_items": [
+    "(Optional) Fix DOM nesting hydration warnings in ChurnRetention.js cohort table (span not valid child of tr/td/tbody).",
+    "(Optional) Consider streaming or longer client timeouts for outreach/offer/workflow AI generation which can take 30-60s."
+  ],
+  "critical_code_review_comments": [
+    "retention.py is clean and focused (223 lines). Uses org_filter for scoping, excludes _id from Mongo reads, and has proper fallback path for non-paid tiers and LLM failures.",
+    "AI timeout is 40s server-side with a template fallback — good defensive design. However clients (including our test suite) must allow ~60-90s for slow 'workflow' generations.",
+    "Cohort table in ChurnRetention.js has invalid DOM nesting causing hydration warnings — cosmetic but should be fixed."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_retention_plays.py (created)"
+  ],
+  "success_rate": {"backend": "100% (17/17)", "frontend": "100% (all data-testids present, full loop verified)"},
+  "test_credentials": "testpro@test.com / password (Enterprise) — used for both backend + frontend.",
+  "seed_data_creation": "None. testpro org already had 8+ at-risk deals seeded. Test suite creates its own retention plays; some remain in DB (deal_test_*, SCOPING_TEST_DEAL, etc.). Cleanup not implemented but plays are org-scoped and testable in isolation.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend endpoints verified: POST/GET/PATCH/DELETE /api/retention/plays. Test file at /app/backend/tests/test_retention_plays.py. Frontend flow at /churn works fully. If re-running tests, expect 60-120s runtime due to real Claude AI calls. Testpro org has ~13-15 plays accumulated across iterations; feel free to DELETE cleanup if needed. Console shows harmless hydration warnings from cohort table.",
+  "rca of the issue": "N/A — no issues to RCA. Feature works as designed."
+}

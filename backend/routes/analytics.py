@@ -199,6 +199,8 @@ async def get_churn_analytics(user: User = Depends(get_current_user), sources: O
         days_inactive = max(1, 30 - int(prob * 0.3))
 
         at_risk_deals.append({
+            "id": d.get("deal_id"),
+            "deal_id": d.get("deal_id"),
             "name": d.get("name", "Unknown"),
             "company": d.get("company", "Unknown"),
             "value": val,
