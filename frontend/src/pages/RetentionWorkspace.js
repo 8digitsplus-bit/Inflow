@@ -98,6 +98,11 @@ const RetentionWorkspace = () => {
   const [emailSubject, setEmailSubject] = useState('');
   const [sending, setSending] = useState(false);
 
+  const [offer, setOffer] = useState({
+    type: 'percent_discount', percent: 15, amount: 0, months: 1,
+    term: 'next renewal', expiry: '14 days', perk: '', conditions: '',
+  });
+
   const load = useCallback(async () => {
     try {
       const r = await fetch(`${API_URL}/api/retention/deal/${dealId}`, { credentials: 'include' });
@@ -113,13 +118,15 @@ const RetentionWorkspace = () => {
 
   useEffect(() => { load(); }, [load]);
 
-  const generate = async (actionType) => {
+  const generate = async (actionType, offerPayload = null) => {
     if (!deal) return;
     setGenLoading(actionType);
     try {
+      const payload = { action_type: actionType, deal };
+      if (actionType === 'offer' && offerPayload) payload.offer = offerPayload;
       const r = await fetch(`${API_URL}/api/retention/plays`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        credentials: 'include', body: JSON.stringify({ action_type: actionType, deal }),
+        credentials: 'include', body: JSON.stringify(payload),
       });
       if (r.ok) {
         const p = await r.json();
@@ -218,6 +225,159 @@ const RetentionWorkspace = () => {
               )}
             </div>
           </>
+        )}
+      </div>
+    );
+  };
+
+  const buildOfferPayload = () => {
+    const cost = offerCost(offer, deal.value);
+    const net = Math.max(0, (deal.value || 0) - cost);
+    return { ...offer, label: offerLabel(offer), offer_cost: cost, net_retained: net };
+  };
+
+  const renderOffer = () => {
+    const content = drafts.offer;
+    const pid = playIds.offer;
+    const busy = genLoading === 'offer';
+    const cost = offerCost(offer, deal.value);
+    const net = Math.max(0, (deal.value || 0) - cost);
+    const setField = (k, v) => setOffer((o) => ({ ...o, [k]: v }));
+    const needsPercent = offer.type === 'percent_discount';
+    const needsAmount = offer.type === 'fixed_discount';
+    const needsMonths = offer.type === 'free_months' || offer.type === 'pause';
+    const needsPerk = offer.type === 'added_value';
+    const needsTerm = offer.type === 'percent_discount' || offer.type === 'price_freeze';
+    return (
+      <div className="space-y-5">
+        <div className="flex items-start gap-3">
+          <div className="p-2 rounded-lg bg-white/5"><Gift className="w-5 h-5 text-emerald-400" /></div>
+          <div>
+            <h3 className="text-white font-semibold" style={{ fontFamily: 'Outfit' }}>Special offer</h3>
+            <p className="text-zinc-400 text-sm">{TOOL_META.offer.blurb}</p>
+          </div>
+        </div>
+
+        <div>
+          <label className="text-zinc-400 text-xs mb-2 block">Offer type</label>
+          <div className="flex flex-wrap gap-2" data-testid="offer-type-group">
+            {OFFER_TYPES.map((t) => (
+              <button key={t.key} type="button" onClick={() => setField('type', t.key)}
+                data-testid={`offer-type-${t.key}`}
+                className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${offer.type === t.key ? 'bg-[#0052ff] text-white border-[#0052ff]' : 'bg-white/[0.03] text-zinc-300 border-white/10 hover:bg-white/[0.06]'}`}>
+                {t.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="grid sm:grid-cols-2 gap-4">
+          {needsPercent && (
+            <div>
+              <label className="text-zinc-400 text-xs mb-1 block">Discount %</label>
+              <Input type="number" min="0" max="100" value={offer.percent}
+                onChange={(e) => setField('percent', e.target.value)}
+                className="bg-zinc-950/60 border-zinc-800 text-zinc-200" data-testid="offer-percent" />
+            </div>
+          )}
+          {needsAmount && (
+            <div>
+              <label className="text-zinc-400 text-xs mb-1 block">Amount off ($)</label>
+              <Input type="number" min="0" value={offer.amount}
+                onChange={(e) => setField('amount', e.target.value)}
+                className="bg-zinc-950/60 border-zinc-800 text-zinc-200" data-testid="offer-amount" />
+            </div>
+          )}
+          {needsMonths && (
+            <div>
+              <label className="text-zinc-400 text-xs mb-1 block">{offer.type === 'pause' ? 'Pause (months)' : 'Free months'}</label>
+              <Input type="number" min="0" max="12" value={offer.months}
+                onChange={(e) => setField('months', e.target.value)}
+                className="bg-zinc-950/60 border-zinc-800 text-zinc-200" data-testid="offer-months" />
+            </div>
+          )}
+          {needsPerk && (
+            <div className="sm:col-span-2">
+              <label className="text-zinc-400 text-xs mb-1 block">Added value / perk</label>
+              <Input value={offer.perk} placeholder="e.g. free onboarding, premium support for 3 months"
+                onChange={(e) => setField('perk', e.target.value)}
+                className="bg-zinc-950/60 border-zinc-800 text-zinc-200" data-testid="offer-perk" />
+            </div>
+          )}
+          {needsTerm && (
+            <div>
+              <label className="text-zinc-400 text-xs mb-1 block">Applies to</label>
+              <div className="flex flex-wrap gap-1.5" data-testid="offer-term-group">
+                {OFFER_TERMS.map((t) => (
+                  <button key={t} type="button" onClick={() => setField('term', t)}
+                    data-testid={`offer-term-${t.replace(/\s+/g, '-')}`}
+                    className={`px-2.5 py-1 rounded-md text-xs border transition-colors ${offer.term === t ? 'bg-white/15 text-white border-white/20' : 'bg-white/[0.03] text-zinc-400 border-white/10 hover:bg-white/[0.06]'}`}>{t}</button>
+                ))}
+              </div>
+            </div>
+          )}
+          <div>
+            <label className="text-zinc-400 text-xs mb-1 block">Offer expires in</label>
+            <div className="flex flex-wrap gap-1.5" data-testid="offer-expiry-group">
+              {OFFER_EXPIRIES.map((t) => (
+                <button key={t} type="button" onClick={() => setField('expiry', t)}
+                  data-testid={`offer-expiry-${t.replace(/\s+/g, '-')}`}
+                  className={`px-2.5 py-1 rounded-md text-xs border transition-colors ${offer.expiry === t ? 'bg-white/15 text-white border-white/20' : 'bg-white/[0.03] text-zinc-400 border-white/10 hover:bg-white/[0.06]'}`}>{t}</button>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <label className="text-zinc-400 text-xs mb-1 block">Conditions (optional)</label>
+          <Input value={offer.conditions} placeholder="e.g. requires a 12-month commitment"
+            onChange={(e) => setField('conditions', e.target.value)}
+            className="bg-zinc-950/60 border-zinc-800 text-zinc-200" data-testid="offer-conditions" />
+        </div>
+
+        <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/[0.04] p-4" data-testid="offer-roi">
+          <div className="grid grid-cols-3 gap-3 text-center">
+            <div>
+              <div className="text-[11px] text-zinc-500 uppercase tracking-wide">Recurring at risk</div>
+              <div className="text-white font-semibold font-mono">{fmt(deal.value)}</div>
+            </div>
+            <div>
+              <div className="text-[11px] text-zinc-500 uppercase tracking-wide">Offer cost</div>
+              <div className="text-amber-400 font-semibold font-mono" data-testid="offer-cost-value">−{fmt(cost)}</div>
+            </div>
+            <div>
+              <div className="text-[11px] text-zinc-500 uppercase tracking-wide">Net retained</div>
+              <div className="text-emerald-400 font-semibold font-mono" data-testid="offer-net-value">{fmt(net)}</div>
+            </div>
+          </div>
+          <p className="text-zinc-400 text-xs mt-3 text-center">{offerLabel(offer)}</p>
+        </div>
+
+        <Button onClick={() => generate('offer', buildOfferPayload())} disabled={busy}
+          className="bg-[#0052ff] hover:bg-[#0047d6] text-white" data-testid="generate-offer">
+          {busy ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Sparkles className="w-4 h-4 mr-2" />}
+          {busy ? 'Building offer…' : (content ? 'Rebuild offer message' : 'Build offer message with AI')}
+        </Button>
+
+        {content && (
+          <div className="space-y-3">
+            <Textarea value={content} onChange={(e) => setDrafts((d) => ({ ...d, offer: e.target.value }))}
+              className="min-h-[240px] bg-zinc-950/60 border-zinc-800 text-zinc-200 text-sm leading-relaxed"
+              data-testid="draft-offer" />
+            <div className="flex flex-wrap items-center gap-2">
+              <Button size="sm" variant="outline" className="border-zinc-700 text-zinc-300 hover:bg-white/5"
+                onClick={() => copy('offer', content)} data-testid="copy-offer">
+                {copiedKey === 'offer' ? <Check className="w-3.5 h-3.5 mr-1 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 mr-1" />}
+                {copiedKey === 'offer' ? 'Copied' : 'Copy'}
+              </Button>
+              {pid && (
+                <>
+                  <Button size="sm" className="bg-sky-600/80 hover:bg-sky-600 text-white" onClick={() => updatePlay(pid, 'in_progress')} data-testid="progress-offer">Mark in progress</Button>
+                  <Button size="sm" className="bg-emerald-600/80 hover:bg-emerald-600 text-white" onClick={() => updatePlay(pid, 'saved')} data-testid="save-offer">Mark saved</Button>
+                </>
+              )}
+            </div>
+          </div>
         )}
       </div>
     );
@@ -358,7 +518,7 @@ const RetentionWorkspace = () => {
                   <TabsTrigger value="workflow" data-testid="tab-workflow"><Workflow className="w-3.5 h-3.5 mr-1.5" /> Workflow</TabsTrigger>
                 </TabsList>
                 <TabsContent value="outreach" className="mt-5">{renderOutreach()}</TabsContent>
-                <TabsContent value="offer" className="mt-5">{renderGenericTool('offer')}</TabsContent>
+                <TabsContent value="offer" className="mt-5">{renderOffer()}</TabsContent>
                 <TabsContent value="support" className="mt-5">{renderGenericTool('support')}</TabsContent>
                 <TabsContent value="workflow" className="mt-5">{renderGenericTool('workflow')}</TabsContent>
               </Tabs>
