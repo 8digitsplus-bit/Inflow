@@ -8,6 +8,7 @@ import logging
 from database import db
 from models import User
 from dependencies import get_current_user, org_filter
+from utils.email import send_email
 
 logger = logging.getLogger(__name__)
 
@@ -220,3 +221,92 @@ async def delete_retention_play(play_id: str, user: User = Depends(get_current_u
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Play not found")
     return {"ok": True}
+
+
+def _deal_risk_context(d: dict) -> dict:
+    prob = d.get("probability", 50)
+    stage = d.get("stage", "lead")
+    val = d.get("value", 0)
+    if prob < 30:
+        risk = "critical"
+    elif prob < 50:
+        risk = "high"
+    elif prob < 70 and stage in ("lead", "qualified"):
+        risk = "medium"
+    else:
+        risk = "low"
+    engagement = min(100, max(10, prob + (20 if stage in ("proposal", "negotiation") else 0)))
+    days_inactive = max(1, 30 - int(prob * 0.3))
+    return {
+        "id": d.get("deal_id"),
+        "deal_id": d.get("deal_id"),
+        "name": d.get("name", "Unknown"),
+        "company": d.get("company", "Unknown"),
+        "value": val,
+        "stage": stage,
+        "probability": prob,
+        "risk_level": risk,
+        "engagement_score": engagement,
+        "days_inactive": days_inactive,
+        "source": d.get("source"),
+        "notes": d.get("notes", ""),
+    }
+
+
+@router.get("/retention/deal/{deal_id}")
+async def get_retention_deal(deal_id: str, user: User = Depends(get_current_user)):
+    """Deal context + its retention plays for the per-deal Protect workspace."""
+    d = await db.deals.find_one({"deal_id": deal_id, **org_filter(user)}, {"_id": 0})
+    if not d:
+        raise HTTPException(status_code=404, detail="Deal not found")
+    plays = await db.retention_plays.find(
+        {"deal_id": deal_id, **org_filter(user)}, {"_id": 0}
+    ).sort("created_at", -1).to_list(100)
+    protected = round(sum(p.get("value", 0) for p in plays if p.get("status") == "saved"), 2)
+    return {"deal": _deal_risk_context(d), "plays": plays, "protected": protected}
+
+
+def _email_html(body: str, deal_name: str) -> str:
+    safe = (body or "").replace("<", "&lt;").replace(">", "&gt;").replace("\n", "<br/>")
+    return (
+        "<div style=\"font-family:-apple-system,Segoe UI,Roboto,sans-serif;color:#1a1a1a;"
+        "font-size:15px;line-height:1.6;max-width:560px;\">" + safe + "</div>"
+    )
+
+
+@router.post("/retention/send-email")
+async def send_retention_email(request: Request, user: User = Depends(get_current_user)):
+    """Send a retention outreach email via Resend and log it on the play."""
+    try:
+        body = await request.json()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Invalid request body")
+
+    to = (body.get("to") or "").strip()
+    subject = (body.get("subject") or "").strip()
+    message = (body.get("body") or "").strip()
+    if not to or "@" not in to:
+        raise HTTPException(status_code=400, detail="A valid recipient email is required")
+    if not subject or not message:
+        raise HTTPException(status_code=400, detail="Subject and body are required")
+
+    result = await send_email(
+        to=to,
+        subject=subject,
+        html=_email_html(message, body.get("deal_name", "")),
+        text=message,
+    )
+    if not result.get("sent"):
+        reason = result.get("reason") or "unknown"
+        if reason == "no_api_key":
+            raise HTTPException(status_code=503, detail="Email sending isn't configured yet (missing RESEND_API_KEY).")
+        raise HTTPException(status_code=502, detail=f"Could not send email: {reason}")
+
+    play_id = body.get("play_id")
+    if play_id:
+        now = datetime.now(timezone.utc).isoformat()
+        await db.retention_plays.update_one(
+            {"play_id": play_id, **org_filter(user)},
+            {"$set": {"status": "in_progress", "note": f"Email sent to {to}", "updated_at": now}},
+        )
+    return {"sent": True, "id": result.get("id"), "to": to}

@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import DashboardLayout from '../components/DashboardLayout';
 import { AIResponseRenderer } from '../components/AIResponseRenderer';
@@ -21,14 +22,11 @@ import {
   Mail,
   Gift,
   LifeBuoy,
-  Workflow,
-  Copy,
-  Check
+  Workflow
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Progress } from '../components/ui/progress';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../components/ui/dialog';
 import { Badge } from '../components/ui/badge';
 import {
   AreaChart,
@@ -67,6 +65,7 @@ const STATUS_STYLES = {
 
 const ChurnRetention = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [aiPrediction, setAiPrediction] = useState(null);
@@ -74,13 +73,6 @@ const ChurnRetention = () => {
   const [plays, setPlays] = useState([]);
   const [playsSummary, setPlaysSummary] = useState(null);
   const [expandedPlay, setExpandedPlay] = useState(null);
-  const [protectOpen, setProtectOpen] = useState(false);
-  const [protectDeal, setProtectDeal] = useState(null);
-  const [activeAction, setActiveAction] = useState(null);
-  const [generating, setGenerating] = useState(false);
-  const [actionContent, setActionContent] = useState('');
-  const [currentPlayId, setCurrentPlayId] = useState(null);
-  const [copied, setCopied] = useState(false);
 
   useEffect(() => { fetchChurnData(); fetchPlays(); }, []);
 
@@ -116,23 +108,7 @@ const ChurnRetention = () => {
   };
 
   const openProtect = (deal) => {
-    setProtectDeal(deal); setActiveAction(null); setActionContent(''); setCurrentPlayId(null); setProtectOpen(true);
-  };
-
-  const triggerAction = async (actionType) => {
-    setActiveAction(actionType); setGenerating(true); setActionContent(''); setCurrentPlayId(null);
-    try {
-      const r = await fetch(`${API_URL}/api/retention/plays`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        credentials: 'include', body: JSON.stringify({ action_type: actionType, deal: protectDeal })
-      });
-      if (r.ok) {
-        const p = await r.json();
-        setActionContent(p.content); setCurrentPlayId(p.play_id); fetchPlays();
-        toast.success('Retention play created');
-      } else { toast.error((await r.json()).detail || 'Failed to create play'); setActiveAction(null); }
-    } catch { toast.error('Failed to create play'); setActiveAction(null); }
-    finally { setGenerating(false); }
+    navigate(`/retention/${deal.deal_id || deal.id}`, { state: { deal } });
   };
 
   const updatePlay = async (playId, status) => {
@@ -146,10 +122,6 @@ const ChurnRetention = () => {
         toast.success(status === 'saved' ? 'Marked as saved — recurring revenue protected' : `Marked ${status.replace('_', ' ')}`);
       } else { toast.error('Failed to update play'); }
     } catch { toast.error('Failed to update play'); }
-  };
-
-  const copyContent = () => {
-    navigator.clipboard.writeText(actionContent); setCopied(true); setTimeout(() => setCopied(false), 1500);
   };
 
   const fmt = (v) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(v);
@@ -589,63 +561,6 @@ const ChurnRetention = () => {
             </div>
           </CardContent>
         </Card>
-
-        {/* Protect dialog — trigger retention actions */}
-        <Dialog open={protectOpen} onOpenChange={setProtectOpen}>
-          <DialogContent className="bg-zinc-950 border-white/10 text-white max-w-lg" data-testid="protect-dialog">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
-                <Shield className="w-5 h-5 text-[#0052ff]" /> Protect: {protectDeal?.name}
-              </DialogTitle>
-              <DialogDescription className="text-zinc-400">
-                {protectDeal?.company} · {fmt(protectDeal?.value || 0)} at risk · Trigger an action to protect recurring revenue.
-              </DialogDescription>
-            </DialogHeader>
-
-            {!activeAction ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 py-2">
-                {RETENTION_ACTIONS.map((a) => {
-                  const Icon = a.icon;
-                  return (
-                    <button key={a.key} onClick={() => triggerAction(a.key)} data-testid={`action-${a.key}`}
-                      className="text-left p-4 rounded-xl border border-zinc-800 bg-zinc-900/50 hover:border-[#0052ff]/60 hover:bg-white/5 transition-colors">
-                      <Icon className={`w-5 h-5 mb-2 ${a.color}`} />
-                      <div className="text-white text-sm font-medium">{a.label}</div>
-                      <div className="text-zinc-500 text-xs mt-0.5">{a.desc}</div>
-                    </button>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="py-1">
-                <button onClick={() => { setActiveAction(null); setActionContent(''); setCurrentPlayId(null); }} className="text-zinc-400 hover:text-white text-xs mb-2" data-testid="action-back">&larr; Choose another action</button>
-                {generating ? (
-                  <div className="flex flex-col items-center justify-center py-10 text-zinc-400" data-testid="action-generating">
-                    <Loader2 className="w-8 h-8 animate-spin mb-3 text-[#0052ff]" />
-                    <p className="text-sm">Drafting your {RETENTION_ACTIONS.find(a => a.key === activeAction)?.label.toLowerCase()}…</p>
-                  </div>
-                ) : (
-                  <>
-                    <div className="max-h-[320px] overflow-y-auto rounded-lg border border-zinc-800 bg-zinc-900/40 p-3 text-sm" data-testid="action-content">
-                      <AIResponseRenderer text={actionContent} />
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2 mt-3">
-                      <Button size="sm" variant="outline" className="border-zinc-700 text-zinc-300 hover:bg-white/5" onClick={copyContent} data-testid="action-copy">
-                        {copied ? <Check className="w-3.5 h-3.5 mr-1 text-emerald-400" /> : <Copy className="w-3.5 h-3.5 mr-1" />} {copied ? 'Copied' : 'Copy'}
-                      </Button>
-                      {currentPlayId && (
-                        <>
-                          <Button size="sm" className="bg-sky-600/80 hover:bg-sky-600 text-white" onClick={() => updatePlay(currentPlayId, 'in_progress')} data-testid="action-mark-progress">Mark contacted</Button>
-                          <Button size="sm" className="bg-emerald-600/80 hover:bg-emerald-600 text-white" onClick={() => { updatePlay(currentPlayId, 'saved'); setProtectOpen(false); }} data-testid="action-mark-saved">Mark saved</Button>
-                        </>
-                      )}
-                    </div>
-                  </>
-                )}
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
       </div>
     </DashboardLayout>
   );
