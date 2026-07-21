@@ -13,6 +13,13 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
+### Churn → System of Action: Retention Plays (Jun 2026) — P0 actionability
+- Turned the view-only Churn & Retention page into an action surface. Each at-risk deal now has a **Protect** button that opens a dialog to trigger one of 4 retention actions: **Personalized outreach**, **Special offer**, **Support engagement**, **Retention workflow**. Each action is AI-drafted (Claude sonnet-4-5 via Emergent key, with a template fallback for non-paid tiers / LLM failure) and becomes a tracked **Retention Play**.
+- New **Retention Plays** card tracks each play's status (open → in_progress → saved/lost) with a headline **"Revenue Protected"** metric (sum of saved plays' value) + **"In Play"** metric — closing the decide → act → outcome loop. Outcome framing: *protect recurring revenue*.
+- Backend `/app/backend/routes/retention.py`: `POST /api/retention/plays` (create + AI draft), `GET /api/retention/plays` (list + summary), `PATCH /api/retention/plays/{id}` (status/note), `DELETE /api/retention/plays/{id}`. Stored in `db.retention_plays`, org-scoped via `org_filter`. `analytics/churn` at-risk deals now include `id`/`deal_id`.
+- Tested: iteration_46 — backend 17/17 pytest (`test_retention_plays.py`), frontend full loop verified (Protect → draft → Mark saved → Revenue Protected updates). Known cosmetic: pre-existing cohort-table DOM-nesting console warning; long outreach/offer/workflow AI drafts (30-60s) fall back to template server-side after 40s.
+
+
 ### Discrete-Tier Volume Pricing + Ruler Slider (Jun 2026) — P0 billing overhaul
 - Migrated the self-serve plan from a linear "$50 base + $21 / additional 1k, 1k-20k" model to a **discrete 10-tier** value-metric model (deals & revenue tracked / month). Tiers (index → volume → monthly → yearly): 0=1K/$50/$500, 1=10K/$259/$2,590, 2=25K/$500/$5,000, 3=100K/$1,345/$13,450, 4=250K/$2,590/$25,900, 5=500K/$4,250/$42,500, 6=1M/$7,000/$70,000, 7=5M/$22,100/$221,000, 8=10M/$35,400/$354,000, 9=15M/$46,800/$468,000. Yearly = exactly 10x monthly (2 months free). Above tier 9 → Contact sales.
 - The slider position is a **TIER INDEX (0-9)** passed via URL param `units` and checkout body `quantity` (previously a count of 1k blocks). Each tier is billed in Stripe as its own FLAT recurring price (line-item quantity=1). update-volume swaps the subscription item's price to the new tier (prorated). The subscription.updated webhook reads the tier index from subscription metadata `quantity`.
