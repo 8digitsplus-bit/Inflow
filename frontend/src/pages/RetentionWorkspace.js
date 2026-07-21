@@ -36,6 +36,38 @@ const TOOL_META = {
   workflow: { icon: Workflow, label: 'Retention workflow', color: 'text-purple-400', blurb: 'Generate a multi-step play combining outreach, value, support and an offer.' },
 };
 
+const OFFER_TYPES = [
+  { key: 'percent_discount', label: '% discount' },
+  { key: 'fixed_discount', label: '$ off' },
+  { key: 'free_months', label: 'Free months' },
+  { key: 'added_value', label: 'Added value' },
+  { key: 'price_freeze', label: 'Price freeze' },
+  { key: 'pause', label: 'Pause plan' },
+];
+const OFFER_TERMS = ['next renewal', '3 months', '6 months', '12 months'];
+const OFFER_EXPIRIES = ['7 days', '14 days', '30 days'];
+
+function offerCost(offer, dealValue) {
+  const v = dealValue || 0;
+  switch (offer.type) {
+    case 'percent_discount': return Math.round(v * (Number(offer.percent) || 0) / 100);
+    case 'fixed_discount': return Math.round(Number(offer.amount) || 0);
+    case 'free_months': return Math.round((v / 12) * (Number(offer.months) || 0));
+    default: return 0;
+  }
+}
+function offerLabel(offer) {
+  switch (offer.type) {
+    case 'percent_discount': return `${offer.percent}% discount · ${offer.term} · expires ${offer.expiry}`;
+    case 'fixed_discount': return `$${Number(offer.amount || 0).toLocaleString()} off · ${offer.term} · expires ${offer.expiry}`;
+    case 'free_months': return `${offer.months} free month(s) · expires ${offer.expiry}`;
+    case 'added_value': return `Added value: ${offer.perk || 'perk'} · expires ${offer.expiry}`;
+    case 'price_freeze': return `Price freeze · ${offer.term} · expires ${offer.expiry}`;
+    case 'pause': return `Pause plan · ${offer.months} month(s) · expires ${offer.expiry}`;
+    default: return 'Custom offer';
+  }
+}
+
 function splitEmail(content) {
   const text = content || '';
   const m = text.match(/^\s*subject:\s*(.+)$/im);

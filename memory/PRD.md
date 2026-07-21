@@ -13,6 +13,13 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
+### Retention Workspace — per-deal "Protect" command page (Jun 2026) — P0 actionability
+- Upgraded the churn "Protect" action from a dialog into a dedicated per-deal **Retention Workspace** page at `/retention/:dealId`. Clicking Protect on any at-risk deal opens a war-room with the deal's risk signals (value at risk, win probability, engagement, days inactive), a **Revenue Protected** tally, and a full **retention toolkit** (tabbed): Personalized Outreach, Special Offer, Support Engagement, Retention Workflow — each AI-drafted, editable, copyable, and trackable as a play. An **Activity timeline** shows every play on the deal with saved/lost/in-progress controls.
+- **Real email send**: the Outreach tab drafts an editable subject + body and sends via Resend (`POST /api/retention/send-email`) with input validation (400), graceful 503 when unconfigured, 502 on send failure, and marks the linked play `in_progress` on success.
+- Backend: `GET /api/retention/deal/{deal_id}` (org-scoped deal context + plays + protected total, 404 on unknown/cross-org) added to `retention.py`. Route wired in `App.js` (`/retention/:dealId`, TierGate L1). Churn Protect button now navigates (react-router state fallback); old dialog removed.
+- Tested: iteration_47 — backend 12/12 pytest (`test_retention_workspace.py`), frontend 100% (Protect → workspace → support draft → save → Revenue Protected $0→$95k; outreach send + validation; back nav). Known cosmetic: pre-existing cohort-table DOM-nesting console warning (platform dev instrumentation, production-safe).
+
+
 ### Churn → System of Action: Retention Plays (Jun 2026) — P0 actionability
 - Turned the view-only Churn & Retention page into an action surface. Each at-risk deal now has a **Protect** button that opens a dialog to trigger one of 4 retention actions: **Personalized outreach**, **Special offer**, **Support engagement**, **Retention workflow**. Each action is AI-drafted (Claude sonnet-4-5 via Emergent key, with a template fallback for non-paid tiers / LLM failure) and becomes a tracked **Retention Play**.
 - New **Retention Plays** card tracks each play's status (open → in_progress → saved/lost) with a headline **"Revenue Protected"** metric (sum of saved plays' value) + **"In Play"** metric — closing the decide → act → outcome loop. Outcome framing: *protect recurring revenue*.
