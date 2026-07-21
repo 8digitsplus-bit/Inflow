@@ -2,8 +2,10 @@ from fastapi import FastAPI, APIRouter, Request
 from fastapi.responses import JSONResponse
 from starlette.middleware.cors import CORSMiddleware
 import logging
+import re
 
 import os
+import sentry_sdk
 
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
@@ -34,6 +36,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
+logger = logging.getLogger(__name__)
 
 # Initialize Sentry (no-op if SENTRY_DSN unset) — before app creation for auto-instrumentation
 init_sentry()
@@ -59,6 +62,54 @@ async def _rate_limit_handler(request: Request, exc: RateLimitExceeded):
             )
         },
         headers={"Retry-After": str(retry_after)},
+    )
+
+
+# Origins allowed to receive credentialed responses. Mirrors the CORSMiddleware
+# config below so that error responses can carry the SAME CORS headers.
+_cors_env_origins = (os.environ.get("CORS_ORIGINS") or os.environ.get("ALLOWED_ORIGINS") or "").strip()
+_EXPLICIT_ORIGINS = (
+    {o.strip() for o in _cors_env_origins.split(",") if o.strip()}
+    if (_cors_env_origins and _cors_env_origins != "*") else set()
+)
+_ALLOWED_ORIGIN_RE = re.compile(
+    r"https?://(localhost(:\d+)?|127\.0\.0\.1(:\d+)?|.*\.preview\.emergentagent\.com|"
+    r".*\.emergent\.host|.*\.emergentagent\.com|(.*\.)?inflowft\.com)$"
+)
+
+
+def _cors_headers_for(request: Request) -> dict:
+    """CORS headers for an allowed Origin, so error responses aren't browser-blocked."""
+    origin = request.headers.get("origin")
+    if not origin:
+        return {}
+    allowed = origin in _EXPLICIT_ORIGINS if _EXPLICIT_ORIGINS else bool(_ALLOWED_ORIGIN_RE.match(origin))
+    if not allowed:
+        return {}
+    return {
+        "Access-Control-Allow-Origin": origin,
+        "Access-Control-Allow-Credentials": "true",
+        "Vary": "Origin",
+    }
+
+
+@app.exception_handler(Exception)
+async def _unhandled_exception_handler(request: Request, exc: Exception):
+    """Return a truthful JSON 500 WITH CORS headers.
+
+    Starlette emits unhandled-exception 500s above the CORS middleware, so the
+    browser would otherwise block the response and the client would misreport it
+    as a network/"couldn't reach server" error. We attach CORS headers manually
+    and report the exception to Sentry."""
+    logger.error(f"Unhandled exception on {request.method} {request.url.path}: {exc!r}")
+    try:
+        sentry_sdk.capture_exception(exc)
+    except Exception:
+        pass
+    return JSONResponse(
+        status_code=500,
+        content={"detail": "Something went wrong on our end. Please try again in a moment."},
+        headers=_cors_headers_for(request),
     )
 
 
