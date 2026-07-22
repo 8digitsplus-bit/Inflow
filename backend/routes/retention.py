@@ -97,7 +97,7 @@ def _fallback_content(action_type: str, deal: dict) -> str:
     )
 
 
-async def _generate_ai_content(action_type: str, deal: dict, user: User, offer: dict = None) -> tuple[str, bool]:
+async def _generate_ai_content(action_type: str, deal: dict, user: User) -> tuple[str, bool]:
     """Return (content, ai_generated). Falls back to a template on any failure."""
     if user.subscription_tier not in PAID_TIERS:
         return _fallback_content(action_type, deal), False
@@ -123,20 +123,7 @@ async def _generate_ai_content(action_type: str, deal: dict, user: User, offer: 
             f"Engagement score: {deal.get('engagement_score', 'n/a')}%\n"
             f"Days inactive: {deal.get('days_inactive', 'n/a')}\n\n"
         )
-        if action_type == "offer" and offer:
-            prompt += (
-                "The rep has already configured this EXACT offer — present THIS offer, do not substitute a different one:\n"
-                f"- Offer: {offer.get('label', 'discount')}\n"
-                f"- Estimated cost of the offer: ${float(offer.get('offer_cost', 0) or 0):,.0f}\n"
-                f"- Net recurring revenue retained if accepted: ${float(offer.get('net_retained', 0) or 0):,.0f}\n"
-                f"- Expiry: {offer.get('expiry', 'n/a')}\n"
-                f"- Conditions: {offer.get('conditions') or 'none'}\n\n"
-                "Write, using plain section titles followed by a colon: (1) ROI justification (one line comparing offer "
-                "cost vs recurring revenue protected), (2) Guardrail caution if any, (3) Customer message: a ready-to-send "
-                "note presenting exactly this offer. Keep it concise."
-            )
-        else:
-            prompt += f"Produce the {cfg['label'].lower()} now."
+        prompt += f"Produce the {cfg['label'].lower()} now."
         resp = await asyncio.wait_for(chat.send_message(UserMessage(text=prompt)), timeout=40)
         text = (resp or "").strip()
         return (text or _fallback_content(action_type, deal)), bool(text)
@@ -160,8 +147,7 @@ async def create_retention_play(request: Request, user: User = Depends(get_curre
     if not deal.get("name") and not deal.get("company"):
         raise HTTPException(status_code=400, detail="A deal is required")
 
-    offer = body.get("offer") if action_type == "offer" else None
-    content, ai_generated = await _generate_ai_content(action_type, deal, user, offer)
+    content, ai_generated = await _generate_ai_content(action_type, deal, user)
     now = datetime.now(timezone.utc).isoformat()
     play = {
         "play_id": f"play_{uuid.uuid4().hex[:12]}",
@@ -176,7 +162,6 @@ async def create_retention_play(request: Request, user: User = Depends(get_curre
         "action_label": ACTIONS[action_type]["label"],
         "content": content,
         "ai_generated": ai_generated,
-        "offer": offer,
         "status": "open",
         "note": "",
         "created_at": now,

@@ -13,13 +13,6 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
-### Structured Offer Builder in Retention Workspace (Jun 2026) — P0 actionability
-- Replaced the generic AI text-blob "Offer" tab in `RetentionWorkspace.js` with a guided, structured offer builder. Rep picks an **offer type** (% discount / $ off / free months / added value / price freeze / pause plan), fills type-specific inputs (percent, amount, months, or perk), an **Applies-to term** (next renewal / 3 / 6 / 12 months, for %-discount & price-freeze), an **expiry** (7 / 14 / 30 days), and optional **conditions**.
-- A live **ROI card** computes and shows *Recurring at risk → Offer cost → Net retained* in real time as inputs change (`offerCost`/`offerLabel` helpers), plus a human-readable offer label.
-- "Build offer message with AI" sends the structured `offer` payload to `POST /api/retention/plays`; the backend (`retention.py` `_generate_ai_content`) prompts Claude to present *exactly that* configured offer (ROI justification using the exact cost vs revenue-protected numbers, guardrail caution, ready-to-send customer message). Draft is editable, copyable, rebuildable, and trackable as a play (in-progress / saved).
-- Backend already accepted `offer` (label, offer_cost, net_retained, expiry, conditions) and stores it on the play doc; frontend now builds and sends it.
-- Verified: frontend compiles clean; type-switch swaps conditional inputs (free_months shows months + hides percent; added_value shows perk); live ROI correct ($95k at risk, 15% → −$14,250 cost, $80,750 net); AI draft (1.2k chars) presents the exact offer with 5.7x return framing; play logged to Activity timeline. Backend verified via curl (ai_generated=True, offer persisted).
-
 ### Retention Workspace — per-deal "Protect" command page (Jun 2026) — P0 actionability
 - Upgraded the churn "Protect" action from a dialog into a dedicated per-deal **Retention Workspace** page at `/retention/:dealId`. Clicking Protect on any at-risk deal opens a war-room with the deal's risk signals (value at risk, win probability, engagement, days inactive), a **Revenue Protected** tally, and a full **retention toolkit** (tabbed): Personalized Outreach, Special Offer, Support Engagement, Retention Workflow — each AI-drafted, editable, copyable, and trackable as a play. An **Activity timeline** shows every play on the deal with saved/lost/in-progress controls.
 - **Real email send**: the Outreach tab drafts an editable subject + body and sends via Resend (`POST /api/retention/send-email`) with input validation (400), graceful 503 when unconfigured, 502 on send failure, and marks the linked play `in_progress` on success.
