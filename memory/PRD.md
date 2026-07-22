@@ -13,19 +13,10 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
-### Retention Workspace — per-deal "Protect" command page (Jun 2026) — P0 actionability
-- Upgraded the churn "Protect" action from a dialog into a dedicated per-deal **Retention Workspace** page at `/retention/:dealId`. Clicking Protect on any at-risk deal opens a war-room with the deal's risk signals (value at risk, win probability, engagement, days inactive), a **Revenue Protected** tally, and a full **retention toolkit** (tabbed): Personalized Outreach, Special Offer, Support Engagement, Retention Workflow — each AI-drafted, editable, copyable, and trackable as a play. An **Activity timeline** shows every play on the deal with saved/lost/in-progress controls.
-- **Real email send**: the Outreach tab drafts an editable subject + body and sends via Resend (`POST /api/retention/send-email`) with input validation (400), graceful 503 when unconfigured, 502 on send failure, and marks the linked play `in_progress` on success.
-- Backend: `GET /api/retention/deal/{deal_id}` (org-scoped deal context + plays + protected total, 404 on unknown/cross-org) added to `retention.py`. Route wired in `App.js` (`/retention/:dealId`, TierGate L1). Churn Protect button now navigates (react-router state fallback); old dialog removed.
-- Tested: iteration_47 — backend 12/12 pytest (`test_retention_workspace.py`), frontend 100% (Protect → workspace → support draft → save → Revenue Protected $0→$95k; outreach send + validation; back nav). Known cosmetic: pre-existing cohort-table DOM-nesting console warning (platform dev instrumentation, production-safe).
-
-
-### Churn → System of Action: Retention Plays (Jun 2026) — P0 actionability
-- Turned the view-only Churn & Retention page into an action surface. Each at-risk deal now has a **Protect** button that opens a dialog to trigger one of 4 retention actions: **Personalized outreach**, **Special offer**, **Support engagement**, **Retention workflow**. Each action is AI-drafted (Claude sonnet-4-5 via Emergent key, with a template fallback for non-paid tiers / LLM failure) and becomes a tracked **Retention Play**.
-- New **Retention Plays** card tracks each play's status (open → in_progress → saved/lost) with a headline **"Revenue Protected"** metric (sum of saved plays' value) + **"In Play"** metric — closing the decide → act → outcome loop. Outcome framing: *protect recurring revenue*.
-- Backend `/app/backend/routes/retention.py`: `POST /api/retention/plays` (create + AI draft), `GET /api/retention/plays` (list + summary), `PATCH /api/retention/plays/{id}` (status/note), `DELETE /api/retention/plays/{id}`. Stored in `db.retention_plays`, org-scoped via `org_filter`. `analytics/churn` at-risk deals now include `id`/`deal_id`.
-- Tested: iteration_46 — backend 17/17 pytest (`test_retention_plays.py`), frontend full loop verified (Protect → draft → Mark saved → Revenue Protected updates). Known cosmetic: pre-existing cohort-table DOM-nesting console warning; long outreach/offer/workflow AI drafts (30-60s) fall back to template server-side after 40s.
-
+### Retention / "System of Action" REMOVED (Jul 2026) — reverted per user request
+- Per user request, the Churn "System of Action" work was fully rolled back and the Churn & Retention page returned to its original view-only analytics state.
+- Removed: the per-deal Retention Workspace page + route (`/retention/:dealId`, `frontend/src/pages/RetentionWorkspace.js`), the "Protect" button on at-risk deals, the "Retention Plays" card (Revenue Protected / In Play), and the backend `routes/retention.py` router (unregistered from `server.py`). Deleted `backend/tests/test_retention_plays.py` and `test_retention_workspace.py`. The Structured Offer Builder (added and removed earlier this session) is also gone.
+- Churn page now shows only: KPIs, Retention/Churn trend, Customer Health, Revenue Lost, Churn Reasons, Risk by Segment, At-Risk Deals (with AI-prediction only), AI Churn Prediction, and the Cohort table. The `db.retention_plays` collection is left untouched (orphaned data, harmless).
 
 ### Discrete-Tier Volume Pricing + Ruler Slider (Jun 2026) — P0 billing overhaul
 - Migrated the self-serve plan from a linear "$50 base + $21 / additional 1k, 1k-20k" model to a **discrete 10-tier** value-metric model (deals & revenue tracked / month). Tiers (index → volume → monthly → yearly): 0=1K/$50/$500, 1=10K/$259/$2,590, 2=25K/$500/$5,000, 3=100K/$1,345/$13,450, 4=250K/$2,590/$25,900, 5=500K/$4,250/$42,500, 6=1M/$7,000/$70,000, 7=5M/$22,100/$221,000, 8=10M/$35,400/$354,000, 9=15M/$46,800/$468,000. Yearly = exactly 10x monthly (2 months free). Above tier 9 → Contact sales.

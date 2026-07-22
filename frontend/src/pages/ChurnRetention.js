@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import DashboardLayout from '../components/DashboardLayout';
 import { AIResponseRenderer } from '../components/AIResponseRenderer';
@@ -16,18 +15,12 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Shield,
-  ShieldCheck,
   Activity,
-  Clock,
-  Mail,
-  Gift,
-  LifeBuoy,
-  Workflow
+  Clock
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Progress } from '../components/ui/progress';
-import { Badge } from '../components/ui/badge';
 import {
   AreaChart,
   Area,
@@ -50,31 +43,14 @@ import { toast } from 'sonner';
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 const HEALTH_COLORS = { Healthy: '#10B981', Moderate: '#F59E0B', 'At Risk': '#EF4444', Critical: '#DC2626' };
 
-const RETENTION_ACTIONS = [
-  { key: 'outreach', label: 'Personalized outreach', desc: 'AI-drafted email to re-engage the account', icon: Mail, color: 'text-sky-400' },
-  { key: 'offer', label: 'Special offer', desc: 'Targeted save offer with guardrails', icon: Gift, color: 'text-emerald-400' },
-  { key: 'support', label: 'Support engagement', desc: 'Proactive health-check plan', icon: LifeBuoy, color: 'text-amber-400' },
-  { key: 'workflow', label: 'Retention workflow', desc: 'Multi-step play to save the account', icon: Workflow, color: 'text-purple-400' },
-];
-const STATUS_STYLES = {
-  open: 'bg-zinc-500/15 text-zinc-300 border-zinc-500/30',
-  in_progress: 'bg-sky-500/15 text-sky-300 border-sky-500/30',
-  saved: 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30',
-  lost: 'bg-red-500/15 text-red-300 border-red-500/30',
-};
-
 const ChurnRetention = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [aiPrediction, setAiPrediction] = useState(null);
   const [loadingAI, setLoadingAI] = useState(false);
-  const [plays, setPlays] = useState([]);
-  const [playsSummary, setPlaysSummary] = useState(null);
-  const [expandedPlay, setExpandedPlay] = useState(null);
 
-  useEffect(() => { fetchChurnData(); fetchPlays(); }, []);
+  useEffect(() => { fetchChurnData(); }, []);
 
   const fetchChurnData = async () => {
     try {
@@ -98,30 +74,6 @@ const ChurnRetention = () => {
       else { toast.error((await response.json()).detail || 'Failed to get prediction'); }
     } catch { toast.error('Failed to get AI prediction'); }
     finally { setLoadingAI(false); }
-  };
-
-  const fetchPlays = async () => {
-    try {
-      const r = await fetch(`${API_URL}/api/retention/plays`, { credentials: 'include' });
-      if (r.ok) { const d = await r.json(); setPlays(d.plays || []); setPlaysSummary(d.summary || null); }
-    } catch (e) { console.error('Failed to fetch retention plays:', e); }
-  };
-
-  const openProtect = (deal) => {
-    navigate(`/retention/${deal.deal_id || deal.id}`, { state: { deal } });
-  };
-
-  const updatePlay = async (playId, status) => {
-    try {
-      const r = await fetch(`${API_URL}/api/retention/plays/${playId}`, {
-        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-        credentials: 'include', body: JSON.stringify({ status })
-      });
-      if (r.ok) {
-        fetchPlays();
-        toast.success(status === 'saved' ? 'Marked as saved — recurring revenue protected' : `Marked ${status.replace('_', ' ')}`);
-      } else { toast.error('Failed to update play'); }
-    } catch { toast.error('Failed to update play'); }
   };
 
   const fmt = (v) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0 }).format(v);
@@ -414,10 +366,6 @@ const ChurnRetention = () => {
                           onClick={() => getAIPrediction(deal)} disabled={loadingAI} title="AI risk analysis" data-testid={`predict-btn-${i}`}>
                           {loadingAI ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
                         </Button>
-                        <Button size="sm" className="h-8 px-2.5 text-xs bg-[#0052ff] hover:bg-[#0047d6] text-white"
-                          onClick={() => openProtect(deal)} data-testid={`protect-btn-${i}`}>
-                          <Shield className="w-3 h-3 mr-1" /> Protect
-                        </Button>
                       </div>
                     </div>
                   ))}
@@ -455,71 +403,6 @@ const ChurnRetention = () => {
             </CardContent>
           </Card>
         </div>
-
-        {/* Retention Plays — protect recurring revenue */}
-        <Card className="bg-zinc-950/50 border-white/10" data-testid="retention-plays-card">
-          <CardHeader>
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-              <CardTitle className="text-lg font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
-                <ShieldCheck className="w-5 h-5 text-emerald-400" /> Retention Plays
-                <span className="text-xs font-normal text-zinc-500 hidden sm:inline">· Protect recurring revenue</span>
-              </CardTitle>
-              <div className="flex items-center gap-6">
-                <div className="text-right">
-                  <div className="text-[10px] text-zinc-500 uppercase tracking-wide">Revenue Protected</div>
-                  <div className="text-lg font-bold font-mono text-emerald-400" data-testid="revenue-protected">{fmt(playsSummary?.revenue_protected || 0)}</div>
-                </div>
-                <div className="text-right">
-                  <div className="text-[10px] text-zinc-500 uppercase tracking-wide">In Play</div>
-                  <div className="text-lg font-bold font-mono text-amber-400" data-testid="revenue-in-play">{fmt(playsSummary?.revenue_in_play || 0)}</div>
-                </div>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent>
-            {plays.length > 0 ? (
-              <div className="space-y-2" data-testid="retention-plays-list">
-                {plays.map((p) => {
-                  const meta = RETENTION_ACTIONS.find(a => a.key === p.action_type) || {};
-                  const Icon = meta.icon || Shield;
-                  const expanded = expandedPlay === p.play_id;
-                  const isActive = p.status === 'open' || p.status === 'in_progress';
-                  return (
-                    <div key={p.play_id} className="rounded-lg border border-zinc-800 bg-zinc-900/40" data-testid={`play-${p.play_id}`}>
-                      <div className="flex items-center gap-3 p-3">
-                        <Icon className={`w-4 h-4 flex-shrink-0 ${meta.color || 'text-zinc-400'}`} />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="text-white text-sm font-medium truncate">{p.deal_name}</span>
-                            <Badge variant="outline" className={`text-[10px] capitalize ${STATUS_STYLES[p.status] || ''}`}>{p.status.replace('_', ' ')}</Badge>
-                          </div>
-                          <p className="text-zinc-500 text-xs truncate">{meta.label || p.action_label} · {fmt(p.value)}{p.company ? ` · ${p.company}` : ''}</p>
-                        </div>
-                        <button onClick={() => setExpandedPlay(expanded ? null : p.play_id)} className="text-zinc-400 hover:text-white text-xs px-2 flex-shrink-0" data-testid={`play-view-${p.play_id}`}>{expanded ? 'Hide' : 'View'}</button>
-                        {isActive && (
-                          <>
-                            <Button size="sm" className="h-7 px-2 text-xs bg-emerald-600/80 hover:bg-emerald-600 text-white flex-shrink-0" onClick={() => updatePlay(p.play_id, 'saved')} data-testid={`play-save-${p.play_id}`}>Saved</Button>
-                            <Button size="sm" variant="outline" className="h-7 px-2 text-xs border-zinc-700 text-zinc-400 hover:bg-white/5 flex-shrink-0" onClick={() => updatePlay(p.play_id, 'lost')} data-testid={`play-lost-${p.play_id}`}>Lost</Button>
-                          </>
-                        )}
-                      </div>
-                      {expanded && (
-                        <div className="px-3 pb-3 border-t border-zinc-800/60">
-                          <div className="max-h-[260px] overflow-y-auto text-sm mt-2"><AIResponseRenderer text={p.content} /></div>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="text-center py-8 text-zinc-500">
-                <ShieldCheck className="w-10 h-10 mx-auto mb-3 opacity-50" />
-                <p className="text-sm">No retention plays yet. Hit <span className="text-white font-medium">Protect</span> on an at-risk deal to launch one and protect recurring revenue.</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
 
         {/* Cohort Analysis */}
         <Card className="bg-zinc-950/50 border-white/10" data-testid="cohort-analysis-card">

@@ -8,7 +8,6 @@ import SalesRevenue from './pages/SalesRevenue';
 import PricingOptimizer from './pages/PricingOptimizer';
 import RevenueIntelligence from './pages/RevenueIntelligence';
 import ChurnRetention from './pages/ChurnRetention';
-import RetentionWorkspace from './pages/RetentionWorkspace';
 import ConversionOptimization from './pages/ConversionOptimization';
 import Settings from './pages/Settings';
 import Integrations from './pages/Integrations';
@@ -119,16 +118,6 @@ const AppRouter = () => {
           <ProtectedRoute>
             <TierGate requiredLevel={1}>
               <ChurnRetention />
-            </TierGate>
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/retention/:dealId" 
-        element={
-          <ProtectedRoute>
-            <TierGate requiredLevel={1}>
-              <RetentionWorkspace />
             </TierGate>
           </ProtectedRoute>
         } 
