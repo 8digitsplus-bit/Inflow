@@ -16,6 +16,12 @@
 - Live Stripe draft invoice creation WORKS at runtime (platform injects a real sk_test key; the .env sentinel `sk_test_emergent` is swapped at runtime). Approve auto-creates a Stripe customer if none set.
 
 
+## Upsell Engine / Revenue Execution (Jul 2026)
+- Page: /upsell (Enterprise-tier + owner only). Sidebar: "Revenue Execution" → "Upsell Engine".
+- testpro@test.com is Enterprise + owner, so it has full access. Candidates come from `db.deals` + `db.telemetry_usage`; run `POST /api/upsell/scan` to populate.
+- Email send + notify-sales use Resend; the preview RESEND_API_KEY is INVALID, so those return HTTP 422 with a readable detail (drafts still generate). Real sends need a valid key + verified sender.
+- Backend tests: /app/backend/tests/test_upsell_engine.py (18/18 pass).
+
 ## Demo Account
 - Email: testdemo@inflow.com
 - Password: password

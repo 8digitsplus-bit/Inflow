@@ -495,8 +495,8 @@ async def send_upsell_email(body: SendEmailRequest, user: User = Depends(require
     if not result.get("sent"):
         reason = result.get("reason") or "unknown"
         if reason == "no_api_key":
-            raise HTTPException(status_code=503, detail="Email sending isn't configured yet (missing RESEND_API_KEY).")
-        raise HTTPException(status_code=502, detail=f"Could not send email: {reason}")
+            raise HTTPException(status_code=400, detail="Email sending isn't configured yet. Add a RESEND_API_KEY to send upgrade emails.")
+        raise HTTPException(status_code=422, detail=f"Could not send email: {reason}")
     if body.candidate_id:
         await db.upsell_candidates.update_one(
             {"candidate_id": body.candidate_id, **org_filter(user)},
@@ -533,8 +533,8 @@ async def notify_sales(candidate_id: str, body: NotifySalesRequest = NotifySales
     if not result.get("sent"):
         reason = result.get("reason") or "unknown"
         if reason == "no_api_key":
-            raise HTTPException(status_code=503, detail="Email sending isn't configured yet (missing RESEND_API_KEY).")
-        raise HTTPException(status_code=502, detail=f"Could not notify sales: {reason}")
+            raise HTTPException(status_code=400, detail="Email sending isn't configured yet. Add a RESEND_API_KEY to notify your sales team.")
+        raise HTTPException(status_code=422, detail=f"Could not notify sales: {reason}")
     await db.upsell_candidates.update_one(
         {"candidate_id": candidate_id, **org_filter(user)},
         {"$set": {"status": "notified", "updated_at": datetime.now(timezone.utc).isoformat()}},
