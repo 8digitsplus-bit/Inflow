@@ -28,6 +28,7 @@ from routes.contact import router as contact_router
 from routes.legal import router as legal_router
 from routes.telemetry import router as telemetry_router
 from routes.competitors import router as competitors_router
+from routes.upsell import router as upsell_router
 from migrations.orgs import migrate_users_to_orgs
 from utils.sentry_config import init_sentry
 
@@ -133,6 +134,7 @@ api_router.include_router(contact_router)
 api_router.include_router(legal_router)
 api_router.include_router(telemetry_router)
 api_router.include_router(competitors_router)
+api_router.include_router(upsell_router)
 
 
 # Basic routes

@@ -8,6 +8,7 @@ import SalesRevenue from './pages/SalesRevenue';
 import PricingOptimizer from './pages/PricingOptimizer';
 import RevenueIntelligence from './pages/RevenueIntelligence';
 import ChurnRetention from './pages/ChurnRetention';
+import UpsellEngine from './pages/UpsellEngine';
 import ConversionOptimization from './pages/ConversionOptimization';
 import Settings from './pages/Settings';
 import Integrations from './pages/Integrations';
@@ -118,6 +119,16 @@ const AppRouter = () => {
           <ProtectedRoute>
             <TierGate requiredLevel={1}>
               <ChurnRetention />
+            </TierGate>
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/upsell" 
+        element={
+          <ProtectedRoute>
+            <TierGate requiredLevel={3}>
+              <UpsellEngine />
             </TierGate>
           </ProtectedRoute>
         } 

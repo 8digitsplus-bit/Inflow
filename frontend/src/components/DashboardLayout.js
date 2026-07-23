@@ -20,6 +20,7 @@ import {
   MessageCircle,
   Radar,
   Swords,
+  Rocket,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from './ui/alert-dialog';
@@ -57,6 +58,12 @@ const navGroups = [
       { name: 'CRO', href: '/cro', icon: Zap, minTier: 0 },
       { name: 'Pricing', href: '/pricing', icon: Tag, minTier: 2 },
       { name: 'Competitors', href: '/competitor-intel', icon: Swords, minTier: 3 },
+    ]
+  },
+  {
+    label: 'Revenue Execution',
+    items: [
+      { name: 'Upsell Engine', href: '/upsell', icon: Rocket, minTier: 3 },
     ]
   },
   {

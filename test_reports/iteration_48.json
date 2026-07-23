@@ -1,0 +1,47 @@
+{
+  "summary": "Full-stack test of new Upsell Engine (Revenue Execution) feature. 18/18 backend pytest passed. Frontend E2E covered all 4 actions (upgrade email, discount offer, notify sales, upgrade campaign) plus plan CRUD, scan, dismiss, campaign lifecycle. Graceful email failure (502) is returned as expected because Resend is unconfigured — user sees a toast (not silent). One UX polish issue: the 502 body is stripped by Cloudflare so the frontend toast reads 'Request failed' instead of the backend's descriptive detail message.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {
+        "endpoint": "POST /api/upsell/send-email and /api/upsell/candidates/{id}/notify-sales",
+        "issue": "Backend correctly raises HTTPException(502, detail='...') when Resend key invalid, but the Cloudflare ingress replaces 5xx JSON responses with its default HTML error page. The frontend cannot read the `detail` field, so users see the generic 'Request failed' toast instead of the specific reason. Consider returning 200 with {sent:false, reason:...} or using a non-5xx status (422/400) so the error detail reaches the client."
+      }
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {
+        "flow": "Send upgrade email / Notify sales",
+        "issue": "Toast text is generic 'Request failed' because backend 502 body is stripped by ingress (see backend minor issue). Functionally graceful (toast IS shown, no silent failure), but message is unhelpful to end user.",
+        "affected_selectors": ["[data-testid=action-send-btn]", "[data-testid=notify-send-btn]"]
+      }
+    ],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_upsell_engine.py",
+    "/app/test_reports/pytest/pytest_upsell_engine.xml"
+  ],
+  "action_items": [
+    "Optional UX polish: make /api/upsell/send-email and /notify-sales return 200 with {sent:false, reason:'...'} on Resend failure (or 4xx) so the frontend can surface the actual reason in the toast. Ingress currently swallows the 502 detail. Not blocking — the graceful-failure spec is met."
+  ],
+  "critical_code_review_comments": [
+    "routes/upsell.py: solid separation of concerns, org_filter used consistently, _clean strips ObjectId, AI drafts have safe fallbacks with 40s timeout — good.",
+    "UpsellEngine.js (480 lines): approaching the 700-line soft limit; consider splitting the action dialog / campaign dialog into subcomponents to keep it maintainable.",
+    "UpsellEngine.js req() helper swallows the response body when non-JSON (Cloudflare HTML on 502). Consider reading text() and constructing a user-friendly message like 'The email service is temporarily unavailable' instead of the generic 'Request failed'.",
+    "upsell.py POST /send-email uses status 502/503 which are gateway-error codes commonly rewritten by proxies/CDNs — prefer 200-with-flag OR 422 so downstream can render the reason.",
+    "upsell.py _pick_plan returns the highest-priced plan as the default upsell target — reasonable heuristic; documented in code."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_upsell_engine.py (new)"
+  ],
+  "success_rate": {"backend": "100% (18/18)", "frontend": "100% of tested flows"},
+  "test_credentials": "testpro@test.com / password (Enterprise + owner, org_id=org_15337f4cefc9)",
+  "seed_data_creation": "Test transiently created TEST_UI_Plan (deleted) and TEST_UI_Camp (deleted). Existing seed: 1 Premium plan, 4 candidates (Wayne Enterprises $30k, Acme Corp $25.5k, Globex $15.5k, Umbrella $13.75k = $84,750/yr potential), 1 draft campaign 'Q3 Power-User Push'.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Upsell Engine feature is fully functional. All 4 action buttons work. AI drafting via Claude took ~5-15s per draft in test. The only rough edge is the generic 'Request failed' toast when Resend is unconfigured — main agent may improve UX by returning a non-5xx status or restructuring the response. Access gate for Enterprise+owner is enforced at the backend (require_enterprise dep) and frontend (TierGate + status page check).",
+  "rca of the issue": "Email send toast shows 'Request failed' instead of a descriptive error: root cause is that FastAPI returns 502 with JSON detail, but Cloudflare's `preview.emergentagent.com` edge intercepts upstream 502/504 and substitutes its default HTML 'Bad gateway' page. Frontend fetch tries JSON parse, gets empty object, falls back to 'Request failed'. Mitigation: change endpoint status code to 200-with-flag or 422 so ingress passes the body through unchanged."
+}
