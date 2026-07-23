@@ -13,6 +13,17 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
+### High-Intent Buyer Detection "Discover" — Revenue Execution (Jul 2026) — P0 pipeline acceleration
+- New page `/discover` (`frontend/src/pages/HighIntent.js`) under the "Revenue Execution" sidebar group (now holds High-Intent Buyers + Upsell Engine). Finds who is most likely to buy.
+- **Integration-driven intent scoring**: `POST /api/intent/scan` analyzes OPEN opportunities (`db.deals`, won/lost excluded) + product usage (`db.telemetry_usage`), grouped by account, and scores 0-100 from transparent signals across 3 categories — Marketing (visited pricing/inbound, ad engagement, recently active), Sales (proposal stage, multiple stakeholders, demo/late stage), Product (trial usage, feature exploration, invited teammates/seats).
+- **4 actions per lead**: (1) **Fast-track** — assign/route to an org AE + optional email notify (`/leads/{id}/fast-track`); (2) **Outreach** — AI email referencing the lead's exact signals (`/leads/{id}/outreach`); (3) **Book demo** — personalized scheduling link from the owner's configured Calendly/Cal.com URL, emailed (`/leads/{id}/booking` + `/settings`); (4) **Sandbox** — personalized POC package: AI setup brief + shareable link + status, idempotent (`/leads/{id}/sandbox`). Every lead carries an **activity log** (the shared action layer); statuses new→assigned→contacted→booked→sandbox→won/dismissed persist.
+- AI drafting reuses Claude (`claude-sonnet-4-5-20250929`) via Emergent LLM key w/ fallbacks; sends via Resend. Backend `routes/intent.py` registered in `server.py`.
+- Tested: iteration_49 — backend 17/17 pytest (`test_high_intent.py`), frontend 100% (12/12: scan, settings, all 4 actions, activity log, dismiss, regressions). Email send returns 422 gracefully (preview Resend key invalid — real sends need a valid key).
+
+### Gating model aligned to value-based pricing (Jul 2026)
+- Pricing is value-based ("one plan, everything included" — price scales by volume; every paying checkout maps to `enterprise_*` internally). So gating now means **paid vs. trial**, not feature tiers. Added `require_paid` / `require_paid_owner` deps (`dependencies.py`). Premium features unlock on any active subscription; send/route actions are owner-only.
+- Rewrote the stale `TierGate.js` upgrade wall (was old $99/$149/$400 cards) into a single value-based "everything included" panel linking to the volume-slider `/choose-plan`.
+
 ### Upsell Engine — "Revenue Execution" section (Jul 2026) — P0 expansion revenue
 - New sidebar group **"Revenue Execution"** (between Analytics and Tools) with an **Upsell Engine** page at `/upsell` (`frontend/src/pages/UpsellEngine.js`). Enterprise-tier + org-owner only (backend `require_enterprise` dep + frontend `TierGate` L3 + status gate).
 - **Integration-driven candidate detection**: `POST /api/upsell/scan` aggregates customer accounts from connected-integration data — revenue/accounts in `db.deals` + product-usage in `db.telemetry_usage` (Mixpanel/Amplitude) — grouped by company, and scores each for expansion potential. Detected signals: heavy product usage, team growth, frequent engagement, nearing plan limit, high-value, multi-product, long tenure. Returns `expansion_score` (0-100) + estimated annual `est_expansion_value`.

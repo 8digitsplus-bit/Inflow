@@ -438,6 +438,8 @@ async def send_intent_email(body: SendEmailReq, user: User = Depends(require_pai
 @router.post("/intent/leads/{lead_id}/sandbox")
 async def build_sandbox(lead_id: str, body: DraftReq = DraftReq(), user: User = Depends(require_paid_owner)):
     lead = await _get_lead(lead_id, user)
+    if lead.get("sandbox"):
+        return lead["sandbox"]  # idempotent — don't overwrite an existing POC package
     sandbox_id = f"sbx_{uuid.uuid4().hex[:10]}"
     link = f"{SANDBOX_BASE}/{sandbox_id}"
     fallback = (
