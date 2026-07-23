@@ -21,6 +21,7 @@ import {
   Radar,
   Swords,
   Rocket,
+  Telescope,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from './ui/alert-dialog';
@@ -63,6 +64,7 @@ const navGroups = [
   {
     label: 'Revenue Execution',
     items: [
+      { name: 'High-Intent Buyers', href: '/discover', icon: Telescope, minTier: 1 },
       { name: 'Upsell Engine', href: '/upsell', icon: Rocket, minTier: 3 },
     ]
   },

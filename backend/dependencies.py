@@ -59,6 +59,26 @@ async def require_owner(user: User = Depends(get_current_user)) -> User:
     return user
 
 
+async def require_paid(user: User = Depends(get_current_user)) -> User:
+    """Gate a feature to accounts with an active (paid) subscription.
+
+    Under the value-based plan every paying customer maps to a top-tier
+    subscription internally, so 'paid' simply means not trial/expired/cancelled/free.
+    """
+    org = await db.organizations.find_one({"org_id": user.org_id}, {"_id": 0})
+    tier = (org or {}).get("subscription_tier") or user.subscription_tier or "trial"
+    if (tier or "trial") in {"trial", "expired", "cancelled", "free"}:
+        raise HTTPException(status_code=403, detail="This feature requires an active InFlow subscription.")
+    return user
+
+
+async def require_paid_owner(user: User = Depends(require_paid)) -> User:
+    """Paid subscription + org owner (for send/route actions)."""
+    if user.role != "owner":
+        raise HTTPException(status_code=403, detail="Only the organization owner can perform this action")
+    return user
+
+
 def org_filter(user: User) -> dict:
     """MongoDB filter to scope a query to the user's organization.
 

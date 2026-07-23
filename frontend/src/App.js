@@ -9,6 +9,7 @@ import PricingOptimizer from './pages/PricingOptimizer';
 import RevenueIntelligence from './pages/RevenueIntelligence';
 import ChurnRetention from './pages/ChurnRetention';
 import UpsellEngine from './pages/UpsellEngine';
+import HighIntent from './pages/HighIntent';
 import ConversionOptimization from './pages/ConversionOptimization';
 import Settings from './pages/Settings';
 import Integrations from './pages/Integrations';
@@ -129,6 +130,16 @@ const AppRouter = () => {
           <ProtectedRoute>
             <TierGate requiredLevel={3}>
               <UpsellEngine />
+            </TierGate>
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/discover" 
+        element={
+          <ProtectedRoute>
+            <TierGate requiredLevel={1}>
+              <HighIntent />
             </TierGate>
           </ProtectedRoute>
         } 

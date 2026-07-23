@@ -1,0 +1,31 @@
+{
+  "summary": "Full end-to-end testing of the new High-Intent Buyer Detection (Discover) feature under Revenue Execution + regression on Upsell Engine and TierGate. Backend: 17/17 pytest passing. Frontend: /discover loads for paid+owner testpro (no gate), sidebar shows both Revenue Execution items, scheduling URL persists, scan populates leads, all 4 actions work (Fast-track routes AE + logs activity, Outreach AI-drafts email referencing signals, Book demo draft includes personalized scheduling link, Sandbox provisions POC with brief+link+status ready), activity log expands, dismiss removes lead from list. send-email returns 422 gracefully as expected (Resend key invalid in preview) and drafts still generate. TierGate rewrite: /upsell renders upsell-engine-page (no regression) — testpro is Enterprise so upgrade wall isn't shown, cannot directly validate upgrade-panel for this account (as noted by main agent).",
+  "backend_issues": { "critical": [], "minor": [] },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "/discover fasttrack-dialog", "issues": ["React hydration console warning: '<span> cannot be a child of <select>' — caused by a dev-tooling wrapper (x-ve-dynamic spans wrap <option> elements). Not app-code issue and does not affect functionality, but worth investigating whether the visual-editor wrapper is only meant for dev mode."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_high_intent.py",
+    "/app/test_reports/pytest/pytest_high_intent.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "HighIntent.js frontend: on Sandbox flow, if `lead.sandbox` already exists it shows the existing package without re-provisioning — good UX. However there's no server-side idempotency check, so a POST /sandbox on a lead that already has one overwrites it with a new sandbox_id/link. If regenerating is intended UX, add a 'Regenerate' button; if not, guard on backend.",
+    "routes/intent.py `scan_leads` uses aggregation in Python across up to 5000 deals/telemetry rows in a single pass. Fine for now but should page or use a MongoDB aggregation pipeline as data grows.",
+    "TierGate.js is well-simplified to the single value-based panel — but the /discover page has its own separate `intent-paid-gate` panel (in HighIntent.js) rendered when !is_paid; consider aligning it with TierGate's shared upgrade-panel for consistency (currently duplicated messaging + no CTA on the paid-gate panel)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_high_intent.py (new — 17 tests)"
+  ],
+  "success_rate": { "backend": "100% (17/17)", "frontend": "100% (12/12 acceptance criteria)" },
+  "test_credentials": "testpro@test.com / password (Enterprise + owner)",
+  "seed_data_creation": "None. Used seed leads from existing db.deals (7 leads found in scan — spec says signal-sparse). Hooli lead had 'sandbox' status pre-set from prior smoke run; other leads confirmed 'new' → 'assigned' → 'sandbox' transitions.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Discover backend tests at /app/backend/tests/test_high_intent.py. All AI-draft endpoints (outreach/booking/sandbox) take 5-45s due to real Emergent LLM. /intent/send-email returns 422 in preview because RESEND_API_KEY is invalid — this is EXPECTED and part of test assertions. testpro@test.com is enterprise+owner (subscription_tier=enterprise_monthly). The Playwright cookie banner at bottom of the page can occasionally intercept the far-right 'Dismiss' button clicks — use scroll_into_view + click(force=True) if you hit that flake.",
+  "rca of the issue": "N/A — no unresolved issues. Note: initial dismiss test appeared to fail due to Termly cookie banner overlaying the ml-auto Dismiss button at bottom of viewport. Retest with scroll_into_view + force=True click confirmed dismiss works correctly (5→0 row after dismiss)."
+}
