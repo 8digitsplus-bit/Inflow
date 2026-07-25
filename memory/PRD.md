@@ -13,6 +13,13 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
+### FIX — Login lockout via app-wide crash from corrupt localStorage (Jul 2026) — P0
+- Symptom: user saw the Sentry ErrorBoundary fallback ("Something went wrong — An unexpected error occurred and our team has been notified. [Reload]") when logging in; Reload re-hit the same crash → permanent lockout.
+- Root cause: `frontend/src/pages/AuthPage.js` parsed `localStorage['inflow_last_account']` with an UNGUARDED `JSON.parse` during render. A corrupt/non-JSON value (e.g. `[object Object]`, `undefined`, truncated JSON) threw synchronously → the app-wide `<Sentry.ErrorBoundary>` replaced the whole UI.
+- Fix: wrapped the parse in try/catch; on failure it `localStorage.removeItem('inflow_last_account')` and returns null, so the app never crashes and the user recovers automatically. Backend login was never at fault (session_token cookie issues correctly).
+- Verified by bug_testing_agent (iteration_51, verdict FIXED): corrupt values no longer show the ErrorBoundary + auto-clear + login reaches /dashboard; clean login and valid saved-account chooser also reach /dashboard.
+
+
 ### High-Intent Buyer Detection "Discover" — Revenue Execution (REWRITTEN to Guided AI Flow, Jul 2026) — P0 pipeline acceleration
 - Page `/discover` (`frontend/src/pages/HighIntent.js`) under the "Revenue Execution" sidebar group. REWRITTEN from the old 4-action model into a single sequential 6-step **Guided AI selling loop**: Opportunity detected → AI analyzes everything → AI explains WHY this buyer matters → AI predicts the outcome → AI recommends ONE action → user executes → AI measures impact.
 - **Integration-driven intent scoring**: `POST /api/intent/scan` analyzes OPEN opportunities (`db.deals`, won/lost excluded) + product usage (`db.telemetry_usage`), grouped by account, scored 0-100 from transparent signals across Marketing / Sales / Product categories (`_build_signals`). Leads persisted in `db.intent_leads` (idempotent by `account_key`; scan now normalizes any legacy/unknown status back to `new`).
