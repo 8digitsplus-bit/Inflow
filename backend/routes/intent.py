@@ -1,26 +1,21 @@
-"""High-Intent Buyer Detection (Discover) — find who is most likely to buy.
+"""High-Intent Buyer Detection (Discover) — guided AI selling flow.
 
-Monitors buying-intent signals across connected integrations and scores each open
-opportunity/account. Signals span three categories, derived transparently from the
-data InFlow already ingests:
-  Marketing : pricing/inbound source, ad engagement, recent (returning) activity
-  Sales     : proposal stage, multiple stakeholders (open threads), demo/late stage
-  Product   : active trial usage, feature exploration, invited teammates (seats)
+Detects high-intent buyers from connected-integration signals, then walks each one
+through a single decision loop:
 
-Actions per hot lead:
-  1) Fast-track  — assign/route the lead to an account executive (+ optional email)
-  2) Outreach    — AI-drafted, hyper-specific email addressing exactly what they engaged with
-  3) Direct book — a personalized scheduling link for instant demo booking
-  4) Sandbox     — a personalized proof-of-concept package (setup brief + link + status)
+  Opportunity detected -> AI analyzes everything -> AI explains WHY this buyer matters
+  -> AI predicts the outcome -> AI recommends ONE action -> user executes -> AI measures impact
 
-Every lead carries an activity log (the shared "action layer"). Paid-tier gated;
-send/route actions are owner-only.
+Signals span Marketing (pricing/inbound, ad engagement, recent activity), Sales
+(proposal, multiple stakeholders, demo/late stage) and Product (trial usage, feature
+exploration, invited teammates). Paid-tier gated; the act/execute steps are owner-only.
 """
+import re
+import json
 import uuid
 import logging
 from datetime import datetime, timezone
-from urllib.parse import quote
-from typing import Optional, List
+from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
@@ -42,7 +37,8 @@ AD_SOURCES = {"ads", "ad", "paid", "google ads", "linkedin ads", "facebook ads",
 INBOUND_SOURCES = {"website", "organic", "inbound", "pricing", "referral", "content", "seo",
                    "demo request", "contact form", "webinar", "blog", "g2"}
 STAGE_ORDER = ["lead", "prospect", "qualified", "discovery", "demo", "proposal", "negotiation"]
-SANDBOX_BASE = "https://sandbox.inflowft.com"
+IMPACT_OUTCOMES = {"replied", "meeting_booked", "won", "no_response", "lost"}
+ACTION_TYPES = {"send_email", "book_call", "loop_in_ae", "nurture"}
 
 
 # ------------------------------------------------------------------ models
@@ -51,25 +47,20 @@ class LeadPatch(BaseModel):
     contact_email: Optional[str] = None
 
 
-class SettingsBody(BaseModel):
-    scheduling_url: Optional[str] = None
-
-
-class FastTrackBody(BaseModel):
-    assignee_id: str
-    notify: bool = True
-
-
-class DraftReq(BaseModel):
+class AnalyzeReq(BaseModel):
     pass
 
 
-class SendEmailReq(BaseModel):
-    lead_id: Optional[str] = None
-    to: str
-    subject: str
-    body: str
-    mark_status: Optional[str] = None
+class ExecuteReq(BaseModel):
+    to: Optional[str] = None
+    send: bool = False
+    note: Optional[str] = None
+    artifact: Optional[str] = None
+
+
+class ImpactReq(BaseModel):
+    outcome: str
+    note: Optional[str] = None
 
 
 # ------------------------------------------------------------------ helpers
@@ -100,7 +91,76 @@ def _signal_summary(lead: dict) -> str:
     return "; ".join(f"{s['label']} ({s['detail']})" for s in lead.get("signals", []))
 
 
-# ------------------------------------------------------------------ status / settings / team
+def _split_subject(text: str) -> tuple[str, str]:
+    m = re.search(r"^\s*subject:\s*(.+)$", text or "", re.I | re.M)
+    if m:
+        subj = m.group(1).strip()
+        body = re.sub(r"^\s*subject:\s*.+$", "", text, flags=re.I | re.M).lstrip()
+        return subj, body
+    return "", text or ""
+
+
+def _fallback_briefing(lead: dict) -> dict:
+    score = lead.get("intent_score", 0)
+    value = lead.get("value", 0) or 0
+    prob = max(5, min(95, round(0.5 * score + 0.5 * lead.get("probability", 0))))
+    stage = lead.get("best_stage", "lead")
+    if stage in ("negotiation", "proposal"):
+        timeline = "1-2 weeks"
+    elif stage in ("demo", "qualified", "discovery"):
+        timeline = "3-6 weeks"
+    else:
+        timeline = "6-10 weeks"
+    conf = "high" if score >= 60 else "medium" if score >= 40 else "low"
+    sigs = _signal_summary(lead) or "several positive signals"
+    if stage in ("proposal", "negotiation"):
+        action = {"type": "book_call", "title": "Book a closing call",
+                  "rationale": "They're late-stage and warm — a live call removes the last blockers to a decision.",
+                  "artifact": f"Hi there,\n\nWe're close on {lead['account']}. I'd love 20 minutes to walk through the final details and answer any open questions so we can get you moving. What time works this week?\n\nBest regards"}
+    elif score >= 50:
+        action = {"type": "send_email", "title": "Send a value-focused follow-up",
+                  "rationale": f"Strong intent ({sigs}). Strike now with a specific, tailored note while attention is high.",
+                  "artifact": f"Subject: The results {lead['account']} is set up for\n\nHi there,\n\nI noticed {sigs} — that usually means you're evaluating seriously. Here's exactly how teams like yours see value fast, tailored to what you've explored. Want a quick 20-minute walkthrough this week?\n\nBest regards"}
+    else:
+        action = {"type": "nurture", "title": "Add to a light nurture",
+                  "rationale": "Intent is building but not yet hot — stay top-of-mind with one useful, low-friction touch.",
+                  "artifact": f"Send {lead['account']} one relevant case study or resource tied to their use case, then re-check intent in a week."}
+    return {
+        "why": f"{lead['account']} is showing {sigs}. In your pipeline this pattern signals active evaluation and a real buying window worth about ${value:,.0f}.",
+        "prediction": {"close_probability": prob, "expected_value": float(value), "timeline": timeline,
+                       "confidence": conf, "summary": f"~{prob}% to close in {timeline} at roughly ${value:,.0f}."},
+        "recommended_action": action,
+    }
+
+
+def _parse_briefing(text: str) -> Optional[dict]:
+    try:
+        s = text[text.index("{"):text.rindex("}") + 1]
+        data = json.loads(s)
+        if not all(k in data for k in ("why", "prediction", "recommended_action")):
+            return None
+        p, a = data["prediction"], data["recommended_action"]
+        data["prediction"] = {
+            "close_probability": max(0, min(100, int(p.get("close_probability", 0) or 0))),
+            "expected_value": float(p.get("expected_value", 0) or 0),
+            "timeline": str(p.get("timeline", "")),
+            "confidence": p.get("confidence", "medium") if p.get("confidence") in ("high", "medium", "low") else "medium",
+            "summary": str(p.get("summary", "")),
+        }
+        atype = a.get("type", "send_email")
+        data["recommended_action"] = {
+            "type": atype if atype in ACTION_TYPES else "send_email",
+            "title": str(a.get("title", "")),
+            "rationale": str(a.get("rationale", "")),
+            "artifact": str(a.get("artifact", "")),
+        }
+        data["why"] = str(data["why"])
+        return data
+    except Exception:
+        return None
+
+
+# ------------------------------------------------------------------ status
 @router.get("/intent/status")
 async def intent_status(user: User = Depends(get_current_user)):
     org = await db.organizations.find_one({"org_id": user.org_id}, {"_id": 0})
@@ -109,44 +169,15 @@ async def intent_status(user: User = Depends(get_current_user)):
     connections = await db.business_connections.find(
         {**org_filter(user), "platform": {"$in": list(USAGE_SOURCES)}}, {"_id": 0, "platform": 1}
     ).to_list(10)
-    settings = await db.intent_settings.find_one(org_filter(user), {"_id": 0})
     open_leads = await db.intent_leads.count_documents(
-        {**org_filter(user), "status": {"$nin": ["dismissed", "won"]}}
+        {**org_filter(user), "status": {"$nin": ["dismissed", "won", "lost"]}}
     )
-    team = await db.users.count_documents({"org_id": user.org_id})
     return {
         "is_paid": is_paid,
         "is_owner": user.role == "owner",
         "usage_sources_connected": [c["platform"] for c in connections],
-        "scheduling_url": (settings or {}).get("scheduling_url", ""),
         "open_leads": open_leads,
-        "team_size": team,
     }
-
-
-@router.get("/intent/settings")
-async def get_settings(user: User = Depends(require_paid)):
-    s = await db.intent_settings.find_one(org_filter(user), {"_id": 0})
-    return s or {"scheduling_url": ""}
-
-
-@router.put("/intent/settings")
-async def put_settings(body: SettingsBody, user: User = Depends(require_paid_owner)):
-    url = (body.scheduling_url or "").strip()
-    await db.intent_settings.update_one(
-        org_filter(user),
-        {"$set": {"org_id": user.org_id, "scheduling_url": url, "updated_at": _now()}},
-        upsert=True,
-    )
-    return {"scheduling_url": url}
-
-
-@router.get("/intent/team")
-async def list_team(user: User = Depends(require_paid)):
-    members = await db.users.find(
-        {"org_id": user.org_id}, {"_id": 0, "user_id": 1, "name": 1, "email": 1, "role": 1}
-    ).to_list(200)
-    return members
 
 
 # ------------------------------------------------------------------ scan
@@ -159,7 +190,6 @@ def _build_signals(acct: dict, medians: dict) -> tuple[list, int]:
     dc = acct["deals_count"]
     notes = (acct["notes"] or "").lower()
 
-    # Marketing
     inbound = src & INBOUND_SOURCES
     if inbound:
         signals.append({"key": "pricing_page_visit", "cat": "Marketing", "label": "Visited pricing / inbound", "detail": ", ".join(sorted(inbound))[:40]})
@@ -169,7 +199,6 @@ def _build_signals(acct: dict, medians: dict) -> tuple[list, int]:
     if acct["days_since_update"] is not None and acct["days_since_update"] <= 14:
         signals.append({"key": "returning_visitor", "cat": "Marketing", "label": "Recently active", "detail": f"touched {acct['days_since_update']}d ago"})
 
-    # Sales
     if "proposal" in stages:
         signals.append({"key": "proposal_viewed", "cat": "Sales", "label": "Proposal stage", "detail": "proposal in play"})
     if (stages & {"demo", "negotiation"}) or "demo" in notes:
@@ -177,7 +206,6 @@ def _build_signals(acct: dict, medians: dict) -> tuple[list, int]:
     if dc >= 2:
         signals.append({"key": "multiple_stakeholders", "cat": "Sales", "label": "Multiple stakeholders", "detail": f"{dc} open threads"})
 
-    # Product
     if usage > 0:
         signals.append({"key": "trial_usage", "cat": "Product", "label": "Active trial usage", "detail": f"{usage:,} events"})
     if usage > 0 and usage >= max(500.0, medians["usage"] * 1.15):
@@ -195,7 +223,6 @@ def _build_signals(acct: dict, medians: dict) -> tuple[list, int]:
 
 @router.post("/intent/scan")
 async def scan_leads(user: User = Depends(require_paid)):
-    """Analyze open opportunities + integration signals to surface high-intent buyers."""
     deals = await db.deals.find(org_filter(user), {"_id": 0}).to_list(5000)
     usage_rows = await db.telemetry_usage.find(org_filter(user), {"_id": 0}).to_list(5000)
 
@@ -213,7 +240,7 @@ async def scan_leads(user: User = Depends(require_paid)):
     for d in deals:
         stage = (d.get("stage") or "").lower()
         if stage in WON_STAGES or stage in LOST_STAGES:
-            continue  # Discover targets OPEN prospects, not customers/lost
+            continue
         company = (d.get("company") or d.get("name") or "").strip()
         if not company:
             continue
@@ -285,17 +312,15 @@ async def scan_leads(user: User = Depends(require_paid)):
         if existing:
             base["status"] = existing.get("status", "new")
             base["contact_email"] = existing.get("contact_email", "")
-            base["assigned_to"] = existing.get("assigned_to")
-            base["assigned_name"] = existing.get("assigned_name")
             await db.intent_leads.update_one({"lead_id": existing["lead_id"]}, {"$set": base})
         else:
             base["lead_id"] = f"lead_{uuid.uuid4().hex[:12]}"
             base["status"] = "new"
             base["contact_email"] = ""
-            base["assigned_to"] = None
-            base["assigned_name"] = None
-            base["activity"] = [{"ts": now_iso, "type": "detected", "detail": f"Detected with intent score {score}/100", "by": "InFlow"}]
-            base["sandbox"] = None
+            base["briefing"] = None
+            base["executed"] = None
+            base["impact"] = None
+            base["activity"] = [{"ts": now_iso, "type": "detected", "detail": f"Opportunity detected — intent score {score}/100", "by": "InFlow"}]
             await db.intent_leads.insert_one(dict(base))
 
     return {"status": "scanned", "accounts_analyzed": len(accounts), "leads_found": found, "hot_leads": hot}
@@ -310,7 +335,7 @@ async def list_leads(user: User = Depends(require_paid)):
 async def patch_lead(lead_id: str, body: LeadPatch, user: User = Depends(require_paid)):
     updates = {}
     if body.status is not None:
-        if body.status not in ("new", "assigned", "contacted", "booked", "sandbox", "won", "dismissed"):
+        if body.status not in ("new", "analyzed", "executed", "won", "lost", "dismissed"):
             raise HTTPException(status_code=400, detail="Invalid status")
         updates["status"] = body.status
     if body.contact_email is not None:
@@ -324,146 +349,98 @@ async def patch_lead(lead_id: str, body: LeadPatch, user: User = Depends(require
     return _clean(await db.intent_leads.find_one({"lead_id": lead_id}, {"_id": 0}))
 
 
-# ------------------------------------------------------------------ action 1: fast-track to AE
-@router.post("/intent/leads/{lead_id}/fast-track")
-async def fast_track(lead_id: str, body: FastTrackBody, user: User = Depends(require_paid_owner)):
+# ------------------------------------------------------------------ step: AI analyze (why + predict + recommend ONE action)
+@router.post("/intent/leads/{lead_id}/analyze")
+async def analyze_lead(lead_id: str, body: AnalyzeReq = AnalyzeReq(), user: User = Depends(require_paid_owner)):
     lead = await _get_lead(lead_id, user)
-    ae = await db.users.find_one({"user_id": body.assignee_id, "org_id": user.org_id}, {"_id": 0})
-    if not ae:
-        raise HTTPException(status_code=404, detail="Assignee not found on your team")
+    system = (
+        "You are an elite revenue-intelligence strategist analyzing a single buyer. Respond with STRICT JSON only "
+        "(no markdown, no prose outside the JSON). The JSON must have exactly these keys: "
+        '"why" (2 sentences on why this buyer matters right now), '
+        '"prediction" (object: close_probability int 0-100, expected_value number, timeline short string, '
+        'confidence one of high|medium|low, summary one sentence), and '
+        '"recommended_action" (object: type one of send_email|book_call|loop_in_ae|nurture, title short, '
+        "rationale one sentence on why THIS action now, artifact = the ready-to-use content — for send_email a full "
+        "email starting with a 'Subject:' line; for book_call short call talking points; for loop_in_ae an internal "
+        "handoff note; for nurture a one-line nurture suggestion). Recommend exactly ONE action."
+    )
+    prompt = (
+        f"Buyer account: {lead['account']}\n"
+        f"Open pipeline value: ${lead['value']:,.0f}\n"
+        f"Stage: {lead['best_stage']} | deal probability: {lead['probability']}%\n"
+        f"Intent score: {lead['intent_score']}/100\n"
+        f"Buying-intent signals: {_signal_summary(lead) or 'inbound interest'}\n\n"
+        f"Return the analysis JSON now."
+    )
+    text, ok = await _ai_text(system, prompt, f"intent_analyze_{lead_id}", "")
+    briefing = _parse_briefing(text) if (ok and text) else None
+    if not briefing:
+        briefing = _fallback_briefing(lead)
+    briefing["generated_at"] = _now()
+    new_status = "analyzed" if lead.get("status") == "new" else lead.get("status")
     await db.intent_leads.update_one(
-        {"lead_id": lead_id},
-        {"$set": {"assigned_to": ae["user_id"], "assigned_name": ae.get("name") or ae.get("email"),
-                  "status": "assigned", "updated_at": _now()}},
+        {"lead_id": lead_id}, {"$set": {"briefing": briefing, "status": new_status, "updated_at": _now()}}
     )
-    await _log_activity(lead_id, user, "fast_track", f"Routed to {ae.get('name') or ae.get('email')}")
-    notified = False
-    if body.notify and ae.get("email"):
-        subject = f"Hot lead routed to you: {lead['account']} ({lead['intent_score']}/100 intent)"
-        text = (
-            f"Hi {ae.get('name') or 'there'},\n\n{lead['account']} is showing strong buying intent "
-            f"(score {lead['intent_score']}/100) and has been routed to you for immediate outreach.\n\n"
-            f"Signals: {_signal_summary(lead) or 'multiple positive signals'}\n"
-            f"Open pipeline value: ${lead['value']:,.0f}\n\n"
-            f"Reach out while the intent is hot.\n\n— InFlow Discover"
-        )
-        res = await send_email(to=ae["email"], subject=subject, html=_email_html(text), text=text)
-        notified = bool(res and res.get("sent"))
-    return {"assigned_to": ae["user_id"], "assigned_name": ae.get("name") or ae.get("email"), "notified": notified}
+    await _log_activity(lead_id, user, "analyze", "AI generated buyer briefing")
+    return briefing
 
 
-# ------------------------------------------------------------------ action 2: custom outreach
-@router.post("/intent/leads/{lead_id}/outreach")
-async def draft_outreach(lead_id: str, body: DraftReq = DraftReq(), user: User = Depends(require_paid_owner)):
+# ------------------------------------------------------------------ step: user executes the ONE action
+@router.post("/intent/leads/{lead_id}/execute")
+async def execute_action(lead_id: str, body: ExecuteReq = ExecuteReq(), user: User = Depends(require_paid_owner)):
     lead = await _get_lead(lead_id, user)
-    fallback = (
-        f"Subject: Saw your interest in what we're building, {lead['account']}\n\n"
-        f"Hi there,\n\nI noticed {lead['account']} has been engaging with us — {_signal_summary(lead) or 'a few strong signals'}. "
-        f"That usually means there's a real problem you're trying to solve right now.\n\n"
-        f"I'd love to show you exactly how teams like yours get value fast. Would a quick 20-minute walkthrough this week help?\n\n"
-        f"Happy to tailor it to what you've already looked at.\n\nBest regards"
-    )
-    system = (
-        "You are a top SDR writing a hyper-specific, non-generic outreach email to a prospect showing buying intent. "
-        "Reference the EXACT signals/pages they engaged with, be concise and human, and end with a low-friction call to action "
-        "(a short demo). No emojis, no markdown symbols. Output a 'Subject:' line then the body. Under 150 words."
-    )
-    prompt = (
-        f"Prospect account: {lead['account']}\nStage: {lead['best_stage']}\n"
-        f"Buying-intent signals to reference specifically: {_signal_summary(lead) or 'inbound interest'}\n"
-        f"Open pipeline value: ${lead['value']:,.0f}\n\nWrite the outreach email now."
-    )
-    text, _ = await _ai_text(system, prompt, f"intent_outreach_{lead_id}", fallback)
-    return {"draft": text, "lead_id": lead_id}
+    briefing = lead.get("briefing")
+    if not briefing:
+        raise HTTPException(status_code=400, detail="Run the AI analysis first")
+    action = briefing.get("recommended_action", {})
+    artifact = (body.artifact if body.artifact is not None else action.get("artifact", "")) or ""
+    sent = False
+    detail = f"Executed: {action.get('title') or 'recommended action'}"
 
+    if body.send and action.get("type") == "send_email":
+        to = (body.to or lead.get("contact_email") or "").strip()
+        if not to or "@" not in to:
+            raise HTTPException(status_code=400, detail="A valid recipient email is required to send")
+        subj, bod = _split_subject(artifact)
+        result = await send_email(to=to, subject=subj or f"Following up — {lead['account']}", html=_email_html(bod), text=bod)
+        if not result.get("sent"):
+            reason = result.get("reason") or "unknown"
+            if reason == "no_api_key":
+                raise HTTPException(status_code=400, detail="Email sending isn't configured yet. Add a RESEND_API_KEY to send.")
+            raise HTTPException(status_code=422, detail=f"Could not send email: {reason}")
+        sent = True
+        detail = f"Sent email to {to}"
+        await db.intent_leads.update_one({"lead_id": lead_id}, {"$set": {"contact_email": to}})
 
-# ------------------------------------------------------------------ action 3: direct booking
-@router.post("/intent/leads/{lead_id}/booking")
-async def draft_booking(lead_id: str, body: DraftReq = DraftReq(), user: User = Depends(require_paid_owner)):
-    lead = await _get_lead(lead_id, user)
-    settings = await db.intent_settings.find_one(org_filter(user), {"_id": 0})
-    base_url = (settings or {}).get("scheduling_url", "").strip()
-    if not base_url:
-        raise HTTPException(status_code=400, detail="Set your scheduling link in Discover settings first (e.g. your Calendly/Cal.com URL).")
-    sep = "&" if "?" in base_url else "?"
-    booking_link = f"{base_url}{sep}utm_source=inflow&utm_campaign=high_intent&account={quote(lead['account'])}"
-    if lead.get("contact_email"):
-        booking_link += f"&email={quote(lead['contact_email'])}"
-
-    fallback = (
-        f"Subject: Grab a time that works for you, {lead['account']}\n\n"
-        f"Hi there,\n\nBased on your interest ({_signal_summary(lead) or 'recent activity'}), I'd love to give you a focused "
-        f"demo tailored to your use case. Pick any time that suits you here:\n\n{booking_link}\n\n"
-        f"Looking forward to it.\n\nBest regards"
-    )
-    system = (
-        "You are an AE writing a short, warm email inviting a high-intent prospect to book a demo. Reference their interest "
-        "briefly and present the scheduling link clearly. No emojis, no markdown symbols. Output a 'Subject:' line then the body. "
-        "You MUST include this exact scheduling link verbatim on its own line: " + booking_link + ". Under 130 words."
-    )
-    prompt = (
-        f"Prospect: {lead['account']}\nSignals: {_signal_summary(lead) or 'inbound interest'}\n"
-        f"Scheduling link (include verbatim): {booking_link}\n\nWrite the booking invite now."
-    )
-    text, _ = await _ai_text(system, prompt, f"intent_booking_{lead_id}", fallback)
-    if booking_link not in text:
-        text = text.rstrip() + f"\n\nBook here: {booking_link}"
-    return {"draft": text, "booking_link": booking_link, "lead_id": lead_id}
-
-
-# ------------------------------------------------------------------ shared send
-@router.post("/intent/send-email")
-async def send_intent_email(body: SendEmailReq, user: User = Depends(require_paid_owner)):
-    to = (body.to or "").strip()
-    if not to or "@" not in to:
-        raise HTTPException(status_code=400, detail="A valid recipient email is required")
-    if not body.subject.strip() or not body.body.strip():
-        raise HTTPException(status_code=400, detail="Subject and body are required")
-    result = await send_email(to=to, subject=body.subject.strip(), html=_email_html(body.body), text=body.body)
-    if not result.get("sent"):
-        reason = result.get("reason") or "unknown"
-        if reason == "no_api_key":
-            raise HTTPException(status_code=400, detail="Email sending isn't configured yet. Add a RESEND_API_KEY to send outreach.")
-        raise HTTPException(status_code=422, detail=f"Could not send email: {reason}")
-    if body.lead_id:
-        await db.intent_leads.update_one(
-            {"lead_id": body.lead_id, **org_filter(user)},
-            {"$set": {"status": body.mark_status or "contacted", "contact_email": to, "updated_at": _now()}},
-        )
-        await _log_activity(body.lead_id, user, body.mark_status or "contacted", f"Email sent to {to}")
-    return {"sent": True, "id": result.get("id"), "to": to}
-
-
-# ------------------------------------------------------------------ action 4: custom sandbox
-@router.post("/intent/leads/{lead_id}/sandbox")
-async def build_sandbox(lead_id: str, body: DraftReq = DraftReq(), user: User = Depends(require_paid_owner)):
-    lead = await _get_lead(lead_id, user)
-    if lead.get("sandbox"):
-        return lead["sandbox"]  # idempotent — don't overwrite an existing POC package
-    sandbox_id = f"sbx_{uuid.uuid4().hex[:10]}"
-    link = f"{SANDBOX_BASE}/{sandbox_id}"
-    fallback = (
-        f"Personalized proof-of-concept for {lead['account']}\n\n"
-        f"Pre-loaded with sample data modeled on this account's profile and use case. "
-        f"Based on their signals ({_signal_summary(lead) or 'active evaluation'}), the environment highlights the exact "
-        f"workflows they explored so they can see value on day one.\n\n"
-        f"Suggested setup: 1) seed their team/accounts, 2) enable the features they explored, "
-        f"3) pre-build one dashboard tied to their goal, 4) share the link for a guided first session."
-    )
-    system = (
-        "You are a solutions engineer writing a short internal setup brief for a personalized proof-of-concept (sandbox) "
-        "environment for a high-intent prospect. Describe what data to pre-load and which workflows to highlight based on "
-        "their signals. No emojis, no markdown symbols. Under 130 words."
-    )
-    prompt = (
-        f"Prospect: {lead['account']}\nStage: {lead['best_stage']}\n"
-        f"Signals: {_signal_summary(lead) or 'active evaluation'}\nOpen value: ${lead['value']:,.0f}\n\n"
-        f"Write the sandbox setup brief now."
-    )
-    brief, _ = await _ai_text(system, prompt, f"intent_sandbox_{lead_id}", fallback)
-    sandbox = {"sandbox_id": sandbox_id, "link": link, "brief": brief, "status": "ready", "created_at": _now()}
+    executed = {"action_type": action.get("type"), "title": action.get("title"),
+                "note": (body.note or "").strip(), "sent": sent, "executed_at": _now()}
     await db.intent_leads.update_one(
-        {"lead_id": lead_id}, {"$set": {"sandbox": sandbox, "status": "sandbox", "updated_at": _now()}}
+        {"lead_id": lead_id}, {"$set": {"executed": executed, "status": "executed", "updated_at": _now()}}
     )
-    await _log_activity(lead_id, user, "sandbox", f"Built personalized POC sandbox {sandbox_id}")
-    return sandbox
+    await _log_activity(lead_id, user, "execute", detail)
+    return {"executed": executed, "sent": sent}
+
+
+# ------------------------------------------------------------------ step: AI measures impact
+@router.post("/intent/leads/{lead_id}/impact")
+async def measure_impact(lead_id: str, body: ImpactReq, user: User = Depends(require_paid_owner)):
+    lead = await _get_lead(lead_id, user)
+    if body.outcome not in IMPACT_OUTCOMES:
+        raise HTTPException(status_code=400, detail="Invalid outcome")
+    value = lead.get("value", 0) or 0
+    value_influenced = value if body.outcome in ("won", "meeting_booked", "replied") else 0
+    summaries = {
+        "won": f"Won — ${value:,.0f} in new revenue attributed to acting on this buyer's intent at the right moment.",
+        "meeting_booked": f"Meeting booked — ${value:,.0f} of pipeline advanced to a live conversation.",
+        "replied": f"Positive reply — the buyer re-engaged; ${value:,.0f} kept in active play.",
+        "no_response": "No response yet — recommend one more tailored touch, then re-evaluate intent on the next scan.",
+        "lost": "Lost this cycle — log the reason; the account stays available for future re-engagement.",
+    }
+    new_status = "won" if body.outcome == "won" else "lost" if body.outcome == "lost" else "executed"
+    impact = {"outcome": body.outcome, "summary": summaries[body.outcome],
+              "value_influenced": round(value_influenced, 2), "note": (body.note or "").strip(), "measured_at": _now()}
+    await db.intent_leads.update_one(
+        {"lead_id": lead_id}, {"$set": {"impact": impact, "status": new_status, "updated_at": _now()}}
+    )
+    await _log_activity(lead_id, user, "impact", f"Impact measured: {body.outcome} (${value_influenced:,.0f} influenced)")
+    return impact
