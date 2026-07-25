@@ -157,7 +157,15 @@ export default function HighIntent() {
     catch (e) { toast.error(e.message); }
   };
 
-  const copyArtifact = () => { navigator.clipboard.writeText(artifact || ''); setCopied(true); setTimeout(() => setCopied(false), 1500); };
+  const copyArtifact = async () => {
+    try {
+      await navigator.clipboard.writeText(artifact || '');
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch (e) {
+      toast.error('Clipboard unavailable — select the text and copy manually');
+    }
+  };
 
   // -------- gates
   if (loading) return <DashboardLayout><div className="flex items-center justify-center min-h-[70vh]" data-testid="intent-loading"><Loader2 className="w-6 h-6 text-slate-400 animate-spin" /></div></DashboardLayout>;

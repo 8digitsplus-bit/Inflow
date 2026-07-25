@@ -310,7 +310,8 @@ async def scan_leads(user: User = Depends(require_paid)):
             "updated_at": now_iso,
         }
         if existing:
-            base["status"] = existing.get("status", "new")
+            prev_status = existing.get("status", "new")
+            base["status"] = prev_status if prev_status in {"new", "analyzed", "executed", "won", "lost", "dismissed"} else "new"
             base["contact_email"] = existing.get("contact_email", "")
             await db.intent_leads.update_one({"lead_id": existing["lead_id"]}, {"$set": base})
         else:
