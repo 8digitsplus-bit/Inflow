@@ -1,0 +1,35 @@
+{
+  "summary": "Tested the rewritten High-Intent Buyer Detection guided AI flow end-to-end (backend + frontend). Backend: 14/15 tests pass, 1 skipped (patch_dismiss when no open leads — expected in shared DB). All new endpoints (/api/intent/status, /scan, /leads, /leads/{id}/analyze, /execute, /impact, PATCH) work as spec'd, including gating (401 unauth, 400 execute-before-analyze, 400 invalid recipient / invalid status, 404 unknown lead), and the 422 graceful-failure on execute-with-send is confirmed (invalid preview RESEND_API_KEY). Frontend: /discover loads for the paid owner, stats render, scan works, and the full guided flow (open dialog -> AI analyze -> Why/Prediction/Recommendation with editable artifact -> Mark done -> Outcome measurement -> Impact card) all rendered with real AI output. Activity log shows detected/analyze/execute/impact entries. Dismiss removes lead from open list, list + stats refresh. One real bug found: clicking the Copy button in the flow dialog throws an uncaught NotAllowedError that surfaces a full-screen React dev error overlay in preview.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/intent/scan", "issue": "Scan preserves any existing lead.status even when it is a value no longer accepted by PATCH (e.g. legacy 'sandbox' status left in DB). Not user-facing, but leaks stale schema — worth normalizing unknown statuses back to 'new' on scan-update."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "HighIntent.js — copyArtifact()", "issue": "navigator.clipboard.writeText() throws NotAllowedError in some browser contexts (preview iframe, non-focused). The promise rejection is unhandled, so React surfaces a full-page 'Uncaught runtime errors' overlay that blocks the user from continuing the flow. Wrap in try/catch or .catch() and show a toast fallback.", "selector": "[data-testid=\"flow-copy-btn\"]", "priority": "HIGH"}
+    ],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/backend/tests/test_high_intent_v2.py", "/app/test_reports/pytest/pytest_high_intent_v2.xml"],
+  "action_items": [
+    "Wrap copyArtifact() in try/catch (or use .catch()) so clipboard permission failures don't render an unhandled-error overlay; show a toast fallback instead.",
+    "Consider normalizing legacy/unknown lead.status values back to 'new' in the /intent/scan upsert path so stale leads (e.g. 'sandbox' from removed features) become actionable again."
+  ],
+  "critical_code_review_comments": [
+    "HighIntent.js copyArtifact writes to clipboard without error handling — a common source of Sentry noise and dev-overlay in embedded contexts.",
+    "routes/intent.py scan_leads: `existing.get('status', 'new')` blindly preserves any prior status. Fine for the new state machine, but historical DB rows can hold statuses no longer in the accepted set — validate/normalize on upsert.",
+    "Analyze endpoint status transition: `new_status = 'analyzed' if lead.status == 'new' else lead.status` — subtle but means analyzing a 'dismissed' lead won't undismiss it (probably intentional). Consider making analyze idempotent w.r.t. re-analysis after dismiss.",
+    "test_high_intent.py (old file) is stale and referenced removed endpoints — should be deleted to avoid confusion (kept as-is per instructions; new test file is test_high_intent_v2.py)."
+  ],
+  "updated_files": ["/app/backend/tests/test_high_intent_v2.py"],
+  "success_rate": {"backend": "93% (14/15 executed passed, 1 skipped)", "frontend": "100% of guided-flow scenarios verified; 1 UI bug on copy"},
+  "test_credentials": "testpro@test.com / password (enterprise_monthly, owner)",
+  "seed_data_creation": "None. Reused existing 7 db.intent_leads rows; had to PATCH them back to status='new' between runs because prior test runs left them in won/dismissed/executed states (scan is idempotent by account_key and preserves prior status).",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Backend covered by /app/backend/tests/test_high_intent_v2.py (junit at /app/test_reports/pytest/pytest_high_intent_v2.xml). To reset DB state for E2E: login via /api/auth/login then PATCH each /api/intent/leads/{id} to {status:'new'} — scan does NOT reset status. AI analyze always returns a valid briefing (real Claude output observed in preview). Real Resend send returns 422 by design (invalid key).",
+  "rca of the issue": "Copy-button overlay bug: navigator.clipboard.writeText() returns a Promise that rejects with NotAllowedError when the document/iframe lacks clipboard-write permission or focus. HighIntent.js line ~160 calls it without awaiting or catching, so the rejection bubbles up as an unhandled promise rejection that React dev-mode renders as a blocking full-screen overlay. Fix: `try { await navigator.clipboard.writeText(artifact || ''); setCopied(true); } catch (e) { toast.error('Clipboard not available — copy manually'); }`."
+}
