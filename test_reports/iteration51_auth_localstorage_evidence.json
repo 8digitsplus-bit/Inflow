@@ -1,0 +1,61 @@
+{
+  "base_url": "https://revenue-exec.preview.emergentagent.com",
+  "results": [
+    {
+      "label": "corrupt [object Object]",
+      "status": "passed",
+      "error_boundary": false,
+      "localStorage_after_load": null,
+      "final_url": "https://revenue-exec.preview.emergentagent.com/dashboard",
+      "saved_account_after_login": {
+        "name": "Test Pro User",
+        "email": "testpro@test.com"
+      },
+      "console_error_count": 30
+    },
+    {
+      "label": "corrupt undefined",
+      "status": "passed",
+      "error_boundary": false,
+      "localStorage_after_load": null,
+      "final_url": "https://revenue-exec.preview.emergentagent.com/dashboard",
+      "saved_account_after_login": {
+        "name": "Test Pro User",
+        "email": "testpro@test.com"
+      },
+      "console_error_count": 28
+    },
+    {
+      "label": "corrupt truncated JSON",
+      "status": "passed",
+      "error_boundary": false,
+      "localStorage_after_load": null,
+      "final_url": "https://revenue-exec.preview.emergentagent.com/dashboard",
+      "saved_account_after_login": {
+        "name": "Test Pro User",
+        "email": "testpro@test.com"
+      },
+      "console_error_count": 28
+    },
+    {
+      "label": "clean login regression",
+      "status": "passed",
+      "final_url": "https://revenue-exec.preview.emergentagent.com/dashboard",
+      "saved_account_after_login": {
+        "name": "Test Pro User",
+        "email": "testpro@test.com"
+      },
+      "console_error_count": 28
+    },
+    {
+      "label": "valid saved-account chooser",
+      "status": "passed",
+      "saved_account": {
+        "name": "Test Pro User",
+        "email": "testpro@test.com"
+      },
+      "final_url": "https://revenue-exec.preview.emergentagent.com/dashboard",
+      "console_error_count": 50
+    }
+  ]
+}

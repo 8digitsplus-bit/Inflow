@@ -76,8 +76,20 @@ const AuthPage = () => {
   const otpRefs = useRef([]);
 
   // Account chooser state
-  const savedAccountRaw = localStorage.getItem('inflow_last_account');
-  const savedAccount = savedAccountRaw ? JSON.parse(savedAccountRaw) : null;
+  // Guard against a corrupt localStorage value: an unguarded JSON.parse here
+  // throws during render and trips the app-wide Sentry ErrorBoundary, locking
+  // the user out of login entirely (Reload re-hits the same crash). Clear the
+  // bad value so the user recovers automatically.
+  const savedAccount = (() => {
+    const raw = localStorage.getItem('inflow_last_account');
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw);
+    } catch {
+      localStorage.removeItem('inflow_last_account');
+      return null;
+    }
+  })();
   const [showAccountChooser, setShowAccountChooser] = useState(!!savedAccount);
 
   // True when the saved account matches the currently authenticated user (one-click sign-in possible)
