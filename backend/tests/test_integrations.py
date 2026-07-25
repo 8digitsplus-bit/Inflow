@@ -8,7 +8,7 @@ import os
 import time
 from datetime import datetime, timedelta
 
-BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://revenue-dash-40.preview.emergentagent.com').rstrip('/')
+BASE_URL = os.environ.get('REACT_APP_BACKEND_URL', 'https://revenue-exec.preview.emergentagent.com').rstrip('/')
 
 # Test session token created via mongosh
 SESSION_TOKEN = "test_session_integ_1772621703579"
