@@ -10,6 +10,7 @@ import RevenueIntelligence from './pages/RevenueIntelligence';
 import ChurnRetention from './pages/ChurnRetention';
 import UpsellEngine from './pages/UpsellEngine';
 import HighIntent from './pages/HighIntent';
+import Workspace from './pages/Workspace';
 import ConversionOptimization from './pages/ConversionOptimization';
 import Settings from './pages/Settings';
 import Integrations from './pages/Integrations';
@@ -140,6 +141,16 @@ const AppRouter = () => {
           <ProtectedRoute>
             <TierGate requiredLevel={1}>
               <HighIntent />
+            </TierGate>
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/workspace" 
+        element={
+          <ProtectedRoute>
+            <TierGate requiredLevel={1}>
+              <Workspace />
             </TierGate>
           </ProtectedRoute>
         } 

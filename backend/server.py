@@ -30,6 +30,7 @@ from routes.telemetry import router as telemetry_router
 from routes.competitors import router as competitors_router
 from routes.upsell import router as upsell_router
 from routes.intent import router as intent_router
+from routes.workspace import router as workspace_router
 from migrations.orgs import migrate_users_to_orgs
 from utils.sentry_config import init_sentry
 
@@ -137,6 +138,7 @@ api_router.include_router(telemetry_router)
 api_router.include_router(competitors_router)
 api_router.include_router(upsell_router)
 api_router.include_router(intent_router)
+api_router.include_router(workspace_router)
 
 
 # Basic routes

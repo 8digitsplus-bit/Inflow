@@ -22,6 +22,7 @@ import {
   Swords,
   Rocket,
   Telescope,
+  Workflow,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from './ui/alert-dialog';
@@ -66,6 +67,7 @@ const navGroups = [
     items: [
       { name: 'High-Intent Buyers', href: '/discover', icon: Telescope, minTier: 1 },
       { name: 'Upsell Engine', href: '/upsell', icon: Rocket, minTier: 3 },
+      { name: 'Workspace', href: '/workspace', icon: Workflow, minTier: 1 },
     ]
   },
   {

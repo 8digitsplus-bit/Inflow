@@ -1,0 +1,33 @@
+{
+  "summary": "Full backend + frontend testing of the new Action Workspace feature (/workspace + /api/workspace/*). Backend: 21/21 pytest cases pass — gating (401 unauth), status shape (is_owner + hubspot connected + has_token), targets endpoint returns lists+error string for demo token (expected), AI draft returns real Claude text for note/task/call/email and rejects 'deal' kind, all validation cases (missing target for note/task/call/email, missing per-kind required fields, invalid kind, invalid provider), full deal draft→execute→graceful 422 ('HubSpot authentication failed. Reconnect...')→status flips to failed→delete→404 flow, execute non-existent 404, newest-first ordering, no MongoDB _id leak. Frontend: /workspace page renders for the paid owner with workspace-page, workspace-connection banner ('Connected to Demo Hubspot'), all 5 kind pills, target selects, AI draft fills note body with real Claude text (~349 chars), AI draft button is hidden on 'deal' kind (as spec'd), Save-as-draft creates a draft that appears in the queue with a DRAFT badge and 'Review & push' button, clicking push opens confirm-dialog with confirm-preview, Cancel closes without writing, Confirm & push triggers 422 and the action's status badge flips to 'failed' with the readable HubSpot error inline. Sidebar nav-workspace is present under Revenue Execution. The 422 on execute and empty target lists are EXPECTED per the demo token — not reported as bugs.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "/workspace (React hydration)", "issues": ["Console warning: 'In HTML, <span> cannot be a child of <select>' / '<span> cannot be a child of <option>' — a Radix/shadcn Select overlay is likely rendering hidden <span> siblings inside the native <select> markup in the target picker or pipeline/stage selects. Cosmetic (hydration warning), does not break functionality."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_workspace.py", "/app/test_reports/pytest/pytest_workspace.xml"],
+  "action_items": [
+    "Optional: silence the '<span> cannot be a child of <select>/<option>' React hydration warning on /workspace (likely the native <select> markup has a stray <span> child rendered by Radix/shadcn Label or icon)."
+  ],
+  "critical_code_review_comments": [
+    "workspace.py execute() correctly persists status='failed' + result.error BEFORE raising 422 — good UX, action becomes retryable.",
+    "hubspot_write._post surfaces clear 401/403 reasons with missing_scopes list — great error handling.",
+    "Workspace.js: /targets is called even when the demo token is known-bad, causing a red toast every page load ('HubSpot authentication failed...'). Consider suppressing the toast on initial mount and only showing it on manual refresh; the same error is already surfaced next to the composer. Minor UX polish.",
+    "Workspace.js parseDraft uses a regex fallback that could silently produce empty title if AI ignores 'Title:' prefix — acceptable given _ai_text fallback strings guarantee that prefix.",
+    "delete_action allows deleting an 'executed' action from the DB directly via API even though UI hides the button — spec says 'executed cannot be deleted from UI' which is satisfied, but backend does not enforce it. Low priority."
+  ],
+  "updated_files": ["/app/backend/tests/test_workspace.py"],
+  "success_rate": {"backend": "100% (21/21)", "frontend": "100% of specified flows"},
+  "test_credentials": "testpro@test.com / password (enterprise_monthly, org owner) — verified working.",
+  "seed_data_creation": "None. Test used the pre-existing demo HubSpot connection. All created workspace_actions were cleaned up in fixtures.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Backend regression suite at /app/backend/tests/test_workspace.py (21 tests, all green). Feature is production-ready in preview modulo the cosmetic React hydration warning about <span> inside <select>. Real HubSpot write verification requires swapping testpro's demo token for a real Private App token with crm.objects.contacts.write, crm.objects.deals.write, and CRM read scopes — cannot be done in preview.",
+  "rca of the issue": "N/A — no bugs found. The 422 'HubSpot authentication failed' returned by /api/workspace/actions/{id}/execute is EXPECTED because testpro's HubSpot connection stores a demo/invalid token. Backend correctly translates HubSpot's 401 into a human-readable 422 detail and persists the action as status='failed' with a retryable error field."
+}
