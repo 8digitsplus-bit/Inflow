@@ -17,7 +17,8 @@
 
 
 ## Upsell Engine / Revenue Execution (Jul 2026)
-- Pages: /discover (High-Intent Buyers, any paid tier) and /upsell (Upsell Engine, enterprise) under the "Revenue Execution" sidebar group.
+- Pages: /discover (High-Intent Buyers, any paid tier), /upsell (Upsell Engine, enterprise), and /workspace (Action Workspace, any paid tier) under the "Revenue Execution" sidebar group.
+- **Action Workspace (/workspace)**: two-way write-backs to HubSpot (add note, create task, log call/email, create deal) with human-in-the-loop confirm. testpro is owner + paid so full access. NOTE: testpro's HubSpot is a DEMO connection (invalid token) — execute returns HTTP 422 "reconnect HubSpot" and target lists are empty. Real writes need a valid HubSpot Private App token with write scopes. Backend tests: /app/backend/tests/test_workspace.py (21/21).
 - Page: /upsell (Enterprise-tier + owner only). Sidebar: "Revenue Execution" → "Upsell Engine".
 - testpro@test.com is Enterprise + owner, so it has full access. Candidates come from `db.deals` + `db.telemetry_usage`; run `POST /api/upsell/scan` to populate.
 - Email send + notify-sales use Resend; the preview RESEND_API_KEY is INVALID, so those return HTTP 422 with a readable detail (drafts still generate). Real sends need a valid key + verified sender.

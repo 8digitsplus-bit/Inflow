@@ -13,6 +13,15 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
+### Action Workspace — Two-way "System of Action" write-backs (Jul 2026) — P0 Revenue Execution
+- NEW page `/workspace` (`frontend/src/pages/Workspace.js`) under the **Revenue Execution** sidebar group (now: High-Intent Buyers + Upsell Engine + Workspace). Turns InFlow's read-only integrations into a two-way system where users push changes back into their connected tools. HubSpot first; architecture is provider-generic (`WRITE_PROVIDERS`) so other integrations plug in later.
+- **4 write actions (HubSpot)**: add a note, create a task, log an activity (call/email), create a new deal — each associated to a live HubSpot record (deal/contact). NO stage/value edits this phase (per user). Upload calls/files deferred to next phase.
+- **Human-in-the-loop**: compose (optional AI draft via Claude) → Save as DRAFT → Review & push opens a confirm dialog with a preview → Confirm & push executes the real HubSpot write. Nothing writes without explicit confirm.
+- Backend `routes/workspace.py` (registered in `server.py`): `GET /workspace/status`, `GET /workspace/targets` (live deals/contacts/pipelines with real HubSpot ids), `POST /workspace/ai-draft`, `POST /workspace/actions` (draft), `GET /workspace/actions`, `DELETE /workspace/actions/{id}`, `POST /workspace/actions/{id}/execute`. Reads = `require_paid`; create/execute/delete = `require_paid_owner`. Actions persisted in `db.workspace_actions` (status draft→executed/failed, activity log).
+- HubSpot write client `routes/hubspot_write.py` — CRM v3 endpoints (notes/tasks/calls/emails/deals) with correct HUBSPOT_DEFINED association typeIds; returns structured {ok,id,error,code,missing_scopes}. On write failure the action is saved as `failed` with a readable reason (retryable) and the endpoint returns HTTP 422. 401→"reconnect HubSpot"; 403→"missing write scopes" (lists missing scopes).
+- Tested: iteration_52 — backend 21/21 pytest (`tests/test_workspace.py`), frontend 100% of flows (render, gating, kind switching, AI draft, draft create, confirm gating, graceful 422 + failed status, delete, history). ⚠️ LIVE HUBSPOT WRITES ARE UNTESTED IN PREVIEW: testpro's HubSpot connection uses a DEMO/invalid token, so execute returns 422 "reconnect HubSpot" and the target picker returns 0 deals/0 contacts. REAL writes + target picking require the user's real HubSpot Private App token with write scopes (crm.objects.deals.write + crm.objects.contacts.write + CRM read).
+
+
 ### FIX — Login lockout via app-wide crash from corrupt localStorage (Jul 2026) — P0
 - Symptom: user saw the Sentry ErrorBoundary fallback ("Something went wrong — An unexpected error occurred and our team has been notified. [Reload]") when logging in; Reload re-hit the same crash → permanent lockout.
 - Root cause: `frontend/src/pages/AuthPage.js` parsed `localStorage['inflow_last_account']` with an UNGUARDED `JSON.parse` during render. A corrupt/non-JSON value (e.g. `[object Object]`, `undefined`, truncated JSON) threw synchronously → the app-wide `<Sentry.ErrorBoundary>` replaced the whole UI.

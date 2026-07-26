@@ -100,19 +100,19 @@ export default function Workspace() {
     finally { setLoading(false); }
   }, [req]);
 
-  const loadTargets = useCallback(async () => {
+  const loadTargets = useCallback(async ({ silent = false } = {}) => {
     setTargetsLoading(true);
     try {
       const t = await req('/targets?provider=hubspot');
       setTargets(t);
-      if (t.error) toast.error(t.error);
-    } catch (e) { setTargets({ deals: [], contacts: [], pipelines: [], error: e.message }); toast.error(e.message); }
+      if (t.error && !silent) toast.error(t.error);
+    } catch (e) { setTargets({ deals: [], contacts: [], pipelines: [], error: e.message }); if (!silent) toast.error(e.message); }
     setTargetsLoading(false);
   }, [req]);
 
   useEffect(() => { loadAll(); }, [loadAll]);
   useEffect(() => {
-    if (status && hubspot?.connected) loadTargets();
+    if (status && hubspot?.connected) loadTargets({ silent: true });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status]);
 
@@ -205,8 +205,12 @@ export default function Workspace() {
           <div className={`rounded-2xl ${glass} px-5 py-3 flex items-center gap-3 mb-6`} data-testid="workspace-connection">
             <span className="w-2 h-2 rounded-full bg-emerald-400" />
             <span className="text-sm text-zinc-300">Connected to <span className="text-white font-medium">{hubspot.account_name || 'HubSpot'}</span></span>
-            <span className="text-xs text-zinc-500 ml-2">{targets.deals.length} deals · {targets.contacts.length} contacts</span>
-            <Button variant="ghost" size="sm" onClick={loadTargets} disabled={targetsLoading} className="ml-auto h-8 text-xs text-zinc-400 hover:text-white" data-testid="workspace-refresh-targets">{targetsLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}</Button>
+            {targets.error ? (
+              <span className="text-[11px] text-red-300/90 ml-2 flex items-center gap-1" data-testid="workspace-targets-error"><AlertTriangle className="w-3 h-3" /> {targets.error}</span>
+            ) : (
+              <span className="text-xs text-zinc-500 ml-2">{targets.deals.length} deals · {targets.contacts.length} contacts</span>
+            )}
+            <Button variant="ghost" size="sm" onClick={() => loadTargets()} disabled={targetsLoading} className="ml-auto h-8 text-xs text-zinc-400 hover:text-white" data-testid="workspace-refresh-targets">{targetsLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}</Button>
           </div>
         )}
 
