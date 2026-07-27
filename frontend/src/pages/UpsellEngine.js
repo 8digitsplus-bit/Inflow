@@ -222,8 +222,8 @@ export default function UpsellEngine() {
       <DashboardLayout>
         <div className="flex flex-col items-center justify-center min-h-[70vh] px-4 text-center" data-testid="upsell-enterprise-gate">
           <div className="w-14 h-14 rounded-2xl bg-slate-500/10 flex items-center justify-center mb-5"><Rocket className="w-7 h-7 text-slate-400" /></div>
-          <h2 className="text-2xl font-bold text-white mb-2" style={{ fontFamily: 'Outfit' }}>Upsell Engine</h2>
-          <p className="text-zinc-400 text-sm max-w-md">Grow revenue from existing customers. The Upsell Engine is an Enterprise feature — upgrade to detect expansion-ready accounts and drive them to a higher plan.</p>
+          <h2 className="text-2xl font-bold text-white mb-2" style={{ fontFamily: 'Outfit' }}>High-Intent Buyer Detection</h2>
+          <p className="text-zinc-400 text-sm max-w-md">Find the accounts showing the strongest buying intent. High-Intent Buyer Detection is an Enterprise feature — upgrade to surface your hottest opportunities and act on them.</p>
         </div>
       </DashboardLayout>
     );
@@ -234,7 +234,7 @@ export default function UpsellEngine() {
         <div className="flex flex-col items-center justify-center min-h-[70vh] px-4 text-center" data-testid="upsell-owner-gate">
           <div className="w-14 h-14 rounded-2xl bg-slate-500/10 flex items-center justify-center mb-5"><Rocket className="w-7 h-7 text-slate-400" /></div>
           <h2 className="text-2xl font-bold text-white mb-2" style={{ fontFamily: 'Outfit' }}>Owner access required</h2>
-          <p className="text-zinc-400 text-sm max-w-md">Only the organization owner can run the Upsell Engine and contact customers.</p>
+          <p className="text-zinc-400 text-sm max-w-md">Only the organization owner can run High-Intent Buyer Detection and contact customers.</p>
         </div>
       </DashboardLayout>
     );
@@ -247,10 +247,10 @@ export default function UpsellEngine() {
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-8">
           <div>
             <div className="flex items-center gap-2 text-slate-400 text-xs font-semibold uppercase tracking-widest mb-2">
-              <Rocket className="w-4 h-4" /> Revenue Execution
+              <Rocket className="w-4 h-4" /> Revenue Execution · Discover
             </div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>Upsell Engine</h1>
-            <p className="text-zinc-400 text-sm mt-1 max-w-2xl">We read customer metrics from your connected integrations to surface accounts that are ready to grow — then help you move them to a higher plan with a tailored email, an offer, a sales handoff, or a full campaign.</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>High-Intent Buyer Detection</h1>
+            <p className="text-zinc-400 text-sm mt-1 max-w-2xl">We read signals from your connected integrations to surface the accounts showing the strongest intent — then help you act with a tailored email, an offer, a sales handoff, or a full campaign.</p>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
             {status?.usage_sources_connected?.length > 0 && (
@@ -272,7 +272,7 @@ export default function UpsellEngine() {
             <div className="text-[11px] text-zinc-500 mt-1">across open candidates</div>
           </div>
           <div className={`rounded-2xl p-5 ${glass}`} data-testid="stat-candidates">
-            <div className="flex items-center gap-2 text-zinc-400 text-xs mb-2"><TrendingUp className="w-4 h-4" /> Upsell candidates</div>
+            <div className="flex items-center gap-2 text-zinc-400 text-xs mb-2"><TrendingUp className="w-4 h-4" /> High-intent accounts</div>
             <div className="text-3xl font-bold text-white">{openCandidates.length}</div>
             <div className="text-[11px] text-zinc-500 mt-1">{candidates.length} detected total</div>
           </div>
@@ -310,7 +310,7 @@ export default function UpsellEngine() {
         {/* Candidates */}
         <div className={`rounded-2xl ${glass} mb-8 overflow-hidden`}>
           <div className="px-5 py-4 border-b border-white/[0.06] flex items-center justify-between">
-            <div className="flex items-center gap-2"><Gauge className="w-4 h-4 text-slate-400" /><h2 className="text-sm font-semibold text-white">Upsell candidates</h2></div>
+            <div className="flex items-center gap-2"><Gauge className="w-4 h-4 text-slate-400" /><h2 className="text-sm font-semibold text-white">High-intent accounts</h2></div>
             {selected.length > 0 && (
               <Button onClick={() => setCampOpen(true)} className="bg-[#0052ff] hover:bg-[#0047d6] text-white h-8 text-xs" data-testid="new-campaign-btn"><Megaphone className="w-4 h-4 mr-1" /> Campaign ({selected.length})</Button>
             )}

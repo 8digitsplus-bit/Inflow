@@ -65,8 +65,8 @@ const navGroups = [
   {
     label: 'Revenue Execution',
     items: [
-      { name: 'High-Intent Buyers', href: '/discover', icon: Telescope, minTier: 1 },
-      { name: 'Upsell Engine', href: '/upsell', icon: Rocket, minTier: 3 },
+      { name: 'Upsell Engine', href: '/discover', icon: Rocket, minTier: 1 },
+      { name: 'High-Intent Buyers', href: '/upsell', icon: Telescope, minTier: 3 },
       { name: 'Workspace', href: '/workspace', icon: Workflow, minTier: 1 },
     ]
   },

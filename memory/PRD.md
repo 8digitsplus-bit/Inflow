@@ -13,6 +13,14 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
+### Label swap — "High-Intent Buyers" ↔ "Upsell Engine" (Jun 2026)
+- Per user request, the two Revenue Execution features SWAPPED DISPLAY NAMES only; routes/code/functionality unchanged ("content stays under the hood").
+- **IMPORTANT mapping for future agents** (label ≠ file/route):
+  - Route `/discover` → file `pages/HighIntent.js` → now LABELED **"Upsell Engine"** (Rocket icon, minTier 1). Still runs high-intent buyer-detection code (`/api/intent/*`, "Scan for buyers", "Hot buyers"). Section header relabeled "Upsell opportunities".
+  - Route `/upsell` → file `pages/UpsellEngine.js` → now LABELED **"High-Intent Buyer Detection"** (Telescope icon, minTier 3, enterprise). Still runs upsell/expansion code (`/api/upsell/*`, "Your upgrade plans", "Expansion potential"). "Upsell candidates" relabeled "High-intent accounts".
+- Swapped: sidebar labels+icons (`DashboardLayout.js`), page H1s, gate titles/descriptions, eyebrows, and top taglines. data-testids (`high-intent-page`, `upsell-engine-page`, etc.) unchanged. Verified via screenshot + compile.
+
+
 ### Action Workspace — Two-way "System of Action" write-backs (Jul 2026) — P0 Revenue Execution
 - NEW page `/workspace` (`frontend/src/pages/Workspace.js`) under the **Revenue Execution** sidebar group (now: High-Intent Buyers + Upsell Engine + Workspace). Turns InFlow's read-only integrations into a two-way system where users push changes back into their connected tools. HubSpot first; architecture is provider-generic (`WRITE_PROVIDERS`) so other integrations plug in later.
 - **4 write actions (HubSpot)**: add a note, create a task, log an activity (call/email), create a new deal — each associated to a live HubSpot record (deal/contact). NO stage/value edits this phase (per user). Upload calls/files deferred to next phase.
