@@ -13,6 +13,13 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
+### Individual Account Workspace — per-account "deal room" with 2-way sync (Jun 2026) — P0 Revenue Execution
+- From the guided-flow dialog on `/discover` (labeled "Upsell Engine", `HighIntent.js`), a **"Manage"** button (`flow-manage-btn`) opens a dedicated per-account page at **`/workspace/account/:leadId`** (`pages/AccountWorkspace.js`) — a focused deal room for that one buyer with on-demand 2-way HubSpot sync.
+- Shows: account header (name, intent score, value/stage/probability, linked/unlinked badge); **editable HubSpot fields** (deal name, amount, stage) with a confirm dialog → push back to HubSpot; a **link selector** to bind the account to a live HubSpot deal (auto-matches by name when a real token is present); an **action composer** (note/task/call/email/deal, AI-draft, human-in-the-loop confirm) scoped to this account via `account_ref`; and a **merged activity timeline** (InFlow AI intent activity + pushed InFlow actions + best-effort HubSpot engagements), newest first.
+- Backend (`routes/workspace.py`): `GET /workspace/account/{lead_id}` (assembles lead + hubspot record/deals + scoped actions + merged timeline), `POST /workspace/account/{lead_id}/link`, `POST /workspace/account/{lead_id}/fields` (validates link + graceful 422). `ActionCreate` gained optional `account_ref`. HubSpot client (`hubspot_write.py`) gained `get_deal`, `update_deal` (PATCH), `list_deal_activity` (v4 associations + batch read).
+- Tested: iteration_53 — backend **27/27 pytest** (`tests/test_workspace.py`), frontend **100%** (Manage nav, render, badges, timeline, link, field-push confirm+validation, compose→save→review&push→failed, account_ref scoping, delete, back). ⚠️ LIVE HUBSPOT 2-WAY SYNC IS UNVERIFIED IN PREVIEW (testpro's HubSpot token is DEMO/invalid → empty deals dropdown, field/action pushes return graceful 422 "reconnect HubSpot"). Real sync needs the user's write-scoped HubSpot Private App token.
+
+
 ### Label swap — "High-Intent Buyers" ↔ "Upsell Engine" (Jun 2026)
 - Per user request, the two Revenue Execution features SWAPPED DISPLAY NAMES only; routes/code/functionality unchanged ("content stays under the hood").
 - **IMPORTANT mapping for future agents** (label ≠ file/route):
