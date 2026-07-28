@@ -13,6 +13,11 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
+### Sidebar cleanup — collapsible group dropdowns (Jun 2026)
+- Each labeled sidebar group (Sales, Analytics, Revenue Execution, Tools) in `components/DashboardLayout.js` is now a **collapsible dropdown** (clickable header + rotating ChevronDown). Dashboard (unlabeled) stays always visible.
+- Open/closed state persists in `localStorage.sidebar_groups`; the group containing the active route auto-opens. In icon-collapsed sidebar mode all items still show (dropdowns only apply in expanded mode). Group header testids: `nav-group-{label}`. Verified via screenshot + compile.
+
+
 ### Individual Account Workspace — per-account "deal room" with 2-way sync (Jun 2026) — P0 Revenue Execution
 - From the guided-flow dialog on `/discover` (labeled "Upsell Engine", `HighIntent.js`), a **"Manage"** button (`flow-manage-btn`) opens a dedicated per-account page at **`/workspace/account/:leadId`** (`pages/AccountWorkspace.js`) — a focused deal room for that one buyer with on-demand 2-way HubSpot sync.
 - Shows: account header (name, intent score, value/stage/probability, linked/unlinked badge); **editable HubSpot fields** (deal name, amount, stage) with a confirm dialog → push back to HubSpot; a **link selector** to bind the account to a live HubSpot deal (auto-matches by name when a real token is present); an **action composer** (note/task/call/email/deal, AI-draft, human-in-the-loop confirm) scoped to this account via `account_ref`; and a **merged activity timeline** (InFlow AI intent activity + pushed InFlow actions + best-effort HubSpot engagements), newest first.

@@ -23,6 +23,7 @@ import {
   Rocket,
   Telescope,
   Workflow,
+  ChevronDown,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from './ui/alert-dialog';
@@ -90,6 +91,13 @@ const DashboardLayout = ({ children }) => {
   const [collapsed, setCollapsed] = useState(() => {
     try { return localStorage.getItem('sidebar_collapsed') === 'true'; } catch { return false; }
   });
+  const [openGroups, setOpenGroups] = useState(() => {
+    let saved = {};
+    try { saved = JSON.parse(localStorage.getItem('sidebar_groups') || '{}'); } catch {}
+    const init = {};
+    navGroups.forEach((g) => { if (g.label) init[g.label] = g.label in saved ? saved[g.label] : true; });
+    return init;
+  });
 
   const tier = user?.subscription_tier || 'trial';
   const userLevel = TIER_LEVEL[tier] ?? 0;
@@ -97,6 +105,18 @@ const DashboardLayout = ({ children }) => {
   useEffect(() => {
     try { localStorage.setItem('sidebar_collapsed', String(collapsed)); } catch {}
   }, [collapsed]);
+
+  useEffect(() => {
+    try { localStorage.setItem('sidebar_groups', JSON.stringify(openGroups)); } catch {}
+  }, [openGroups]);
+
+  useEffect(() => {
+    const active = navGroups.find((g) => g.label && g.items.some((it) => it.href === location.pathname));
+    if (active) setOpenGroups((prev) => (prev[active.label] ? prev : { ...prev, [active.label]: true }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
+
+  const toggleGroup = (label) => setOpenGroups((prev) => ({ ...prev, [label]: !prev[label] }));
 
   const getInitials = (name) => {
     if (!name) return 'U';
@@ -155,12 +175,18 @@ const DashboardLayout = ({ children }) => {
             {navGroups.map((group, gi) => (
               <div key={gi} className={gi > 0 ? 'mt-3' : ''}>
                 {group.label && !collapsed && (
-                  <div className="px-2 mb-1">
-                    <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-600">{group.label}</span>
-                  </div>
+                  <button
+                    onClick={() => toggleGroup(group.label)}
+                    aria-expanded={openGroups[group.label]}
+                    className="w-full px-2 mb-1 flex items-center justify-between group/lbl"
+                    data-testid={`nav-group-${group.label.toLowerCase().replace(/\s+/g, '-')}`}
+                  >
+                    <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-600 group-hover/lbl:text-zinc-400 transition-colors">{group.label}</span>
+                    <ChevronDown className={`w-3 h-3 text-zinc-600 group-hover/lbl:text-zinc-400 transition-transform duration-200 ${openGroups[group.label] ? '' : '-rotate-90'}`} />
+                  </button>
                 )}
                 {collapsed && gi > 0 && <div className="mx-2 my-2 border-t border-white/[0.04]" />}
-                {group.items.map((item) => {
+                {(collapsed || !group.label || openGroups[group.label]) && group.items.map((item) => {
                   const Icon = item.icon;
                   const active = isActive(item.href);
                   const locked = userLevel < item.minTier;
