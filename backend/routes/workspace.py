@@ -49,6 +49,7 @@ class ActionCreate(BaseModel):
     target: Optional[Target] = None
     payload: dict = {}
     ai_used: bool = False
+    account_ref: Optional[str] = None
 
 
 class AIDraftReq(BaseModel):
@@ -206,6 +207,7 @@ async def create_action(body: ActionCreate, user: User = Depends(require_paid_ow
         "provider": body.provider,
         "kind": body.kind,
         "target": tgt,
+        "account_ref": body.account_ref,
         "payload": body.payload or {},
         "ai_used": bool(body.ai_used),
         "status": "draft",
@@ -283,3 +285,114 @@ async def execute_action(action_id: str, user: User = Depends(require_paid_owner
     await _log(action_id, user, "failed", res.get("error") or "HubSpot write failed")
     # 422 so the readable detail passes the ingress to the UI
     raise HTTPException(status_code=422, detail=res.get("error") or "HubSpot write failed")
+
+
+# ------------------------------------------------------------------ individual account workspace (2-way sync)
+class LinkReq(BaseModel):
+    hubspot_deal_id: str
+    label: Optional[str] = ""
+
+
+class FieldsReq(BaseModel):
+    dealname: Optional[str] = None
+    amount: Optional[str] = None
+    dealstage: Optional[str] = None
+
+
+def _ts_key(ts) -> int:
+    if not ts:
+        return 0
+    s = str(ts)
+    if s.isdigit():
+        return int(s)
+    try:
+        return int(datetime.fromisoformat(s.replace("Z", "+00:00")).timestamp() * 1000)
+    except Exception:
+        return 0
+
+
+def _action_summary(a: dict) -> str:
+    p = a.get("payload") or {}
+    k = a.get("kind")
+    if k == "note":
+        return p.get("body", "")
+    if k in ("task", "call"):
+        return p.get("title", "")
+    if k == "email":
+        return p.get("subject", "")
+    if k == "deal":
+        return p.get("dealname", "")
+    return k or ""
+
+
+@router.get("/workspace/account/{lead_id}")
+async def account_room(lead_id: str, user: User = Depends(require_paid)):
+    lead = await db.intent_leads.find_one({"lead_id": lead_id, **org_filter(user)}, {"_id": 0})
+    if not lead:
+        raise HTTPException(status_code=404, detail="Account not found")
+    conn = await _hs_conn(user)
+    token = _hs_token(conn)
+    linked = lead.get("hubspot_deal_id")
+    hub = {"connected": bool(conn), "error": None, "deal_fields": None, "deals": [], "contacts": []}
+    if conn:
+        tg = await hs.list_targets(token)
+        hub["deals"] = tg["deals"]
+        hub["contacts"] = tg["contacts"]
+        hub["error"] = tg.get("error")
+        if not linked and not tg.get("error"):
+            nm = (lead.get("account") or "").strip().lower()
+            for d in tg["deals"]:
+                if (d.get("label") or "").strip().lower() == nm:
+                    linked = d["id"]
+                    break
+        if linked:
+            gd = await hs.get_deal(token, linked)
+            if gd.get("ok"):
+                hub["deal_fields"] = gd["fields"]
+            elif not hub["error"]:
+                hub["error"] = gd.get("error")
+    actions = await db.workspace_actions.find(
+        {**org_filter(user), "account_ref": lead_id}, {"_id": 0}
+    ).sort("created_at", -1).to_list(200)
+    timeline = []
+    for a in (lead.get("activity") or []):
+        timeline.append({"source": "intent", "kind": a.get("type"), "detail": a.get("detail"),
+                         "ts": a.get("ts"), "by": a.get("by")})
+    for a in actions:
+        timeline.append({"source": "inflow", "kind": a["kind"], "detail": _action_summary(a),
+                         "ts": a.get("updated_at") or a.get("created_at"), "status": a.get("status"),
+                         "by": a.get("created_by")})
+    if linked:
+        for e in await hs.list_deal_activity(token, linked):
+            timeline.append(e)
+    timeline.sort(key=lambda x: _ts_key(x.get("ts")), reverse=True)
+    return {"lead": lead, "linked_deal_id": linked, "hubspot": hub, "actions": actions, "timeline": timeline}
+
+
+@router.post("/workspace/account/{lead_id}/link")
+async def link_account(lead_id: str, body: LinkReq, user: User = Depends(require_paid_owner)):
+    res = await db.intent_leads.update_one(
+        {"lead_id": lead_id, **org_filter(user)},
+        {"$set": {"hubspot_deal_id": body.hubspot_deal_id}},
+    )
+    if res.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Account not found")
+    return {"linked_deal_id": body.hubspot_deal_id}
+
+
+@router.post("/workspace/account/{lead_id}/fields")
+async def update_account_fields(lead_id: str, body: FieldsReq, user: User = Depends(require_paid_owner)):
+    lead = await db.intent_leads.find_one({"lead_id": lead_id, **org_filter(user)}, {"_id": 0})
+    if not lead:
+        raise HTTPException(status_code=404, detail="Account not found")
+    linked = lead.get("hubspot_deal_id")
+    if not linked:
+        raise HTTPException(status_code=400, detail="Link a HubSpot deal first, then push field updates.")
+    fields = {k: v for k, v in {"dealname": body.dealname, "amount": body.amount, "dealstage": body.dealstage}.items() if v not in (None, "")}
+    if not fields:
+        raise HTTPException(status_code=400, detail="No field changes to push")
+    conn = await _hs_conn(user)
+    res = await hs.update_deal(_hs_token(conn), linked, fields)
+    if res.get("ok"):
+        return {"ok": True, "fields": fields}
+    raise HTTPException(status_code=422, detail=res.get("error") or "HubSpot update failed")

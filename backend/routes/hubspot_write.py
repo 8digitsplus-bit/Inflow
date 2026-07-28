@@ -206,3 +206,85 @@ async def create_deal(token, dealname, amount=None, dealstage=None, pipeline=Non
     if a:
         payload["associations"] = a
     return await _post(token, "/crm/v3/objects/deals", payload)
+
+
+# ------------------------------------------------------------------ deal read/update + activity (individual workspace)
+async def _patch(token: str, path: str, payload: dict) -> dict:
+    if not token:
+        return {"ok": False, "code": 401,
+                "error": "HubSpot isn't authenticated. Reconnect HubSpot with a valid Private App token that has write access."}
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            r = await client.patch(f"{HUBSPOT_BASE}{path}", headers=_headers(token), json=payload)
+    except Exception as e:
+        return {"ok": False, "error": f"Could not reach HubSpot: {e}"}
+    if r.status_code in (200, 201):
+        d = r.json()
+        return {"ok": True, "id": d.get("id"), "raw": d}
+    try:
+        err = r.json()
+    except Exception:
+        err = {}
+    if r.status_code == 401:
+        return {"ok": False, "code": 401, "error": "HubSpot authentication failed. Reconnect HubSpot with a valid Private App token."}
+    if r.status_code == 403:
+        ctx = err.get("context") or {}
+        missing = ctx.get("requiredScopes") or ctx.get("missingScopes") or []
+        if isinstance(missing, str):
+            missing = [missing]
+        return {"ok": False, "code": 403, "missing_scopes": missing,
+                "error": "Your HubSpot token is missing write permission. Reconnect HubSpot with deal write scope."}
+    return {"ok": False, "code": r.status_code, "error": err.get("message") or f"HubSpot returned status {r.status_code}"}
+
+
+async def get_deal(token: str, deal_id: str) -> dict:
+    if not token or not deal_id:
+        return {"ok": False, "error": "Not linked", "fields": {}}
+    try:
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            r = await client.get(f"{HUBSPOT_BASE}/crm/v3/objects/deals/{deal_id}", headers=_headers(token),
+                                 params={"properties": "dealname,amount,dealstage,pipeline,closedate"})
+    except Exception as e:
+        return {"ok": False, "error": f"Could not reach HubSpot: {e}", "fields": {}}
+    if r.status_code == 200:
+        return {"ok": True, "fields": r.json().get("properties", {})}
+    if r.status_code == 401:
+        return {"ok": False, "error": "HubSpot authentication failed. Reconnect HubSpot with a valid Private App token.", "fields": {}}
+    return {"ok": False, "error": f"HubSpot returned status {r.status_code}", "fields": {}}
+
+
+async def update_deal(token: str, deal_id: str, fields: dict) -> dict:
+    return await _patch(token, f"/crm/v3/objects/deals/{deal_id}", {"properties": fields})
+
+
+_ENGAGEMENTS = [("notes", "hs_note_body", "note"), ("calls", "hs_call_title", "call"),
+                ("emails", "hs_email_subject", "email"), ("tasks", "hs_task_subject", "task")]
+
+
+async def list_deal_activity(token: str, deal_id: str, limit: int = 10) -> list:
+    """Best-effort pull of a deal's HubSpot engagements for the merged timeline."""
+    if not token or not deal_id:
+        return []
+    items = []
+    try:
+        async with httpx.AsyncClient(timeout=20.0) as client:
+            for obj_type, prop, kind in _ENGAGEMENTS:
+                ra = await client.get(f"{HUBSPOT_BASE}/crm/v4/objects/deals/{deal_id}/associations/{obj_type}",
+                                     headers=_headers(token), params={"limit": limit})
+                if ra.status_code != 200:
+                    continue
+                ids = [str(r.get("toObjectId")) for r in ra.json().get("results", []) if r.get("toObjectId")][:limit]
+                if not ids:
+                    continue
+                rb = await client.post(f"{HUBSPOT_BASE}/crm/v3/objects/{obj_type}/batch/read",
+                                      headers=_headers(token),
+                                      json={"properties": [prop, "hs_timestamp"], "inputs": [{"id": i} for i in ids]})
+                if rb.status_code != 200:
+                    continue
+                for o in rb.json().get("results", []):
+                    p = o.get("properties", {})
+                    items.append({"source": "hubspot", "kind": kind,
+                                  "detail": p.get(prop) or kind, "ts": p.get("hs_timestamp") or o.get("createdAt")})
+    except Exception:
+        return items
+    return items

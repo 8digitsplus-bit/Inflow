@@ -11,6 +11,7 @@ import ChurnRetention from './pages/ChurnRetention';
 import UpsellEngine from './pages/UpsellEngine';
 import HighIntent from './pages/HighIntent';
 import Workspace from './pages/Workspace';
+import AccountWorkspace from './pages/AccountWorkspace';
 import ConversionOptimization from './pages/ConversionOptimization';
 import Settings from './pages/Settings';
 import Integrations from './pages/Integrations';
@@ -151,6 +152,16 @@ const AppRouter = () => {
           <ProtectedRoute>
             <TierGate requiredLevel={1}>
               <Workspace />
+            </TierGate>
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/workspace/account/:leadId" 
+        element={
+          <ProtectedRoute>
+            <TierGate requiredLevel={1}>
+              <AccountWorkspace />
             </TierGate>
           </ProtectedRoute>
         } 

@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
 import {
   Telescope, ScanLine, Loader2, Flame, Users, TrendingUp, Mail, CalendarClock, Route,
-  Sparkles, Check, Copy, Target, Brain, Lightbulb, Zap, Trophy, ArrowDown, ChevronDown, ChevronUp,
+  Sparkles, Check, Copy, Target, Brain, Lightbulb, Zap, Trophy, ArrowDown, ChevronDown, ChevronUp, ArrowUpRight,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -59,6 +60,7 @@ const Step = ({ icon: Icon, n, label, done, active, children, last }) => (
 );
 
 export default function HighIntent() {
+  const navigate = useNavigate();
   const [status, setStatus] = useState(null);
   const [leads, setLeads] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -391,6 +393,12 @@ export default function HighIntent() {
                   )}
                 </>
               )}
+
+              {/* Manage in individual workspace (2-way sync) */}
+              <div className="border-t border-white/10 mt-1 pt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2" data-testid="flow-manage-footer">
+                <div className="text-[11px] text-zinc-500">Open a dedicated workspace to sync this account both ways with your CRM.</div>
+                <Button size="sm" variant="outline" onClick={() => navigate(`/workspace/account/${flow.lead_id}`)} className="border-[#0052ff]/40 text-[#4d8bff] hover:bg-[#0052ff]/10 h-8 text-xs" data-testid="flow-manage-btn"><ArrowUpRight className="w-3.5 h-3.5 mr-1" /> Manage</Button>
+              </div>
             </div>
           )}
         </DialogContent>

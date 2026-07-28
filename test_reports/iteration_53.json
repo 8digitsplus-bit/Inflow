@@ -1,0 +1,29 @@
+{
+  "summary": "Full backend + frontend verification of the new per-account 'deal room' (/workspace/account/:leadId). Backend: 27/27 pytest cases pass (was 21, added 6 for the account room). New coverage: GET /workspace/account/{lead_id} returns the expected shape {lead, linked_deal_id, hubspot:{connected,error,deals,contacts,deal_fields}, actions, timeline} with hubspot.connected=true + hubspot.error='HubSpot authentication failed...' (demo token, expected), timeline populated from the intent lead activity (>=1 item), 404 on unknown lead; POST /workspace/account/{lead}/link works (linked_deal_id persists on GET), 404 on unknown lead; POST /workspace/account/{lead}/fields returns 400 when unlinked, 400 when no changes, and graceful 422 'HubSpot authentication failed...' after link with demo token (expected); account_ref scoping: a 'deal' draft created with account_ref appears in that account's actions list AND in its timeline as source='inflow', and is absent from a second lead's account page. Frontend: On /discover the guided flow-dialog opens for a lead, flow-manage-footer + flow-manage-btn are present at the bottom, clicking Manage navigates to /workspace/account/lead_d0edd59db085. account-workspace-page renders with account-name 'Bluth Company', account-unlinked-badge, account-hub-error showing the demo-token reconnect message, 8 timeline items rendered (timeline-item-0..7), all 5 kind pills (note/task/call/email/deal), account-push-fields-btn is correctly disabled while unlinked. Full push flow verified: selected 'deal' kind, filled account-deal-name='TEST_UI_deal_53', clicked account-save-btn -> pending action appeared, clicked Review & push -> account-confirm-dialog opened with preview 'Deal: TEST_UI_deal_53', account-confirm-push -> HTTP 422 -> action status flipped to 'failed' with the readable HubSpot error inline; account-delete-{id} removes the action; account-back-btn navigates back to /discover. The demo-token 422s and empty deals dropdown are EXPECTED per the review request and NOT reported as bugs.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "/workspace/account/:leadId (React hydration)", "issues": ["Same '<span> cannot be a child of <select>' hydration warning observed on iter52 also fires here for account-link-select and the task priority native <select>. Cosmetic; does not break functionality. Likely visual-edits injection wrapping <option> in a <span>."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_workspace.py", "/app/test_reports/pytest/pytest_workspace_53.xml"],
+  "action_items": [
+    "(Cosmetic, carried over from iter52) Silence the '<span> cannot be a child of <select>/<option>' React hydration warning. Now also present on the AccountWorkspace page for account-link-select and account-task-priority."
+  ],
+  "critical_code_review_comments": [
+    "workspace.account_room() auto-links a HubSpot deal by case-insensitive account name match when there's no error and no explicit link. Good UX when a real token is present. With demo token tg.get('error') is truthy so auto-link is skipped — correct.",
+    "workspace.update_account_fields() sends only fields that are provided (dealname/amount/dealstage) — no accidental blanking of unspecified fields. Good.",
+    "AccountWorkspace.js delete has no confirm dialog; a single click on account-delete-{id} destroys a draft/failed action. Acceptable since executed actions can't be deleted from UI (button hidden), but a small confirm would prevent accidents. Low priority.",
+    "test_account_link_and_fields_422 sets lead.hubspot_deal_id='TEST_hs_deal_123' on the first lead; this persists in Mongo and will surface as linked_deal_id on subsequent test runs / manual QA of that lead. Not harmful because demo-token writes 422 anyway, but consider a teardown that unsets hubspot_deal_id, or expose an /unlink endpoint. (Testing agent did not add DB teardown — main agent may want to seed cleanup.)"
+  ],
+  "updated_files": ["/app/backend/tests/test_workspace.py"],
+  "success_rate": {"backend": "100% (27/27)", "frontend": "100% of specified flows"},
+  "test_credentials": "testpro@test.com / password (enterprise_monthly, org owner) — verified.",
+  "seed_data_creation": "test_account_link_and_fields_422 links the first intent lead to hubspot_deal_id='TEST_hs_deal_123' in Mongo — no code endpoint to unlink; if a next iteration expects an unlinked state, main agent should reset lead.hubspot_deal_id or add an /unlink endpoint. Test-created workspace_actions are cleaned via fixtures.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Backend regression covers 27 tests in /app/backend/tests/test_workspace.py incl. the new account-room endpoints. All expected demo-token failures (422 on execute/fields, empty deals list, hubspot.error string) are asserted as PASS conditions — do not flip them. A prior test link ('TEST_hs_deal_123') may still be on the first intent lead in Mongo; use a different lead index or add an unlink step if you require the unlinked state.",
+  "rca of the issue": "N/A — no bugs. The 422s and empty deals dropdown are the intentional graceful-fail path for testpro's demo HubSpot token. All new UI + API contracts (Manage button navigation, header/badges/timeline, kind pills, composer, save-draft, confirm dialog, review&push, delete, back, field-push validation, account_ref scoping) function as specified."
+}
