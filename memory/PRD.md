@@ -13,6 +13,13 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
+### Workspace multi-provider push — "push to the CRM you select" (Jun 2026)
+- The Action Workspace (`/workspace`) can now push every action to the **connected CRM the user selects per action** — HubSpot, Salesforce, or Pipedrive — via a destination dropdown (`workspace-provider-select`). Previously it was hardcoded to HubSpot only.
+- Action kinds expanded to six: note, task, call, email, deal, and the **new `offer`**. Offer → creates a **Quote object** in HubSpot (`create_quote`) and Salesforce (`Quote` + standard Pricebook); Pipedrive has no Quotes API so an offer is saved as a **structured note on the deal**. Offer requires a deal target (enforced backend + UI locks target type to Deal).
+- New backend write clients: `routes/salesforce_write.py` (ContentNote+ContentDocumentLink, Task w/ TaskSubtype for call/email, Opportunity, Quote; 401→reconnect) and `routes/pipedrive_write.py` (`/v1/notes`, `/v2/activities`, `/v2/deals`, `x-api-token`). `routes/hubspot_write.py` gained `create_quote`. `routes/workspace.py` now dispatches `targets`/`execute` per provider and stores `provider` on each action.
+- Human-in-the-loop preserved: nothing writes until the user hits "Confirm & push"; the dialog title + preview show the chosen destination. All external writes fail gracefully with readable messages (no 500s).
+- Verified: 29/29 `tests/test_workspace.py` pass; curl-confirmed graceful 422 per provider + offer-requires-deal 400; testing agent frontend run **100%** (selector lists 3 providers, provider switching, offer form + deal-locked target, draft/confirm/push, failed-status handling). NOTE: testpro has DEMO connections for all three CRMs (invalid tokens) — real writes need valid write-scoped tokens.
+
 ### Pricing + integration limits updated to new 3-tier values (Jun 2026)
 - Per user request, applied new prices to the 3-tier model: **Essential** $75/mo · $747/yr, **Pro** $179/mo · $1,695/yr, **Enterprise** $327/mo · $2,499/yr. Yearly savings are now per-plan (Essential 17%, Pro 21%, Enterprise 36%) — no longer a flat "30%".
 - **Integration slot limits raised**: Essential **5**, Pro **15**, Enterprise **unlimited** (trial stays 2). Backend `INTEGRATION_LIMITS` in `routes/business.py`; feature bullets read "5 / 15 / Unlimited live integrations" everywhere.
