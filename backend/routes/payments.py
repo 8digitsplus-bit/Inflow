@@ -34,54 +34,16 @@ SUBSCRIPTION_PLANS = {
         "features": ["4 live integrations", "CSV import", "AI insights", "CRO analysis", "Revenue forecasting", "Priority support"]
     },
     "enterprise_monthly": {
-        "price": 50.0, "name": "InFlow", "period": "monthly",
-        "interval": "month", "tiered": True,
-        "features": ["All features included", "Unlimited integrations", "AI insights & forecasting", "Competitor Intelligence", "Smart Assist AI", "Priority support"]
+        "price": 400.0, "name": "Enterprise", "period": "monthly",
+        "interval": "month",
+        "features": ["Unlimited integrations", "Custom API access", "Smart Assist AI", "Revenue Intelligence", "Competitor Intelligence", "Dedicated support"]
     },
     "enterprise_yearly": {
-        "price": 500.0, "name": "InFlow", "period": "yearly",
-        "interval": "year", "tiered": True,
-        "features": ["All features included", "Unlimited integrations", "AI insights & forecasting", "Competitor Intelligence", "Smart Assist AI", "Priority support"]
+        "price": 3360.0, "name": "Enterprise", "period": "yearly",
+        "interval": "year",
+        "features": ["Unlimited integrations", "Custom API access", "Smart Assist AI", "Revenue Intelligence", "Competitor Intelligence", "Dedicated support"]
     }
 }
-
-# Usage-based (value-metric) pricing. The self-serve plan is billed by the volume
-# of deals & revenue tracked per month, chosen via a ruler slider that snaps to the
-# discrete tiers below. Yearly = 10x monthly (2 months free). Above the top tier =>
-# Contact sales. Each tier is billed in Stripe as a distinct FLAT recurring price
-# (quantity = 1). The "quantity" passed around (URL/metadata) is the TIER INDEX.
-# Internally the plan uses the top tier ("enterprise_*") so a payer unlocks all features.
-USAGE_TIERS = [
-    {"contracts": 1000, "monthly_cents": 5000, "yearly_cents": 50000},
-    {"contracts": 10000, "monthly_cents": 25900, "yearly_cents": 259000},
-    {"contracts": 25000, "monthly_cents": 50000, "yearly_cents": 500000},
-    {"contracts": 100000, "monthly_cents": 134500, "yearly_cents": 1345000},
-    {"contracts": 250000, "monthly_cents": 259000, "yearly_cents": 2590000},
-    {"contracts": 500000, "monthly_cents": 425000, "yearly_cents": 4250000},
-    {"contracts": 1000000, "monthly_cents": 700000, "yearly_cents": 7000000},
-    {"contracts": 5000000, "monthly_cents": 2210000, "yearly_cents": 22100000},
-    {"contracts": 10000000, "monthly_cents": 3540000, "yearly_cents": 35400000},
-    {"contracts": 15000000, "monthly_cents": 4680000, "yearly_cents": 46800000},
-]
-
-
-def _clamp_tier(idx) -> int:
-    try:
-        i = int(idx)
-    except (TypeError, ValueError):
-        i = 0
-    return max(0, min(len(USAGE_TIERS) - 1, i))
-
-
-def compute_usage_amount(tier_index, period: str) -> float:
-    t = USAGE_TIERS[_clamp_tier(tier_index)]
-    cents = t["yearly_cents"] if period == "yearly" else t["monthly_cents"]
-    return round(cents / 100.0, 2)
-
-
-def _volume_fields(tier_index) -> dict:
-    i = _clamp_tier(tier_index)
-    return {"volume_units": i, "deal_limit": USAGE_TIERS[i]["contracts"]}
 
 # Cache for Stripe Price IDs (created on demand)
 _stripe_price_cache = {}
@@ -91,62 +53,43 @@ def is_real_stripe_key(key: str) -> bool:
     return key and (key.startswith("sk_live_") or key.startswith("sk_test_")) and key != "sk_test_emergent"
 
 
-async def get_or_create_stripe_price(plan_key: str, plan: dict, tier_index: int = 0) -> str:
-    """Get or create a Stripe Price for subscription billing.
+async def get_or_create_stripe_price(plan_key: str, plan: dict) -> str:
+    """Get or create a Stripe Price for subscription billing."""
+    if plan_key in _stripe_price_cache:
+        return _stripe_price_cache[plan_key]
 
-    Signature-aware: if the plan's amount changes, a NEW Stripe Price is created
-    instead of reusing a stale cached one. Flat prices for both legacy fixed plans
-    and usage/value-metric tiers (each tier is its own flat recurring price).
-    """
-    interval = plan.get("interval", "month")
-    if plan.get("tiered"):
-        i = _clamp_tier(tier_index)
-        t = USAGE_TIERS[i]
-        cents = t["yearly_cents"] if interval == "year" else t["monthly_cents"]
-        cache_key = f"{plan_key}:{i}"
-        signature = f"tierflat:{cents}:{interval}"
-        product_name = f"InFlow ({t['contracts']:,} deals · {plan['period'].title()})"
-    else:
-        i = 0
-        cents = int(plan["price"] * 100)
-        cache_key = plan_key
-        signature = f"flat:{cents}:{interval}"
-        product_name = f"InFlow {plan['name']} ({plan['period'].title()})"
-
-    mem = _stripe_price_cache.get(cache_key)
-    if mem and mem.get("signature") == signature:
-        return mem["price_id"]
-
-    cached = await db.stripe_prices.find_one({"plan_key": cache_key}, {"_id": 0})
-    if cached and cached.get("signature") == signature:
-        _stripe_price_cache[cache_key] = {"price_id": cached["price_id"], "signature": signature}
+    # Check DB cache
+    cached = await db.stripe_prices.find_one({"plan_key": plan_key}, {"_id": 0})
+    if cached:
+        _stripe_price_cache[plan_key] = cached["price_id"]
         return cached["price_id"]
 
+    # Create Stripe Product + Price
     product = stripe_sdk.Product.create(
-        name=product_name,
-        metadata={"plan_key": plan_key, "tier_index": str(i)}
+        name=f"InFlow {plan['name']} ({plan['period'].title()})",
+        metadata={"plan_key": plan_key}
     )
+
+    amount_cents = int(plan["price"] * 100)
+    interval = plan.get("interval", "month")
 
     price = stripe_sdk.Price.create(
         product=product.id,
-        unit_amount=cents,
+        unit_amount=amount_cents,
         currency="usd",
-        recurring={"interval": interval},
+        recurring={"interval": interval}
     )
 
-    await db.stripe_prices.update_one(
-        {"plan_key": cache_key},
-        {"$set": {
-            "plan_key": cache_key,
-            "price_id": price.id,
-            "product_id": product.id,
-            "signature": signature,
-            "interval": interval,
-            "created_at": datetime.now(timezone.utc).isoformat(),
-        }},
-        upsert=True,
-    )
-    _stripe_price_cache[cache_key] = {"price_id": price.id, "signature": signature}
+    # Cache it
+    await db.stripe_prices.insert_one({
+        "plan_key": plan_key,
+        "price_id": price.id,
+        "product_id": product.id,
+        "amount": plan["price"],
+        "interval": interval,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    })
+    _stripe_price_cache[plan_key] = price.id
     return price.id
 
 
@@ -170,7 +113,7 @@ async def get_or_create_coupon() -> str:
     return coupon.id
 
 
-async def create_subscription_checkout(plan_key: str, plan: dict, user: User, origin_url: str, use_trial: bool = True, tier_index: int = 0):
+async def create_subscription_checkout(plan_key: str, plan: dict, user: User, origin_url: str, use_trial: bool = True):
     """Create a Stripe Checkout Session in subscription + embedded mode.
 
     Embedded mode renders Stripe's hosted checkout form inside an iframe on our
@@ -183,7 +126,7 @@ async def create_subscription_checkout(plan_key: str, plan: dict, user: User, or
     original 14-day trial ends. Total trial time is capped at 14 days from
     signup — upgrading mid-trial does NOT extend the trial.
     """
-    price_id = await get_or_create_stripe_price(plan_key, plan, tier_index)
+    price_id = await get_or_create_stripe_price(plan_key, plan)
 
     # Preserve plan in the return URL so the post-payment screen can
     # render the correct order summary even after the redirect.
@@ -193,7 +136,6 @@ async def create_subscription_checkout(plan_key: str, plan: dict, user: User, or
         "metadata": {
             "user_id": user.user_id,
             "plan": plan_key,
-            "quantity": str(tier_index),
         }
     }
 
@@ -231,7 +173,6 @@ async def create_subscription_checkout(plan_key: str, plan: dict, user: User, or
             "user_id": user.user_id,
             "plan": plan_key,
             "user_email": user.email,
-            "quantity": str(tier_index),
         }
     }
 
@@ -293,11 +234,7 @@ async def create_checkout_session(request: Request, user: User = Depends(require
         raise HTTPException(status_code=400, detail="Invalid plan")
 
     plan = SUBSCRIPTION_PLANS[plan_key]
-    tier_index = _clamp_tier(data.get("quantity", 0)) if plan.get("tiered") else 0
-    if plan.get("tiered"):
-        final_price = compute_usage_amount(tier_index, "yearly" if plan.get("interval") == "year" else "monthly")
-    else:
-        final_price = plan["price"]
+    final_price = plan["price"]
 
     api_key = os.environ.get("STRIPE_API_KEY")
     if not api_key:
@@ -306,7 +243,7 @@ async def create_checkout_session(request: Request, user: User = Depends(require
     try:
         if is_real_stripe_key(api_key):
             stripe_sdk.api_key = api_key
-            session = await create_subscription_checkout(plan_key, plan, user, origin_url, use_trial=use_trial, tier_index=tier_index)
+            session = await create_subscription_checkout(plan_key, plan, user, origin_url, use_trial=use_trial)
             session_id = session.id
             session_url = None
             client_secret = session.client_secret  # embedded mode
@@ -325,7 +262,7 @@ async def create_checkout_session(request: Request, user: User = Depends(require
             currency="usd",
             plan=plan_key,
             payment_status="pending",
-            metadata={"plan": plan_key, "mode": mode, "quantity": str(tier_index)}
+            metadata={"plan": plan_key, "mode": mode}
         )
         txn_dict = txn.model_dump()
         txn_dict["created_at"] = txn_dict["created_at"].isoformat()
@@ -390,7 +327,6 @@ async def get_session_status(session_id: str, user: User = Depends(get_current_u
         subscription_id = session.subscription
         customer_id = session.customer
         now = datetime.now(timezone.utc).isoformat()
-        vol = _volume_fields((transaction.get("metadata") or {}).get("quantity", 1)) if plan in ("enterprise_monthly", "enterprise_yearly") else {}
 
         await db.payment_transactions.update_one(
             {"session_id": session_id},
@@ -409,7 +345,6 @@ async def get_session_status(session_id: str, user: User = Depends(get_current_u
                 "stripe_subscription_id": subscription_id,
                 "stripe_customer_id": customer_id,
                 "updated_at": now,
-                **vol,
             }}
         )
         if user.org_id:
@@ -421,7 +356,6 @@ async def get_session_status(session_id: str, user: User = Depends(get_current_u
                     "stripe_subscription_id": subscription_id,
                     "stripe_customer_id": customer_id,
                     "updated_at": now,
-                    **vol,
                 }}
             )
 
@@ -545,7 +479,6 @@ async def get_payment_status(session_id: str, request: Request, user: User = Dep
 
         if payment_status == "paid" and transaction.get("payment_status") != "paid":
             plan = transaction.get("plan", "pro_monthly")
-            vol = _volume_fields((transaction.get("metadata") or {}).get("quantity", 1)) if plan in ("enterprise_monthly", "enterprise_yearly") else {}
             update_fields = {
                 "payment_status": "paid",
                 "updated_at": datetime.now(timezone.utc).isoformat()
@@ -560,8 +493,7 @@ async def get_payment_status(session_id: str, request: Request, user: User = Dep
             user_update = {
                 "subscription_tier": plan,
                 "subscription_status": "active",
-                "updated_at": datetime.now(timezone.utc).isoformat(),
-                **vol,
+                "updated_at": datetime.now(timezone.utc).isoformat()
             }
             if subscription_id:
                 user_update["stripe_subscription_id"] = subscription_id
@@ -576,7 +508,6 @@ async def get_payment_status(session_id: str, request: Request, user: User = Dep
                     "subscription_tier": plan,
                     "subscription_status": "active",
                     "updated_at": datetime.now(timezone.utc).isoformat(),
-                    **vol,
                 }
                 if subscription_id:
                     org_update["stripe_subscription_id"] = subscription_id
@@ -663,11 +594,9 @@ async def stripe_webhook(request: Request):
 
                 if metadata.get("user_id"):
                     plan = metadata.get("plan", "pro_monthly")
-                    vol = _volume_fields(metadata.get("quantity", 1)) if plan in ("enterprise_monthly", "enterprise_yearly") else {}
                     user_update = {
                         "subscription_tier": plan,
                         "subscription_status": "active",
-                        **vol,
                     }
                     if subscription_id:
                         user_update["stripe_subscription_id"] = subscription_id
@@ -684,7 +613,6 @@ async def stripe_webhook(request: Request):
                         org_update = {
                             "subscription_tier": plan,
                             "subscription_status": "active",
-                            **vol,
                         }
                         if subscription_id:
                             org_update["stripe_subscription_id"] = subscription_id
@@ -697,10 +625,8 @@ async def stripe_webhook(request: Request):
                 # Without this handler the DB silently drifts from Stripe.
                 sub_id = data_obj.get("id")
                 status = data_obj.get("status")  # active / past_due / canceled / etc
-                # Plan key + tier index were stored on the subscription's metadata.
+                # Plan key was stored on the subscription's metadata at checkout time.
                 plan = (data_obj.get("metadata") or {}).get("plan")
-                # Volume tier can change via the portal / update-volume; keep deal_limit in sync.
-                sub_qty = (data_obj.get("metadata") or {}).get("quantity")
 
                 if sub_id:
                     user_doc = await db.users.find_one(
@@ -711,8 +637,6 @@ async def stripe_webhook(request: Request):
                         u_set = {"subscription_status": status} if status else {}
                         if plan:
                             u_set["subscription_tier"] = plan
-                        if sub_qty:
-                            u_set.update(_volume_fields(sub_qty))
                         if u_set:
                             await db.users.update_one(
                                 {"user_id": user_doc["user_id"]}, {"$set": u_set}
@@ -721,8 +645,6 @@ async def stripe_webhook(request: Request):
                             o_set = {"subscription_status": status} if status else {}
                             if plan:
                                 o_set["subscription_tier"] = plan
-                            if sub_qty:
-                                o_set.update(_volume_fields(sub_qty))
                             if o_set:
                                 await db.organizations.update_one(
                                     {"org_id": user_doc["org_id"]}, {"$set": o_set}
@@ -823,72 +745,6 @@ async def stripe_webhook(request: Request):
 async def get_subscription_plans():
     """Get available subscription plans."""
     return SUBSCRIPTION_PLANS
-
-
-@router.get("/subscription/usage-pricing")
-async def get_usage_pricing():
-    """Public pricing config for the volume slider (deals & revenue tracked)."""
-    return {
-        "tiers": [
-            {
-                "contracts": t["contracts"],
-                "monthly": t["monthly_cents"] / 100.0,
-                "yearly": t["yearly_cents"] / 100.0,
-            }
-            for t in USAGE_TIERS
-        ],
-        "min_tier": 0,
-        "max_tier": len(USAGE_TIERS) - 1,
-        "plan_keys": {"monthly": "enterprise_monthly", "yearly": "enterprise_yearly"},
-    }
-
-
-@router.post("/subscription/update-volume")
-async def update_volume(request: Request, current_user: User = Depends(require_owner)):
-    """Change the tracked-deal volume tier on an active usage subscription.
-    Swaps the Stripe subscription item to the selected tier's price (prorated) and
-    updates the org/user deal_limit so the soft cap moves with it."""
-    try:
-        data = await request.json()
-    except Exception:
-        raise HTTPException(status_code=400, detail="Invalid request body")
-    tier_index = _clamp_tier(data.get("quantity"))
-
-    user_doc = await db.users.find_one(
-        {"user_id": current_user.user_id},
-        {"_id": 0, "stripe_subscription_id": 1, "subscription_tier": 1},
-    )
-    tier = (user_doc or {}).get("subscription_tier")
-    if tier not in ("enterprise_monthly", "enterprise_yearly"):
-        raise HTTPException(status_code=400, detail="Volume changes apply to an active usage plan only.")
-    sub_id = (user_doc or {}).get("stripe_subscription_id")
-    api_key = os.environ.get("STRIPE_API_KEY")
-    if not sub_id or not api_key or not is_real_stripe_key(api_key):
-        raise HTTPException(status_code=400, detail="No active subscription found.")
-
-    stripe_sdk.api_key = api_key
-    period = "yearly" if tier == "enterprise_yearly" else "monthly"
-    plan = SUBSCRIPTION_PLANS[tier]
-    try:
-        new_price_id = await get_or_create_stripe_price(tier, plan, tier_index)
-        sub = stripe_sdk.Subscription.retrieve(sub_id)
-        item_id = sub["items"]["data"][0]["id"]
-        stripe_sdk.Subscription.modify(
-            sub_id,
-            items=[{"id": item_id, "price": new_price_id, "quantity": 1}],
-            proration_behavior="always_invoice",
-            metadata={"plan": tier, "user_id": current_user.user_id, "quantity": str(tier_index)},
-        )
-    except Exception as e:
-        logger.error(f"update-volume error: {e}")
-        raise HTTPException(status_code=500, detail="Could not update your plan volume.")
-
-    vol = _volume_fields(tier_index)
-    now = datetime.now(timezone.utc).isoformat()
-    await db.users.update_one({"user_id": current_user.user_id}, {"$set": {**vol, "updated_at": now}})
-    if current_user.org_id:
-        await db.organizations.update_one({"org_id": current_user.org_id}, {"$set": {**vol, "updated_at": now}})
-    return {"ok": True, **vol, "period": period, "amount": compute_usage_amount(tier_index, period)}
 
 
 @router.post("/subscription/cancel")

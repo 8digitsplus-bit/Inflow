@@ -3,7 +3,15 @@ import { useAuth } from '../contexts/AuthContext';
 import DashboardLayout from './DashboardLayout';
 import { Lock, ArrowRight, Sparkles, Check, Clock } from 'lucide-react';
 import { Button } from './ui/button';
-import { ALL_FEATURES } from '../lib/pricing';
+const ALL_FEATURES = [
+  'All features included',
+  'Unlimited integrations',
+  'AI insights & revenue forecasting',
+  'CRO & churn analysis',
+  'Competitor Intelligence',
+  'Smart Assist AI',
+  'Priority support',
+];
 
 // Under the value-based plan every paying customer maps to the top tier internally,
 // so "level >= 1" simply means "active/paid" (trial=0, expired/cancelled=-1).

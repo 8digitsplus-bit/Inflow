@@ -13,6 +13,14 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
+### Pricing REVERTED to 3-tier fixed cards (Jun 2026) — removed volume/usage model
+- Per user request, reverted from the volume/usage-based pricing model back to the original **3 fixed tiers with cards**: **Essential** ($99/mo, $830/yr), **Pro** ($149/mo, $1,250/yr), **Enterprise** ($400/mo, $3,360/yr). Yearly billing shows a ~30% saving.
+- Implementation: `git checkout`-restored the 6 pricing files to their pre-volume state (commit `1561b8f^`): `backend/routes/payments.py`, `backend/routes/business.py`, `frontend/src/{pages/ChoosePlan.js, pages/Checkout.js, pages/Settings.js, components/landing/PricingSection.js}`. Deleted volume-only files: `frontend/src/lib/pricing.js`, `frontend/src/components/VolumeSlider.jsx`, `backend/tests/test_usage_tier_pricing.py`. Fixed `components/TierGate.js` to inline its feature list (no longer imports the deleted `lib/pricing`).
+- The revert was clean/self-contained — the ONLY commits that had touched those files since the 3-tier era were the 3 volume commits (`1561b8f`, `a12ec3b`, `95a0002`), so no unrelated work was lost. `ConnectBusiness.js` uses `/business/integration-usage` (tier-based integration quota, present in both versions) and is unaffected. User model `volume_units`/`deal_limit` are no longer set/enforced.
+- Verified (self-test): `GET /api/subscription/plans` returns the 3 tiers with correct prices; all 6 plan variants create valid Stripe test checkout sessions via `POST /api/payments/create-checkout`; landing PricingSection + ChoosePlan render the 3 cards with Monthly/Yearly toggle and no slider; frontend compiles with no orphan imports.
+- NOTE: `TierGate` gating still uses tier levels essential(1) < pro(3) < enterprise(higher). Feature pages gate by these tiers as before.
+
+
 ### Sidebar cleanup — collapsible group dropdowns (Jun 2026)
 - Each labeled sidebar group (Sales, Analytics, Revenue Execution, Tools) in `components/DashboardLayout.js` is now a **collapsible dropdown** (clickable header + rotating ChevronDown). Dashboard (unlabeled) stays always visible.
 - Open/closed state persists in `localStorage.sidebar_groups`; the group containing the active route auto-opens. In icon-collapsed sidebar mode all items still show (dropdowns only apply in expanded mode). Group header testids: `nav-group-{label}`. Verified via screenshot + compile.
