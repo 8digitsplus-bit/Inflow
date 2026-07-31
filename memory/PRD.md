@@ -13,6 +13,12 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
+### 20% first-year discount on annual plans + stale Stripe-price bug fixed (Jun 2026)
+- Yearly plans keep full/renewal prices **$747 / $1,695 / $2,499** and now apply a real **20% first-year discount** via a Stripe coupon (`percent_off=20, duration="once"`) enabled by `first_year_discount: True` on the three yearly plans. First-year charged: **$597.60 / $1,356 / $1,999.20**; renews at full price after year one. Monthly plans unchanged (no discount).
+- **Bug fixed**: `get_or_create_stripe_price` cached the Stripe Price by `plan_key` only and never refreshed on price changes — so the earlier price updates ($99→$75, $149→$179, $830→$747, etc.) never reached checkout (users would've been charged the OLD amounts). Cache is now amount+interval-aware and creates a fresh immutable Stripe Price whenever the plan amount changes.
+- Display updated across ChoosePlan, landing PricingSection, Checkout (order summary: discounted price, struck-through full price, "First-year discount (20%)", "Renews at $X/year after your first year"), Settings, and FAQ/contact/support AI copy.
+- Verified via curl (actual Stripe charge per plan): monthly $75/$179/$327; yearly first-year $597.60/$1,356/$1,999.20. Checkout order summary visually confirmed for pro_yearly.
+
 ### Workspace multi-provider push — "push to the CRM you select" (Jun 2026)
 - The Action Workspace (`/workspace`) can now push every action to the **connected CRM the user selects per action** — HubSpot, Salesforce, or Pipedrive — via a destination dropdown (`workspace-provider-select`). Previously it was hardcoded to HubSpot only.
 - Action kinds expanded to six: note, task, call, email, deal, and the **new `offer`**. Offer → creates a **Quote object** in HubSpot (`create_quote`) and Salesforce (`Quote` + standard Pricebook); Pipedrive has no Quotes API so an offer is saved as a **structured note on the deal**. Offer requires a deal target (enforced backend + UI locks target type to Deal).

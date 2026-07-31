@@ -21,6 +21,7 @@ SUBSCRIPTION_PLANS = {
     "essential_yearly": {
         "price": 747.0, "name": "Essential", "period": "yearly",
         "interval": "year",
+        "first_year_discount": True,
         "features": ["Sales Pipeline", "Core analytics", "5 live integrations", "Churn monitoring", "Email support"]
     },
     "pro_monthly": {
@@ -31,6 +32,7 @@ SUBSCRIPTION_PLANS = {
     "pro_yearly": {
         "price": 1695.0, "name": "Pro", "period": "yearly",
         "interval": "year",
+        "first_year_discount": True,
         "features": ["15 live integrations", "CSV import", "AI insights", "CRO analysis", "Revenue forecasting", "Priority support"]
     },
     "enterprise_monthly": {
@@ -41,6 +43,7 @@ SUBSCRIPTION_PLANS = {
     "enterprise_yearly": {
         "price": 2499.0, "name": "Enterprise", "period": "yearly",
         "interval": "year",
+        "first_year_discount": True,
         "features": ["Unlimited integrations", "Custom API access", "Smart Assist AI", "Revenue Intelligence", "Competitor Intelligence", "Dedicated support"]
     }
 }
@@ -54,25 +57,31 @@ def is_real_stripe_key(key: str) -> bool:
 
 
 async def get_or_create_stripe_price(plan_key: str, plan: dict) -> str:
-    """Get or create a Stripe Price for subscription billing."""
-    if plan_key in _stripe_price_cache:
-        return _stripe_price_cache[plan_key]
+    """Get or create a Stripe Price for subscription billing.
 
-    # Check DB cache
+    The cache is keyed by plan_key but validated against the CURRENT amount +
+    interval. Stripe Prices are immutable, so when a plan's price changes we
+    must create a fresh Price and refresh the cache — otherwise checkouts keep
+    charging the old (stale) amount.
+    """
+    amount_cents = int(round(plan["price"] * 100))
+    interval = plan.get("interval", "month")
+
+    mem = _stripe_price_cache.get(plan_key)
+    if isinstance(mem, dict) and mem.get("amount_cents") == amount_cents and mem.get("interval") == interval:
+        return mem["price_id"]
+
+    # DB cache — reuse only if the stored amount + interval still match
     cached = await db.stripe_prices.find_one({"plan_key": plan_key}, {"_id": 0})
-    if cached:
-        _stripe_price_cache[plan_key] = cached["price_id"]
+    if cached and int(round((cached.get("amount") or 0) * 100)) == amount_cents and cached.get("interval") == interval:
+        _stripe_price_cache[plan_key] = {"price_id": cached["price_id"], "amount_cents": amount_cents, "interval": interval}
         return cached["price_id"]
 
-    # Create Stripe Product + Price
+    # First time, or the price changed — create a fresh Stripe Product + Price.
     product = stripe_sdk.Product.create(
         name=f"InFlow {plan['name']} ({plan['period'].title()})",
         metadata={"plan_key": plan_key}
     )
-
-    amount_cents = int(plan["price"] * 100)
-    interval = plan.get("interval", "month")
-
     price = stripe_sdk.Price.create(
         product=product.id,
         unit_amount=amount_cents,
@@ -80,33 +89,36 @@ async def get_or_create_stripe_price(plan_key: str, plan: dict) -> str:
         recurring={"interval": interval}
     )
 
-    # Cache it
-    await db.stripe_prices.insert_one({
-        "plan_key": plan_key,
-        "price_id": price.id,
-        "product_id": product.id,
-        "amount": plan["price"],
-        "interval": interval,
-        "created_at": datetime.now(timezone.utc).isoformat()
-    })
-    _stripe_price_cache[plan_key] = price.id
+    await db.stripe_prices.update_one(
+        {"plan_key": plan_key},
+        {"$set": {
+            "plan_key": plan_key,
+            "price_id": price.id,
+            "product_id": product.id,
+            "amount": plan["price"],
+            "interval": interval,
+            "updated_at": datetime.now(timezone.utc).isoformat(),
+        }},
+        upsert=True,
+    )
+    _stripe_price_cache[plan_key] = {"price_id": price.id, "amount_cents": amount_cents, "interval": interval}
     return price.id
 
 
 async def get_or_create_coupon() -> str:
-    """Get or create a 30% first-year discount coupon."""
-    cached = await db.stripe_coupons.find_one({"name": "first_year_30"}, {"_id": 0})
+    """Get or create a 20% first-year discount coupon (applies to the first invoice only)."""
+    cached = await db.stripe_coupons.find_one({"name": "first_year_20"}, {"_id": 0})
     if cached:
         return cached["coupon_id"]
 
     coupon = stripe_sdk.Coupon.create(
-        percent_off=30,
+        percent_off=20,
         duration="once",
-        name="30% Off First Year"
+        name="20% Off First Year"
     )
 
     await db.stripe_coupons.insert_one({
-        "name": "first_year_30",
+        "name": "first_year_20",
         "coupon_id": coupon.id,
         "created_at": datetime.now(timezone.utc).isoformat()
     })
@@ -234,7 +246,7 @@ async def create_checkout_session(request: Request, user: User = Depends(require
         raise HTTPException(status_code=400, detail="Invalid plan")
 
     plan = SUBSCRIPTION_PLANS[plan_key]
-    final_price = plan["price"]
+    final_price = round(plan["price"] * 0.8, 2) if plan.get("first_year_discount") else plan["price"]
 
     api_key = os.environ.get("STRIPE_API_KEY")
     if not api_key:

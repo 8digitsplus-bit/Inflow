@@ -22,11 +22,11 @@ const stripePromise = STRIPE_PUBLISHABLE_KEY ? loadStripe(STRIPE_PUBLISHABLE_KEY
 
 const PLANS = {
   essential_monthly: { name: 'Essential', price: 75, period: 'month', features: ['Sales Pipeline', 'Core Analytics', '5 live integrations', 'Churn Monitoring'] },
-  essential_yearly: { name: 'Essential', price: 747, period: 'year', originalPrice: 900, features: ['Sales Pipeline', 'Core Analytics', '5 live integrations', 'Churn Monitoring'] },
+  essential_yearly: { name: 'Essential', price: 597.60, period: 'year', originalPrice: 747, features: ['Sales Pipeline', 'Core Analytics', '5 live integrations', 'Churn Monitoring'] },
   pro_monthly: { name: 'Pro', price: 179, period: 'month', features: ['15 live integrations', 'CSV import', 'AI Insights', 'CRO Analysis'] },
-  pro_yearly: { name: 'Pro', price: 1695, period: 'year', originalPrice: 2148, features: ['15 live integrations', 'CSV import', 'AI Insights', 'CRO Analysis'] },
+  pro_yearly: { name: 'Pro', price: 1356, period: 'year', originalPrice: 1695, features: ['15 live integrations', 'CSV import', 'AI Insights', 'CRO Analysis'] },
   enterprise_monthly: { name: 'Enterprise', price: 327, period: 'month', features: ['Unlimited integrations', 'Custom API access', 'Smart Assist AI', 'Competitor Intelligence'] },
-  enterprise_yearly: { name: 'Enterprise', price: 2499, period: 'year', originalPrice: 3924, features: ['Unlimited integrations', 'Custom API access', 'Smart Assist AI', 'Competitor Intelligence'] },
+  enterprise_yearly: { name: 'Enterprise', price: 1999.20, period: 'year', originalPrice: 2499, features: ['Unlimited integrations', 'Custom API access', 'Smart Assist AI', 'Competitor Intelligence'] },
 };
 
 // Framer Motion blur-in reveal — matches the sitewide glass aesthetic.
@@ -49,6 +49,8 @@ const Checkout = () => {
   const plan = PLANS[planKey];
   const totalPrice = plan ? plan.price : 0;
   const totalOriginal = plan?.originalPrice ? plan.originalPrice : null;
+  const discountPct = totalOriginal ? Math.round((1 - totalPrice / totalOriginal) * 100) : 0;
+  const fmt = (n) => Number(n).toLocaleString(undefined, { minimumFractionDigits: Number(n) % 1 ? 2 : 0, maximumFractionDigits: 2 });
 
   const authed = !!user;
 
@@ -228,10 +230,10 @@ const Checkout = () => {
                   </div>
                   <div className="text-right shrink-0">
                     <p className="text-white font-bold leading-none" style={{ fontFamily: 'Outfit' }}>
-                      ${totalPrice.toLocaleString()}
+                      ${fmt(totalPrice)}
                     </p>
                     {totalOriginal && (
-                      <p className="text-zinc-500 text-[10px] line-through mt-0.5">${totalOriginal.toLocaleString()}</p>
+                      <p className="text-zinc-500 text-[10px] line-through mt-0.5">${fmt(totalOriginal)}</p>
                     )}
                   </div>
                 </div>
@@ -252,12 +254,12 @@ const Checkout = () => {
                 <div className="space-y-1.5 mb-4">
                   <div className="flex justify-between text-[11px]">
                     <span className="text-zinc-400">Subtotal</span>
-                    <span className="text-zinc-200">${(totalOriginal || totalPrice).toLocaleString()}</span>
+                    <span className="text-zinc-200">${fmt(totalOriginal || totalPrice)}</span>
                   </div>
                   {totalOriginal && (
                     <div className="flex justify-between text-[11px]">
-                      <span className="text-emerald-300">Annual discount (30%)</span>
-                      <span className="text-emerald-300">-${(totalOriginal - totalPrice).toLocaleString()}</span>
+                      <span className="text-emerald-300">First-year discount ({discountPct}%)</span>
+                      <span className="text-emerald-300">-${fmt(totalOriginal - totalPrice)}</span>
                     </div>
                   )}
                   {trialAvailable && (
@@ -299,7 +301,7 @@ const Checkout = () => {
                         </span>
                         Subscribe now
                       </span>
-                      <span className="block text-[10px] text-zinc-400 mt-1">Pay ${totalPrice.toLocaleString()} today</span>
+                      <span className="block text-[10px] text-zinc-400 mt-1">Pay ${fmt(totalPrice)} today</span>
                     </button>
                   </div>
                 )}
@@ -308,15 +310,18 @@ const Checkout = () => {
                 <div className="flex items-center justify-between p-3 rounded-xl bg-white/[0.05] border border-white/[0.1] backdrop-blur-sm">
                   <span className="text-white font-semibold text-sm">Total today</span>
                   <span className="text-white font-bold text-xl" style={{ fontFamily: 'Outfit' }}>
-                    {trialActive ? '$0.00' : `$${totalPrice.toLocaleString()}`}
+                    {trialActive ? '$0.00' : `$${fmt(totalPrice)}`}
                   </span>
                 </div>
 
                 <p className="text-[10px] text-zinc-500 mt-3 leading-relaxed">
                   {trialActive ? (
-                    <>You'll be charged <span className="text-zinc-300">${totalPrice.toLocaleString()}</span> on <span className="text-zinc-300">{trialEndDate}</span> when your trial ends. Cancel anytime in Settings — no charge during the trial.</>
+                    <>You'll be charged <span className="text-zinc-300">${fmt(totalPrice)}</span> on <span className="text-zinc-300">{trialEndDate}</span> when your trial ends. Cancel anytime in Settings — no charge during the trial.</>
                   ) : (
-                    <>Charged today: <span className="text-zinc-300">${totalPrice.toLocaleString()}</span>. Cancel anytime from Settings.</>
+                    <>Charged today: <span className="text-zinc-300">${fmt(totalPrice)}</span>. Cancel anytime from Settings.</>
+                  )}
+                  {totalOriginal && (
+                    <> Renews at <span className="text-zinc-300">${fmt(totalOriginal)}/year</span> after your first year.</>
                   )}
                 </p>
               </div>

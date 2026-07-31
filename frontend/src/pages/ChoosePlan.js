@@ -13,17 +13,17 @@ import { VerticalCutReveal } from '../components/ui/vertical-cut-reveal';
 const PLANS = {
   essential: {
     key: 'essential', name: 'Essential', tagline: 'For small teams getting started',
-    monthly: 75, yearly: 747, yearlyOriginal: 900,
+    monthly: 75, yearly: 747, yearlyFirst: 597.60,
     features: ['Sales Pipeline', 'Core analytics', '5 live integrations', 'Churn monitoring'],
   },
   pro: {
     key: 'pro', name: 'Pro', tagline: 'For growing businesses',
-    monthly: 179, yearly: 1695, yearlyOriginal: 2148,
+    monthly: 179, yearly: 1695, yearlyFirst: 1356,
     features: ['Everything in Essential', '15 live integrations', 'CSV import', 'AI insights', 'CRO analysis', 'Revenue forecasting', 'Priority support'],
   },
   enterprise: {
     key: 'enterprise', name: 'Enterprise', tagline: 'For scaling organizations',
-    monthly: 327, yearly: 2499, yearlyOriginal: 3924,
+    monthly: 327, yearly: 2499, yearlyFirst: 1999.20,
     features: ['Everything in Pro', 'Unlimited integrations', 'Custom API access', 'Smart Assist AI', 'Revenue Intelligence', 'Competitor Intelligence'],
   },
 };
@@ -89,9 +89,11 @@ const ChoosePlan = () => {
   const [billingPeriod, setBillingPeriod] = useState('monthly');
 
   const plan = PLANS[planKey];
-  const price = billingPeriod === 'monthly' ? plan.monthly : plan.yearly;
-  const originalPrice = billingPeriod === 'yearly' ? plan.yearlyOriginal : null;
-  const savingsPct = Math.round((1 - plan.yearly / plan.yearlyOriginal) * 100);
+  const isYearly = billingPeriod === 'yearly';
+  const price = isYearly ? plan.yearlyFirst : plan.monthly;
+  const originalPrice = isYearly ? plan.yearly : null;
+  const savingsPct = 20;
+  const priceFmt = { minimumFractionDigits: price % 1 ? 2 : 0, maximumFractionDigits: 2 };
   const isCurrent = user?.subscription_tier === `${planKey}_${billingPeriod}`;
 
   const handlePurchase = () => {
@@ -191,7 +193,7 @@ const ChoosePlan = () => {
 
             <TimelineContent as="div" animationNum={4} timelineRef={pageRef} customVariants={revealVariants}>
               <h4 className="font-semibold text-white mb-1">Billing period</h4>
-              <p className="text-sm text-zinc-400 mb-2">Save up to {savingsPct}% when you pay yearly</p>
+              <p className="text-sm text-zinc-400 mb-2">Get {savingsPct}% off your first year when you pay yearly</p>
               <PricingSwitch
                 layoutId="billing-pill"
                 testidPrefix="toggle"
@@ -208,11 +210,11 @@ const ChoosePlan = () => {
             <TimelineContent as="div" animationNum={5} timelineRef={pageRef} customVariants={revealVariants} className="grid grid-cols-2 items-center gap-3 pt-2">
               <div className="flex items-baseline">
                 <span className="text-5xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>
-                  $<NumberFlow value={price} />
+                  $<NumberFlow value={price} format={priceFmt} />
                 </span>
                 {originalPrice && (
                   <span className="text-lg text-zinc-500 line-through ml-2">
-                    $<NumberFlow value={originalPrice} />
+                    $<NumberFlow value={originalPrice} format={{ maximumFractionDigits: 0 }} />
                   </span>
                 )}
               </div>
@@ -232,7 +234,7 @@ const ChoosePlan = () => {
               <p className="col-span-2 text-xs text-[#4d8bff]">
                 {billingPeriod === 'monthly'
                   ? 'Billed monthly · cancel anytime'
-                  : `Billed yearly · save $${(plan.yearlyOriginal - plan.yearly).toLocaleString()} vs monthly`}
+                  : `20% off your first year · renews at $${plan.yearly.toLocaleString()}/yr`}
               </p>
             </TimelineContent>
           </div>

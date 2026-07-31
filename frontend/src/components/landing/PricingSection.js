@@ -25,9 +25,9 @@ const plans = {
     { name: 'Enterprise', price: '327', period: '/mo', features: ['Everything in Pro', 'Unlimited integrations', 'Custom API access', 'Smart Assist AI', 'Revenue Intelligence', 'Competitor Intelligence'], cta: 'Maximise', featured: false, planId: 'enterprise_monthly' }
   ],
   yearly: [
-    { name: 'Essential', price: '747', originalPrice: '900', period: '/yr', features: ['Sales Pipeline', 'Core analytics', '5 live integrations', 'Churn monitoring'], cta: 'Unlock Access', featured: false, planId: 'essential_yearly', savings: 'Save 17%' },
-    { name: 'Pro', price: '1,695', originalPrice: '2,148', period: '/yr', features: ['Everything in Essential', '15 live integrations', 'CSV import', 'AI insights', 'CRO analysis', 'Revenue forecasting', 'Priority support'], cta: 'Scale Up', featured: true, planId: 'pro_yearly', savings: 'Save 21%' },
-    { name: 'Enterprise', price: '2,499', originalPrice: '3,924', period: '/yr', features: ['Everything in Pro', 'Unlimited integrations', 'Custom API access', 'Smart Assist AI', 'Revenue Intelligence', 'Competitor Intelligence'], cta: 'Maximise', featured: false, planId: 'enterprise_yearly', savings: 'Save 36%' }
+    { name: 'Essential', price: '597.60', originalPrice: '747', period: '/yr', features: ['Sales Pipeline', 'Core analytics', '5 live integrations', 'Churn monitoring'], cta: 'Unlock Access', featured: false, planId: 'essential_yearly', savings: '20% off 1st yr' },
+    { name: 'Pro', price: '1,356', originalPrice: '1,695', period: '/yr', features: ['Everything in Essential', '15 live integrations', 'CSV import', 'AI insights', 'CRO analysis', 'Revenue forecasting', 'Priority support'], cta: 'Scale Up', featured: true, planId: 'pro_yearly', savings: '20% off 1st yr' },
+    { name: 'Enterprise', price: '1,999.20', originalPrice: '2,499', period: '/yr', features: ['Everything in Pro', 'Unlimited integrations', 'Custom API access', 'Smart Assist AI', 'Revenue Intelligence', 'Competitor Intelligence'], cta: 'Maximise', featured: false, planId: 'enterprise_yearly', savings: '20% off 1st yr' }
   ]
 };
 

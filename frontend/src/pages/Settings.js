@@ -270,11 +270,12 @@ const Settings = () => {
       { key: 'enterprise_monthly', name: 'Enterprise', price: 327 }
     ],
     yearly: [
-      { key: 'essential_yearly', name: 'Essential', price: 747, originalPrice: 900, savings: 153 },
-      { key: 'pro_yearly', name: 'Pro', price: 1695, originalPrice: 2148, featured: true, savings: 453 },
-      { key: 'enterprise_yearly', name: 'Enterprise', price: 2499, originalPrice: 3924, savings: 1425 }
+      { key: 'essential_yearly', name: 'Essential', price: 597.60, originalPrice: 747, savings: 149.40 },
+      { key: 'pro_yearly', name: 'Pro', price: 1356, originalPrice: 1695, featured: true, savings: 339 },
+      { key: 'enterprise_yearly', name: 'Enterprise', price: 1999.20, originalPrice: 2499, savings: 499.80 }
     ]
   };
+  const money = (n) => Number(n).toLocaleString(undefined, { minimumFractionDigits: Number(n) % 1 ? 2 : 0, maximumFractionDigits: 2 });
 
   return (
     <DashboardLayout>
@@ -522,7 +523,7 @@ const Settings = () => {
                   Yearly <span className={`ml-1 transition-colors duration-300 ${billingPeriod === 'yearly' ? 'text-emerald-300' : 'text-emerald-400'}`}>Save more</span>
                 </button>
               </div>
-              <p className="text-xs text-zinc-500 mt-2">*Save up to 36% vs. paying monthly</p>
+              <p className="text-xs text-zinc-500 mt-2">*New customers get 20% off their first year</p>
             </div>
 
             <div className="grid md:grid-cols-3 gap-4">
@@ -556,11 +557,11 @@ const Settings = () => {
                     
                     <div className="mt-2 flex items-baseline gap-2">
                       <span className="text-2xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>
-                        ${plan.price.toLocaleString()}
+                        ${money(plan.price)}
                       </span>
                       {plan.originalPrice && (
                         <span className="text-sm text-zinc-500 line-through">
-                          ${plan.originalPrice.toLocaleString()}
+                          ${money(plan.originalPrice)}
                         </span>
                       )}
                       <span className="text-zinc-400 text-sm">
@@ -569,7 +570,7 @@ const Settings = () => {
                     </div>
 
                     {plan.savings && (
-                      <p className="text-emerald-400 text-xs mt-1">{`Save $${plan.savings.toLocaleString()}/yr`}</p>
+                      <p className="text-emerald-400 text-xs mt-1">{`20% off — save $${money(plan.savings)} first year`}</p>
                     )}
                     
                     <ul className="mt-4 space-y-2">
