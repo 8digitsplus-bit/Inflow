@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import {
-  Workflow, Loader2, StickyNote, CheckSquare, Phone, Mail, Handshake, Sparkles,
+  Workflow, Loader2, StickyNote, CheckSquare, Phone, Mail, Handshake, BadgePercent, Sparkles,
   Send, Trash2, Check, X, AlertTriangle, Plug, RefreshCw, Clock,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
@@ -16,14 +16,18 @@ import { toast } from 'sonner';
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 const glass = 'bg-white/[0.04] border border-white/10 backdrop-blur-xl';
 
+const PROVIDER_NAMES = { hubspot: 'HubSpot', salesforce: 'Salesforce', pipedrive: 'Pipedrive' };
+
 const KINDS = [
   { key: 'note', label: 'Add note', icon: StickyNote, needsTarget: true },
   { key: 'task', label: 'Create task', icon: CheckSquare, needsTarget: true },
   { key: 'call', label: 'Log call', icon: Phone, needsTarget: true },
   { key: 'email', label: 'Log email', icon: Mail, needsTarget: true },
   { key: 'deal', label: 'New deal', icon: Handshake, needsTarget: false },
+  { key: 'offer', label: 'Create offer', icon: BadgePercent, needsTarget: true, dealOnly: true },
 ];
 const KIND_META = Object.fromEntries(KINDS.map((k) => [k.key, k]));
+const AI_KINDS = new Set(['note', 'task', 'call', 'email']);
 const STATUS_STYLE = {
   draft: 'bg-amber-500/15 text-amber-300 border-amber-500/30',
   executed: 'bg-emerald-500/20 text-emerald-200 border-emerald-500/40',
@@ -37,6 +41,7 @@ const emptyPayload = (kind) => {
     case 'call': return { title: '', notes: '', direction: 'OUTBOUND', when: '' };
     case 'email': return { subject: '', text: '', when: '' };
     case 'deal': return { dealname: '', amount: '', pipeline: '', dealstage: '', closedate: '', contact_id: '' };
+    case 'offer': return { title: '', amount: '', discount: '', expiration: '', notes: '' };
     default: return {};
   }
 };
@@ -59,6 +64,7 @@ const summarize = (a) => {
   if (a.kind === 'call') return p.title;
   if (a.kind === 'email') return p.subject;
   if (a.kind === 'deal') return `${p.dealname}${p.amount ? ` · $${p.amount}` : ''}`;
+  if (a.kind === 'offer') return `${p.title}${p.amount ? ` · $${p.amount}` : ''}${p.discount ? ` · ${p.discount}% off` : ''}`;
   return '';
 };
 
@@ -69,6 +75,7 @@ export default function Workspace() {
   const [targets, setTargets] = useState({ deals: [], contacts: [], pipelines: [], error: null });
   const [targetsLoading, setTargetsLoading] = useState(false);
 
+  const [provider, setProvider] = useState('');
   const [kind, setKind] = useState('note');
   const [payload, setPayload] = useState(emptyPayload('note'));
   const [targetType, setTargetType] = useState('deal');
@@ -80,7 +87,10 @@ export default function Workspace() {
   const [pushing, setPushing] = useState(false);
 
   const isOwner = !!status?.is_owner;
-  const hubspot = (status?.providers || []).find((p) => p.platform === 'hubspot');
+  const providers = status?.providers || [];
+  const activeProvider = providers.find((p) => p.platform === provider);
+  const providerName = PROVIDER_NAMES[provider] || activeProvider?.name || 'your CRM';
+  const connected = !!activeProvider?.connected;
 
   const req = useCallback(async (path, opts = {}) => {
     const res = await fetch(`${API_URL}/api/workspace${path}`, {
@@ -101,22 +111,34 @@ export default function Workspace() {
   }, [req]);
 
   const loadTargets = useCallback(async ({ silent = false } = {}) => {
+    if (!provider) return;
     setTargetsLoading(true);
     try {
-      const t = await req('/targets?provider=hubspot');
+      const t = await req(`/targets?provider=${provider}`);
       setTargets(t);
       if (t.error && !silent) toast.error(t.error);
     } catch (e) { setTargets({ deals: [], contacts: [], pipelines: [], error: e.message }); if (!silent) toast.error(e.message); }
     setTargetsLoading(false);
-  }, [req]);
+  }, [req, provider]);
 
   useEffect(() => { loadAll(); }, [loadAll]);
+
+  // default to the first connected write provider once status arrives
   useEffect(() => {
-    if (status && hubspot?.connected) loadTargets({ silent: true });
+    if (providers.length && !provider) setProvider(providers[0].platform);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [status]);
 
-  const selectKind = (k) => { setKind(k); setPayload(emptyPayload(k)); setTargetId(''); };
+  // (re)load records whenever the selected provider changes
+  useEffect(() => {
+    if (provider && connected) { setTargetId(''); loadTargets({ silent: true }); }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [provider]);
+
+  const selectKind = (k) => {
+    setKind(k); setPayload(emptyPayload(k)); setTargetId('');
+    if (KIND_META[k].dealOnly) setTargetType('deal');
+  };
   const setField = (f, v) => setPayload((p) => ({ ...p, [f]: v }));
 
   const runAIDraft = async () => {
@@ -144,10 +166,10 @@ export default function Workspace() {
   };
 
   const saveDraft = async () => {
-    if (KIND_META[kind].needsTarget && !targetId) { toast.error('Pick a HubSpot record to attach this to'); return; }
+    if (KIND_META[kind].needsTarget && !targetId) { toast.error(`Pick a ${providerName} record to attach this to`); return; }
     setSaving(true);
     try {
-      const body = { provider: 'hubspot', kind, target: currentTarget(), payload, ai_used: false };
+      const body = { provider, kind, target: currentTarget(), payload, ai_used: false };
       await req('/actions', { method: 'POST', body: JSON.stringify(body) });
       toast.success('Saved as draft — review & push when ready');
       setPayload(emptyPayload(kind)); setTargetId('');
@@ -162,7 +184,7 @@ export default function Workspace() {
     setPushing(true);
     try {
       await req(`/actions/${confirm.action_id}/execute`, { method: 'POST' });
-      toast.success('Pushed to HubSpot');
+      toast.success(`Pushed to ${PROVIDER_NAMES[confirm.provider] || 'your CRM'}`);
       setConfirm(null);
       setActions(await req('/actions'));
       setStatus(await req('/status'));
@@ -180,6 +202,8 @@ export default function Workspace() {
   const pipelines = targets.pipelines || [];
   const activePipeline = pipelines.find((pp) => pp.id === payload.pipeline) || pipelines[0];
   const KindIcon = KIND_META[kind].icon;
+  const showTargetPicker = KIND_META[kind].needsTarget;
+  const dealOnly = !!KIND_META[kind].dealOnly;
 
   return (
     <DashboardLayout>
@@ -188,27 +212,38 @@ export default function Workspace() {
         <div className="mb-6">
           <div className="flex items-center gap-2 text-slate-400 text-xs font-semibold uppercase tracking-widest mb-2"><Workflow className="w-4 h-4" /> Revenue Execution · Workspace</div>
           <h1 className="text-2xl sm:text-3xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>Action Workspace</h1>
-          <p className="text-zinc-400 text-sm mt-1 max-w-2xl">Take control — push changes straight back into your connected tools. Draft a note, task, activity or a new deal, review it, then <span className="text-white">confirm to write it to HubSpot</span>. Nothing is sent until you approve it.</p>
+          <p className="text-zinc-400 text-sm mt-1 max-w-2xl">Take control — push changes straight back into the connected tool you choose. Draft a note, task, call, email, deal or offer, review it, then <span className="text-white">confirm to write it to {providerName}</span>. Nothing is sent until you approve it.</p>
         </div>
 
-        {/* Connection banner */}
-        {!hubspot?.connected ? (
+        {/* Connection / destination bar */}
+        {providers.length === 0 ? (
           <div className={`rounded-2xl ${glass} p-6 flex flex-col sm:flex-row sm:items-center gap-4 mb-6`} data-testid="workspace-no-connection">
             <div className="w-11 h-11 rounded-xl bg-amber-500/10 flex items-center justify-center flex-shrink-0"><Plug className="w-5 h-5 text-amber-300" /></div>
             <div className="flex-1">
-              <div className="text-white font-semibold text-sm">Connect HubSpot to start pushing actions</div>
-              <div className="text-zinc-400 text-xs mt-0.5">The Workspace writes notes, tasks, activities and deals into HubSpot. Connect it with a Private App token that has write access.</div>
+              <div className="text-white font-semibold text-sm">Connect a CRM to start pushing actions</div>
+              <div className="text-zinc-400 text-xs mt-0.5">The Workspace writes notes, tasks, activities, deals and offers into your CRM. Connect HubSpot, Salesforce, or Pipedrive with write access.</div>
             </div>
-            <Button onClick={() => (window.location.href = '/connect-business')} className="bg-[#0052ff] hover:bg-[#0047d6] text-white h-9 text-sm" data-testid="workspace-connect-btn"><Plug className="w-4 h-4 mr-1.5" /> Connect HubSpot</Button>
+            <Button onClick={() => (window.location.href = '/connect-business')} className="bg-[#0052ff] hover:bg-[#0047d6] text-white h-9 text-sm" data-testid="workspace-connect-btn"><Plug className="w-4 h-4 mr-1.5" /> Connect a CRM</Button>
           </div>
         ) : (
-          <div className={`rounded-2xl ${glass} px-5 py-3 flex items-center gap-3 mb-6`} data-testid="workspace-connection">
+          <div className={`rounded-2xl ${glass} px-5 py-3 flex flex-wrap items-center gap-3 mb-6`} data-testid="workspace-connection">
+            <span className="text-xs text-zinc-500 uppercase tracking-wide">Push to</span>
+            <select
+              value={provider}
+              onChange={(e) => setProvider(e.target.value)}
+              className="bg-zinc-900 border border-zinc-700 rounded-md text-sm text-white h-9 px-2 min-w-[150px]"
+              data-testid="workspace-provider-select"
+            >
+              {providers.map((p) => (
+                <option key={p.platform} value={p.platform}>{PROVIDER_NAMES[p.platform] || p.name}</option>
+              ))}
+            </select>
             <span className="w-2 h-2 rounded-full bg-emerald-400" />
-            <span className="text-sm text-zinc-300">Connected to <span className="text-white font-medium">{hubspot.account_name || 'HubSpot'}</span></span>
+            <span className="text-sm text-zinc-300">Connected to <span className="text-white font-medium">{activeProvider?.account_name || providerName}</span></span>
             {targets.error ? (
-              <span className="text-[11px] text-red-300/90 ml-2 flex items-center gap-1" data-testid="workspace-targets-error"><AlertTriangle className="w-3 h-3" /> {targets.error}</span>
+              <span className="text-[11px] text-red-300/90 ml-1 flex items-center gap-1" data-testid="workspace-targets-error"><AlertTriangle className="w-3 h-3" /> {targets.error}</span>
             ) : (
-              <span className="text-xs text-zinc-500 ml-2">{targets.deals.length} deals · {targets.contacts.length} contacts</span>
+              <span className="text-xs text-zinc-500 ml-1">{targets.deals.length} deals · {targets.contacts.length} contacts</span>
             )}
             <Button variant="ghost" size="sm" onClick={() => loadTargets()} disabled={targetsLoading} className="ml-auto h-8 text-xs text-zinc-400 hover:text-white" data-testid="workspace-refresh-targets">{targetsLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}</Button>
           </div>
@@ -233,17 +268,17 @@ export default function Workspace() {
             {!isOwner && <div className="text-[11px] text-zinc-500 mb-4">Write actions are owner-only.</div>}
 
             {/* target picker */}
-            {KIND_META[kind].needsTarget && (
+            {showTargetPicker && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-4">
                 <div>
                   <Label className="text-zinc-500 text-[11px]">Attach to</Label>
-                  <select value={targetType} onChange={(e) => { setTargetType(e.target.value); setTargetId(''); }} className="w-full mt-1 bg-zinc-900 border border-zinc-700 rounded-md text-sm text-white h-9 px-2" data-testid="target-type-select">
+                  <select value={targetType} onChange={(e) => { setTargetType(e.target.value); setTargetId(''); }} disabled={dealOnly} className="w-full mt-1 bg-zinc-900 border border-zinc-700 rounded-md text-sm text-white h-9 px-2 disabled:opacity-60" data-testid="target-type-select">
                     <option value="deal">Deal</option>
-                    <option value="contact">Contact</option>
+                    {!dealOnly && <option value="contact">Contact</option>}
                   </select>
                 </div>
                 <div>
-                  <Label className="text-zinc-500 text-[11px]">{targetType === 'deal' ? 'HubSpot deal' : 'HubSpot contact'}</Label>
+                  <Label className="text-zinc-500 text-[11px]">{targetType === 'deal' ? `${providerName} deal` : `${providerName} contact`}</Label>
                   <select value={targetId} onChange={(e) => setTargetId(e.target.value)} className="w-full mt-1 bg-zinc-900 border border-zinc-700 rounded-md text-sm text-white h-9 px-2" data-testid="target-record-select">
                     <option value="">{targetsLoading ? 'Loading…' : 'Select a record'}</option>
                     {(targetType === 'deal' ? targets.deals : targets.contacts).map((r) => (
@@ -299,10 +334,22 @@ export default function Workspace() {
                   </div>
                 </>
               )}
+              {kind === 'offer' && (
+                <>
+                  <div><Label className="text-zinc-500 text-[11px]">Offer name</Label><Input value={payload.title} onChange={(e) => setField('title', e.target.value)} placeholder="Q3 expansion offer" className="bg-zinc-900 border-zinc-700 text-white h-9 text-sm mt-1" data-testid="field-offer-title" /></div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><Label className="text-zinc-500 text-[11px]">Amount ($)</Label><Input type="number" value={payload.amount} onChange={(e) => setField('amount', e.target.value)} placeholder="10000" className="bg-zinc-900 border-zinc-700 text-white h-9 text-sm mt-1" data-testid="field-offer-amount" /></div>
+                    <div><Label className="text-zinc-500 text-[11px]">Discount (%)</Label><Input type="number" value={payload.discount} onChange={(e) => setField('discount', e.target.value)} placeholder="10" className="bg-zinc-900 border-zinc-700 text-white h-9 text-sm mt-1" data-testid="field-offer-discount" /></div>
+                  </div>
+                  <div><Label className="text-zinc-500 text-[11px]">Valid until</Label><Input type="date" value={payload.expiration} onChange={(e) => setField('expiration', e.target.value)} className="bg-zinc-900 border-zinc-700 text-white h-9 text-sm mt-1 w-full sm:w-1/2" data-testid="field-offer-expiration" /></div>
+                  <div><Label className="text-zinc-500 text-[11px]">Details (optional)</Label><Textarea rows={3} value={payload.notes} onChange={(e) => setField('notes', e.target.value)} placeholder="What's included in this offer…" className="bg-zinc-900 border-zinc-700 text-zinc-200 text-sm mt-1" data-testid="field-offer-notes" /></div>
+                  <div className="text-[11px] text-zinc-500 flex items-start gap-1.5"><BadgePercent className="w-3 h-3 mt-0.5 flex-shrink-0" /> Creates a Quote in HubSpot / Salesforce. Pipedrive has no Quotes API, so the offer is saved as a structured note on the deal.</div>
+                </>
+              )}
             </div>
 
             <div className="flex items-center gap-2 mt-5">
-              {kind !== 'deal' && (
+              {AI_KINDS.has(kind) && (
                 <Button variant="outline" size="sm" onClick={runAIDraft} disabled={!isOwner || aiBusy} className="border-zinc-700 text-zinc-300 hover:bg-white/5 h-9 text-xs" data-testid="ai-draft-btn">{aiBusy ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5 mr-1.5 text-[#4d8bff]" />} AI draft</Button>
               )}
               <Button size="sm" onClick={saveDraft} disabled={!isOwner || saving} className="bg-[#0052ff] hover:bg-[#0047d6] text-white h-9 text-xs ml-auto" data-testid="save-draft-btn">{saving ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <Check className="w-3.5 h-3.5 mr-1.5" />} Save as draft</Button>
@@ -316,11 +363,12 @@ export default function Workspace() {
               <span className="text-[11px] text-zinc-500">{status?.drafts || 0} draft · {status?.executed || 0} pushed</span>
             </div>
             {actions.length === 0 ? (
-              <div className="text-center text-zinc-500 text-sm py-10" data-testid="no-actions">No actions yet. Compose one on the left, review it, then push to HubSpot.</div>
+              <div className="text-center text-zinc-500 text-sm py-10" data-testid="no-actions">No actions yet. Compose one on the left, review it, then push to your CRM.</div>
             ) : (
               <div className="space-y-2 max-h-[520px] overflow-y-auto" data-testid="actions-list">
                 {actions.map((a) => {
                   const Icon = KIND_META[a.kind]?.icon || StickyNote;
+                  const provName = PROVIDER_NAMES[a.provider] || 'CRM';
                   return (
                     <div key={a.action_id} className="rounded-lg bg-white/[0.02] border border-white/[0.06] p-3" data-testid={`action-${a.action_id}`}>
                       <div className="flex items-start gap-2">
@@ -328,12 +376,13 @@ export default function Workspace() {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
                             <span className="text-white text-sm font-medium">{KIND_META[a.kind]?.label || a.kind}</span>
+                            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-white/[0.06] text-zinc-400 border border-white/10">{provName}</span>
                             <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-semibold uppercase border ${STATUS_STYLE[a.status]}`} data-testid={`action-status-${a.action_id}`}>{a.status}</span>
                           </div>
                           {a.target?.label && <div className="text-[11px] text-zinc-500 mt-0.5 truncate">→ {a.target.label}</div>}
                           <div className="text-xs text-zinc-400 mt-1 line-clamp-2">{summarize(a)}</div>
                           {a.status === 'failed' && a.result?.error && <div className="text-[11px] text-red-300/90 mt-1 flex items-start gap-1"><AlertTriangle className="w-3 h-3 mt-0.5 flex-shrink-0" /> {a.result.error}</div>}
-                          {a.status === 'executed' && <div className="text-[11px] text-emerald-400/80 mt-1">Pushed to HubSpot{a.result?.hubspot_id ? ` · id ${a.result.hubspot_id}` : ''}</div>}
+                          {a.status === 'executed' && <div className="text-[11px] text-emerald-400/80 mt-1">Pushed to {provName}{(a.result?.external_id || a.result?.hubspot_id) ? ` · id ${a.result.external_id || a.result.hubspot_id}` : ''}</div>}
                         </div>
                       </div>
                       {isOwner && a.status !== 'executed' && (
@@ -355,12 +404,13 @@ export default function Workspace() {
       <Dialog open={!!confirm} onOpenChange={(o) => { if (!o) setConfirm(null); }}>
         <DialogContent className="bg-zinc-950 border-zinc-800 text-white max-w-lg" data-testid="confirm-dialog">
           <DialogHeader>
-            <DialogTitle style={{ fontFamily: 'Outfit' }} className="flex items-center gap-2"><Send className="w-5 h-5 text-[#4d8bff]" /> Push to HubSpot?</DialogTitle>
-            <DialogDescription className="text-zinc-400">This writes directly to your HubSpot account. Review before confirming.</DialogDescription>
+            <DialogTitle style={{ fontFamily: 'Outfit' }} className="flex items-center gap-2"><Send className="w-5 h-5 text-[#4d8bff]" /> Push to {PROVIDER_NAMES[confirm?.provider] || 'your CRM'}?</DialogTitle>
+            <DialogDescription className="text-zinc-400">This writes directly to your {PROVIDER_NAMES[confirm?.provider] || 'CRM'} account. Review before confirming.</DialogDescription>
           </DialogHeader>
           {confirm && (
             <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 space-y-2 text-sm" data-testid="confirm-preview">
               <div className="flex items-center gap-2"><span className="text-zinc-500 text-xs uppercase tracking-wide w-20">Action</span><span className="text-white">{KIND_META[confirm.kind]?.label}</span></div>
+              <div className="flex items-center gap-2"><span className="text-zinc-500 text-xs uppercase tracking-wide w-20">Destination</span><span className="text-white">{PROVIDER_NAMES[confirm.provider] || confirm.provider}</span></div>
               {confirm.target?.label && <div className="flex items-center gap-2"><span className="text-zinc-500 text-xs uppercase tracking-wide w-20">Target</span><span className="text-white">{confirm.target.label}</span></div>}
               <div className="flex items-start gap-2"><span className="text-zinc-500 text-xs uppercase tracking-wide w-20 flex-shrink-0">Content</span><span className="text-zinc-200 whitespace-pre-wrap">{summarize(confirm)}</span></div>
             </div>

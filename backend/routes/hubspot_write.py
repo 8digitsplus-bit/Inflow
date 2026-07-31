@@ -208,6 +208,21 @@ async def create_deal(token, dealname, amount=None, dealstage=None, pipeline=Non
     return await _post(token, "/crm/v3/objects/deals", payload)
 
 
+async def create_quote(token, title, expiration=None, deal_id=None) -> dict:
+    """Create a draft HubSpot Quote (the "offer") associated to a deal."""
+    props = {"hs_title": title or "Quote", "hs_status": "DRAFT"}
+    if expiration:
+        props["hs_expiration_date"] = str(expiration)[:10]
+    payload = {"properties": props}
+    if deal_id:
+        # HUBSPOT_DEFINED quote -> deal association typeId is 64
+        payload["associations"] = [{
+            "to": {"id": str(deal_id)},
+            "types": [{"associationCategory": "HUBSPOT_DEFINED", "associationTypeId": 64}],
+        }]
+    return await _post(token, "/crm/v3/objects/quotes", payload)
+
+
 # ------------------------------------------------------------------ deal read/update + activity (individual workspace)
 async def _patch(token: str, path: str, payload: dict) -> dict:
     if not token:

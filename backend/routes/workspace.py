@@ -27,13 +27,15 @@ from dependencies import get_current_user, org_filter, require_paid, require_pai
 from utils.crypto import decrypt
 from routes.upsell import _ai_text
 from routes import hubspot_write as hs
+from routes import salesforce_write as sf
+from routes import pipedrive_write as pd
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-WRITE_PROVIDERS = {"hubspot": "HubSpot"}
-KINDS = {"note", "task", "call", "email", "deal"}
-TARGET_KINDS = {"note", "task", "call", "email"}  # require an association target
+WRITE_PROVIDERS = {"hubspot": "HubSpot", "salesforce": "Salesforce", "pipedrive": "Pipedrive"}
+KINDS = {"note", "task", "call", "email", "deal", "offer"}
+TARGET_KINDS = {"note", "task", "call", "email", "offer"}  # require an association target
 
 
 # ------------------------------------------------------------------ models
@@ -85,6 +87,24 @@ def _hs_token(conn: Optional[dict]) -> str:
         return ""
 
 
+async def _conn(user: User, platform: str) -> Optional[dict]:
+    return await db.business_connections.find_one(
+        {**org_filter(user), "platform": platform}, {"_id": 0}
+    )
+
+
+def _creds(conn: Optional[dict]) -> dict:
+    """Decrypted credentials for any write provider (token + instance_url)."""
+    if not conn:
+        return {"token": "", "instance_url": ""}
+    enc = conn.get("api_key_encrypted")
+    try:
+        token = decrypt(enc) if enc else ""
+    except Exception:
+        token = ""
+    return {"token": token, "instance_url": conn.get("instance_url", "")}
+
+
 async def _log(action_id: str, user: User, atype: str, detail: str):
     await db.workspace_actions.update_one(
         {"action_id": action_id},
@@ -121,14 +141,21 @@ async def workspace_status(user: User = Depends(require_paid)):
 # ------------------------------------------------------------------ live targets
 @router.get("/workspace/targets")
 async def workspace_targets(provider: str = "hubspot", user: User = Depends(require_paid)):
-    if provider != "hubspot":
+    if provider not in WRITE_PROVIDERS:
         raise HTTPException(status_code=400, detail="Unsupported provider")
-    conn = await _hs_conn(user)
+    conn = await _conn(user, provider)
     if not conn:
-        raise HTTPException(status_code=400, detail="Connect HubSpot first to load records.")
-    token = _hs_token(conn)
-    targets = await hs.list_targets(token)
-    pipelines = await hs.list_deal_pipelines(token)
+        raise HTTPException(status_code=400, detail=f"Connect {WRITE_PROVIDERS[provider]} first to load records.")
+    creds = _creds(conn)
+    if provider == "hubspot":
+        targets = await hs.list_targets(creds["token"])
+        pipelines = await hs.list_deal_pipelines(creds["token"])
+    elif provider == "salesforce":
+        targets = await sf.list_targets(creds)
+        pipelines = await sf.list_pipelines(creds)
+    else:  # pipedrive
+        targets = await pd.list_targets(creds)
+        pipelines = await pd.list_pipelines(creds)
     return {
         "deals": targets["deals"],
         "contacts": targets["contacts"],
@@ -179,9 +206,12 @@ async def workspace_ai_draft(body: AIDraftReq, user: User = Depends(require_paid
 def _validate_action(kind: str, target: Optional[Target], payload: dict):
     if kind not in KINDS:
         raise HTTPException(status_code=400, detail="Invalid action kind")
-    if kind in TARGET_KINDS:
+    if kind == "offer":
+        if not target or target.type != "deal" or not target.id:
+            raise HTTPException(status_code=400, detail="Attach the offer to a deal.")
+    elif kind in TARGET_KINDS:
         if not target or target.type not in ("deal", "contact") or not target.id:
-            raise HTTPException(status_code=400, detail="Pick a HubSpot record (deal or contact) to attach this to.")
+            raise HTTPException(status_code=400, detail="Pick a record (deal or contact) to attach this to.")
     if kind == "note" and not (payload.get("body") or "").strip():
         raise HTTPException(status_code=400, detail="Note body is required")
     if kind == "task" and not (payload.get("title") or "").strip():
@@ -192,6 +222,8 @@ def _validate_action(kind: str, target: Optional[Target], payload: dict):
         raise HTTPException(status_code=400, detail="Email subject is required")
     if kind == "deal" and not (payload.get("dealname") or "").strip():
         raise HTTPException(status_code=400, detail="Deal name is required")
+    if kind == "offer" and not (payload.get("title") or "").strip():
+        raise HTTPException(status_code=400, detail="Offer name is required")
 
 
 @router.post("/workspace/actions")
@@ -244,47 +276,60 @@ async def execute_action(action_id: str, user: User = Depends(require_paid_owner
     if action.get("status") == "executed":
         raise HTTPException(status_code=400, detail="This action was already executed")
 
-    conn = await _hs_conn(user)
-    token = _hs_token(conn)
+    provider = action.get("provider", "hubspot")
+    if provider not in WRITE_PROVIDERS:
+        raise HTTPException(status_code=400, detail="Unsupported provider")
+    label = WRITE_PROVIDERS[provider]
+    conn = await _conn(user, provider)
+    creds = _creds(conn)
     kind = action["kind"]
     p = action.get("payload") or {}
     tgt = action.get("target") or {}
     ttype, tid = tgt.get("type"), tgt.get("id")
 
-    if kind == "note":
-        res = await hs.create_note(token, p.get("body"), ttype, tid, p.get("when"))
-    elif kind == "task":
-        res = await hs.create_task(token, p.get("title"), p.get("body"), p.get("priority"), p.get("due_date"), ttype, tid)
-    elif kind == "call":
-        res = await hs.log_call(token, p.get("title"), p.get("notes"), p.get("when"), p.get("direction"), ttype, tid)
-    elif kind == "email":
-        res = await hs.log_email(token, p.get("subject"), p.get("text"), p.get("when"), ttype, tid)
-    elif kind == "deal":
-        res = await hs.create_deal(token, p.get("dealname"), p.get("amount"), p.get("dealstage"),
-                                   p.get("pipeline"), p.get("closedate"), p.get("contact_id"))
-    else:
-        raise HTTPException(status_code=400, detail="Unknown action kind")
+    if provider == "hubspot":
+        token = creds["token"]
+        if kind == "note":
+            res = await hs.create_note(token, p.get("body"), ttype, tid, p.get("when"))
+        elif kind == "task":
+            res = await hs.create_task(token, p.get("title"), p.get("body"), p.get("priority"), p.get("due_date"), ttype, tid)
+        elif kind == "call":
+            res = await hs.log_call(token, p.get("title"), p.get("notes"), p.get("when"), p.get("direction"), ttype, tid)
+        elif kind == "email":
+            res = await hs.log_email(token, p.get("subject"), p.get("text"), p.get("when"), ttype, tid)
+        elif kind == "deal":
+            res = await hs.create_deal(token, p.get("dealname"), p.get("amount"), p.get("dealstage"),
+                                       p.get("pipeline"), p.get("closedate"), p.get("contact_id"))
+        elif kind == "offer":
+            res = await hs.create_quote(token, p.get("title"), p.get("expiration"), tid)
+        else:
+            raise HTTPException(status_code=400, detail="Unknown action kind")
+    elif provider == "salesforce":
+        res = await sf.write(kind, creds, p, tgt)
+    else:  # pipedrive
+        res = await pd.write(kind, creds, p, tgt)
 
     now = _now()
     if res.get("ok"):
-        result = {"ok": True, "hubspot_id": res.get("id"), "executed_at": now}
+        result = {"ok": True, "external_id": res.get("id"), "hubspot_id": res.get("id"),
+                  "provider": provider, "executed_at": now}
         await db.workspace_actions.update_one(
             {"action_id": action_id},
             {"$set": {"status": "executed", "result": result, "updated_at": now}},
         )
-        await _log(action_id, user, "execute", f"Pushed to HubSpot (id {res.get('id')})")
+        await _log(action_id, user, "execute", f"Pushed to {label} (id {res.get('id')})")
         return {"status": "executed", "result": result}
 
     # failure — persist as failed with a clear reason; keep it retryable
     result = {"ok": False, "error": res.get("error"), "code": res.get("code"),
-              "missing_scopes": res.get("missing_scopes"), "failed_at": now}
+              "missing_scopes": res.get("missing_scopes"), "provider": provider, "failed_at": now}
     await db.workspace_actions.update_one(
         {"action_id": action_id},
         {"$set": {"status": "failed", "result": result, "updated_at": now}},
     )
-    await _log(action_id, user, "failed", res.get("error") or "HubSpot write failed")
+    await _log(action_id, user, "failed", res.get("error") or f"{label} write failed")
     # 422 so the readable detail passes the ingress to the UI
-    raise HTTPException(status_code=422, detail=res.get("error") or "HubSpot write failed")
+    raise HTTPException(status_code=422, detail=res.get("error") or f"{label} write failed")
 
 
 # ------------------------------------------------------------------ individual account workspace (2-way sync)

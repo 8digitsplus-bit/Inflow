@@ -88,7 +88,7 @@ def test_create_note_missing_target(sess):
     r = sess.post(f"{API}/workspace/actions",
                   json={"provider": "hubspot", "kind": "note", "payload": {"body": "hi"}}, timeout=20)
     assert r.status_code == 400
-    assert "hubspot" in r.json().get("detail", "").lower()
+    assert "attach" in r.json().get("detail", "").lower()
 
 
 def test_create_note_missing_body(sess):
@@ -131,11 +131,32 @@ def test_invalid_kind(sess):
     assert r.status_code == 400
 
 
-def test_invalid_provider(sess):
+def test_salesforce_provider_accepted(sess):
+    # salesforce is now a supported write destination -> draft is created
     r = sess.post(f"{API}/workspace/actions",
                   json={"provider": "salesforce", "kind": "deal",
                         "payload": {"dealname": "x"}}, timeout=20)
+    assert r.status_code == 200
+    aid = r.json().get("action_id")
+    assert aid
+    sess.delete(f"{API}/workspace/actions/{aid}", timeout=20)
+
+
+def test_invalid_provider(sess):
+    r = sess.post(f"{API}/workspace/actions",
+                  json={"provider": "boguscrm", "kind": "deal",
+                        "payload": {"dealname": "x"}}, timeout=20)
     assert r.status_code == 400
+
+
+def test_offer_requires_deal_target(sess):
+    # offer must attach to a deal, not a contact / nothing
+    r = sess.post(f"{API}/workspace/actions",
+                  json={"provider": "hubspot", "kind": "offer",
+                        "target": {"type": "contact", "id": "1"},
+                        "payload": {"title": "Deal offer"}}, timeout=20)
+    assert r.status_code == 400
+    assert "offer" in r.json().get("detail", "").lower()
 
 
 # --------- full deal draft -> execute (expected 422) -> delete ---------
