@@ -13,17 +13,17 @@ import { VerticalCutReveal } from '../components/ui/vertical-cut-reveal';
 const PLANS = {
   essential: {
     key: 'essential', name: 'Essential', tagline: 'For small teams getting started',
-    monthly: 99, yearly: 830, yearlyOriginal: 1188,
-    features: ['Sales Pipeline', 'Core analytics', '2 live integrations', 'Churn monitoring'],
+    monthly: 75, yearly: 747, yearlyOriginal: 900,
+    features: ['Sales Pipeline', 'Core analytics', '5 live integrations', 'Churn monitoring'],
   },
   pro: {
     key: 'pro', name: 'Pro', tagline: 'For growing businesses',
-    monthly: 149, yearly: 1250, yearlyOriginal: 1788,
-    features: ['Everything in Essential', '4 live integrations', 'CSV import', 'AI insights', 'CRO analysis', 'Revenue forecasting', 'Priority support'],
+    monthly: 179, yearly: 1695, yearlyOriginal: 2148,
+    features: ['Everything in Essential', '15 live integrations', 'CSV import', 'AI insights', 'CRO analysis', 'Revenue forecasting', 'Priority support'],
   },
   enterprise: {
     key: 'enterprise', name: 'Enterprise', tagline: 'For scaling organizations',
-    monthly: 400, yearly: 3360, yearlyOriginal: 4800,
+    monthly: 327, yearly: 2499, yearlyOriginal: 3924,
     features: ['Everything in Pro', 'Unlimited integrations', 'Custom API access', 'Smart Assist AI', 'Revenue Intelligence', 'Competitor Intelligence'],
   },
 };
@@ -91,6 +91,7 @@ const ChoosePlan = () => {
   const plan = PLANS[planKey];
   const price = billingPeriod === 'monthly' ? plan.monthly : plan.yearly;
   const originalPrice = billingPeriod === 'yearly' ? plan.yearlyOriginal : null;
+  const savingsPct = Math.round((1 - plan.yearly / plan.yearlyOriginal) * 100);
   const isCurrent = user?.subscription_tier === `${planKey}_${billingPeriod}`;
 
   const handlePurchase = () => {
@@ -190,7 +191,7 @@ const ChoosePlan = () => {
 
             <TimelineContent as="div" animationNum={4} timelineRef={pageRef} customVariants={revealVariants}>
               <h4 className="font-semibold text-white mb-1">Billing period</h4>
-              <p className="text-sm text-zinc-400 mb-2">Save 30% when you pay yearly</p>
+              <p className="text-sm text-zinc-400 mb-2">Save up to {savingsPct}% when you pay yearly</p>
               <PricingSwitch
                 layoutId="billing-pill"
                 testidPrefix="toggle"
@@ -198,7 +199,7 @@ const ChoosePlan = () => {
                 onChange={setBillingPeriod}
                 options={[
                   { key: 'monthly', label: 'Monthly' },
-                  { key: 'yearly', label: 'Yearly', badge: '-30%' },
+                  { key: 'yearly', label: 'Yearly', badge: `-${savingsPct}%` },
                 ]}
               />
             </TimelineContent>

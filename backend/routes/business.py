@@ -672,10 +672,10 @@ class ConnectRequest(BaseModel):
 # Integration slot limits by subscription tier
 INTEGRATION_LIMITS = {
     "trial": 2,
-    "essential_monthly": 2,
-    "essential_yearly": 2,
-    "pro_monthly": 4,
-    "pro_yearly": 4,
+    "essential_monthly": 5,
+    "essential_yearly": 5,
+    "pro_monthly": 15,
+    "pro_yearly": 15,
     "enterprise_monthly": None,  # unlimited
     "enterprise_yearly": None,
     "expired": 0,

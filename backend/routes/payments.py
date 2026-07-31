@@ -14,32 +14,32 @@ router = APIRouter()
 
 SUBSCRIPTION_PLANS = {
     "essential_monthly": {
-        "price": 99.0, "name": "Essential", "period": "monthly",
+        "price": 75.0, "name": "Essential", "period": "monthly",
         "interval": "month",
-        "features": ["Sales Pipeline", "Core analytics", "2 live integrations", "Churn monitoring", "Email support"]
+        "features": ["Sales Pipeline", "Core analytics", "5 live integrations", "Churn monitoring", "Email support"]
     },
     "essential_yearly": {
-        "price": 830.0, "name": "Essential", "period": "yearly",
+        "price": 747.0, "name": "Essential", "period": "yearly",
         "interval": "year",
-        "features": ["Sales Pipeline", "Core analytics", "2 live integrations", "Churn monitoring", "Email support"]
+        "features": ["Sales Pipeline", "Core analytics", "5 live integrations", "Churn monitoring", "Email support"]
     },
     "pro_monthly": {
-        "price": 149.0, "name": "Pro", "period": "monthly",
+        "price": 179.0, "name": "Pro", "period": "monthly",
         "interval": "month",
-        "features": ["4 live integrations", "CSV import", "AI insights", "CRO analysis", "Revenue forecasting", "Priority support"]
+        "features": ["15 live integrations", "CSV import", "AI insights", "CRO analysis", "Revenue forecasting", "Priority support"]
     },
     "pro_yearly": {
-        "price": 1250.0, "name": "Pro", "period": "yearly",
+        "price": 1695.0, "name": "Pro", "period": "yearly",
         "interval": "year",
-        "features": ["4 live integrations", "CSV import", "AI insights", "CRO analysis", "Revenue forecasting", "Priority support"]
+        "features": ["15 live integrations", "CSV import", "AI insights", "CRO analysis", "Revenue forecasting", "Priority support"]
     },
     "enterprise_monthly": {
-        "price": 400.0, "name": "Enterprise", "period": "monthly",
+        "price": 327.0, "name": "Enterprise", "period": "monthly",
         "interval": "month",
         "features": ["Unlimited integrations", "Custom API access", "Smart Assist AI", "Revenue Intelligence", "Competitor Intelligence", "Dedicated support"]
     },
     "enterprise_yearly": {
-        "price": 3360.0, "name": "Enterprise", "period": "yearly",
+        "price": 2499.0, "name": "Enterprise", "period": "yearly",
         "interval": "year",
         "features": ["Unlimited integrations", "Custom API access", "Smart Assist AI", "Revenue Intelligence", "Competitor Intelligence", "Dedicated support"]
     }

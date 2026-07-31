@@ -12,7 +12,7 @@ const faqs = [
   },
   {
     q: 'What data sources can I connect?',
-    a: '35+ live integrations across five categories — Payments (Stripe, PayPal, Square, Chargebee…), E-Commerce (Shopify, WooCommerce, Amazon Seller…), CRM (HubSpot, Salesforce, Pipedrive…), Finance (QuickBooks, Xero, Sage…) and Analytics (GA4, Amplitude, Mixpanel, PostHog…). Your plan sets how many you can connect at once (Essential 2, Pro 4, Enterprise unlimited). Pro adds CSV import; Enterprise adds Custom API access.',
+    a: '35+ live integrations across five categories — Payments (Stripe, PayPal, Square, Chargebee…), E-Commerce (Shopify, WooCommerce, Amazon Seller…), CRM (HubSpot, Salesforce, Pipedrive…), Finance (QuickBooks, Xero, Sage…) and Analytics (GA4, Amplitude, Mixpanel, PostHog…). Your plan sets how many you can connect at once (Essential 5, Pro 15, Enterprise unlimited). Pro adds CSV import; Enterprise adds Custom API access.',
   },
   {
     q: 'What can InFlow’s AI do?',
@@ -20,7 +20,7 @@ const faqs = [
   },
   {
     q: "What's the difference between Essential, Pro & Enterprise?",
-    a: 'Essential ($99/mo) — 2 integrations + core analytics. Pro ($149/mo) — 4 integrations, AI insights, CSV import, forecasting. Enterprise ($400/mo) — unlimited integrations, Custom API, Smart Assist AI, Competitor Intelligence. Flat monthly or yearly subscription per workspace. Yearly billing saves 30%.',
+    a: 'Essential ($75/mo) — 5 integrations + core analytics. Pro ($179/mo) — 15 integrations, AI insights, CSV import, forecasting. Enterprise ($327/mo) — unlimited integrations, Custom API, Smart Assist AI, Competitor Intelligence. Flat monthly or yearly subscription per workspace. Yearly billing saves up to 36%.',
   },
   {
     q: 'Can I cancel or change my plan at any time?',

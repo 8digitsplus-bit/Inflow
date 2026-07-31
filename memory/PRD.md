@@ -13,6 +13,12 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
+### Pricing + integration limits updated to new 3-tier values (Jun 2026)
+- Per user request, applied new prices to the 3-tier model: **Essential** $75/mo · $747/yr, **Pro** $179/mo · $1,695/yr, **Enterprise** $327/mo · $2,499/yr. Yearly savings are now per-plan (Essential 17%, Pro 21%, Enterprise 36%) — no longer a flat "30%".
+- **Integration slot limits raised**: Essential **5**, Pro **15**, Enterprise **unlimited** (trial stays 2). Backend `INTEGRATION_LIMITS` in `routes/business.py`; feature bullets read "5 / 15 / Unlimited live integrations" everywhere.
+- Files touched: `backend/routes/payments.py` (SUBSCRIPTION_PLANS prices + feature bullets), `backend/routes/business.py` (INTEGRATION_LIMITS), `backend/routes/contact.py` + `backend/routes/support.py` (AI knowledge text), `frontend/src/pages/ChoosePlan.js` (dynamic per-plan savings badge), `frontend/src/pages/Checkout.js`, `frontend/src/pages/Settings.js`, `frontend/src/components/landing/PricingSection.js`, `frontend/src/components/landing/FAQSection.js`.
+- Verified: `GET /api/subscription/plans` returns the new prices + integration labels; `POST /api/payments/create-checkout` (pro_monthly) returns a valid Stripe client_secret; `GET /api/business/integration-usage` returns unlimited for Enterprise; ChoosePlan screenshot shows $179 / "15 live integrations" / dynamic "-21%" yearly badge. grep confirms zero stale $99/$149/$400/$830/$1,250/$3,360 or "2/4 integration" references remain.
+
 ### Pricing REVERTED to 3-tier fixed cards (Jun 2026) — removed volume/usage model
 - Per user request, reverted from the volume/usage-based pricing model back to the original **3 fixed tiers with cards**: **Essential** ($99/mo, $830/yr), **Pro** ($149/mo, $1,250/yr), **Enterprise** ($400/mo, $3,360/yr). Yearly billing shows a ~30% saving.
 - Implementation: `git checkout`-restored the 6 pricing files to their pre-volume state (commit `1561b8f^`): `backend/routes/payments.py`, `backend/routes/business.py`, `frontend/src/{pages/ChoosePlan.js, pages/Checkout.js, pages/Settings.js, components/landing/PricingSection.js}`. Deleted volume-only files: `frontend/src/lib/pricing.js`, `frontend/src/components/VolumeSlider.jsx`, `backend/tests/test_usage_tier_pricing.py`. Fixed `components/TierGate.js` to inline its feature list (no longer imports the deleted `lib/pricing`).

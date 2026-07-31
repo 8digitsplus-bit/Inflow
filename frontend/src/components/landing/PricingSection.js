@@ -20,14 +20,14 @@ import {
 
 const plans = {
   monthly: [
-    { name: 'Essential', price: '99', period: '/mo', features: ['Sales Pipeline', 'Core analytics', '2 live integrations', 'Churn monitoring'], cta: 'Unlock Access', featured: false, planId: 'essential_monthly' },
-    { name: 'Pro', price: '149', period: '/mo', features: ['Everything in Essential', '4 live integrations', 'CSV import', 'AI insights', 'CRO analysis', 'Revenue forecasting', 'Priority support'], cta: 'Scale Up', featured: true, planId: 'pro_monthly' },
-    { name: 'Enterprise', price: '400', period: '/mo', features: ['Everything in Pro', 'Unlimited integrations', 'Custom API access', 'Smart Assist AI', 'Revenue Intelligence', 'Competitor Intelligence'], cta: 'Maximise', featured: false, planId: 'enterprise_monthly' }
+    { name: 'Essential', price: '75', period: '/mo', features: ['Sales Pipeline', 'Core analytics', '5 live integrations', 'Churn monitoring'], cta: 'Unlock Access', featured: false, planId: 'essential_monthly' },
+    { name: 'Pro', price: '179', period: '/mo', features: ['Everything in Essential', '15 live integrations', 'CSV import', 'AI insights', 'CRO analysis', 'Revenue forecasting', 'Priority support'], cta: 'Scale Up', featured: true, planId: 'pro_monthly' },
+    { name: 'Enterprise', price: '327', period: '/mo', features: ['Everything in Pro', 'Unlimited integrations', 'Custom API access', 'Smart Assist AI', 'Revenue Intelligence', 'Competitor Intelligence'], cta: 'Maximise', featured: false, planId: 'enterprise_monthly' }
   ],
   yearly: [
-    { name: 'Essential', price: '830', originalPrice: '1,188', period: '/yr', features: ['Sales Pipeline', 'Core analytics', '2 live integrations', 'Churn monitoring'], cta: 'Unlock Access', featured: false, planId: 'essential_yearly', savings: 'Save 30%' },
-    { name: 'Pro', price: '1,250', originalPrice: '1,788', period: '/yr', features: ['Everything in Essential', '4 live integrations', 'CSV import', 'AI insights', 'CRO analysis', 'Revenue forecasting', 'Priority support'], cta: 'Scale Up', featured: true, planId: 'pro_yearly', savings: 'Save 30%' },
-    { name: 'Enterprise', price: '3,360', originalPrice: '4,800', period: '/yr', features: ['Everything in Pro', 'Unlimited integrations', 'Custom API access', 'Smart Assist AI', 'Revenue Intelligence', 'Competitor Intelligence'], cta: 'Maximise', featured: false, planId: 'enterprise_yearly', savings: 'Save 30%' }
+    { name: 'Essential', price: '747', originalPrice: '900', period: '/yr', features: ['Sales Pipeline', 'Core analytics', '5 live integrations', 'Churn monitoring'], cta: 'Unlock Access', featured: false, planId: 'essential_yearly', savings: 'Save 17%' },
+    { name: 'Pro', price: '1,695', originalPrice: '2,148', period: '/yr', features: ['Everything in Essential', '15 live integrations', 'CSV import', 'AI insights', 'CRO analysis', 'Revenue forecasting', 'Priority support'], cta: 'Scale Up', featured: true, planId: 'pro_yearly', savings: 'Save 21%' },
+    { name: 'Enterprise', price: '2,499', originalPrice: '3,924', period: '/yr', features: ['Everything in Pro', 'Unlimited integrations', 'Custom API access', 'Smart Assist AI', 'Revenue Intelligence', 'Competitor Intelligence'], cta: 'Maximise', featured: false, planId: 'enterprise_yearly', savings: 'Save 36%' }
   ]
 };
 
