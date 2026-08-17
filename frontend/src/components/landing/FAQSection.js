@@ -4,35 +4,35 @@ import { ChevronDown } from 'lucide-react';
 const faqs = [
   {
     q: 'What is InFlow and who is it for?',
-    a: 'A revenue intelligence platform for B2B SaaS, e-commerce, and service teams. Founders, RevOps, and finance use it to unify pipeline + revenue data and run AI-powered analytics from one dashboard.',
+    a: "InFlow's a revenue intelligence platform for businesses, e-commerce, solo-founders & rev-ops.",
   },
   {
     q: 'How does the free trial and sign-up work?',
-    a: 'You pick a plan and create your account right on the checkout page. From there you can start an optional 14-day free trial — your card is saved but you’re charged $0 today and can cancel anytime before it ends — or subscribe and pay immediately. You’re always in control from Settings → Billing.',
+    a: 'You choose your plan & create your account. From the checkout page you can opt for the 14 day free trial.',
   },
   {
     q: 'What data sources can I connect?',
-    a: '35+ live integrations across five categories — Payments (Stripe, PayPal, Square, Chargebee…), E-Commerce (Shopify, WooCommerce, Amazon Seller…), CRM (HubSpot, Salesforce, Pipedrive…), Finance (QuickBooks, Xero, Sage…) and Analytics (GA4, Amplitude, Mixpanel, PostHog…). Your plan sets how many you can connect at once (Essential 5, Pro 15, Enterprise unlimited). Pro adds CSV import; Enterprise adds Custom API access.',
+    a: 'You can choose from up to 35 integrations across: payments, e-commerce, CRM, analytics & finance.',
   },
   {
-    q: 'What can InFlow’s AI do?',
-    a: 'Claude powers a suite of tools: AI revenue insights and forecasting, automatic revenue-leak detection, pricing guidance with a written rationale and projected impact, and Competitor Intelligence — which auto-extracts competitors’ public pricing and benchmarks it against yours. Everything runs on demand, so nothing changes on your account without you.',
+    q: 'Do you offer a discount on annual plans?',
+    a: 'Yes — new customers get 20% off their first year on any annual plan: $597 (Essential), $1,356 (Pro), $1,999 (Enterprise). Plans renew at the standard yearly price after year one.',
   },
   {
-    q: "What's the difference between Essential, Pro & Enterprise?",
-    a: 'Essential ($75/mo) — 5 integrations + core analytics. Pro ($179/mo) — 15 integrations, AI insights, CSV import, forecasting. Enterprise ($327/mo) — unlimited integrations, Custom API, Smart Assist AI, Competitor Intelligence. Flat monthly or yearly subscription per workspace. New customers get 20% off their first year on annual plans (renews at the standard yearly price after year one).',
+    q: "What can InFlow's AI do?",
+    a: "Claude powers on-demand AI revenue insights and forecasting, automatic revenue-leak detection, pricing guidance with a written rationale, and Competitor Intelligence that benchmarks rivals' public pricing against yours.",
   },
   {
     q: 'Can I cancel or change my plan at any time?',
-    a: 'Yes. Settings → Manage Billing lets you update your card, switch plans, view invoices, or cancel — all self-serve. No lock-in contracts.',
+    a: 'Yes you can cancel anytime from Settings → Manage Billing.',
   },
   {
     q: 'Is my data secure?',
-    a: 'Encrypted in transit (TLS 1.3) and at rest. Integration credentials encrypted with AES, payments handled by Stripe (we never see your card), optional 2FA on every plan, and your data is never used to train AI models.',
+    a: 'Yes. Data is secured in transit & at rest via TLS 1.3.',
   },
   {
-    q: 'What kind of support do you offer?',
-    a: 'All plans include AI support chat and a ticket system, with priority handling on Pro and Enterprise. Smart Assist AI — our autonomous agent that investigates your data and takes actions — is exclusive to Enterprise. You can also reach us anytime at support@inflowft.com.',
+    q: 'Can I push updates back into my CRM?',
+    a: 'Yes. In the Workspace you can draft notes, tasks, calls, emails, deals and offers and push them into the CRM you choose — HubSpot, Salesforce or Pipedrive — with a review-and-confirm step before anything is written.',
   },
 ];
 
