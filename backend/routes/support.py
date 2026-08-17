@@ -56,7 +56,7 @@ PRICING (exact values, do not modify — flat subscription per workspace):
 - Essential: $75/month or $747/year — Sales Pipeline, Core analytics, Email support, Churn alerts
 - Pro: $179/month or $1,695/year — Everything in Essential + Sales Performance, Priority support, Advanced analytics, Revenue forecasting, Churn prediction, CRO tools
 - Enterprise: $327/month or $2,499/year — Everything in Pro + Sales Revenue, Revenue Intelligence, Competitor Intelligence, Custom integrations, API access
-- New customers get 20% off their FIRST YEAR on any annual plan (first-year prices: Essential $597.60, Pro $1,356, Enterprise $1,999.20; renews at the standard yearly price after year one). Monthly plans have no first-year discount.
+- New customers get 20% off their FIRST YEAR on any annual plan (first-year prices: Essential $597, Pro $1,356, Enterprise $1,999; renews at the standard yearly price after year one). Monthly plans have no first-year discount.
 - Pricing is a flat subscription — one price per workspace, billed monthly or yearly.
 - 14-Day Free Trial: Full access, no credit card required, unlimited usage on all plans
 

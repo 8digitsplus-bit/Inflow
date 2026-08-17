@@ -70,9 +70,9 @@ PRODUCT KNOWLEDGE (never invent beyond this)
 ────────────────────────────────────────
 
 PLANS (flat per workspace / month). New customers get 20% off their FIRST YEAR on any annual plan (renews at the standard yearly price after year one).
-- Essential — $75/mo or $747/yr ($597.60 first year). Sales pipeline, core analytics, 5 integrations, churn monitoring, email support.
+- Essential — $75/mo or $747/yr ($597 first year). Sales pipeline, core analytics, 5 integrations, churn monitoring, email support.
 - Pro — $179/mo or $1,695/yr ($1,356 first year). Everything in Essential + 15 integrations, CSV import, AI insights, CRO analysis, revenue forecasting, priority support.
-- Enterprise — $327/mo or $2,499/yr ($1,999.20 first year). Everything in Pro + unlimited integrations, Custom API access, Smart Assist AI (in-app data analyst), Revenue Intelligence, Competitor Intelligence, dedicated account support.
+- Enterprise — $327/mo or $2,499/yr ($1,999 first year). Everything in Pro + unlimited integrations, Custom API access, Smart Assist AI (in-app data analyst), Revenue Intelligence, Competitor Intelligence, dedicated account support.
 
 Pricing is a flat subscription — one price per workspace, billed monthly or yearly. Billing is managed from Settings → Manage Billing.
 

@@ -21,7 +21,7 @@ SUBSCRIPTION_PLANS = {
     "essential_yearly": {
         "price": 747.0, "name": "Essential", "period": "yearly",
         "interval": "year",
-        "first_year_discount": True,
+        "first_year_price": 597.0,
         "features": ["Sales Pipeline", "Core analytics", "5 live integrations", "Churn monitoring", "Email support"]
     },
     "pro_monthly": {
@@ -32,7 +32,7 @@ SUBSCRIPTION_PLANS = {
     "pro_yearly": {
         "price": 1695.0, "name": "Pro", "period": "yearly",
         "interval": "year",
-        "first_year_discount": True,
+        "first_year_price": 1356.0,
         "features": ["15 live integrations", "CSV import", "AI insights", "CRO analysis", "Revenue forecasting", "Priority support"]
     },
     "enterprise_monthly": {
@@ -43,7 +43,7 @@ SUBSCRIPTION_PLANS = {
     "enterprise_yearly": {
         "price": 2499.0, "name": "Enterprise", "period": "yearly",
         "interval": "year",
-        "first_year_discount": True,
+        "first_year_price": 1999.0,
         "features": ["Unlimited integrations", "Custom API access", "Smart Assist AI", "Revenue Intelligence", "Competitor Intelligence", "Dedicated support"]
     }
 }
@@ -105,20 +105,26 @@ async def get_or_create_stripe_price(plan_key: str, plan: dict) -> str:
     return price.id
 
 
-async def get_or_create_coupon() -> str:
-    """Get or create a 20% first-year discount coupon (applies to the first invoice only)."""
-    cached = await db.stripe_coupons.find_one({"name": "first_year_20"}, {"_id": 0})
+async def get_or_create_amount_coupon(plan_key: str, amount_off_cents: int) -> str:
+    """Get or create a fixed-amount first-year discount coupon (first invoice only).
+
+    Using a fixed amount_off (rather than percent_off) keeps the first-year price
+    a clean round number regardless of the base price.
+    """
+    name = f"first_year_{plan_key}_{amount_off_cents}"
+    cached = await db.stripe_coupons.find_one({"name": name}, {"_id": 0})
     if cached:
         return cached["coupon_id"]
 
     coupon = stripe_sdk.Coupon.create(
-        percent_off=20,
+        amount_off=amount_off_cents,
+        currency="usd",
         duration="once",
-        name="20% Off First Year"
+        name=f"First year discount ({plan_key})"
     )
 
     await db.stripe_coupons.insert_one({
-        "name": "first_year_20",
+        "name": name,
         "coupon_id": coupon.id,
         "created_at": datetime.now(timezone.utc).isoformat()
     })
@@ -188,10 +194,12 @@ async def create_subscription_checkout(plan_key: str, plan: dict, user: User, or
         }
     }
 
-    # Apply 30% coupon for yearly first-year discount
-    if plan.get("first_year_discount"):
-        coupon_id = await get_or_create_coupon()
-        session_params["discounts"] = [{"coupon": coupon_id}]
+    # Apply first-year discount as a fixed amount so the first-year price is a clean number
+    if plan.get("first_year_price") is not None:
+        amount_off = int(round((plan["price"] - plan["first_year_price"]) * 100))
+        if amount_off > 0:
+            coupon_id = await get_or_create_amount_coupon(plan_key, amount_off)
+            session_params["discounts"] = [{"coupon": coupon_id}]
 
     session = stripe_sdk.checkout.Session.create(**session_params)
     return session
@@ -246,7 +254,7 @@ async def create_checkout_session(request: Request, user: User = Depends(require
         raise HTTPException(status_code=400, detail="Invalid plan")
 
     plan = SUBSCRIPTION_PLANS[plan_key]
-    final_price = round(plan["price"] * 0.8, 2) if plan.get("first_year_discount") else plan["price"]
+    final_price = plan.get("first_year_price", plan["price"])
 
     api_key = os.environ.get("STRIPE_API_KEY")
     if not api_key:

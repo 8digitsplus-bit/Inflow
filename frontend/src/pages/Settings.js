@@ -270,9 +270,9 @@ const Settings = () => {
       { key: 'enterprise_monthly', name: 'Enterprise', price: 327 }
     ],
     yearly: [
-      { key: 'essential_yearly', name: 'Essential', price: 597.60, originalPrice: 747, savings: 149.40 },
+      { key: 'essential_yearly', name: 'Essential', price: 597, originalPrice: 747, savings: 150 },
       { key: 'pro_yearly', name: 'Pro', price: 1356, originalPrice: 1695, featured: true, savings: 339 },
-      { key: 'enterprise_yearly', name: 'Enterprise', price: 1999.20, originalPrice: 2499, savings: 499.80 }
+      { key: 'enterprise_yearly', name: 'Enterprise', price: 1999, originalPrice: 2499, savings: 500 }
     ]
   };
   const money = (n) => Number(n).toLocaleString(undefined, { minimumFractionDigits: Number(n) % 1 ? 2 : 0, maximumFractionDigits: 2 });

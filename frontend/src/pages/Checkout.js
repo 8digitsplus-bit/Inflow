@@ -22,11 +22,11 @@ const stripePromise = STRIPE_PUBLISHABLE_KEY ? loadStripe(STRIPE_PUBLISHABLE_KEY
 
 const PLANS = {
   essential_monthly: { name: 'Essential', price: 75, period: 'month', features: ['Sales Pipeline', 'Core Analytics', '5 live integrations', 'Churn Monitoring'] },
-  essential_yearly: { name: 'Essential', price: 597.60, period: 'year', originalPrice: 747, features: ['Sales Pipeline', 'Core Analytics', '5 live integrations', 'Churn Monitoring'] },
+  essential_yearly: { name: 'Essential', price: 597, period: 'year', originalPrice: 747, features: ['Sales Pipeline', 'Core Analytics', '5 live integrations', 'Churn Monitoring'] },
   pro_monthly: { name: 'Pro', price: 179, period: 'month', features: ['15 live integrations', 'CSV import', 'AI Insights', 'CRO Analysis'] },
   pro_yearly: { name: 'Pro', price: 1356, period: 'year', originalPrice: 1695, features: ['15 live integrations', 'CSV import', 'AI Insights', 'CRO Analysis'] },
   enterprise_monthly: { name: 'Enterprise', price: 327, period: 'month', features: ['Unlimited integrations', 'Custom API access', 'Smart Assist AI', 'Competitor Intelligence'] },
-  enterprise_yearly: { name: 'Enterprise', price: 1999.20, period: 'year', originalPrice: 2499, features: ['Unlimited integrations', 'Custom API access', 'Smart Assist AI', 'Competitor Intelligence'] },
+  enterprise_yearly: { name: 'Enterprise', price: 1999, period: 'year', originalPrice: 2499, features: ['Unlimited integrations', 'Custom API access', 'Smart Assist AI', 'Competitor Intelligence'] },
 };
 
 // Framer Motion blur-in reveal — matches the sitewide glass aesthetic.

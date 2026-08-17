@@ -13,7 +13,7 @@ import { VerticalCutReveal } from '../components/ui/vertical-cut-reveal';
 const PLANS = {
   essential: {
     key: 'essential', name: 'Essential', tagline: 'For small teams getting started',
-    monthly: 75, yearly: 747, yearlyFirst: 597.60,
+    monthly: 75, yearly: 747, yearlyFirst: 597,
     features: ['Sales Pipeline', 'Core analytics', '5 live integrations', 'Churn monitoring'],
   },
   pro: {
@@ -23,7 +23,7 @@ const PLANS = {
   },
   enterprise: {
     key: 'enterprise', name: 'Enterprise', tagline: 'For scaling organizations',
-    monthly: 327, yearly: 2499, yearlyFirst: 1999.20,
+    monthly: 327, yearly: 2499, yearlyFirst: 1999,
     features: ['Everything in Pro', 'Unlimited integrations', 'Custom API access', 'Smart Assist AI', 'Revenue Intelligence', 'Competitor Intelligence'],
   },
 };
