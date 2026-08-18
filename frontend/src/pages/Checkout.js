@@ -46,6 +46,9 @@ const Checkout = () => {
   const { user, registerWithEmail } = useAuth();
 
   const planKey = searchParams.get('plan') || 'pro_monthly';
+  const fromParam = searchParams.get('from') || '';
+  const backTo = fromParam.startsWith('/') ? fromParam : '/choose-plan';
+  const backLabel = backTo.startsWith('/settings') ? 'Back to settings' : 'Back';
   const plan = PLANS[planKey];
   const totalPrice = plan ? plan.price : 0;
   const totalOriginal = plan?.originalPrice ? plan.originalPrice : null;
@@ -165,8 +168,8 @@ const Checkout = () => {
       {/* Header */}
       <div className="relative border-b border-white/[0.06] bg-white/[0.02] backdrop-blur-xl z-10">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 h-11 flex items-center justify-between">
-          <button onClick={() => navigate('/choose-plan')} className="flex items-center gap-2 text-zinc-400 hover:text-white text-xs transition-colors" data-testid="back-btn">
-            <ArrowLeft className="w-3.5 h-3.5" /> Back
+          <button onClick={() => navigate(backTo)} className="flex items-center gap-2 text-zinc-400 hover:text-white text-xs transition-colors" data-testid="back-btn">
+            <ArrowLeft className="w-3.5 h-3.5" /> {backLabel}
           </button>
           <img src="/inflow-logo.png?v=6" alt="InFlow" className="h-4 w-auto" />
           <div className="flex items-center gap-1.5 text-zinc-500 text-xs">

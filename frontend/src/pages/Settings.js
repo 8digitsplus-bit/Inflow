@@ -187,7 +187,8 @@ const Settings = () => {
   const handleUpgrade = async (planId) => {
     if (planId === user?.subscription_tier) return;
     // Flat per-workspace pricing — all plans go straight to embedded checkout.
-    navigate(`/checkout?plan=${planId}`);
+    // Pass where we came from so Checkout's Back button returns to Settings.
+    navigate(`/checkout?plan=${planId}&from=/settings`);
   };
 
   const handleCancelSubscription = async () => {
