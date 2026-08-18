@@ -8,15 +8,15 @@ const faqs = [
   },
   {
     q: 'How does the free trial and sign-up work?',
-    a: 'You choose your plan & create your account. From the checkout page you can opt for the 14 day free trial.',
+    a: 'Choose your plan & create your account. From the checkout page you can opt for the 14 day free trial.',
   },
   {
     q: 'What data sources can I connect?',
     a: 'You can choose from up to 35 integrations across: payments, e-commerce, CRM, analytics & finance.',
   },
   {
-    q: 'Do you offer a discount on annual plans?',
-    a: 'Yes — new customers get 20% off their first year on any annual plan: $597 (Essential), $1,356 (Pro), $1,999 (Enterprise). Plans renew at the standard yearly price after year one.',
+    q: 'Do you offer a discount?',
+    a: 'Yes, you get 20% off your first year.',
   },
   {
     q: "What can InFlow's AI do?",
@@ -24,15 +24,15 @@ const faqs = [
   },
   {
     q: 'Can I cancel or change my plan at any time?',
-    a: 'Yes you can cancel anytime from Settings → Manage Billing.',
+    a: 'Yes you can cancel from Settings → Manage Billing. You can change your plan from Settings → Subscription.',
   },
   {
     q: 'Is my data secure?',
     a: 'Yes. Data is secured in transit & at rest via TLS 1.3.',
   },
   {
-    q: 'Can I push updates back into my CRM?',
-    a: 'Yes. In the Workspace you can draft notes, tasks, calls, emails, deals and offers and push them into the CRM you choose — HubSpot, Salesforce or Pipedrive — with a review-and-confirm step before anything is written.',
+    q: "Essential vs Pro vs Enterprise. What's the difference?",
+    a: 'Essential — basic for solo & small teams. Pro — for users wanting to scale. Enterprise — for power-users maximising revenue.',
   },
 ];
 
