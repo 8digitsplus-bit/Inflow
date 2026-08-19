@@ -3,11 +3,12 @@ import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import DashboardLayout from '../components/DashboardLayout';
 import { AIResponseRenderer } from '../components/AIResponseRenderer';
-import { 
+import {
   TrendingUp,
+  TrendingDown,
   DollarSign,
-  Target, 
-  Users, 
+  Target,
+  Users,
   Sparkles,
   ArrowRight,
   BarChart3,
@@ -19,9 +20,9 @@ import {
   Lock,
   Filter,
   ChevronDown,
-  Check
+  Check,
+  CheckCircle2,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { STAGE_COLORS } from '../constants/colors';
 import { Button } from '../components/ui/button';
 import { Progress } from '../components/ui/progress';
@@ -33,17 +34,15 @@ import {
   DropdownMenuSeparator,
   DropdownMenuCheckboxItem,
 } from '../components/ui/dropdown-menu';
-import { 
-  AreaChart, 
-  Area, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
+import {
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
   ResponsiveContainer,
   BarChart,
   Bar,
-  Cell
+  Cell,
 } from 'recharts';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
@@ -62,14 +61,7 @@ const TIER_ACCESS = {
   enterprise_yearly: ['metrics', 'revenue_chart', 'pipeline_dist', 'churn_widget', 'cro_widget', 'ai_insights', 'recent_deals', 'quick_actions'],
 };
 
-// Map onboarding goals to dashboard sections for ordering priority
-const GOAL_TO_SECTION = {
-  pipeline: ['pipeline_dist', 'recent_deals'],
-  pricing: ['ai_insights'],
-  churn: ['churn_widget'],
-  cro: ['cro_widget'],
-  revenue: ['revenue_chart'],
-};
+const CARD = 'rounded-xl border border-white/[0.07] bg-zinc-950/40 backdrop-blur-sm';
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -107,7 +99,7 @@ const Dashboard = () => {
       const r = await fetch(`${API_URL}/api/business/platforms`, { credentials: 'include' });
       if (r.ok) {
         const platforms = await r.json();
-        setConnectedSources(platforms.filter(p => p.connected));
+        setConnectedSources(platforms.filter((p) => p.connected));
       }
     } catch { /* noop */ }
   };
@@ -119,7 +111,7 @@ const Dashboard = () => {
         fetch(`${API_URL}/api/analytics/revenue${q}`, { credentials: 'include' }),
         fetch(`${API_URL}/api/analytics/churn${q}`, { credentials: 'include' }),
         fetch(`${API_URL}/api/analytics/cro${q}`, { credentials: 'include' }),
-        fetch(`${API_URL}/api/deals`, { credentials: 'include' })
+        fetch(`${API_URL}/api/deals`, { credentials: 'include' }),
       ]);
       if (analyticsRes.ok) setAnalytics(await analyticsRes.json());
       if (churnRes.ok) setChurnData(await churnRes.json());
@@ -142,8 +134,8 @@ const Dashboard = () => {
         credentials: 'include',
         body: JSON.stringify({
           context: `Analyze this business data and provide strategic insights: Total Pipeline: $${analytics?.total_pipeline || 0}, Win Rate: ${analytics?.win_rate || 0}%, Churn Rate: ${churnData?.churn_rate || 0}%, Conversion Rate: ${croData?.overall_conversion || 0}%`,
-          data: { analytics, churnData, croData }
-        })
+          data: { analytics, churnData, croData },
+        }),
       });
       if (response.ok) {
         const data = await response.json();
@@ -156,7 +148,7 @@ const Dashboard = () => {
     }
   };
 
-  const formatCurrency = (value) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value);
+  const formatCurrency = (value) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value || 0);
 
   const CustomTooltip = ({ active, payload, label }) => {
     if (!active || !payload?.length) return null;
@@ -185,53 +177,76 @@ const Dashboard = () => {
 
   const recentDeals = deals.slice(0, 5);
   const stageColors = STAGE_COLORS;
-  const pieData = analytics?.stage_breakdown?.filter(s => !['closed_won', 'closed_lost'].includes(s.stage) && s.count > 0) || [];
+  const monthly = analytics?.monthly_data || [];
+  const pieData = analytics?.stage_breakdown?.filter((s) => !['closed_won', 'closed_lost'].includes(s.stage) && s.count > 0) || [];
 
-  // Locked section overlay
+  // Real month-over-month revenue delta (no fabricated numbers)
+  const revDelta = (() => {
+    if (monthly.length < 2) return null;
+    const last = monthly[monthly.length - 1]?.revenue || 0;
+    const prev = monthly[monthly.length - 2]?.revenue || 0;
+    if (!prev) return null;
+    return ((last - prev) / prev) * 100;
+  })();
+
   const LockedOverlay = ({ requiredTier }) => (
     <div className="absolute inset-0 bg-zinc-950/80 backdrop-blur-sm rounded-xl flex flex-col items-center justify-center z-10">
       <Lock className="w-6 h-6 text-zinc-500 mb-2" />
       <p className="text-zinc-400 text-xs mb-2">Available on {requiredTier}+</p>
       <Link to="/settings">
-        <Button size="sm" className="bg-white/10 hover:bg-white/20 h-7 text-xs px-3">
-          Upgrade
-        </Button>
+        <Button size="sm" className="bg-white/10 hover:bg-white/20 h-7 text-xs px-3">Upgrade</Button>
       </Link>
     </div>
   );
 
-  // Determine which health sections to prioritize based on goals
-  const goalSections = userGoals.flatMap(g => GOAL_TO_SECTION[g] || []);
-  const isGoalHighlighted = (section) => goalSections.includes(section);
+  // Efferd-style KPI stat card
+  const Kpi = ({ label, value, icon: Icon, accent, delta, sub, testid }) => (
+    <div className={`${CARD} p-4 transition-colors hover:border-white/[0.14]`} data-testid={testid}>
+      <div className="flex items-center justify-between">
+        <span className="text-[11px] uppercase tracking-wider text-zinc-500">{label}</span>
+        <span className={`w-7 h-7 rounded-lg flex items-center justify-center ${accent}`}><Icon className="w-3.5 h-3.5" /></span>
+      </div>
+      <div className="text-2xl sm:text-[28px] leading-tight font-bold text-white mt-3 truncate" style={{ fontFamily: 'Outfit' }}>{value}</div>
+      <div className="mt-1.5 flex items-center gap-1.5 text-xs">
+        {delta != null && (
+          <span className={`inline-flex items-center gap-0.5 font-semibold ${delta >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+            {delta >= 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
+            {Math.abs(delta).toFixed(1)}%
+          </span>
+        )}
+        <span className="text-zinc-500">{sub}</span>
+      </div>
+    </div>
+  );
 
-  // Order health row: churn, cro, ai - but prioritize goal-matched ones
-  const healthSections = ['churn_widget', 'cro_widget', 'ai_insights'];
-  const sortedHealthSections = [...healthSections].sort((a, b) => {
-    const aGoal = isGoalHighlighted(a) ? 0 : 1;
-    const bGoal = isGoalHighlighted(b) ? 0 : 1;
-    return aGoal - bGoal;
-  });
+  const stageBadge = (stage) => {
+    const cls = stage === 'closed_won'
+      ? 'bg-emerald-500/15 text-emerald-400'
+      : stage === 'closed_lost'
+        ? 'bg-red-500/15 text-red-400'
+        : 'bg-white/[0.06] text-zinc-300';
+    return <span className={`text-[10px] px-2 py-0.5 rounded-full capitalize ${cls}`}>{(stage || '').replace('_', ' ')}</span>;
+  };
 
   return (
     <DashboardLayout>
-      <div className="space-y-6" data-testid="dashboard-main">
+      <div className="space-y-5" data-testid="dashboard-main">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>
               Welcome back, {user?.name?.split(' ')[0] || 'there'}
             </h1>
-            <p className="text-zinc-400 mt-1">
-              {userGoals.length > 0 
-                ? `Focused on ${userGoals.map(g => g.charAt(0).toUpperCase() + g.slice(1)).join(', ')}`
-                : "Here's your complete business overview"
-              }
+            <p className="text-zinc-400 text-sm mt-1">
+              {userGoals.length > 0
+                ? `Focused on ${userGoals.map((g) => g.charAt(0).toUpperCase() + g.slice(1)).join(', ')}`
+                : "Here's your complete business overview"}
             </p>
           </div>
           <div className="flex items-center gap-3">
             <span className={`px-3 py-1.5 rounded-full text-xs font-medium ${
-              isEnterprise ? 'bg-purple-500/20 text-purple-400' :
-              isPro ? 'bg-slate-500/20 text-slate-400' :
+              isEnterprise ? 'bg-[#0052ff]/15 text-[#4d8bff]' :
+              isPro ? 'bg-slate-500/20 text-slate-300' :
               isEssential ? 'bg-cyan-500/20 text-cyan-400' :
               isTrial ? 'bg-amber-500/20 text-amber-400' :
               isExpired || isCancelled ? 'bg-red-500/20 text-red-400' :
@@ -251,18 +266,18 @@ const Dashboard = () => {
             : manualOnly
               ? 'Manual only'
               : selectedSources.length === 1
-                ? (connectedSources.find(c => c.platform_id === selectedSources[0])?.name || selectedSources[0])
+                ? (connectedSources.find((c) => c.platform_id === selectedSources[0])?.name || selectedSources[0])
                 : `${selectedSources.length} sources`;
           const togglePlatform = (pid) => {
-            setSelectedSources(prev => {
-              const withoutManual = prev.filter(p => p !== 'manual');
+            setSelectedSources((prev) => {
+              const withoutManual = prev.filter((p) => p !== 'manual');
               return withoutManual.includes(pid)
-                ? withoutManual.filter(p => p !== pid)
+                ? withoutManual.filter((p) => p !== pid)
                 : [...withoutManual, pid];
             });
           };
           return (
-            <div className="flex items-center gap-2 pb-1 border-b border-white/[0.04]" data-testid="source-filter">
+            <div className="flex items-center gap-2" data-testid="source-filter">
               <span className="text-[11px] uppercase tracking-wider text-zinc-500">Filter</span>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -276,14 +291,8 @@ const Dashboard = () => {
                     <ChevronDown className="w-3.5 h-3.5 text-zinc-500" />
                   </button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent
-                  align="start"
-                  className="w-60 bg-zinc-950 border-zinc-800 text-zinc-200"
-                  data-testid="source-filter-menu"
-                >
-                  <DropdownMenuLabel className="text-[11px] uppercase tracking-wider text-zinc-500 font-medium">
-                    Data sources
-                  </DropdownMenuLabel>
+                <DropdownMenuContent align="start" className="w-60 bg-zinc-950 border-zinc-800 text-zinc-200" data-testid="source-filter-menu">
+                  <DropdownMenuLabel className="text-[11px] uppercase tracking-wider text-zinc-500 font-medium">Data sources</DropdownMenuLabel>
                   <DropdownMenuSeparator className="bg-zinc-800" />
                   <button
                     type="button"
@@ -295,7 +304,7 @@ const Dashboard = () => {
                     All sources
                   </button>
                   <DropdownMenuSeparator className="bg-zinc-800" />
-                  {connectedSources.map(s => {
+                  {connectedSources.map((s) => {
                     const active = selectedSources.includes(s.platform_id);
                     const role = s.revenue_role || s.default_revenue_role || 'revenue';
                     const dotClass = role === 'revenue' ? 'bg-emerald-400' : role === 'pipeline' ? 'bg-slate-400' : 'bg-amber-400';
@@ -326,309 +335,247 @@ const Dashboard = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
               {!allActive && (
-                <button
-                  type="button"
-                  onClick={() => setSelectedSources([])}
-                  className="text-[11px] text-zinc-500 hover:text-zinc-300 underline-offset-2 hover:underline"
-                  data-testid="source-filter-clear"
-                >
-                  Clear
-                </button>
+                <button type="button" onClick={() => setSelectedSources([])} className="text-[11px] text-zinc-500 hover:text-zinc-300 underline-offset-2 hover:underline" data-testid="source-filter-clear">Clear</button>
               )}
             </div>
           );
         })()}
 
-        {/* Key Metrics - Available to all */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">
-          <Card className="bg-zinc-950/50 border-white/10 hover:border-slate-500/30 transition-colors" data-testid="metric-pipeline">
-            <CardContent className="p-3 sm:p-5">
-              <div className="flex items-center justify-between mb-3">
-                <div className="p-2 rounded-lg bg-slate-500/10 text-slate-400"><DollarSign className="w-5 h-5" /></div>
-                <span className="text-xs font-medium flex items-center gap-1 text-emerald-400"><TrendingUp className="w-3 h-3" /> +12.5%</span>
-              </div>
-              <div className="text-lg sm:text-2xl font-bold text-white truncate" style={{ fontFamily: 'Outfit' }}>{formatCurrency(analytics?.total_pipeline || 0)}</div>
-              <div className="text-xs sm:text-sm text-zinc-400 mt-1">Total Pipeline</div>
-            </CardContent>
-          </Card>
-          <Card className="bg-zinc-950/50 border-white/10 hover:border-emerald-500/30 transition-colors" data-testid="metric-revenue">
-            <CardContent className="p-3 sm:p-5">
-              <div className="flex items-center justify-between mb-3">
-                <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400"><TrendingUp className="w-5 h-5" /></div>
-                <span className="text-xs font-medium flex items-center gap-1 text-emerald-400"><TrendingUp className="w-3 h-3" /> +8.2%</span>
-              </div>
-              <div className="text-lg sm:text-2xl font-bold text-white truncate" style={{ fontFamily: 'Outfit' }}>{formatCurrency(analytics?.closed_revenue || 0)}</div>
-              <div className="text-xs sm:text-sm text-zinc-400 mt-1">Closed Revenue</div>
-            </CardContent>
-          </Card>
-          <Card className="bg-zinc-950/50 border-white/10 hover:border-cyan-500/30 transition-colors" data-testid="metric-winrate">
-            <CardContent className="p-3 sm:p-5">
-              <div className="flex items-center justify-between mb-3">
-                <div className="p-2 rounded-lg bg-cyan-500/10 text-cyan-400"><Target className="w-5 h-5" /></div>
-                <span className="text-xs font-medium flex items-center gap-1 text-emerald-400"><TrendingUp className="w-3 h-3" /> +3.1%</span>
-              </div>
-              <div className="text-lg sm:text-2xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>{analytics?.win_rate || 0}%</div>
-              <div className="text-xs sm:text-sm text-zinc-400 mt-1">Win Rate</div>
-            </CardContent>
-          </Card>
-          <Card className="bg-zinc-950/50 border-white/10 hover:border-amber-500/30 transition-colors" data-testid="metric-deals">
-            <CardContent className="p-3 sm:p-5">
-              <div className="flex items-center justify-between mb-3">
-                <div className="p-2 rounded-lg bg-amber-500/10 text-amber-400"><Users className="w-5 h-5" /></div>
-                <span className="text-xs font-medium flex items-center gap-1 text-emerald-400"><TrendingUp className="w-3 h-3" /> +5</span>
-              </div>
-              <div className="text-lg sm:text-2xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>{analytics?.total_deals || 0}</div>
-              <div className="text-xs sm:text-sm text-zinc-400 mt-1">Active Deals</div>
-            </CardContent>
-          </Card>
+        {/* KPI grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+          <Kpi label="Total Pipeline" value={formatCurrency(analytics?.total_pipeline)} icon={DollarSign} accent="bg-[#0052ff]/12 text-[#4d8bff]" delta={null} sub="across all stages" testid="metric-pipeline" />
+          <Kpi label="Closed Revenue" value={formatCurrency(analytics?.closed_revenue)} icon={TrendingUp} accent="bg-emerald-500/12 text-emerald-400" delta={revDelta} sub="vs last month" testid="metric-revenue" />
+          <Kpi label="Win Rate" value={`${analytics?.win_rate || 0}%`} icon={Target} accent="bg-cyan-500/12 text-cyan-400" delta={null} sub={`${croData?.won_deals || 0} won`} testid="metric-winrate" />
+          <Kpi label="Active Deals" value={analytics?.total_deals || 0} icon={Users} accent="bg-amber-500/12 text-amber-400" delta={null} sub="in pipeline" testid="metric-deals" />
         </div>
 
-        {/* Main Charts Row */}
-        <div className="grid lg:grid-cols-3 gap-6">
-          <Card className={`lg:col-span-2 bg-zinc-950/50 border-white/10 ${isGoalHighlighted('revenue_chart') ? 'ring-1 ring-slate-500/30' : ''}`} data-testid="revenue-chart">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
-                  <BarChart3 className="w-5 h-5 text-slate-400" /> Revenue Trend
-                  {isGoalHighlighted('revenue_chart') && <span className="text-[10px] bg-slate-500/20 text-slate-400 px-2 py-0.5 rounded-full">Priority</span>}
-                </CardTitle>
-                <Link to="/revenue"><Button variant="ghost" size="sm" className="text-zinc-400 hover:text-slate-400 hover:bg-slate-500/10">View All <ArrowRight className="w-4 h-4 ml-1" /></Button></Link>
+        {/* Charts row: Revenue bar + Pipeline distribution */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className={`${CARD} p-5`} data-testid="revenue-chart">
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="text-sm font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
+                  <BarChart3 className="w-4 h-4 text-[#4d8bff]" /> Revenue Trend
+                </h3>
+                <p className="text-xs text-zinc-500 mt-0.5">Monthly closed revenue</p>
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[200px] sm:h-[280px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={analytics?.monthly_data || []}>
-                    <defs>
-                      <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#0052FF" stopOpacity={0.3}/><stop offset="95%" stopColor="#0052FF" stopOpacity={0}/>
-                      </linearGradient>
-                      <linearGradient id="colorForecast" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10B981" stopOpacity={0.3}/><stop offset="95%" stopColor="#10B981" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#27272A" />
-                    <XAxis dataKey="month" stroke="#71717A" fontSize={12} />
-                    <YAxis stroke="#71717A" fontSize={12} tickFormatter={(v) => `$${v/1000}k`} />
-                    <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#27272A' }} />
-                    <Area type="monotone" dataKey="revenue" stroke="#0052FF" fill="url(#colorRevenue)" strokeWidth={2} name="Revenue" />
-                    <Area type="monotone" dataKey="forecast" stroke="#10B981" fill="url(#colorForecast)" strokeWidth={2} strokeDasharray="5 5" name="Forecast" />
-                  </AreaChart>
-                </ResponsiveContainer>
+              <div className="flex items-center gap-3">
+                {revDelta != null && (
+                  <span className={`inline-flex items-center gap-0.5 text-sm font-semibold ${revDelta >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                    {revDelta >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}{Math.abs(revDelta).toFixed(1)}%
+                  </span>
+                )}
+                <Link to="/revenue"><Button variant="ghost" size="sm" className="h-7 px-2 text-zinc-400 hover:text-[#4d8bff] hover:bg-[#0052ff]/10 text-xs">View all <ArrowRight className="w-3.5 h-3.5 ml-1" /></Button></Link>
               </div>
-            </CardContent>
-          </Card>
+            </div>
+            <div className="h-[240px] mt-4">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={monthly} margin={{ left: -12, right: 4, top: 4, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#1c1c20" vertical={false} />
+                  <XAxis dataKey="month" stroke="#52525b" fontSize={11} tickLine={false} axisLine={false} />
+                  <YAxis stroke="#52525b" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(v) => (v >= 1000 ? `$${Math.round(v / 1000)}k` : `$${Math.round(v)}`)} />
+                  <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
+                  <Bar dataKey="revenue" fill="#0052ff" radius={[4, 4, 0, 0]} maxBarSize={40} name="Revenue" />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
 
-          <Card className={`bg-zinc-950/50 border-white/10 ${isGoalHighlighted('pipeline_dist') ? 'ring-1 ring-purple-500/30' : ''}`} data-testid="pipeline-distribution">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
-                  <PieChart className="w-5 h-5 text-purple-400" /> Pipeline
-                  {isGoalHighlighted('pipeline_dist') && <span className="text-[10px] bg-purple-500/20 text-purple-400 px-2 py-0.5 rounded-full">Priority</span>}
-                </CardTitle>
-                <Link to="/pipeline"><Button variant="ghost" size="sm" className="text-zinc-400 hover:text-white"><ArrowRight className="w-4 h-4" /></Button></Link>
+          <div className={`${CARD} p-5`} data-testid="pipeline-distribution">
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="text-sm font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
+                  <PieChart className="w-4 h-4 text-purple-400" /> Pipeline by stage
+                </h3>
+                <p className="text-xs text-zinc-500 mt-0.5">Open deals across your funnel</p>
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="h-[200px]">
+              <Link to="/pipeline"><Button variant="ghost" size="sm" className="h-7 px-2 text-zinc-400 hover:text-white text-xs">View all <ArrowRight className="w-3.5 h-3.5 ml-1" /></Button></Link>
+            </div>
+            <div className="h-[240px] mt-4">
+              {pieData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={pieData} layout="vertical" margin={{ left: 10, right: 20, top: 5, bottom: 5 }}>
+                  <BarChart data={pieData} layout="vertical" margin={{ left: 8, right: 20, top: 4, bottom: 4 }}>
                     <XAxis type="number" hide />
-                    <YAxis type="category" dataKey="stage" tick={{ fill: '#a1a1aa', fontSize: 12, textTransform: 'capitalize' }} width={80} tickFormatter={(v) => v.charAt(0).toUpperCase() + v.slice(1)} />
-                    <Tooltip contentStyle={{ backgroundColor: '#0c0c10', border: '1px solid #3f3f46', borderRadius: '8px', color: '#fff' }} itemStyle={{ color: '#A1A1AA' }} formatter={(v) => [`${v} deals`, 'Count']} cursor={{ fill: 'rgba(39, 39, 42, 0.3)' }} />
-                    <Bar dataKey="count" radius={[0, 6, 6, 0]} barSize={18}>
+                    <YAxis type="category" dataKey="stage" tick={{ fill: '#a1a1aa', fontSize: 11 }} width={82} tickLine={false} axisLine={false} tickFormatter={(v) => v.charAt(0).toUpperCase() + v.slice(1)} />
+                    <Tooltip contentStyle={{ backgroundColor: '#0c0c10', border: '1px solid #3f3f46', borderRadius: '8px', color: '#fff', fontSize: '11px' }} itemStyle={{ color: '#A1A1AA' }} formatter={(v) => [`${v} deals`, 'Count']} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
+                    <Bar dataKey="count" radius={[0, 5, 5, 0]} barSize={16}>
                       {pieData.map((entry, index) => (<Cell key={`cell-${index}`} fill={stageColors[entry.stage] || '#0052FF'} />))}
                     </Bar>
                   </BarChart>
                 </ResponsiveContainer>
-              </div>
-            </CardContent>
-          </Card>
+              ) : (
+                <div className="h-full flex items-center justify-center text-zinc-600 text-sm">No open pipeline yet</div>
+              )}
+            </div>
+          </div>
         </div>
 
-        {/* Health Metrics Row - tier gated, goal ordered */}
-        <div className="grid md:grid-cols-3 gap-6">
-          {sortedHealthSections.map((section) => {
-            if (section === 'churn_widget') {
-              const locked = !hasAccess('churn_widget');
-              return (
-                <Card key={section} className={`relative bg-gradient-to-br from-emerald-500/5 to-zinc-950/50 ${locked ? 'border-zinc-800' : isGoalHighlighted('churn_widget') ? 'border-emerald-500/40 ring-1 ring-emerald-500/20' : 'border-emerald-500/20'}`} data-testid="churn-widget">
-                  {locked && <LockedOverlay requiredTier="Essential" />}
-                  <CardHeader className="pb-2">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-base font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
-                        <Heart className="w-4 h-4 text-emerald-400" /> Customer Health
-                        {isGoalHighlighted('churn_widget') && !locked && <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full">Priority</span>}
-                      </CardTitle>
-                      <Link to="/churn"><Button variant="ghost" size="sm" className="text-zinc-400 hover:text-white h-8 px-2"><ArrowRight className="w-4 h-4" /></Button></Link>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <div className={`text-xl sm:text-3xl font-bold ${getHealthColor(churnData?.health_score || 0)}`} style={{ fontFamily: 'Outfit' }}>{churnData?.health_score || 0}</div>
-                        <p className="text-xs text-zinc-400">Health Score</p>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-lg font-semibold text-emerald-400">{churnData?.retention_rate || 0}%</div>
-                        <p className="text-xs text-zinc-400">Retention</p>
-                      </div>
-                    </div>
-                    <Progress value={churnData?.health_score || 0} className="h-2" />
-                    {churnData?.at_risk_count > 0 && (
-                      <div className="mt-3 flex items-center gap-2 text-amber-400 text-xs"><AlertTriangle className="w-3 h-3" />{churnData.at_risk_count} at-risk customers</div>
-                    )}
-                  </CardContent>
-                </Card>
-              );
-            }
-
-            if (section === 'cro_widget') {
-              const locked = !hasAccess('cro_widget');
-              return (
-                <Card key={section} className={`relative bg-gradient-to-br from-cyan-500/5 to-zinc-950/50 ${locked ? 'border-zinc-800' : isGoalHighlighted('cro_widget') ? 'border-cyan-500/40 ring-1 ring-cyan-500/20' : 'border-cyan-500/20'}`} data-testid="cro-widget">
-                  {locked && <LockedOverlay requiredTier="Pro" />}
-                  <CardHeader className="pb-2">
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-base font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
-                        <Zap className="w-4 h-4 text-cyan-400" /> Conversion Rate
-                        {isGoalHighlighted('cro_widget') && !locked && <span className="text-[10px] bg-cyan-500/20 text-cyan-400 px-2 py-0.5 rounded-full">Priority</span>}
-                      </CardTitle>
-                      <Link to="/cro"><Button variant="ghost" size="sm" className="text-zinc-400 hover:text-white h-8 px-2"><ArrowRight className="w-4 h-4" /></Button></Link>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <div className="text-xl sm:text-3xl font-bold text-cyan-400" style={{ fontFamily: 'Outfit' }}>{croData?.overall_conversion || 0}%</div>
-                        <p className="text-xs text-zinc-400">Overall Conversion</p>
-                      </div>
-                      <div className="text-right">
-                        <div className="text-lg font-semibold text-white">{croData?.won_deals || 0}</div>
-                        <p className="text-xs text-zinc-400">Won Deals</p>
-                      </div>
-                    </div>
-                    <div className="flex gap-1">
-                      {croData?.funnel_data?.slice(0, 5).map((stage, i) => (
-                        <div key={i} className="flex-1 h-8 rounded bg-cyan-500/20 relative overflow-hidden" title={`${stage.stage}: ${stage.conversion}%`}>
-                          <div className="absolute bottom-0 left-0 right-0 bg-cyan-500 transition-all" style={{ height: `${stage.conversion}%` }} />
-                        </div>
-                      ))}
-                    </div>
-                    {croData?.bottlenecks?.length > 0 && (
-                      <div className="mt-3 flex items-center gap-2 text-amber-400 text-xs"><AlertTriangle className="w-3 h-3" />{croData.bottlenecks.length} bottleneck(s) detected</div>
-                    )}
-                  </CardContent>
-                </Card>
-              );
-            }
-
-            if (section === 'ai_insights') {
-              const locked = !hasAccess('ai_insights');
-              return (
-                <Card key={section} className={`relative bg-gradient-to-br from-purple-500/10 to-slate-500/5 ${locked ? 'border-zinc-800' : isGoalHighlighted('ai_insights') ? 'border-purple-500/40 ring-1 ring-purple-500/20' : 'border-purple-500/20'}`} data-testid="ai-insights-card">
-                  {locked && <LockedOverlay requiredTier="Pro" />}
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-base font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
-                      <Sparkles className="w-4 h-4 text-purple-400" /> AI Insights
-                      {isGoalHighlighted('ai_insights') && !locked && <span className="text-[10px] bg-purple-500/20 text-purple-400 px-2 py-0.5 rounded-full">Priority</span>}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    {aiInsight ? (
-                      <div className="max-h-[120px] overflow-y-auto"><AIResponseRenderer text={aiInsight.substring(0, 300)} /></div>
-                    ) : (
-                      <div className="text-center py-4">
-                        <Button onClick={getAIInsight} disabled={loadingInsight} size="sm" className="bg-white/10 hover:bg-white/20 h-8 text-xs">
-                          {loadingInsight ? 'Analyzing...' : 'Generate Insights'}
-                        </Button>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              );
-            }
-
-            return null;
-          })}
-        </div>
-
-        {/* Recent Deals & Quick Actions */}
-        <div className="grid lg:grid-cols-3 gap-6">
-          <Card className={`lg:col-span-2 bg-zinc-950/50 border-white/10 ${isGoalHighlighted('recent_deals') ? 'ring-1 ring-slate-500/20' : ''}`} data-testid="recent-deals">
-            <CardHeader className="pb-2">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
-                  <Clock className="w-5 h-5 text-slate-400" /> Recent Deals
-                </CardTitle>
-                <Link to="/pipeline"><Button variant="ghost" size="sm" className="text-zinc-400 hover:text-slate-400 hover:bg-slate-500/10">View All <ArrowRight className="w-4 h-4 ml-1" /></Button></Link>
+        {/* Recent deals table + health + conversion */}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+          <div className={`${CARD} p-5 lg:col-span-2`} data-testid="recent-deals">
+            <div className="flex items-center justify-between mb-1">
+              <div>
+                <h3 className="text-sm font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
+                  <Clock className="w-4 h-4 text-slate-400" /> Recent deals
+                </h3>
+                <p className="text-xs text-zinc-500 mt-0.5">Latest activity across your pipeline</p>
               </div>
-            </CardHeader>
-            <CardContent>
-              {recentDeals.length > 0 ? (
-                <div className="space-y-3">
-                  {recentDeals.map((deal, i) => (
-                    <div key={i} className="flex items-center justify-between p-2 sm:p-3 bg-zinc-900/50 rounded-lg border border-zinc-800/50 hover:border-zinc-700 transition-colors">
-                      <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
-                        <div className="w-1 h-10 rounded-full flex-shrink-0" style={{ backgroundColor: stageColors[deal.stage] || '#0052FF' }} />
-                        <div className="min-w-0">
-                          <h4 className="text-white font-medium text-xs sm:text-sm truncate">{deal.name}</h4>
-                          <p className="text-zinc-400 text-[10px] sm:text-xs truncate">{deal.company}</p>
-                        </div>
-                      </div>
-                      <div className="text-right flex-shrink-0 ml-2">
-                        <div className="text-emerald-400 font-medium text-xs sm:text-sm">{formatCurrency(deal.value)}</div>
-                        <span className={`text-xs px-2 py-0.5 rounded capitalize ${deal.stage === 'closed_won' ? 'bg-emerald-500/20 text-emerald-400' : deal.stage === 'closed_lost' ? 'bg-red-500/20 text-red-400' : 'bg-zinc-700 text-zinc-300'}`}>{deal.stage.replace('_', ' ')}</span>
-                      </div>
+              <Link to="/pipeline"><Button variant="ghost" size="sm" className="h-7 px-2 text-zinc-400 hover:text-white text-xs">View all <ArrowRight className="w-3.5 h-3.5 ml-1" /></Button></Link>
+            </div>
+            {recentDeals.length > 0 ? (
+              <div className="mt-3">
+                <div className="grid grid-cols-[1.2fr_1.4fr_0.9fr_0.9fr] text-[11px] uppercase tracking-wider text-zinc-500 border-b border-white/[0.06] pb-2">
+                  <span>Company</span>
+                  <span>Deal</span>
+                  <span className="text-right">Value</span>
+                  <span className="text-right">Stage</span>
+                </div>
+                {recentDeals.map((deal, i) => (
+                  <div key={i} className="grid grid-cols-[1.2fr_1.4fr_0.9fr_0.9fr] items-center py-2.5 border-b border-white/[0.04] last:border-0 text-sm" data-testid={`deal-row-${i}`}>
+                    <span className="inline-flex items-center gap-2 min-w-0">
+                      <span className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ backgroundColor: stageColors[deal.stage] || '#0052FF' }} />
+                      <span className="text-zinc-300 truncate">{deal.company || '—'}</span>
+                    </span>
+                    <span className="text-white truncate pr-2">{deal.name}</span>
+                    <span className="text-right text-white font-medium whitespace-nowrap">{formatCurrency(deal.value)}</span>
+                    <span className="text-right">{stageBadge(deal.stage)}</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-10 text-zinc-500">
+                <Target className="w-9 h-9 mx-auto mb-3 opacity-50" />
+                <p className="text-sm">No deals yet</p>
+                <Link to="/pipeline"><Button size="sm" className="mt-3 bg-white/10 hover:bg-white/20">Create your first deal</Button></Link>
+              </div>
+            )}
+          </div>
+
+          {/* Customer Health (billing-health analog) */}
+          {(() => {
+            const locked = !hasAccess('churn_widget');
+            return (
+              <div className={`relative ${CARD} p-5`} data-testid="churn-widget">
+                {locked && <LockedOverlay requiredTier="Essential" />}
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
+                    <Heart className="w-4 h-4 text-emerald-400" /> Customer health
+                  </h3>
+                  <Link to="/churn"><Button variant="ghost" size="sm" className="h-7 px-2 text-zinc-400 hover:text-white"><ArrowRight className="w-4 h-4" /></Button></Link>
+                </div>
+                <div className="flex items-end justify-between">
+                  <div>
+                    <div className={`text-3xl font-bold ${getHealthColor(churnData?.health_score || 0)}`} style={{ fontFamily: 'Outfit' }}>{churnData?.health_score || 0}</div>
+                    <p className="text-xs text-zinc-500 mt-0.5">Health score</p>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-lg font-semibold text-emerald-400">{churnData?.retention_rate || 0}%</div>
+                    <p className="text-xs text-zinc-500">Retention</p>
+                  </div>
+                </div>
+                <Progress value={churnData?.health_score || 0} className="h-1.5 mt-4" />
+                {churnData?.at_risk_count > 0 ? (
+                  <div className="mt-3 flex items-center gap-2 text-amber-400 text-xs"><AlertTriangle className="w-3 h-3" />{churnData.at_risk_count} at-risk customers</div>
+                ) : (
+                  <div className="mt-3 flex items-center gap-2 text-emerald-400/80 text-xs"><CheckCircle2 className="w-3 h-3" /> Nothing at risk right now</div>
+                )}
+              </div>
+            );
+          })()}
+
+          {/* Conversion (CRO) */}
+          {(() => {
+            const locked = !hasAccess('cro_widget');
+            return (
+              <div className={`relative ${CARD} p-5`} data-testid="cro-widget">
+                {locked && <LockedOverlay requiredTier="Pro" />}
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
+                    <Zap className="w-4 h-4 text-cyan-400" /> Conversion
+                  </h3>
+                  <Link to="/cro"><Button variant="ghost" size="sm" className="h-7 px-2 text-zinc-400 hover:text-white"><ArrowRight className="w-4 h-4" /></Button></Link>
+                </div>
+                <div className="flex items-end justify-between">
+                  <div>
+                    <div className="text-3xl font-bold text-cyan-400" style={{ fontFamily: 'Outfit' }}>{croData?.overall_conversion || 0}%</div>
+                    <p className="text-xs text-zinc-500 mt-0.5">Overall conversion</p>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-lg font-semibold text-white">{croData?.won_deals || 0}</div>
+                    <p className="text-xs text-zinc-500">Won deals</p>
+                  </div>
+                </div>
+                <div className="flex gap-1 mt-4">
+                  {(croData?.funnel_data?.slice(0, 5) || []).map((stage, i) => (
+                    <div key={i} className="flex-1 h-8 rounded bg-cyan-500/15 relative overflow-hidden" title={`${stage.stage}: ${stage.conversion}%`}>
+                      <div className="absolute bottom-0 left-0 right-0 bg-cyan-500 transition-all" style={{ height: `${stage.conversion}%` }} />
                     </div>
                   ))}
                 </div>
-              ) : (
-                <div className="text-center py-8 text-zinc-500">
-                  <Target className="w-10 h-10 mx-auto mb-3 opacity-50" />
-                  <p className="text-sm">No deals yet</p>
-                  <Link to="/pipeline"><Button size="sm" className="mt-3 bg-white/10 hover:bg-white/20">Create Your First Deal</Button></Link>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+                {croData?.bottlenecks?.length > 0 && (
+                  <div className="mt-3 flex items-center gap-2 text-amber-400 text-xs"><AlertTriangle className="w-3 h-3" />{croData.bottlenecks.length} bottleneck(s)</div>
+                )}
+              </div>
+            );
+          })()}
+        </div>
 
-          <Card className="bg-zinc-950/50 border-white/10" data-testid="quick-actions">
-            <CardHeader className="pb-2">
-              <CardTitle className="text-lg font-semibold text-white" style={{ fontFamily: 'Outfit' }}>Quick Actions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
+        {/* AI Insights + Quick Actions */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+          {(() => {
+            const locked = !hasAccess('ai_insights');
+            return (
+              <div className={`relative ${CARD} p-5 lg:col-span-2`} data-testid="ai-insights-card">
+                {locked && <LockedOverlay requiredTier="Pro" />}
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-sm font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
+                    <Sparkles className="w-4 h-4 text-purple-400" /> AI insights
+                  </h3>
+                  {aiInsight && (
+                    <Button onClick={getAIInsight} disabled={loadingInsight} variant="ghost" size="sm" className="h-7 px-2 text-zinc-400 hover:text-white text-xs">{loadingInsight ? 'Analyzing…' : 'Regenerate'}</Button>
+                  )}
+                </div>
+                {aiInsight ? (
+                  <div className="max-h-[160px] overflow-y-auto pr-1"><AIResponseRenderer text={aiInsight.substring(0, 400)} /></div>
+                ) : (
+                  <div className="text-center py-6">
+                    <p className="text-xs text-zinc-500 mb-3">Get an on-demand read on your pipeline, revenue and churn.</p>
+                    <Button onClick={getAIInsight} disabled={loadingInsight} size="sm" className="bg-[#0052ff] hover:bg-[#0047d6] text-white h-8 text-xs">
+                      {loadingInsight ? 'Analyzing…' : 'Generate insights'}
+                    </Button>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
+
+          <div className={`${CARD} p-5`} data-testid="quick-actions">
+            <h3 className="text-sm font-semibold text-white mb-3" style={{ fontFamily: 'Outfit' }}>Quick actions</h3>
+            <div className="space-y-2">
               <Link to="/pipeline" className="block">
-                <Button variant="outline" className="w-full justify-start border-zinc-800 hover:bg-zinc-900 hover:border-slate-500/30">
-                  <Target className="w-4 h-4 mr-2 text-slate-400" /> Add New Deal
+                <Button variant="outline" className="w-full justify-start border-zinc-800 hover:bg-zinc-900 hover:border-[#0052ff]/40 h-9 text-sm">
+                  <Target className="w-4 h-4 mr-2 text-[#4d8bff]" /> Add new deal
                 </Button>
               </Link>
               {(isPro || isEnterprise) && (
                 <Link to="/pricing" className="block">
-                  <Button variant="outline" className="w-full justify-start border-zinc-800 hover:bg-zinc-900 hover:border-emerald-500/30">
-                    <DollarSign className="w-4 h-4 mr-2 text-emerald-400" /> Analyze Pricing
+                  <Button variant="outline" className="w-full justify-start border-zinc-800 hover:bg-zinc-900 hover:border-emerald-500/30 h-9 text-sm">
+                    <DollarSign className="w-4 h-4 mr-2 text-emerald-400" /> Analyze pricing
                   </Button>
                 </Link>
               )}
               <Link to="/churn" className="block">
-                <Button variant="outline" className="w-full justify-start border-zinc-800 hover:bg-zinc-900 hover:border-amber-500/30">
-                  <Heart className="w-4 h-4 mr-2 text-amber-400" /> Check Customer Health
+                <Button variant="outline" className="w-full justify-start border-zinc-800 hover:bg-zinc-900 hover:border-amber-500/30 h-9 text-sm">
+                  <Heart className="w-4 h-4 mr-2 text-amber-400" /> Check customer health
                 </Button>
               </Link>
-              {(isPro || isEnterprise) && (
-                <Link to="/cro" className="block">
-                  <Button variant="outline" className="w-full justify-start border-zinc-800 hover:bg-zinc-900 hover:border-cyan-500/30">
-                    <Zap className="w-4 h-4 mr-2 text-cyan-400" /> Optimize Conversions
-                  </Button>
-                </Link>
-              )}
               <Link to="/revenue" className="block">
-                <Button variant="outline" className="w-full justify-start border-zinc-800 hover:bg-zinc-900 hover:border-purple-500/30">
-                  <BarChart3 className="w-4 h-4 mr-2 text-purple-400" /> View Full Analytics
+                <Button variant="outline" className="w-full justify-start border-zinc-800 hover:bg-zinc-900 hover:border-purple-500/30 h-9 text-sm">
+                  <BarChart3 className="w-4 h-4 mr-2 text-purple-400" /> View full analytics
                 </Button>
               </Link>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
       </div>
     </DashboardLayout>

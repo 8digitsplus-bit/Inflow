@@ -1,0 +1,30 @@
+{
+  "summary": "Frontend-only test of the restyled Efferd-layout /dashboard for testpro@test.com (enterprise). Logged in via email flow, dashboard rendered end-to-end. All required data-testids present and visible with real values: dashboard-main, tier-badge ('Enterprise Plan'), 4 KPIs (metric-pipeline $1,497,500 / metric-revenue $422,500 with +8.7% delta / metric-winrate 26.9% / metric-deals 26), revenue-chart bar chart Mar-Aug, pipeline-distribution bars (Lead/Qualified/Proposal/Negotiation), recent-deals table with 5 deal-row-N entries (Acme, Globex, Initech, Wayne, Stark), churn-widget (health 71, retention 84.6%, 9 at-risk), cro-widget (31.8% conversion, 7 won), ai-insights-card with Generate button (triggered → 'Analyzing…' state, no crash), quick-actions with 4 buttons. Source filter opened, showed 4 sources, toggling reloaded data gracefully (No open pipeline yet empty state shown). No white-screen or runtime crash. testpro tier correctly unlocked churn/cro/ai.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Dashboard revenue-chart after filtering out a source", "issues": ["Y-axis tick formatter shows 'i0.001k', 'i0.002k' etc. when all values are 0 — looks like an unformatted tick (leading 'i' from an icon glyph or currency formatter). Non-blocking; only appears when filtered data is empty."]}
+    ]
+  },
+  "console_warnings": [
+    "React hydration warning: <span> cannot be a child of <tbody> / <tr>. Root cause: the Emergent visual-edits dev plugin wraps recent-deals rows with <span data-ve-dynamic style='display:contents'>, which is invalid HTML inside <tbody>. Not a Dashboard.js bug (source shows normal <tbody><tr>), but the dev-time wrapper causes hydration mismatches in dev builds. Consider disabling ve-dynamic wrapping for table children or moving the array off <tbody>.",
+    "Multiple 401s on initial load (pre-auth resource fetches) — cosmetic."
+  ],
+  "test_report_links": ["/app/test_reports/iteration_56.json"],
+  "action_items": [
+    "Optional: investigate y-axis tick formatter in revenue-chart when data is all-zero (shows 'i0.001k'-style labels).",
+    "Optional: the visual-edits plugin injects <span display:contents> inside <tbody> around deal-row-N, producing React hydration warnings. Either exclude table children from ve-dynamic wrapping or wrap array iteration on the parent instead of inside <tbody>."
+  ],
+  "critical_code_review_comments": [
+    "Dashboard.js is 592 lines — consider splitting KPI grid, charts, recent-deals table, churn/cro widgets, and AI insights into sub-components for maintainability."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (skipped per request)", "frontend": "100% (all listed sections render + interact successfully)"},
+  "test_credentials": "testpro@test.com / password (enterprise_monthly)",
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Dashboard restyle verified visually and functionally with real data. Main open item is a dev-only hydration warning caused by the visual-edits plugin wrapping table rows. The transient timeline-animation.jsx compile overlay mentioned in the request did not appear during this run."
+}

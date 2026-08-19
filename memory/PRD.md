@@ -13,6 +13,12 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
+### Main Dashboard restyled to "Efferd Dashboard 2" layout (Jun 2026)
+- `/app/frontend/src/pages/Dashboard.js` fully restyled to the Efferd dense-KPI layout while keeping ALL real InFlow data, tier-gating (TIER_ACCESS), source filter and data-testids: 4 KPI stat cards (delta chip on Revenue = real MoM, removed the old hardcoded fake "+12.5%" deltas) → Revenue bar chart + Pipeline-by-stage chart → Recent Deals invoice-style table (div rows, not `<table>`, to avoid the visual-edits plugin's invalid-`<tbody>` hydration warning) → Customer Health + Conversion widgets → AI Insights + Quick Actions.
+- Verified by testing_agent (iteration_56) — 100% frontend pass with real data (e.g. $1.49M pipeline, $422.5k revenue +8.7%, 26.9% win, 26 deals), tier unlocks correct for enterprise, no crashes. Fixed 2 minor items (empty-state Y-axis tick labels; table→div rows).
+- NOTE: user asked for "both" dashboards — only the MAIN /dashboard is done. The second target ("analytics/other views") spans several pages (SalesPerformance, SalesRevenue, RevenueForecast, RevenueIntelligence, RevenueLeaks) and needs the user to pick which to restyle next.
+- Known env quirk: the Emergent visual-edits babel plugin intermittently throws a transient compile-error overlay on `timeline-animation.jsx` (not app code); a `supervisorctl restart frontend` clears it.
+
 ### 20% first-year discount on annual plans + stale Stripe-price bug fixed (Jun 2026)
 - Yearly plans keep full/renewal prices **$747 / $1,695 / $2,499** and now apply a real **20% first-year discount** via a Stripe coupon (`percent_off=20, duration="once"`) enabled by `first_year_discount: True` on the three yearly plans. First-year charged: **$597.60 / $1,356 / $1,999.20**; renews at full price after year one. Monthly plans unchanged (no discount).
 - **Bug fixed**: `get_or_create_stripe_price` cached the Stripe Price by `plan_key` only and never refreshed on price changes — so the earlier price updates ($99→$75, $149→$179, $830→$747, etc.) never reached checkout (users would've been charged the OLD amounts). Cache is now amount+interval-aware and creates a fresh immutable Stripe Price whenever the plan amount changes.
