@@ -2,11 +2,12 @@ import { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import {
   TrendingUp, DollarSign, Target, Loader2, Layers, Clock, Zap, Sparkles,
-  Database, HeartPulse, Megaphone, Wallet, CheckCircle2, PlusCircle, ShieldAlert,
+  Database, HeartPulse, Megaphone, Wallet, CheckCircle2, PlusCircle, ShieldAlert, Info,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
+import { Tooltip as UITooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '../components/ui/tooltip';
 import { STAGE_COLOR_ARRAY } from '../constants/colors';
 import {
   Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -20,6 +21,12 @@ const SOURCE_ICON = {
   'Finance / Billing': Wallet,
   'Customer Success': HeartPulse,
   'Marketing': Megaphone,
+};
+
+const BANDS = {
+  p10: { label: 'Conservative', color: '#93b4ff', desc: 'There is a 90% chance you will make at least this much revenue. Only a 10% chance your revenue will fall below this line.' },
+  p50: { label: 'Realistic', color: '#0052FF', desc: 'The middle outcome — there is a 50% chance your final revenue will land higher or lower than this value.' },
+  p90: { label: 'Potential', color: '#4d8bff', desc: 'The upside case — there is only a 10% chance you will match or exceed this number, and a 90% chance your final revenue will be lower than this peak.' },
 };
 
 const RevenueForecast = () => {
@@ -72,9 +79,9 @@ const RevenueForecast = () => {
     return (
       <div style={{ backgroundColor: '#0c0c10', border: '1px solid #3f3f46', borderRadius: '8px', padding: '8px 12px', fontSize: '11px', lineHeight: '1.5' }}>
         <p style={{ color: '#a1a1aa', marginBottom: '4px', fontWeight: 600 }}>{p.month}</p>
-        <Row color="#0052FF" label="Expected (P50)" value={fmt(p.p50)} />
-        <Row color="#4d8bff" label="Upside (P90)" value={fmt(p.p90)} />
-        <Row color="#93b4ff" label="Conservative (P10)" value={fmt(p.p10)} />
+        <Row color={BANDS.p90.color} label="Potential" value={fmt(p.p90)} />
+        <Row color={BANDS.p50.color} label="Realistic" value={fmt(p.p50)} />
+        <Row color={BANDS.p10.color} label="Conservative" value={fmt(p.p10)} />
         <Row color="#71717a" label="Recurring base" value={fmt(p.recurring)} />
       </div>
     );
@@ -107,6 +114,7 @@ const RevenueForecast = () => {
 
   return (
     <DashboardLayout>
+      <TooltipProvider delayDuration={100}>
       <div className="space-y-5" data-testid="revenue-forecast-page">
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
@@ -124,12 +132,15 @@ const RevenueForecast = () => {
             <CardContent className="p-5">
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-5">
                 <div>
-                  <span className="text-xs text-zinc-500 uppercase tracking-wide">Expected 6-month revenue (P50)</span>
+                  <span className="text-xs text-zinc-500 uppercase tracking-wide inline-flex items-center gap-1.5">
+                    Realistic 6-month revenue
+                    <InfoTip text={BANDS.p50.desc} />
+                  </span>
                   <div className="text-4xl font-bold text-white mt-1" style={{ fontFamily: 'Outfit' }} data-testid="forecast-p50">
                     {fmt(range.p50)}
                   </div>
                   <div className="flex items-center gap-2 mt-2 text-sm">
-                    <span className="text-zinc-400">80% confidence range:</span>
+                    <span className="text-zinc-400">Likely range (Conservative → Potential):</span>
                     <span className="font-medium text-slate-300" data-testid="forecast-range">{fmt(range.p10)} – {fmt(range.p90)}</span>
                   </div>
                 </div>
@@ -144,10 +155,10 @@ const RevenueForecast = () => {
                 <div className="relative h-2 rounded-full bg-gradient-to-r from-slate-500/20 via-slate-500/50 to-slate-500/20 overflow-hidden">
                   <div className="absolute inset-y-0 left-1/2 w-px bg-white/60" />
                 </div>
-                <div className="flex justify-between mt-1.5 text-[10px] text-zinc-500">
-                  <span>P10 {fmtK(range.p10)}</span>
-                  <span className="text-slate-300 font-medium">P50 {fmtK(range.p50)}</span>
-                  <span>P90 {fmtK(range.p90)}</span>
+                <div className="flex justify-between mt-2 text-[10px] text-zinc-500">
+                  <BandLabel band={BANDS.p10} value={fmtK(range.p10)} />
+                  <BandLabel band={BANDS.p50} value={fmtK(range.p50)} className="text-slate-300 font-medium" />
+                  <BandLabel band={BANDS.p90} value={fmtK(range.p90)} />
                 </div>
               </div>
             </CardContent>
@@ -198,7 +209,7 @@ const RevenueForecast = () => {
             <CardTitle className="text-base text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
               <TrendingUp className="w-5 h-5 text-slate-400" /> Monthly forecast with confidence bands
             </CardTitle>
-            <p className="text-xs text-zinc-500">Shaded band = P10–P90 range · solid line = expected (P50) · dashed = recurring baseline</p>
+            <p className="text-xs text-zinc-500">Shaded band = Conservative–Potential range · solid line = Realistic outcome · dashed = recurring baseline</p>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
@@ -213,8 +224,8 @@ const RevenueForecast = () => {
                 <XAxis dataKey="month" tick={{ fill: '#71717a', fontSize: 11 }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fill: '#71717a', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={fmtK} />
                 <Tooltip content={<BandTooltip />} cursor={{ stroke: '#3f3f46' }} />
-                <Area type="monotone" dataKey="band" stroke="none" fill="url(#bandGrad)" fillOpacity={1} isAnimationActive={false} name="P10–P90" />
-                <Line type="monotone" dataKey="p50" stroke="#0052FF" strokeWidth={2.5} dot={{ r: 2.5, fill: '#0052FF' }} name="Expected (P50)" />
+                <Area type="monotone" dataKey="band" stroke="none" fill="url(#bandGrad)" fillOpacity={1} isAnimationActive={false} name="Conservative–Potential" />
+                <Line type="monotone" dataKey="p50" stroke="#0052FF" strokeWidth={2.5} dot={{ r: 2.5, fill: '#0052FF' }} name="Realistic" />
                 <Line type="monotone" dataKey="recurring" stroke="#71717a" strokeDasharray="4 4" strokeWidth={1.5} dot={false} name="Recurring base" />
               </ComposedChart>
             </ResponsiveContainer>
@@ -290,9 +301,9 @@ const RevenueForecast = () => {
                       <div className="absolute inset-y-0 rounded-full bg-slate-500/40" style={{ left: '5%', right: '5%' }} />
                     </div>
                     <div className="flex justify-between mt-1 text-[10px] text-zinc-500">
-                      <span>P10 {fmtK(q.p10)}</span>
+                      <span>Conservative {fmtK(q.p10)}</span>
                       <span>Range {fmtK(spread)}</span>
-                      <span>P90 {fmtK(q.p90)}</span>
+                      <span>Potential {fmtK(q.p90)}</span>
                     </div>
                   </div>
                 );
@@ -454,6 +465,7 @@ const RevenueForecast = () => {
           </Card>
         )}
       </div>
+      </TooltipProvider>
     </DashboardLayout>
   );
 };
@@ -466,6 +478,34 @@ const Row = ({ color, label, value }) => (
     </span>
     <span style={{ fontWeight: 600, color: '#ffffff' }}>{value}</span>
   </div>
+);
+
+const InfoTip = ({ text }) => (
+  <UITooltip>
+    <TooltipTrigger asChild>
+      <span className="cursor-help text-zinc-500 hover:text-zinc-300 transition-colors" data-testid="forecast-info-tip">
+        <Info className="w-3 h-3" />
+      </span>
+    </TooltipTrigger>
+    <TooltipContent className="max-w-[240px] bg-zinc-900 text-zinc-200 border border-white/10 text-[11px] leading-relaxed normal-case tracking-normal font-normal">
+      {text}
+    </TooltipContent>
+  </UITooltip>
+);
+
+const BandLabel = ({ band, value, className }) => (
+  <UITooltip>
+    <TooltipTrigger asChild>
+      <span className={`inline-flex items-center gap-1 cursor-help ${className || ''}`} data-testid={`band-label-${band.label.toLowerCase()}`}>
+        <span className="w-1.5 h-1.5 rounded-full inline-block" style={{ backgroundColor: band.color }} />
+        {band.label} {value}
+        <Info className="w-2.5 h-2.5 opacity-50" />
+      </span>
+    </TooltipTrigger>
+    <TooltipContent className="max-w-[240px] bg-zinc-900 text-zinc-200 border border-white/10 text-[11px] leading-relaxed">
+      <span className="font-semibold" style={{ color: band.color }}>{band.label}: </span>{band.desc}
+    </TooltipContent>
+  </UITooltip>
 );
 
 const MiniStat = ({ label, value, color }) => (
