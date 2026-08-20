@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, Query
 from datetime import datetime, timezone, timedelta
+import numpy as np
 from typing import Optional
 
 from database import db
@@ -861,111 +862,245 @@ async def sync_pricing_from_integrations(user: User = Depends(get_current_user),
 
 
 
-@router.get("/analytics/forecasting")
-async def get_forecasting(user: User = Depends(get_current_user), sources: Optional[str] = Query(None)):
-    """Revenue forecasting with weighted pipeline and scenario modeling."""
-    deals = await db.deals.find(_scoped(user, sources), {"_id": 0}).to_list(1000)
+def _parse_dt(v):
+    if not v:
+        return None
+    try:
+        dt = datetime.fromisoformat(str(v).replace("Z", "+00:00"))
+    except Exception:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=timezone.utc)
+    return dt
 
-    stage_prob = {"lead": 10, "qualified": 25, "proposal": 50, "negotiation": 75, "closed_won": 100, "closed_lost": 0}
+
+async def _compute_forecast(user: User, sources: Optional[str], target: Optional[float]) -> dict:
+    """Probabilistic revenue forecast via Monte Carlo simulation.
+
+    Blends four data layers with whatever the org actually has connected:
+      - CRM (deals): open pipeline simulated deal-by-deal with calibrated win
+        probabilities and real close-timing.
+      - Finance: recurring baseline derived from closed-won history.
+      - Customer Success: retention/NRR applied to the recurring baseline.
+      - Marketing: surfaced as "connect to improve" (no data stored yet).
+    Returns P10/P50/P90 bands (monthly + quarterly + total), calibrated on the
+    org's own win rate and sales cycle. Deterministic math — no LLM in the numbers.
+    """
+    deals = await db.deals.find(_scoped(user, sources), {"_id": 0}).to_list(2000)
+
     open_stages = ["lead", "qualified", "proposal", "negotiation"]
+    stage_prob = {"lead": 10, "qualified": 25, "proposal": 50, "negotiation": 75}
 
     open_deals = [d for d in deals if d.get("stage") in open_stages]
     closed_won = [d for d in deals if d.get("stage") == "closed_won"]
     closed_lost = [d for d in deals if d.get("stage") == "closed_lost"]
-    all_closed = closed_won + closed_lost
+    n_closed = len(closed_won) + len(closed_lost)
 
-    # Weighted pipeline
-    weighted_pipeline = sum(
-        d.get("value", 0) * (d.get("probability", stage_prob.get(d.get("stage", "lead"), 10)) / 100)
-        for d in open_deals
-    )
+    # --- CRM calibration: align pipeline-implied win rate to real historical win rate
+    hist_win_rate = (len(closed_won) / n_closed) if n_closed else None
+    calibrated = n_closed >= 5 and hist_win_rate is not None
 
-    # Win rate
-    win_rate = (len(closed_won) / max(len(all_closed), 1)) * 100
+    def base_prob(d):
+        p = d.get("probability")
+        if p is None:
+            p = stage_prob.get(d.get("stage", "lead"), 10)
+        return max(0.0, min(1.0, float(p) / 100.0))
 
-    # Average deal size and cycle
-    avg_deal_size = sum(d.get("value", 0) for d in open_deals) / max(len(open_deals), 1)
-    avg_cycle_days = 45  # Default estimate
+    probs = np.array([base_prob(d) for d in open_deals], dtype=float)
+    values = np.array([float(d.get("value", 0) or 0) for d in open_deals], dtype=float)
 
-    # Revenue velocity = (deals * avg_value * win_rate) / cycle_days
-    velocity_per_day = (len(open_deals) * avg_deal_size * (win_rate / 100)) / max(avg_cycle_days, 1)
+    calib_factor = 1.0
+    if calibrated and probs.size and probs.mean() > 0:
+        calib_factor = float(np.clip(hist_win_rate / probs.mean(), 0.5, 1.5))
+    if probs.size:
+        probs = np.clip(probs * calib_factor, 0.0, 1.0)
 
-    # Stage forecast breakdown
+    # --- Real sales cycle: median days created_at -> expected_close_date
+    cycles = []
+    for d in deals:
+        c = _parse_dt(d.get("created_at"))
+        e = _parse_dt(d.get("expected_close_date"))
+        if c and e:
+            days = (e - c).days
+            if 1 <= days <= 730:
+                cycles.append(days)
+    sales_cycle_days = int(np.median(cycles)) if len(cycles) >= 3 else 45
+
+    # --- Horizon = 6 months; assign each open deal a close-month index
+    H = 6
+    now = datetime.now(timezone.utc)
+    month_starts = []
+    yy, mm = now.year, now.month
+    for _ in range(H):
+        month_starts.append((yy, mm))
+        mm += 1
+        if mm > 12:
+            mm = 1
+            yy += 1
+
+    def month_index(d):
+        e = _parse_dt(d.get("expected_close_date"))
+        if not e:
+            c = _parse_dt(d.get("created_at")) or now
+            e = c + timedelta(days=sales_cycle_days)
+        idx = (e.year - now.year) * 12 + (e.month - now.month)
+        return int(np.clip(idx, 0, H - 1))
+
+    onehot = np.zeros((len(open_deals), H))
+    for i, d in enumerate(open_deals):
+        onehot[i, month_index(d)] = 1.0
+
+    # --- Finance: recurring baseline from closed-won history
+    total_won_rev = sum(float(d.get("value", 0) or 0) for d in closed_won)
+    recurring_base = round(total_won_rev / 6.0, 2)
+
+    # --- Customer Success: retention -> NRR growth factor; low-prob revenue at risk
+    churn_rate = (len(closed_lost) / max(n_closed, 1)) * 100 if n_closed else 0
+    retention_rate = round(100 - churn_rate, 1)
+    nrr = round(min(130, max(70, retention_rate + 5)), 1)
+    monthly_growth = (nrr / 100.0) ** (1.0 / 12.0)
+    revenue_at_risk = round(sum(float(d.get("value", 0) or 0) for d in open_deals if base_prob(d) < 0.5), 2)
+
+    # --- Monte Carlo (vectorised)
+    SIMS = 10000
+    if open_deals:
+        draws = np.random.random((SIMS, len(open_deals))) < probs
+        monthly_pipeline = (draws * values) @ onehot  # (SIMS, H)
+    else:
+        monthly_pipeline = np.zeros((SIMS, H))
+    recurring_row = np.array([recurring_base * (monthly_growth ** (i + 1)) for i in range(H)])
+    monthly_total = monthly_pipeline + recurring_row
+
+    p10_m = np.percentile(monthly_total, 10, axis=0)
+    p50_m = np.percentile(monthly_total, 50, axis=0)
+    p90_m = np.percentile(monthly_total, 90, axis=0)
+    pipe_p50_m = np.percentile(monthly_pipeline, 50, axis=0)
+
+    totals = monthly_total.sum(axis=1)
+    p10_t, p50_t, p90_t = [round(float(np.percentile(totals, q)), 2) for q in (10, 50, 90)]
+
+    MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+    monthly_forecast = []
+    for i, (y2, m2) in enumerate(month_starts):
+        monthly_forecast.append({
+            "month": f"{MONTHS[m2 - 1]} {str(y2)[2:]}",
+            "p10": round(float(p10_m[i]), 2),
+            "p50": round(float(p50_m[i]), 2),
+            "p90": round(float(p90_m[i]), 2),
+            "pipeline": round(float(pipe_p50_m[i]), 2),
+            "recurring": round(float(recurring_row[i]), 2),
+        })
+
+    quarterly_forecast = []
+    q_map = {}
+    for i, (y2, m2) in enumerate(month_starts):
+        q_map.setdefault((y2, (m2 - 1) // 3 + 1), []).append(i)
+    for (y2, q), idxs in q_map.items():
+        cols = monthly_total[:, idxs].sum(axis=1)
+        quarterly_forecast.append({
+            "quarter": f"Q{q} {y2}",
+            "p10": round(float(np.percentile(cols, 10)), 2),
+            "p50": round(float(np.percentile(cols, 50)), 2),
+            "p90": round(float(np.percentile(cols, 90)), 2),
+        })
+
+    goal = None
+    if target and target > 0:
+        goal = {"target": round(float(target), 2), "probability": round(float((totals >= target).mean()) * 100, 1)}
+
     stage_forecast = []
     for stage in open_stages:
-        stage_deals = [d for d in open_deals if d.get("stage") == stage]
-        raw = sum(d.get("value", 0) for d in stage_deals)
+        sd = [d for d in open_deals if d.get("stage") == stage]
+        raw = sum(float(d.get("value", 0) or 0) for d in sd)
         prob = stage_prob[stage]
-        weighted = raw * (prob / 100)
-        stage_forecast.append({
-            "stage": stage.replace("_", " ").title(),
-            "count": len(stage_deals),
-            "raw": round(raw, 2),
-            "weighted": round(weighted, 2),
-            "probability": prob,
-        })
+        stage_forecast.append({"stage": stage.replace("_", " ").title(), "count": len(sd), "raw": round(raw, 2), "weighted": round(raw * prob / 100, 2), "probability": prob})
 
-    # Monthly forecast (next 6 months)
-    closed_revenue = sum(d.get("value", 0) for d in closed_won)
-    base_monthly = closed_revenue / max(6, 1)  # Rough monthly baseline from history
-    monthly_forecast = []
+    top = sorted(open_deals, key=lambda d: float(d.get("value", 0) or 0) * base_prob(d), reverse=True)[:10]
+    top_deals = [{
+        "name": d.get("name", "Untitled"), "company": d.get("company", "Unknown"),
+        "value": float(d.get("value", 0) or 0), "weighted": round(float(d.get("value", 0) or 0) * base_prob(d), 2),
+        "probability": int(round(base_prob(d) * 100)), "stage": d.get("stage", "lead"),
+    } for d in top]
 
-    for i in range(6):
-        month_dt = datetime.now(timezone.utc) + timedelta(days=30 * (i + 1))
-        month_label = month_dt.strftime("%b %Y")
+    weighted_pipeline = float((probs * values).sum()) if open_deals else 0.0
+    avg_deal_size = float(values.mean()) if values.size else 0.0
 
-        # Growth factor: pipeline fills in gradually
-        pipeline_factor = weighted_pipeline / 6  # Spread weighted pipeline over 6 months
-        decay = max(0.3, 1.0 - (i * 0.12))  # Pipeline confidence decays over time
-
-        best = round(base_monthly + (pipeline_factor * 1.5) + (velocity_per_day * 30 * 0.8), 2)
-        expected = round(base_monthly + (pipeline_factor * decay) + (velocity_per_day * 30 * 0.5 * decay), 2)
-        worst = round(base_monthly * 0.7 + (pipeline_factor * 0.4 * decay), 2)
-
-        monthly_forecast.append({
-            "month": month_label,
-            "best": max(best, 0),
-            "expected": max(expected, 0),
-            "worst": max(worst, 0),
-        })
-
-    # Scenarios
-    best_total = sum(m["best"] for m in monthly_forecast)
-    expected_total = sum(m["expected"] for m in monthly_forecast)
-    worst_total = sum(m["worst"] for m in monthly_forecast)
-
-    scenarios = {
-        "best": {"total": round(best_total, 2), "monthly_avg": round(best_total / 6, 2), "confidence": 25},
-        "expected": {"total": round(expected_total, 2), "monthly_avg": round(expected_total / 6, 2), "confidence": 65},
-        "worst": {"total": round(worst_total, 2), "monthly_avg": round(worst_total / 6, 2), "confidence": 90},
-    }
-
-    # Top upcoming deals (highest weighted value, open only)
-    top_deals = sorted(open_deals, key=lambda d: d.get("value", 0) * (d.get("probability", 10) / 100), reverse=True)[:10]
-    top_deals_out = []
-    for d in top_deals:
-        prob = d.get("probability", stage_prob.get(d.get("stage", "lead"), 10))
-        top_deals_out.append({
-            "name": d.get("name", "Untitled"),
-            "company": d.get("company", "Unknown"),
-            "value": d.get("value", 0),
-            "weighted": round(d.get("value", 0) * (prob / 100), 2),
-            "probability": prob,
-            "stage": d.get("stage", "lead"),
-        })
+    has_finance = total_won_rev > 0
+    has_cs = n_closed > 0
+    data_sources = [
+        {"system": "CRM (Deals)", "connected": True, "detail": "Open pipeline, stages, win rates & close timing"},
+        {"system": "Finance / Billing", "connected": bool(has_finance), "detail": "Recurring baseline from closed-won history" if has_finance else "Connect billing to add recognized/recurring revenue"},
+        {"system": "Customer Success", "connected": bool(has_cs), "detail": f"Retention {retention_rate}% · NRR {nrr}% applied to recurring" if has_cs else "Connect CS to factor in renewals & churn"},
+        {"system": "Marketing", "connected": False, "detail": "Connect a marketing platform to factor in new-lead pipeline"},
+    ]
 
     return {
+        "method": "monte_carlo",
+        "simulations": SIMS,
+        "horizon_months": H,
+        "calibrated": bool(calibrated),
+        "sales_cycle_days": sales_cycle_days,
+        "win_rate": round((hist_win_rate or 0) * 100, 1),
         "weighted_pipeline": round(weighted_pipeline, 2),
-        "pipeline_trend": round(((weighted_pipeline - closed_revenue) / max(closed_revenue, 1)) * 100, 1) if closed_revenue else 0,
+        "recurring_base_monthly": recurring_base,
+        "nrr": nrr,
+        "retention_rate": retention_rate,
+        "revenue_at_risk": revenue_at_risk,
+        "expected_total": p50_t,
+        "range": {"p10": p10_t, "p50": p50_t, "p90": p90_t},
+        "monthly_forecast": monthly_forecast,
+        "quarterly_forecast": quarterly_forecast,
+        "stage_forecast": stage_forecast,
+        "top_deals": top_deals,
         "velocity": {
-            "value_per_day": round(velocity_per_day, 2),
+            "value_per_day": round((len(open_deals) * avg_deal_size * (hist_win_rate or 0)) / max(sales_cycle_days, 1), 2),
             "avg_deal_size": round(avg_deal_size, 2),
-            "win_rate": round(win_rate, 1),
-            "avg_cycle_days": avg_cycle_days,
+            "win_rate": round((hist_win_rate or 0) * 100, 1),
+            "avg_cycle_days": sales_cycle_days,
             "open_deals": len(open_deals),
         },
-        "scenarios": scenarios,
-        "monthly_forecast": monthly_forecast,
-        "stage_forecast": stage_forecast,
-        "top_deals": top_deals_out,
+        "goal": goal,
+        "data_sources": data_sources,
+        # back-compat: scenarios mapped to percentiles
+        "scenarios": {
+            "best": {"total": p90_t, "monthly_avg": round(p90_t / H, 2), "confidence": 90},
+            "expected": {"total": p50_t, "monthly_avg": round(p50_t / H, 2), "confidence": 50},
+            "worst": {"total": p10_t, "monthly_avg": round(p10_t / H, 2), "confidence": 10},
+        },
     }
+
+
+@router.get("/analytics/forecasting")
+async def get_forecasting(user: User = Depends(get_current_user), sources: Optional[str] = Query(None), target: Optional[float] = Query(None)):
+    """Probabilistic revenue forecast (Monte Carlo). Fast — numbers only, no LLM."""
+    return await _compute_forecast(user, sources, target)
+
+
+@router.get("/analytics/forecast-narrative")
+async def get_forecast_narrative(user: User = Depends(get_current_user), sources: Optional[str] = Query(None), target: Optional[float] = Query(None)):
+    """AI (Claude) narrative that explains the forecast. Loaded separately so the
+    numbers render instantly. Falls back to a templated summary if the LLM is unavailable."""
+    f = await _compute_forecast(user, sources, target)
+    r = f["range"]
+    goal_line = ""
+    if f.get("goal"):
+        goal_line = f" There's a {f['goal']['probability']}% chance of hitting the ${f['goal']['target']:,.0f} target."
+    fallback = (
+        f"Your expected 6-month revenue (P50) is ${r['p50']:,.0f}, with 80% of simulated outcomes between "
+        f"${r['p10']:,.0f} and ${r['p90']:,.0f}. Open pipeline of {f['velocity']['open_deals']} deals plus a "
+        f"~${f['recurring_base_monthly'] * 6:,.0f} recurring base drive the number; win rate is {f['win_rate']}% over a "
+        f"~{f['sales_cycle_days']}-day cycle. ${f['revenue_at_risk']:,.0f} sits in low-probability deals — de-risking "
+        f"those would lift the floor.{goal_line}"
+    )
+    system = "You are a revenue forecasting analyst. Be concise, concrete and action-oriented. 3-4 short sentences, no preamble, no markdown headings."
+    prompt = (
+        f"Explain this Monte Carlo revenue forecast to a founder. Expected P50 (6 months): ${r['p50']:,.0f}. "
+        f"Conservative P10: ${r['p10']:,.0f}. Upside P90: ${r['p90']:,.0f}. Open deals: {f['velocity']['open_deals']}, "
+        f"weighted pipeline ${f['weighted_pipeline']:,.0f}. Historical win rate: {f['win_rate']}%. Avg sales cycle: "
+        f"{f['sales_cycle_days']} days. Recurring base/month: ${f['recurring_base_monthly']:,.0f}, NRR {f['nrr']}%. "
+        f"Revenue in low-probability (<50%) deals: ${f['revenue_at_risk']:,.0f}.{goal_line} "
+        f"Give the key drivers, the single biggest risk, and one concrete action to raise the P50."
+    )
+    from routes.upsell import _ai_text
+    narrative, ai_used = await _ai_text(system, prompt, "forecast", fallback)
+    return {"narrative": narrative, "ai_used": ai_used}
