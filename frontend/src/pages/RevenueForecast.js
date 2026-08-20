@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
 import {
   TrendingUp, DollarSign, Target, Loader2, Layers, Clock, Zap, Sparkles,
-  Database, HeartPulse, Megaphone, Wallet, CheckCircle2, PlusCircle, ShieldAlert, Activity,
+  Database, HeartPulse, Megaphone, Wallet, CheckCircle2, PlusCircle, ShieldAlert,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -27,7 +27,6 @@ const RevenueForecast = () => {
   const [loading, setLoading] = useState(true);
   const [narrative, setNarrative] = useState(null);
   const [narrativeLoading, setNarrativeLoading] = useState(true);
-  const [aiUsed, setAiUsed] = useState(false);
   const [targetInput, setTargetInput] = useState('');
   const [appliedTarget, setAppliedTarget] = useState(null);
 
@@ -49,7 +48,6 @@ const RevenueForecast = () => {
       if (res.ok) {
         const j = await res.json();
         setNarrative(j.narrative);
-        setAiUsed(!!j.ai_used);
       }
     } catch (err) { console.error('Failed to fetch narrative:', err); }
     finally { setNarrativeLoading(false); }
@@ -113,18 +111,10 @@ const RevenueForecast = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
           <div>
-            <div className="flex items-center gap-2 mb-1">
-              <h1 className="text-2xl font-bold text-white" style={{ fontFamily: 'Outfit' }} data-testid="forecast-title">
-                Revenue Forecast
-              </h1>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-slate-500/15 text-slate-300 border border-slate-500/20">
-                <Activity className="w-3 h-3" /> Probabilistic
-              </span>
-            </div>
-            <p className="text-zinc-400 text-sm">
-              Monte Carlo simulation · {(data.simulations || 0).toLocaleString()} runs over {data.horizon_months || 6} months
-              {data.calibrated ? ' · calibrated to your win rate' : ''}
-            </p>
+            <h1 className="text-2xl font-bold text-white mb-1" style={{ fontFamily: 'Outfit' }} data-testid="forecast-title">
+              Revenue Forecast
+            </h1>
+            <p className="text-zinc-400 text-sm">Probability forecasting that predicts revenue</p>
           </div>
         </div>
 
@@ -236,11 +226,6 @@ const RevenueForecast = () => {
           <CardHeader className="pb-2">
             <CardTitle className="text-base text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
               <Sparkles className="w-5 h-5 text-slate-300" /> AI forecast analysis
-              {!narrativeLoading && (
-                <span className={`ml-1 text-[10px] px-2 py-0.5 rounded-full font-medium ${aiUsed ? 'bg-emerald-500/15 text-emerald-400' : 'bg-zinc-700 text-zinc-400'}`}>
-                  {aiUsed ? 'Claude' : 'Rule-based'}
-                </span>
-              )}
             </CardTitle>
           </CardHeader>
           <CardContent>
