@@ -24,9 +24,9 @@ const SOURCE_ICON = {
 };
 
 const BANDS = {
-  p10: { label: 'Conservative', color: '#93b4ff', desc: 'There is a 90% chance you will make at least this much revenue. Only a 10% chance your revenue will fall below this line.' },
-  p50: { label: 'Realistic', color: '#0052FF', desc: 'The middle outcome — there is a 50% chance your final revenue will land higher or lower than this value.' },
-  p90: { label: 'Potential', color: '#4d8bff', desc: 'The upside case — there is only a 10% chance you will match or exceed this number, and a 90% chance your final revenue will be lower than this peak.' },
+  p10: { label: 'Conservative', color: '#5A7D66', desc: 'There is a 90% chance you will make at least this much revenue. Only a 10% chance your revenue will fall below this line.' },
+  p50: { label: 'Realistic', color: '#B8B2AA', desc: 'The middle outcome — there is a 50% chance your final revenue will land higher or lower than this value.' },
+  p90: { label: 'Potential', color: '#354278', desc: 'The upside case — there is only a 10% chance you will match or exceed this number, and a 90% chance your final revenue will be lower than this peak.' },
 };
 
 const RevenueForecast = () => {
@@ -152,7 +152,7 @@ const RevenueForecast = () => {
               </div>
               {/* P10 / P50 / P90 confidence bar */}
               <div className="mt-5">
-                <div className="relative h-2 rounded-full bg-gradient-to-r from-slate-500/20 via-slate-500/50 to-slate-500/20 overflow-hidden">
+                <div className="relative h-2 rounded-full overflow-hidden" style={{ background: 'linear-gradient(to right, #5A7D66, #B8B2AA, #354278)' }}>
                   <div className="absolute inset-y-0 left-1/2 w-px bg-white/60" />
                 </div>
                 <div className="flex justify-between mt-2 text-[10px] text-zinc-500">
@@ -216,8 +216,8 @@ const RevenueForecast = () => {
               <ComposedChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }} data-testid="monte-carlo-chart">
                 <defs>
                   <linearGradient id="bandGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#0052FF" stopOpacity={0.28} />
-                    <stop offset="100%" stopColor="#0052FF" stopOpacity={0.04} />
+                    <stop offset="0%" stopColor="#354278" stopOpacity={0.6} />
+                    <stop offset="100%" stopColor="#5A7D66" stopOpacity={0.35} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
@@ -225,7 +225,7 @@ const RevenueForecast = () => {
                 <YAxis tick={{ fill: '#71717a', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={fmtK} />
                 <Tooltip content={<BandTooltip />} cursor={{ stroke: '#3f3f46' }} />
                 <Area type="monotone" dataKey="band" stroke="none" fill="url(#bandGrad)" fillOpacity={1} isAnimationActive={false} name="Conservative–Potential" />
-                <Line type="monotone" dataKey="p50" stroke="#0052FF" strokeWidth={2.5} dot={{ r: 2.5, fill: '#0052FF' }} name="Realistic" />
+                <Line type="monotone" dataKey="p50" stroke="#B8B2AA" strokeWidth={2.5} dot={{ r: 2.5, fill: '#B8B2AA' }} name="Realistic" />
                 <Line type="monotone" dataKey="recurring" stroke="#71717a" strokeDasharray="4 4" strokeWidth={1.5} dot={false} name="Recurring base" />
               </ComposedChart>
             </ResponsiveContainer>

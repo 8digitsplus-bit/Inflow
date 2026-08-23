@@ -18,6 +18,21 @@
   min-height: 100vh;
 }
 
+/* Unified readable font color across app pages only (landing/auth are outside .dashboard-layout).
+   Semantic colors (emerald/green/red/amber/yellow/orange) and all chart colors are intentionally
+   left untouched so status indicators and data viz stay meaningful. */
+.dashboard-layout,
+.dashboard-layout :where(
+  .text-white,
+  .text-zinc-50, .text-zinc-100, .text-zinc-200, .text-zinc-300, .text-zinc-400, .text-zinc-500, .text-zinc-600,
+  .text-slate-50, .text-slate-100, .text-slate-200, .text-slate-300, .text-slate-400, .text-slate-500, .text-slate-600,
+  .text-gray-50, .text-gray-100, .text-gray-200, .text-gray-300, .text-gray-400, .text-gray-500, .text-gray-600,
+  .text-neutral-50, .text-neutral-100, .text-neutral-200, .text-neutral-300, .text-neutral-400, .text-neutral-500, .text-neutral-600,
+  .text-stone-50, .text-stone-100, .text-stone-200, .text-stone-300, .text-stone-400, .text-stone-500, .text-stone-600
+) {
+  color: #E4E4E7 !important;
+}
+
 .dashboard-sidebar {
   width: 200px;
   flex-shrink: 0;

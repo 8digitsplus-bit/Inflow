@@ -13,6 +13,13 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
+### Site-wide font color unified + Forecast band recolor (Jun 2026)
+- **One readable font color across app pages only:** added a CSS rule in `frontend/src/App.css` scoped to `.dashboard-layout` that forces `color:#E4E4E7 !important` on all neutral text utilities (`text-white` + `text-zinc/slate/gray/neutral/stone-50…600`). Semantic status colors (emerald/green/red/amber/yellow/orange) and all chart colors are intentionally left untouched. Public landing/marketing/auth pages are OUTSIDE `.dashboard-layout`, so they are unaffected (verified — landing hero still white).
+- **Forecast bands recolored to 3 distinct colors** (were near-identical blues) in `RevenueForecast.js`: Conservative `#5A7D66` (muted forest green), Realistic `#B8B2AA` (soft platinum), Potential `#354278` (muted deep blue). Applied to the `BANDS` constant, the fan-chart gradient (deep-blue top → forest-green bottom), the platinum P50 line + dots, the hero confidence-bar gradient, band-label dots, and the hover tooltip.
+- Verified: testing_agent iteration_58 (frontend visual) — 100% pass; `#E4E4E7` dominant, semantic colors + charts preserved, band colors distinct, landing untouched, no crashes.
+
+
+
 ### Probabilistic Revenue Forecast — frontend rebuilt for Monte Carlo (Jun 2026) — P0
 - Backend (`backend/routes/analytics.py`) runs a numpy **Monte Carlo** forecast (`_compute_forecast`, 10,000 sims, 6-month horizon) blending CRM deals (calibrated win rates + real close timing), a Finance recurring baseline (from closed-won history), and Customer Success retention/NRR. Returns P10/P50/P90 bands (total + monthly + quarterly), probability-to-hit-target, weighted pipeline, recurring/mo, NRR, revenue-at-risk, velocity, stage forecast, top deals and a `data_sources` panel. `GET /api/analytics/forecasting?target=` (numbers, fast) + `GET /api/analytics/forecast-narrative?target=` (Claude narrative, loaded separately, templated fallback).
 - **Bug fixed**: `_parse_dt` returned naive datetimes for date-only strings → `TypeError: can't subtract offset-naive and offset-aware datetimes` (the endpoint 500'd; the backend had never been tested). Now always returns tz-aware (UTC assumed when naive).
