@@ -1,0 +1,22 @@
+{
+  "summary": "Verified the Revenue Forecast (/forecast) chart change from shaded band to STACKED AREA with three probability layers. Logged in as testpro@test.com, navigated to /forecast, inspected chart DOM and hover tooltip, and validated regression sections. All targeted requirements pass.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/test_reports/forecast_stacked.png"],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "RevenueForecast.js chartData mapping uses Math.max(0, ...) for l_realistic and l_potential which correctly guards against inverted P50<P10 or P90<P50 data (defensive). No issues."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (skipped per request)", "frontend": "100%"},
+  "test_credentials": "testpro@test.com / password (login worked)",
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Stacked area chart change verified: 3 <path class='recharts-area-area'> with fills url(#gConservative), url(#gRealistic), url(#gPotential); strokes #5A7D66, #B8B2AA, #354278; 0 recharts-line elements (old lines removed). Tooltip shows Potential / Realistic / Conservative rows (in that order) with cumulative $ values reading p90/p50/p10 from payload; 'Recurring base' row is gone. Regression: hero ($974,246.95 range shown), Probability-to-hit-target input+Check, quarterly outlook, data sources, AI narrative section all render. No compile-error overlays and no console pageerrors. Note: on some months values converge (e.g., Nov 26 all $62,523.24) which is expected data behavior, not a bug.",
+  "rca of the issue": "N/A — feature working as designed."
+}

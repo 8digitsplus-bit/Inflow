@@ -13,6 +13,11 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
+### Forecast chart → stacked area (Jun 2026)
+- Converted the /forecast monthly chart from a shaded fan/band (`ComposedChart` + range Area + Lines) to a **stacked AreaChart** with 3 probability layers: Conservative floor (green `#5A7D66`, 0→P10), Realistic increment (platinum `#B8B2AA`, P10→P50), Potential increment (deep blue `#354278`, P50→P90). Stack top = P90; each layer's top stroke marks P10/P50/P90. `chartData` maps `l_conservative/l_realistic/l_potential` deltas (guarded with `Math.max(0,…)`). Tooltip shows Potential/Realistic/Conservative cumulative values (dropped the recurring row). Verified: testing_agent iteration_59 — 100% pass, no regressions.
+
+
+
 ### Site-wide font color unified + Forecast band recolor (Jun 2026)
 - **One readable font color across app pages only:** added a CSS rule in `frontend/src/App.css` scoped to `.dashboard-layout` that forces `color:#E4E4E7 !important` on all neutral text utilities (`text-white` + `text-zinc/slate/gray/neutral/stone-50…600`). Semantic status colors (emerald/green/red/amber/yellow/orange) and all chart colors are intentionally left untouched. Public landing/marketing/auth pages are OUTSIDE `.dashboard-layout`, so they are unaffected (verified — landing hero still white).
 - **Forecast bands recolored to 3 distinct colors** (were near-identical blues) in `RevenueForecast.js`: Conservative `#5A7D66` (muted forest green), Realistic `#B8B2AA` (soft platinum), Potential `#354278` (muted deep blue). Applied to the `BANDS` constant, the fan-chart gradient (deep-blue top → forest-green bottom), the platinum P50 line + dots, the hero confidence-bar gradient, band-label dots, and the hover tooltip.

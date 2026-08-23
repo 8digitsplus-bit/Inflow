@@ -11,7 +11,7 @@ import { Tooltip as UITooltip, TooltipContent, TooltipTrigger, TooltipProvider }
 import { STAGE_COLOR_ARRAY } from '../constants/colors';
 import {
   Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  ComposedChart, Line, PieChart, Pie, Cell,
+  AreaChart, PieChart, Pie, Cell,
 } from 'recharts';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
@@ -82,7 +82,6 @@ const RevenueForecast = () => {
         <Row color={BANDS.p90.color} label="Potential" value={fmt(p.p90)} />
         <Row color={BANDS.p50.color} label="Realistic" value={fmt(p.p50)} />
         <Row color={BANDS.p10.color} label="Conservative" value={fmt(p.p10)} />
-        <Row color="#71717a" label="Recurring base" value={fmt(p.recurring)} />
       </div>
     );
   };
@@ -106,7 +105,9 @@ const RevenueForecast = () => {
   const range = data.range || {};
   const chartData = (data.monthly_forecast || []).map((m) => ({
     ...m,
-    band: [m.p10, m.p90],
+    l_conservative: Math.max(0, m.p10),
+    l_realistic: Math.max(0, m.p50 - m.p10),
+    l_potential: Math.max(0, m.p90 - m.p50),
   }));
 
   const goalPct = data.goal ? data.goal.probability : null;
@@ -203,31 +204,39 @@ const RevenueForecast = () => {
           </Card>
         </div>
 
-        {/* Monte Carlo fan chart */}
+        {/* Monte Carlo stacked probability layers */}
         <Card className="bg-zinc-950/50 border border-white/10">
           <CardHeader className="pb-2">
             <CardTitle className="text-base text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
-              <TrendingUp className="w-5 h-5 text-slate-400" /> Monthly forecast with confidence bands
+              <TrendingUp className="w-5 h-5 text-slate-400" /> Monthly forecast — stacked probability layers
             </CardTitle>
-            <p className="text-xs text-zinc-500">Shaded band = Conservative–Potential range · solid line = Realistic outcome · dashed = recurring baseline</p>
+            <p className="text-xs text-zinc-500">Each layer stacks onto the one below · green = Conservative floor · platinum = Realistic · blue = Potential upside (stack top = Potential / P90)</p>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
-              <ComposedChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }} data-testid="monte-carlo-chart">
+              <AreaChart data={chartData} margin={{ top: 8, right: 8, left: 0, bottom: 0 }} data-testid="monte-carlo-chart">
                 <defs>
-                  <linearGradient id="bandGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="#354278" stopOpacity={0.6} />
-                    <stop offset="100%" stopColor="#5A7D66" stopOpacity={0.35} />
+                  <linearGradient id="gConservative" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#5A7D66" stopOpacity={0.7} />
+                    <stop offset="100%" stopColor="#5A7D66" stopOpacity={0.45} />
+                  </linearGradient>
+                  <linearGradient id="gRealistic" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#B8B2AA" stopOpacity={0.6} />
+                    <stop offset="100%" stopColor="#B8B2AA" stopOpacity={0.35} />
+                  </linearGradient>
+                  <linearGradient id="gPotential" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#354278" stopOpacity={0.75} />
+                    <stop offset="100%" stopColor="#354278" stopOpacity={0.4} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
                 <XAxis dataKey="month" tick={{ fill: '#71717a', fontSize: 11 }} axisLine={false} tickLine={false} />
                 <YAxis tick={{ fill: '#71717a', fontSize: 11 }} axisLine={false} tickLine={false} tickFormatter={fmtK} />
                 <Tooltip content={<BandTooltip />} cursor={{ stroke: '#3f3f46' }} />
-                <Area type="monotone" dataKey="band" stroke="none" fill="url(#bandGrad)" fillOpacity={1} isAnimationActive={false} name="Conservative–Potential" />
-                <Line type="monotone" dataKey="p50" stroke="#B8B2AA" strokeWidth={2.5} dot={{ r: 2.5, fill: '#B8B2AA' }} name="Realistic" />
-                <Line type="monotone" dataKey="recurring" stroke="#71717a" strokeDasharray="4 4" strokeWidth={1.5} dot={false} name="Recurring base" />
-              </ComposedChart>
+                <Area type="monotone" dataKey="l_conservative" stackId="bands" stroke="#5A7D66" strokeWidth={1.5} fill="url(#gConservative)" name="Conservative" />
+                <Area type="monotone" dataKey="l_realistic" stackId="bands" stroke="#B8B2AA" strokeWidth={1.5} fill="url(#gRealistic)" name="Realistic" />
+                <Area type="monotone" dataKey="l_potential" stackId="bands" stroke="#354278" strokeWidth={1.5} fill="url(#gPotential)" name="Potential" />
+              </AreaChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
