@@ -8,7 +8,7 @@ import {
   TrendingDown,
   DollarSign,
   Target,
-  Users,
+  Wallet,
   Sparkles,
   ArrowRight,
   BarChart3,
@@ -346,7 +346,7 @@ const Dashboard = () => {
           <Kpi label="Total Pipeline" value={formatCurrency(analytics?.total_pipeline)} icon={DollarSign} accent="bg-[#0052ff]/12 text-[#4d8bff]" delta={null} sub="across all stages" testid="metric-pipeline" />
           <Kpi label="Closed Revenue" value={formatCurrency(analytics?.closed_revenue)} icon={TrendingUp} accent="bg-emerald-500/12 text-emerald-400" delta={revDelta} sub="vs last month" testid="metric-revenue" />
           <Kpi label="Win Rate" value={`${analytics?.win_rate || 0}%`} icon={Target} accent="bg-cyan-500/12 text-cyan-400" delta={null} sub={`${croData?.won_deals || 0} won`} testid="metric-winrate" />
-          <Kpi label="Active Deals" value={analytics?.total_deals || 0} icon={Users} accent="bg-amber-500/12 text-amber-400" delta={null} sub="in pipeline" testid="metric-deals" />
+          <Kpi label="Total Revenue" value={formatCurrency(analytics?.projected_revenue)} icon={Wallet} accent="bg-amber-500/12 text-amber-400" delta={null} sub="closed + weighted pipeline" testid="metric-total-revenue" />
         </div>
 
         {/* Charts row: Revenue bar + Pipeline distribution */}

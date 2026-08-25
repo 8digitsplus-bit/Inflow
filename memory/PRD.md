@@ -13,6 +13,11 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
+### Dashboard: "Active Deals" → "Total Revenue" (Jun 2026)
+- Replaced the dashboard "Active Deals" count KPI with a **"Total Revenue"** currency KPI = projected total (closed revenue + probability-weighted open pipeline). Backend: added `projected_revenue` to `GET /api/analytics/revenue` (`analytics.py`), using the same stage/deal probability logic as the forecast (lead 10 / qualified 25 / proposal 50 / negotiation 75, or the deal's own `probability`). Frontend: `Dashboard.js` KPI now shows `analytics.projected_revenue` via `formatCurrency`, Wallet icon, testid `metric-total-revenue`, sub "closed + weighted pipeline". Curl-verified (closed $422.5k → projected $846.6k).
+
+
+
 ### Forecast chart → stacked area (Jun 2026)
 - Converted the /forecast monthly chart from a shaded fan/band (`ComposedChart` + range Area + Lines) to a **stacked AreaChart** with 3 probability layers: Conservative floor (green `#5A7D66`, 0→P10), Realistic increment (platinum `#B8B2AA`, P10→P50), Potential increment (deep blue `#354278`, P50→P90). Stack top = P90; each layer's top stroke marks P10/P50/P90. `chartData` maps `l_conservative/l_realistic/l_potential` deltas (guarded with `Math.max(0,…)`). Tooltip shows Potential/Realistic/Conservative cumulative values (dropped the recurring row). Verified: testing_agent iteration_59 — 100% pass, no regressions.
 

@@ -42,6 +42,16 @@ async def get_revenue_analytics(user: User = Depends(get_current_user), sources:
     closed_won = [d for d in deals if d.get("stage") == "closed_won"]
     closed_revenue = sum(d.get("value", 0) for d in closed_won)
 
+    open_stages = {"lead", "qualified", "proposal", "negotiation"}
+    _stage_prob = {"lead": 10, "qualified": 25, "proposal": 50, "negotiation": 75}
+    def _win_prob(d):
+        p = d.get("probability")
+        if p is None:
+            p = _stage_prob.get(d.get("stage", "lead"), 10)
+        return max(0.0, min(1.0, float(p) / 100.0))
+    weighted_open = sum(d.get("value", 0) * _win_prob(d) for d in deals if d.get("stage") in open_stages)
+    projected_revenue = closed_revenue + weighted_open
+
     stages = ["lead", "qualified", "proposal", "negotiation", "closed_won", "closed_lost"]
     stage_counts = {stage: 0 for stage in stages}
     stage_values = {stage: 0 for stage in stages}
@@ -67,6 +77,7 @@ async def get_revenue_analytics(user: User = Depends(get_current_user), sources:
     return {
         "total_pipeline": round(total_pipeline, 2),
         "closed_revenue": round(closed_revenue, 2),
+        "projected_revenue": round(projected_revenue, 2),
         "win_rate": round(win_rate, 1),
         "avg_deal_size": round(avg_deal_size, 2),
         "total_deals": len(deals),
