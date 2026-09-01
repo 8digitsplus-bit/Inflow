@@ -13,6 +13,14 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
+### Competitor Intelligence → guided 5-stage cycle (Jun 2026) — major rework
+- Reworked `/competitor-intel` (Enterprise + owner only) from a single tool into a guided **Plan → Gather → Analyze → Share → Act** cycle with a clickable stepper.
+- **Backend (`competitors.py`)** new endpoints (all `require_enterprise`): `GET/PUT /competitors/plan` (objectives, focus areas, key questions, notes); `POST /competitors/analyze` (Claude → summary, patterns, per-competitor strengths/weaknesses, your strengths/weaknesses, opportunities, threats; caches to `competitor_intel_analysis` with benchmark snapshot; rule-based fallback); `GET /competitors/analysis`; `GET /competitors/actions`, `POST /competitors/actions/generate` (Claude), `POST/PUT/DELETE /competitors/actions*` (status todo/in_progress/done); `GET /competitors/report` (compiled markdown); `GET/POST /competitors/shares` (team distribution log). Refactored `benchmark` into reusable `_compute_benchmark`; added `_claude_json` helper. Reuses existing competitor CRUD/rescan/my-pricing extraction.
+- **Frontend (`CompetitorIntel.js`)** fully rewritten: Plan (tag inputs + focus chips), Gather (public-source guidance + existing competitor tool + Your Pricing), Analyze (benchmark strip + AI SWOT/patterns/opps/threats + "stale, re-run" hint when competitor set changed), Share (copy/download markdown report + team distribution + history), Act (AI-generated + manual actions with cycling status).
+- Verified: all endpoints curl-tested (analyze/actions used real Claude); testing_agent iteration_60 — frontend 100% across all 5 stages, persistence confirmed, no console errors.
+
+
+
 ### Dashboard: "Active Deals" → "Total Revenue" (Jun 2026)
 - Replaced the dashboard "Active Deals" count KPI with a **"Total Revenue"** currency KPI = projected total (closed revenue + probability-weighted open pipeline). Backend: added `projected_revenue` to `GET /api/analytics/revenue` (`analytics.py`), using the same stage/deal probability logic as the forecast (lead 10 / qualified 25 / proposal 50 / negotiation 75, or the deal's own `probability`). Frontend: `Dashboard.js` KPI now shows `analytics.projected_revenue` via `formatCurrency`, Wallet icon, testid `metric-total-revenue`, sub "closed + weighted pipeline". Curl-verified (closed $422.5k → projected $846.6k).
 

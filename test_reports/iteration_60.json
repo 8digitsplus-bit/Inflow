@@ -1,0 +1,27 @@
+{
+  "summary": "End-to-end verified the reworked Competitor Intelligence 5-stage guided cycle (/competitor-intel) for testpro@test.com (Enterprise owner). Login → CI page → stepper renders all 5 steps → Plan (add objective, toggle Pricing focus chip, add question, notes, Save) → Gather (my-pricing dialog opens, add-competitor dialog opens with blank-submit validation, competitors-list rendered) → Analyze (benchmark-strip visible, analysis-result loaded with summary + competitor-swot card, no re-run needed since already cached) → Share (copy report clicked, teams selected, log-share added entry to share-history) → Act (7 actions listed, cycled first action status, added TEST_manual action, deleted it successfully). Persistence verified after reload: 3 objectives, 2 questions, notes preserved. Backend endpoints were already curl-verified by main agent; frontend wiring for all new endpoints (plan, analyze, actions, actions/generate, shares, report) works correctly.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "Stage 3 Analyze — SWOT card count", "issue": "Only 1 competitor-swot card rendered even though the org has 2 competitors (Clari + Oliv ai). Likely because the cached analysis returned by GET /api/competitors/analysis was produced when only 1 competitor existed. A fresh POST /api/competitors/analyze re-run should include both. Not blocking — analysis-result, summary, patterns, opps/threats all render.", "affected_selectors": ["[data-testid=\"competitor-swot\"]"]}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/backend/tests/test_competitor_intel.py"],
+  "action_items": [
+    "Optional: after adding a new competitor, invalidate the cached analysis (or prompt user to re-run) so Stage 3 SWOT reflects all current competitors. Currently the UI shows the previously-cached analysis with fewer competitors."
+  ],
+  "critical_code_review_comments": [
+    "CompetitorIntel.js is a large single-file page (~740 lines). Consider extracting each stage (PlanStage/GatherStage/AnalyzeStage/ShareStage/ActStage) into its own component for maintainability.",
+    "The plan-notes textarea appears to have received unusually long content (1337 chars) during test — because the automation dumped a JSHandle repr into it. Not an app bug; just noting the textarea has no client-side max length. Consider a reasonable maxLength (e.g. 5000)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (curl-verified by main agent this session)", "frontend": "100% (all 5 stages wired; stepper nav via clicks and next/prev works; persistence works; no console page errors from CI page)"},
+  "test_credentials": "testpro@test.com / password (Enterprise owner) — login worked via auth-toggle-mode → auth-email-btn → auth-submit-btn",
+  "seed_data_creation": "Added a 3rd objective 'TEST_obj weekly' and 2nd question 'TEST_q Are they cheaper?' to the plan; toggled Pricing focus; overwrote plan notes (long test string); logged one additional share entry (Sales+Leadership + 'TEST share note'). Manual TEST action was added and deleted (net-zero). Main agent may want to clean the plan back to a canonical state via PUT /api/competitors/plan if desired.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Base URL for frontend/backend is https://revenue-exec.preview.emergentagent.com (from /app/frontend/.env REACT_APP_BACKEND_URL). Note the review_request mentioned competitorlens.preview which returns Preview Unavailable — do NOT use that. Login via /auth needs: click auth-toggle-mode → auth-email-btn → fill email/password → auth-submit-btn. All CI testids confirmed working: ci-stepper, ci-step-1..5, ci-next-btn, ci-prev-btn, stage-plan/gather/analyze/share/act, plan-objectives(+ -input/-add/-item-N), plan-focus-pricing, plan-questions, plan-notes, plan-save-btn, my-pricing-btn, my-pricing-dialog, add-competitor-btn, add-competitor-dialog, add-competitor-submit, competitors-list, benchmark-strip, run-analysis-btn, analysis-result, analysis-summary, competitor-swot, copy-report-btn, download-report-btn, share-team-<key>, share-note-input, log-share-btn, share-history, generate-actions-btn, actions-list, action-status-<id>, delete-action-<id>, new-action-input, new-action-category, add-action-btn.",
+  "rca of the issue": "SWOT card mismatch RCA: GET /api/competitors/analysis returns the last saved analysis document. If a competitor was added after the last analyze run, the cached document won't include it. Mitigation: either auto-invalidate cached analysis when the competitors set changes, or display a 'stale — re-run' hint in the UI when analysis.competitors_count != current competitors.length."
+}

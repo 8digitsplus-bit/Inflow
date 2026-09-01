@@ -57,6 +57,36 @@ class MyPricing(BaseModel):
     plans: List[Plan] = []
 
 
+class IntelPlan(BaseModel):
+    objectives: List[str] = []
+    focus_areas: List[str] = []
+    key_questions: List[str] = []
+    notes: str = ""
+
+
+class ActionCreate(BaseModel):
+    title: str
+    category: str = "strategy"       # pricing | product | messaging | strategy
+    detail: str = ""
+
+
+class ActionUpdate(BaseModel):
+    title: Optional[str] = None
+    category: Optional[str] = None
+    detail: Optional[str] = None
+    status: Optional[str] = None     # todo | in_progress | done
+
+
+class ShareCreate(BaseModel):
+    teams: List[str] = []            # sales | product | leadership | marketing
+    channel: str = "export"          # export | copy | link
+    note: str = ""
+
+
+_ACTION_CATS = ("pricing", "product", "messaging", "strategy")
+_ACTION_STATUS = ("todo", "in_progress", "done")
+
+
 # ---------------------------------------------------------------- helpers
 async def require_enterprise(user: User = Depends(require_owner)) -> User:
     org = await db.organizations.find_one({"org_id": user.org_id}, {"_id": 0})
@@ -170,6 +200,56 @@ def _diff_plans(old: list, new: list) -> list:
     return changes
 
 
+async def _claude_json(system: str, prompt: str) -> dict:
+    from emergentintegrations.llm.chat import LlmChat, UserMessage
+    api_key = os.environ.get("EMERGENT_LLM_KEY")
+    if not api_key:
+        raise RuntimeError("LLM key not configured")
+    chat = LlmChat(
+        api_key=api_key,
+        session_id=f"comp_{uuid.uuid4().hex[:10]}",
+        system_message=system,
+    ).with_model("anthropic", CLAUDE_MODEL)
+    resp = await chat.send_message(UserMessage(text=prompt))
+    return _parse_json(resp)
+
+
+def _fallback_analysis(bench: dict, competitors: list) -> dict:
+    pos = bench.get("position")
+    patterns = []
+    if bench.get("market_avg") is not None:
+        patterns.append(f"Market average price is around {bench['market_avg']:g} across {len(competitors)} tracked competitor(s).")
+    if pos == "above":
+        patterns.append("You are priced above the market average — premium positioning.")
+    elif pos == "below":
+        patterns.append("You are priced below the market average — value positioning.")
+    elif pos == "inline":
+        patterns.append("Your pricing is in line with the market.")
+    comps = [{"name": c["name"],
+              "strengths": ([c.get("positioning_summary")] if c.get("positioning_summary") else []) or ["Public pricing available"],
+              "weaknesses": ([] if c.get("plans") else ["No published pricing captured"])}
+             for c in competitors]
+    return {
+        "summary": "Automated benchmark (AI narrative unavailable). Review the pricing patterns below.",
+        "patterns": patterns or ["Add competitors and your pricing to surface patterns."],
+        "competitors": comps,
+        "your_strengths": [], "your_weaknesses": [],
+        "opportunities": ["Set or refine your reference pricing to sharpen benchmarking."] if bench.get("my_avg") is None else [],
+        "threats": [],
+    }
+
+
+def _fallback_actions(analysis: dict) -> list:
+    acts = []
+    for opp in (analysis.get("opportunities") or [])[:3]:
+        acts.append({"title": f"Pursue: {opp}", "category": "strategy", "detail": opp})
+    for th in (analysis.get("threats") or [])[:2]:
+        acts.append({"title": f"Mitigate: {th}", "category": "strategy", "detail": th})
+    if not acts:
+        acts.append({"title": "Review competitor pricing and update your plans", "category": "pricing", "detail": "Keep your reference pricing current against the market."})
+    return acts
+
+
 # ---------------------------------------------------------------- status
 @router.get("/competitors/status")
 async def competitors_status(user: User = Depends(get_current_user)):
@@ -204,8 +284,7 @@ def _avg_price(plans: list) -> Optional[float]:
     return round(sum(vals) / len(vals), 2) if vals else None
 
 
-@router.get("/competitors/benchmark")
-async def benchmark(user: User = Depends(require_enterprise)):
+async def _compute_benchmark(user: User) -> dict:
     competitors = await db.competitors.find(org_filter(user), {"_id": 0}).to_list(200)
     my = await db.org_pricing.find_one({"org_id": user.org_id}, {"_id": 0})
     my_plans = (my or {}).get("plans", [])
@@ -244,6 +323,262 @@ async def benchmark(user: User = Depends(require_enterprise)):
         "position": overall,
         "competitors": comp_summary,
     }
+
+
+@router.get("/competitors/benchmark")
+async def benchmark(user: User = Depends(require_enterprise)):
+    return await _compute_benchmark(user)
+
+
+# ---------------------------------------------------------------- 5-stage intel workflow
+@router.get("/competitors/plan")
+async def get_intel_plan(user: User = Depends(require_enterprise)):
+    doc = await db.competitor_intel_plan.find_one({"org_id": user.org_id}, {"_id": 0})
+    return doc or {"org_id": user.org_id, "objectives": [], "focus_areas": [], "key_questions": [], "notes": ""}
+
+
+@router.put("/competitors/plan")
+async def set_intel_plan(body: IntelPlan, user: User = Depends(require_enterprise)):
+    now = datetime.now(timezone.utc).isoformat()
+    doc = {
+        "org_id": user.org_id,
+        "objectives": [s.strip() for s in body.objectives if s.strip()][:20],
+        "focus_areas": [s.strip() for s in body.focus_areas if s.strip()][:12],
+        "key_questions": [s.strip() for s in body.key_questions if s.strip()][:20],
+        "notes": (body.notes or "")[:2000],
+        "updated_at": now,
+    }
+    await db.competitor_intel_plan.update_one({"org_id": user.org_id}, {"$set": doc}, upsert=True)
+    return doc
+
+
+@router.post("/competitors/analyze")
+async def analyze_landscape(user: User = Depends(require_enterprise)):
+    competitors = await db.competitors.find(org_filter(user), {"_id": 0}).to_list(200)
+    if not competitors:
+        raise HTTPException(status_code=400, detail="Add at least one competitor in the Gather step first.")
+    bench = await _compute_benchmark(user)
+    plan = await db.competitor_intel_plan.find_one({"org_id": user.org_id}, {"_id": 0}) or {}
+
+    comp_lines = []
+    for c in competitors:
+        plans = "; ".join(
+            f"{p.get('name')}: {p.get('price') if p.get('price') is not None else 'custom'} {p.get('currency', 'USD')}/{p.get('period', '')}"
+            for p in c.get("plans", [])
+        ) or "no plans captured"
+        comp_lines.append(f"- {c['name']} ({c['url']}): {plans}. Positioning: {c.get('positioning_summary', 'n/a')}")
+    my_lines = "; ".join(f"{p.get('name')}: {p.get('price')}" for p in bench.get("my_plans", [])) or "not set"
+    objectives = "; ".join(plan.get("objectives", [])) or "general competitive awareness"
+    focus = ", ".join(plan.get("focus_areas", [])) or "pricing, product features"
+
+    prompt = (
+        f"Our objectives: {objectives}\nFocus areas: {focus}\n"
+        f"Our pricing (avg {bench.get('my_avg')}): {my_lines}\n"
+        f"Market avg: {bench.get('market_avg')} | Our position vs market: {bench.get('position')}\n"
+        f"Competitors:\n" + "\n".join(comp_lines) + "\n\n"
+        "Turn these raw facts into clear, decision-ready patterns. Compare competitor strengths and "
+        "weaknesses against ours. Return STRICT JSON only with this exact shape:\n"
+        '{"summary":"2-3 sentence executive summary","patterns":["market pattern",...],'
+        '"competitors":[{"name":"","strengths":["",...],"weaknesses":["",...]}],'
+        '"your_strengths":["",...],"your_weaknesses":["",...],'
+        '"opportunities":["",...],"threats":["",...]}'
+    )
+    try:
+        data = await _claude_json(
+            "You are a competitive intelligence analyst. Turn raw competitor facts into clear patterns. STRICT JSON only, no markdown fences.",
+            prompt,
+        )
+        ai_used = True
+    except Exception as e:
+        logger.warning("CI analyze failed: %s", e)
+        data = _fallback_analysis(bench, competitors)
+        ai_used = False
+
+    # sanitize to expected lists
+    def _lst(v):
+        return [str(x)[:400] for x in v][:12] if isinstance(v, list) else []
+    clean = {
+        "summary": str(data.get("summary", ""))[:800],
+        "patterns": _lst(data.get("patterns")),
+        "competitors": [
+            {"name": str(c.get("name", ""))[:80], "strengths": _lst(c.get("strengths")), "weaknesses": _lst(c.get("weaknesses"))}
+            for c in (data.get("competitors") or [])[:20] if isinstance(c, dict)
+        ],
+        "your_strengths": _lst(data.get("your_strengths")),
+        "your_weaknesses": _lst(data.get("your_weaknesses")),
+        "opportunities": _lst(data.get("opportunities")),
+        "threats": _lst(data.get("threats")),
+    }
+    now = datetime.now(timezone.utc).isoformat()
+    await db.competitor_intel_analysis.update_one(
+        {"org_id": user.org_id},
+        {"$set": {"org_id": user.org_id, "analysis": clean, "benchmark": bench, "ai_used": ai_used, "generated_at": now}},
+        upsert=True,
+    )
+    return {**clean, "benchmark": bench, "ai_used": ai_used, "generated_at": now}
+
+
+@router.get("/competitors/analysis")
+async def get_analysis(user: User = Depends(require_enterprise)):
+    doc = await db.competitor_intel_analysis.find_one({"org_id": user.org_id}, {"_id": 0})
+    if not doc:
+        return {"analysis": None}
+    return {**doc.get("analysis", {}), "benchmark": doc.get("benchmark"), "ai_used": doc.get("ai_used"), "generated_at": doc.get("generated_at")}
+
+
+@router.get("/competitors/actions")
+async def list_actions(user: User = Depends(require_enterprise)):
+    return await db.competitor_intel_actions.find(org_filter(user), {"_id": 0}).sort("created_at", -1).to_list(200)
+
+
+@router.post("/competitors/actions/generate")
+async def generate_actions(user: User = Depends(require_enterprise)):
+    saved = await db.competitor_intel_analysis.find_one({"org_id": user.org_id}, {"_id": 0})
+    if not saved:
+        raise HTTPException(status_code=400, detail="Run the Analyze step first to generate actions.")
+    analysis = saved.get("analysis", {})
+    plan = await db.competitor_intel_plan.find_one({"org_id": user.org_id}, {"_id": 0}) or {}
+    prompt = (
+        "Based on this competitive analysis, recommend concrete next actions to adjust strategy, "
+        "tweak prices, or update products.\n"
+        f"Objectives: {'; '.join(plan.get('objectives', [])) or 'grow revenue'}\n"
+        f"Summary: {analysis.get('summary', '')}\n"
+        f"Opportunities: {analysis.get('opportunities', [])}\n"
+        f"Threats: {analysis.get('threats', [])}\n"
+        f"Our weaknesses: {analysis.get('your_weaknesses', [])}\n\n"
+        'Return STRICT JSON only: {"actions":[{"title":"imperative action","category":"pricing|product|messaging|strategy","detail":"1 sentence on why/how"}]} Max 6 actions.'
+    )
+    try:
+        data = await _claude_json(
+            "You are a revenue strategist. Convert competitive insights into specific, actionable next steps. STRICT JSON only.",
+            prompt,
+        )
+        items = data.get("actions", [])
+        ai_used = True
+    except Exception as e:
+        logger.warning("CI actions failed: %s", e)
+        items = _fallback_actions(analysis)
+        ai_used = False
+
+    now = datetime.now(timezone.utc).isoformat()
+    existing = await db.competitor_intel_actions.find(org_filter(user), {"_id": 0}).to_list(200)
+    existing_titles = {a.get("title", "").strip().lower() for a in existing}
+    created = []
+    for it in (items or [])[:6]:
+        if not isinstance(it, dict):
+            continue
+        title = str(it.get("title", ""))[:140].strip()
+        if not title or title.lower() in existing_titles:
+            continue
+        cat = it.get("category") if it.get("category") in _ACTION_CATS else "strategy"
+        doc = {
+            "action_id": f"act_{uuid.uuid4().hex[:12]}", "org_id": user.org_id,
+            "title": title, "category": cat, "detail": str(it.get("detail", ""))[:280],
+            "status": "todo", "source": "ai", "created_at": now, "updated_at": now,
+        }
+        await db.competitor_intel_actions.insert_one(dict(doc))
+        existing_titles.add(title.lower())
+        created.append(_clean(doc))
+    return {"created": created, "ai_used": ai_used}
+
+
+@router.post("/competitors/actions")
+async def create_action(body: ActionCreate, user: User = Depends(require_enterprise)):
+    if not body.title.strip():
+        raise HTTPException(status_code=400, detail="Action title is required.")
+    now = datetime.now(timezone.utc).isoformat()
+    doc = {
+        "action_id": f"act_{uuid.uuid4().hex[:12]}", "org_id": user.org_id,
+        "title": body.title.strip()[:140],
+        "category": body.category if body.category in _ACTION_CATS else "strategy",
+        "detail": (body.detail or "")[:280], "status": "todo", "source": "manual",
+        "created_at": now, "updated_at": now,
+    }
+    await db.competitor_intel_actions.insert_one(dict(doc))
+    return _clean(doc)
+
+
+@router.put("/competitors/actions/{action_id}")
+async def update_action(action_id: str, body: ActionUpdate, user: User = Depends(require_enterprise)):
+    existing = await db.competitor_intel_actions.find_one({"action_id": action_id, **org_filter(user)}, {"_id": 0})
+    if not existing:
+        raise HTTPException(status_code=404, detail="Action not found")
+    updates = {}
+    if body.title is not None:
+        updates["title"] = body.title.strip()[:140]
+    if body.category is not None and body.category in _ACTION_CATS:
+        updates["category"] = body.category
+    if body.detail is not None:
+        updates["detail"] = body.detail[:280]
+    if body.status is not None and body.status in _ACTION_STATUS:
+        updates["status"] = body.status
+    updates["updated_at"] = datetime.now(timezone.utc).isoformat()
+    await db.competitor_intel_actions.update_one({"action_id": action_id}, {"$set": updates})
+    return _clean(await db.competitor_intel_actions.find_one({"action_id": action_id}, {"_id": 0}))
+
+
+@router.delete("/competitors/actions/{action_id}")
+async def delete_action(action_id: str, user: User = Depends(require_enterprise)):
+    res = await db.competitor_intel_actions.delete_one({"action_id": action_id, **org_filter(user)})
+    if res.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Action not found")
+    return {"status": "deleted"}
+
+
+def _md_report(plan: dict, analysis: dict, bench: dict, actions: list, competitors: list) -> str:
+    L = [f"# Competitive Intelligence Report",
+         f"_Generated {datetime.now(timezone.utc).strftime('%b %d, %Y')}_", ""]
+    if plan.get("objectives"):
+        L += ["## Objectives"] + [f"- {o}" for o in plan["objectives"]] + [""]
+    L += ["## Market benchmark",
+          f"- Your average price: {bench.get('my_avg') if bench.get('my_avg') is not None else 'not set'}",
+          f"- Market average: {bench.get('market_avg') if bench.get('market_avg') is not None else 'n/a'}",
+          f"- Your position: {bench.get('position') or 'n/a'}",
+          f"- Competitors tracked: {len(competitors)}", ""]
+    if analysis:
+        if analysis.get("summary"):
+            L += ["## Executive summary", analysis["summary"], ""]
+        if analysis.get("patterns"):
+            L += ["## Key patterns"] + [f"- {p}" for p in analysis["patterns"]] + [""]
+        if analysis.get("opportunities"):
+            L += ["## Opportunities"] + [f"- {p}" for p in analysis["opportunities"]] + [""]
+        if analysis.get("threats"):
+            L += ["## Threats"] + [f"- {p}" for p in analysis["threats"]] + [""]
+    if actions:
+        L += ["## Recommended actions"] + [f"- [{a.get('status')}] ({a.get('category')}) {a.get('title')}" for a in actions] + [""]
+    return "\n".join(L)
+
+
+@router.get("/competitors/report")
+async def intel_report(user: User = Depends(require_enterprise)):
+    plan = await db.competitor_intel_plan.find_one({"org_id": user.org_id}, {"_id": 0}) or {}
+    saved = await db.competitor_intel_analysis.find_one({"org_id": user.org_id}, {"_id": 0}) or {}
+    analysis = saved.get("analysis", {})
+    bench = saved.get("benchmark") or await _compute_benchmark(user)
+    competitors = await db.competitors.find(org_filter(user), {"_id": 0}).to_list(200)
+    actions = await db.competitor_intel_actions.find(org_filter(user), {"_id": 0}).sort("created_at", -1).to_list(200)
+    md = _md_report(plan, analysis, bench, actions, competitors)
+    return {"markdown": md, "generated_at": datetime.now(timezone.utc).isoformat()}
+
+
+@router.get("/competitors/shares")
+async def list_shares(user: User = Depends(require_enterprise)):
+    return await db.competitor_intel_shares.find(org_filter(user), {"_id": 0}).sort("created_at", -1).to_list(100)
+
+
+@router.post("/competitors/shares")
+async def create_share(body: ShareCreate, user: User = Depends(require_enterprise)):
+    teams = [t for t in body.teams if t in ("sales", "product", "leadership", "marketing")]
+    if not teams:
+        raise HTTPException(status_code=400, detail="Select at least one team to share with.")
+    now = datetime.now(timezone.utc).isoformat()
+    doc = {
+        "share_id": f"shr_{uuid.uuid4().hex[:12]}", "org_id": user.org_id,
+        "teams": teams, "channel": body.channel or "export", "note": (body.note or "")[:280],
+        "shared_by": user.user_id, "created_at": now,
+    }
+    await db.competitor_intel_shares.insert_one(dict(doc))
+    return _clean(doc)
 
 
 # ---------------------------------------------------------------- CRUD + extract
