@@ -28,6 +28,7 @@ from routes.contact import router as contact_router
 from routes.legal import router as legal_router
 from routes.telemetry import router as telemetry_router
 from routes.competitors import router as competitors_router
+from routes.cro import router as cro_router
 from routes.upsell import router as upsell_router
 from routes.intent import router as intent_router
 from routes.workspace import router as workspace_router
@@ -136,6 +137,7 @@ api_router.include_router(contact_router)
 api_router.include_router(legal_router)
 api_router.include_router(telemetry_router)
 api_router.include_router(competitors_router)
+api_router.include_router(cro_router)
 api_router.include_router(upsell_router)
 api_router.include_router(intent_router)
 api_router.include_router(workspace_router)

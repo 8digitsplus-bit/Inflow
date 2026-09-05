@@ -13,6 +13,15 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
+### CRO → guided 5-stage cycle (Jun 2026) — major rework
+- Reworked `/cro` (`ConversionOptimization.js`) from a static dashboard into a guided **Analyze Data → Identify Friction → Formulate Hypotheses → Run Tests → Implement & Iterate** cycle with a clickable stepper.
+- Removed the fabricated metrics (the hardcoded "+4.2% vs last month" delta and the 3 mocked A/B tests). Stage 1 now shows only REAL pipeline-funnel numbers (from `/api/analytics/cro`); an honest note explains heatmaps/session-recordings are external tools to connect. (User will supply additional accurate metrics later.)
+- **New backend `routes/cro.py`** (registered in `server.py`, all `require_paid`): friction CRUD + `/cro/friction/suggest` (AI); hypotheses CRUD + `/cro/hypotheses/suggest` (AI); A/B tests CRUD where PUT returns a real two-proportion **z-test** (`control_rate/variant_rate/improvement/confidence/winner`); implementations CRUD. Creating a test linked to a hypothesis sets it `testing`; implementing sets it `validated`. Collections: `cro_friction`, `cro_hypotheses`, `cro_tests`, `cro_implementations` (org-scoped).
+- Frontend computes A/B significance live client-side (erf approximation mirroring the backend) for instant feedback; optimistic deletes re-fetch on failure.
+- Verified: all endpoints curl-tested (AI suggest returned 5+5; A/B 8%→12% = +50% lift, 99.7% conf, winner variant); testing_agent iteration_61 — frontend 100% across all 5 stages + full cycle wiring, no console errors.
+
+
+
 ### Competitor Intelligence → guided 5-stage cycle (Jun 2026) — major rework
 - Reworked `/competitor-intel` (Enterprise + owner only) from a single tool into a guided **Plan → Gather → Analyze → Share → Act** cycle with a clickable stepper.
 - **Backend (`competitors.py`)** new endpoints (all `require_enterprise`): `GET/PUT /competitors/plan` (objectives, focus areas, key questions, notes); `POST /competitors/analyze` (Claude → summary, patterns, per-competitor strengths/weaknesses, your strengths/weaknesses, opportunities, threats; caches to `competitor_intel_analysis` with benchmark snapshot; rule-based fallback); `GET /competitors/analysis`; `GET /competitors/actions`, `POST /competitors/actions/generate` (Claude), `POST/PUT/DELETE /competitors/actions*` (status todo/in_progress/done); `GET /competitors/report` (compiled markdown); `GET/POST /competitors/shares` (team distribution log). Refactored `benchmark` into reusable `_compute_benchmark`; added `_claude_json` helper. Reuses existing competitor CRUD/rescan/my-pricing extraction.
