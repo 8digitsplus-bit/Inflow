@@ -55,8 +55,8 @@ const navGroups = [
   {
     label: 'Analytics',
     items: [
-      { name: 'Intelligence', href: '/revenue', icon: BarChart3, minTier: 0 },
-      { name: 'Forecast', href: '/forecast', icon: LineChart, minTier: 2 },
+      { name: 'Intelligence', href: '/revenue', icon: BarChart3, minTier: 2 },
+      { name: 'Forecast', href: '/forecast', icon: LineChart, minTier: 3 },
       { name: 'Churn', href: '/churn', icon: Users, minTier: 1 },
       { name: 'CRO', href: '/cro', icon: Zap, minTier: 0 },
       { name: 'Pricing', href: '/pricing', icon: Tag, minTier: 2 },

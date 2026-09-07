@@ -112,7 +112,9 @@ const AppRouter = () => {
         path="/revenue" 
         element={
           <ProtectedRoute>
-            <RevenueIntelligence />
+            <TierGate requiredLevel={2}>
+              <RevenueIntelligence />
+            </TierGate>
           </ProtectedRoute>
         } 
       />
@@ -178,7 +180,7 @@ const AppRouter = () => {
         path="/forecast" 
         element={
           <ProtectedRoute>
-            <TierGate requiredLevel={2}>
+            <TierGate requiredLevel={3}>
               <RevenueForecast />
             </TierGate>
           </ProtectedRoute>
