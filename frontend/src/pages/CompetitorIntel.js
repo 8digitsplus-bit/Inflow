@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
+import { useNavigate } from 'react-router-dom';
 import {
   Swords, Plus, Trash2, RefreshCw, Pencil, Loader2, Globe, TrendingUp, TrendingDown,
   Minus, ExternalLink, AlertTriangle, History, Building2, DollarSign,
   Target, Search, Brain, Share2, Rocket, Check, Copy, Download, X, ChevronRight, ChevronLeft,
-  Sparkles, Lightbulb, ShieldAlert, CheckCircle2, Circle, Users, Package, MessageSquare, Compass,
+  Sparkles, Lightbulb, ShieldAlert, CheckCircle2, Circle, Users, Package, MessageSquare, Compass, Tag,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -153,6 +154,7 @@ export default function CompetitorIntel() {
   const [shareTeams, setShareTeams] = useState([]);
   const [shareNote, setShareNote] = useState('');
   const [newAction, setNewAction] = useState({ title: '', category: 'strategy' });
+  const navigate = useNavigate();
 
   const req = useCallback(async (path, opts = {}) => {
     const res = await fetch(`${API_URL}/api/competitors${path}`, {
@@ -492,6 +494,16 @@ export default function CompetitorIntel() {
                   </div>
                   <div><div className="text-zinc-500 text-xs mb-1">Competitors</div><div className="text-2xl font-bold text-white">{competitors.length}</div></div>
                 </div>
+                {bench.pricing_kind && bench.pricing_kind !== 'aligned' && (
+                  <div className="mt-4 pt-4 border-t border-white/10 flex items-center justify-between gap-3 flex-wrap" data-testid="pricing-opportunity">
+                    <div>
+                      <div className="text-xs text-zinc-500">{bench.pricing_kind === 'upside' ? 'Pricing upside vs market' : 'Revenue exposure vs market'}</div>
+                      <div className={`text-2xl font-bold ${bench.pricing_kind === 'upside' ? 'text-emerald-400' : 'text-amber-400'}`}>{money(bench.pricing_annual)}<span className="text-xs text-zinc-500 font-normal ml-1">/yr est.</span></div>
+                      <div className="text-[11px] text-zinc-500 max-w-md">{bench.pricing_kind === 'upside' ? `You're about ${money(Math.abs(bench.pricing_gap))}/mo below market across ${bench.paying_accounts} paying account(s) — room to raise prices.` : `You're about ${money(Math.abs(bench.pricing_gap))}/mo above market across ${bench.paying_accounts} paying account(s) — revenue at risk to cheaper rivals.`}</div>
+                    </div>
+                    <Button onClick={() => navigate('/pricing')} className="bg-white/10 hover:bg-white/20 text-white shrink-0" data-testid="open-pricing-optimizer"><Tag className="w-4 h-4 mr-1.5" /> Open Pricing Optimizer</Button>
+                  </div>
+                )}
               </div>
             )}
 
@@ -664,6 +676,7 @@ export default function CompetitorIntel() {
                         <div className={`text-sm font-medium ${a.status === 'done' ? 'text-zinc-500 line-through' : 'text-white'}`}>{a.title}</div>
                         {a.detail && <div className="text-xs text-zinc-500 mt-0.5">{a.detail}</div>}
                       </div>
+                      {a.category === 'pricing' && <button onClick={() => navigate('/pricing')} className="text-slate-300 hover:text-white shrink-0 text-[11px] inline-flex items-center gap-1" data-testid={`action-open-pricing-${a.action_id}`}><Tag className="w-3.5 h-3.5" /> Optimize</button>}
                       <button onClick={() => deleteAction(a.action_id)} className="text-zinc-600 hover:text-red-400 shrink-0" data-testid={`delete-action-${a.action_id}`}><Trash2 className="w-4 h-4" /></button>
                     </div>
                   );

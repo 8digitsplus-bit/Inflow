@@ -13,6 +13,14 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
+### Option A — revenue attribution for CRO & Competitor Intelligence (Jun 2026)
+Re-focused the two "drifting" features so each resolves to its OWN distinct $ number (attribution, not aggregation — no reprinting of dashboard totals):
+- **CRO** now shows **revenue impact**: each A/B test takes `monthly_visitors` + `value_per_conversion` (prefilled with the org avg deal value from `/api/cro/summary`) and computes a **Projected annual impact** = `(variant_rate−control_rate) × monthly_visitors × value_per_conversion × 12`. Implementing a winner stores `revenue_impact`, and Stage 5's hero metric **"Revenue lift shipped $/yr"** rolls up all implementations (`GET /cro/summary`). Backend: test fields + `_decorate_test.projected_impact`, implementation `revenue_impact`, new `/cro/summary`.
+- **Competitor Intelligence** now shows a **Pricing opportunity vs market** number in the Analyze benchmark: `_compute_benchmark` returns `pricing_gap`, `pricing_annual` (|gap| × paying accounts × 12), `pricing_kind` (upside/exposure/aligned). Displayed as green "upside" or amber "exposure" with an **"Open Pricing Optimizer"** handoff, and every pricing-category action in the Act stage links to `/pricing` (Competitor Intel triggers the pricing move; Pricing Optimizer owns the recommendation).
+- Verified: curl (projected $480k; testpro exposure $10,899/yr across 7 accounts) + testing_agent iteration_62 (frontend 100%, distinctness confirmed, no crashes). Known: dev-only visual-edits hydration warning around `<select>` — not app code.
+
+
+
 ### CRO → guided 5-stage cycle (Jun 2026) — major rework
 - Reworked `/cro` (`ConversionOptimization.js`) from a static dashboard into a guided **Analyze Data → Identify Friction → Formulate Hypotheses → Run Tests → Implement & Iterate** cycle with a clickable stepper.
 - Removed the fabricated metrics (the hardcoded "+4.2% vs last month" delta and the 3 mocked A/B tests). Stage 1 now shows only REAL pipeline-funnel numbers (from `/api/analytics/cro`); an honest note explains heatmaps/session-recordings are external tools to connect. (User will supply additional accurate metrics later.)

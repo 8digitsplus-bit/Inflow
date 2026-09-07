@@ -1,0 +1,34 @@
+{
+  "summary": "Frontend-only verification of the NEW $-attribution additions on CRO (/cro) and Competitor Intelligence (/competitor-intel) for testpro@test.com. All 5 new wirings work end-to-end. CRO Stage 4 projection computes and persists; VPC placeholder shows the org avg deal value; Stage 5 metric-revenue-lift is sourced from /api/cro/summary and increases on Implement winner. CI Stage 3 shows pricing-opportunity 'exposure' correctly for testpro and Open Pricing Optimizer + Stage 5 pricing-category actions navigate to /pricing.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "CRO Stage 4 (Run Tests)", "issues": ["React hydration warnings in console: '<span> cannot be a child of <select>/<option>' caused by visual-edits injected <span x-excluded='true' style='display:contents'> wrapping option/select. Non-blocking (dev-only overlay) but noisy; consider guarding wrappers around <select>/<option> children."]}
+    ]
+  },
+  "verifications": {
+    "cro_stage4_projection": "Filled monthly_visitors=5000 and value_per_conversion=200 on test 'Short vs long form' (control 1000/80=8%, variant 1000/120=12%). test-projected-<id> rendered '+$480,000' (green). Matches formula (0.12-0.08)*5000*200*12=480000.",
+    "cro_stage4_vpc_placeholder": "test-vpc-<id> placeholder = '60357.14' (matches /api/cro/summary.avg_deal_value ~60357).",
+    "cro_stage4_persistence": "PUT /api/cro/tests/<id> => 200. Reload -> GET /api/cro/tests shows monthly_visitors=5000, value_per_conversion=200, projected_impact=480000. Values re-render in inputs after reload.",
+    "cro_stage5_metric_revenue_lift": "metric-revenue-lift sourced from /api/cro/summary.revenue_lift_shipped. BEFORE implement: '$0/yr'. AFTER 'Implement winner' on the $480k test: '$480,000/yr'. Changes shipped went 1 -> 2. New implementation stored revenue_impact=480000 and impact '+$480,000/yr'.",
+    "ci_stage3_pricing_opportunity": "pricing-opportunity block for testpro shows 'Revenue exposure vs market $10,899/yr est.' with copy: 'You're about $130/mo above market across 7 paying account(s) — revenue at risk to cheaper rivals.' Amber/exposure kind as expected (testpro is priced above market).",
+    "ci_stage3_open_pricing_optimizer": "open-pricing-optimizer button visible and navigates to /pricing (Pricing Optimizer page loads).",
+    "ci_stage5_pricing_actions": "Two action-open-pricing-<id> links present (action-open-pricing-act_c9b5aa861c10, action-open-pricing-act_5fad4493fbb9). Clicking navigates to /pricing.",
+    "distinctness": "CRO metric ($480,000/yr revenue lift shipped) is sourced independently from cro implementations' revenue_impact. CI pricing exposure ($10,899/yr) is derived from _compute_benchmark (my_avg $149 vs market $19.25 across 7 paying accounts). Neither reprints Dashboard totals ($1,497,500 pipeline / $846,550 total revenue).",
+    "console": "No JS runtime crashes. Two initial 401s are pre-login /api/auth/me probes (expected). Only noise are hydration warnings from visual-edits injected spans around <select>/<option>."
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Hydration warning: visual-edits wrapper spans are placed as direct children of <select>, which is invalid HTML. Not a functional blocker but pollutes the console and can break SSR/streaming later — consider skipping the wrapper injection when the child is <option>."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (skipped)", "frontend": "100%"},
+  "test_credentials": "testpro@test.com / password (Enterprise owner, org_15337f4cefc9)",
+  "seed_data_creation": "Persisted monthly_visitors=5000 and value_per_conversion=200 on CRO test ab_4d90f2adeb40; created a new implementation im_60e089ce0733 (Rolled out: Short vs long form, revenue_impact=480000) via 'Implement winner'. These change testpro's CRO Stage 5 state.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "All new $-attribution wiring for CRO Stage 4/5 and Competitor Intel Stage 3/5 is verified. Note that testpro now has 2 CRO implementations (an older one without revenue_impact and the newly rolled-out '+$480,000/yr' from this run). The CRO summary now returns revenue_lift_shipped=480000."
+}

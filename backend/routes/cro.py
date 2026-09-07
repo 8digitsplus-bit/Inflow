@@ -73,6 +73,8 @@ class TestCreate(BaseModel):
     hypothesis_id: Optional[str] = None
     control_label: str = "Original"
     variant_label: str = "Variant"
+    monthly_visitors: int = 0
+    value_per_conversion: Optional[float] = None
 
 
 class TestUpdate(BaseModel):
@@ -85,6 +87,8 @@ class TestUpdate(BaseModel):
     control_conversions: Optional[int] = None
     variant_visitors: Optional[int] = None
     variant_conversions: Optional[int] = None
+    monthly_visitors: Optional[int] = None
+    value_per_conversion: Optional[float] = None
 
 
 class ImplementationCreate(BaseModel):
@@ -93,6 +97,7 @@ class ImplementationCreate(BaseModel):
     hypothesis_id: Optional[str] = None
     stage: str = ""
     impact: str = ""
+    revenue_impact: Optional[float] = None
     note: str = ""
 
 
@@ -159,6 +164,27 @@ async def _funnel_summary(user: User) -> dict:
     drops.sort(key=lambda d: d["drop_rate"], reverse=True)
     return {"counts": counts, "total": total, "drops": drops,
             "overall": round(counts["closed_won"] / max(total, 1) * 100, 1)}
+
+
+async def _avg_deal_value(user: User) -> float:
+    deals = await db.deals.find({**org_filter(user), "stage": "closed_won"}, {"_id": 0, "value": 1}).to_list(3000)
+    vals = [d.get("value", 0) for d in deals if d.get("value")]
+    return round(sum(vals) / len(vals), 2) if vals else 0.0
+
+
+@router.get("/cro/summary")
+async def cro_summary(user: User = Depends(require_paid)):
+    impls = await db.cro_implementations.find(org_filter(user), {"_id": 0}).to_list(500)
+    lift = sum(float(i.get("revenue_impact") or 0) for i in impls)
+    validated = await db.cro_hypotheses.count_documents({**org_filter(user), "status": "validated"})
+    tests_completed = await db.cro_tests.count_documents({**org_filter(user), "status": "completed"})
+    return {
+        "revenue_lift_shipped": round(lift, 2),
+        "changes_shipped": len(impls),
+        "validated_hypotheses": validated,
+        "tests_completed": tests_completed,
+        "avg_deal_value": await _avg_deal_value(user),
+    }
 
 
 # ---------------------------------------------------------------- Stage 2: Friction
@@ -347,7 +373,13 @@ async def delete_hypothesis(hypothesis_id: str, user: User = Depends(require_pai
 def _decorate_test(t: dict) -> dict:
     stats = _ab_stats(t.get("control_visitors", 0), t.get("control_conversions", 0),
                       t.get("variant_visitors", 0), t.get("variant_conversions", 0))
-    return {**t, **stats}
+    proj = None
+    vpc = t.get("value_per_conversion")
+    mv = t.get("monthly_visitors") or 0
+    if stats.get("control_rate") is not None and vpc and mv:
+        delta = (stats["variant_rate"] - stats["control_rate"]) / 100.0
+        proj = round(delta * mv * float(vpc) * 12, 2)
+    return {**t, **stats, "projected_impact": proj}
 
 
 @router.get("/cro/tests")
@@ -365,6 +397,8 @@ async def create_test(body: TestCreate, user: User = Depends(require_paid)):
         "name": body.name.strip()[:160], "metric": body.metric[:80], "hypothesis_id": body.hypothesis_id,
         "control_label": body.control_label[:60] or "Original", "variant_label": body.variant_label[:60] or "Variant",
         "control_visitors": 0, "control_conversions": 0, "variant_visitors": 0, "variant_conversions": 0,
+        "monthly_visitors": max(0, int(body.monthly_visitors or 0)),
+        "value_per_conversion": float(body.value_per_conversion) if body.value_per_conversion is not None else None,
         "status": "planned", "created_at": _now(), "updated_at": _now(),
     }
     await db.cro_tests.insert_one(dict(doc))
@@ -382,10 +416,12 @@ async def update_test(test_id: str, body: TestUpdate, user: User = Depends(requi
         v = getattr(body, f)
         if v is not None:
             upd[f] = v[:160]
-    for f in ("control_visitors", "control_conversions", "variant_visitors", "variant_conversions"):
+    for f in ("control_visitors", "control_conversions", "variant_visitors", "variant_conversions", "monthly_visitors"):
         v = getattr(body, f)
         if v is not None:
             upd[f] = max(0, int(v))
+    if body.value_per_conversion is not None:
+        upd["value_per_conversion"] = max(0.0, float(body.value_per_conversion))
     if body.status is not None and body.status in _TEST_STATUS:
         upd["status"] = body.status
     upd["updated_at"] = _now()
@@ -414,7 +450,8 @@ async def create_implementation(body: ImplementationCreate, user: User = Depends
     doc = {
         "impl_id": f"im_{uuid.uuid4().hex[:12]}", "org_id": user.org_id, "title": body.title.strip()[:200],
         "test_id": body.test_id, "hypothesis_id": body.hypothesis_id, "stage": body.stage[:40],
-        "impact": body.impact[:120], "note": (body.note or "")[:500], "implemented_at": _now(),
+        "impact": body.impact[:120], "revenue_impact": float(body.revenue_impact) if body.revenue_impact is not None else 0.0,
+        "note": (body.note or "")[:500], "implemented_at": _now(),
     }
     await db.cro_implementations.insert_one(dict(doc))
     if body.hypothesis_id:

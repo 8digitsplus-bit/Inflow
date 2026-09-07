@@ -316,12 +316,25 @@ async def _compute_benchmark(user: User) -> dict:
             overall = "above"
         else:
             overall = "inline"
+
+    # Revenue framing: pricing gap vs market across paying accounts (estimate, monthly plans annualized).
+    won = await db.deals.count_documents({**org_filter(user), "stage": "closed_won"})
+    pricing_gap = pricing_annual = pricing_kind = None
+    if my_avg is not None and market_avg is not None:
+        pricing_gap = round(market_avg - my_avg, 2)          # + => you're under market (upside), - => over (exposure)
+        pricing_annual = round(abs(pricing_gap) * max(won, 1) * 12, 2)
+        pricing_kind = "upside" if pricing_gap > 0 else ("exposure" if pricing_gap < 0 else "aligned")
+
     return {
         "my_plans": my_plans,
         "my_avg": my_avg,
         "market_avg": market_avg,
         "position": overall,
         "competitors": comp_summary,
+        "paying_accounts": won,
+        "pricing_gap": pricing_gap,
+        "pricing_annual": pricing_annual,
+        "pricing_kind": pricing_kind,
     }
 
 

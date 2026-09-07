@@ -3,7 +3,7 @@ import DashboardLayout from '../components/DashboardLayout';
 import {
   BarChart3, Activity, AlertTriangle, Lightbulb, FlaskConical, Rocket, Sparkles, Loader2,
   Plus, Trash2, Target, TrendingUp, TrendingDown, ArrowRight, ChevronLeft, ChevronRight,
-  Check, CheckCircle2, Info, Gauge, Split,
+  Check, CheckCircle2, Info, Gauge, Split, DollarSign,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -14,6 +14,7 @@ import { toast } from 'sonner';
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 const glass = 'bg-white/[0.04] border border-white/10 backdrop-blur-xl';
 const FUNNEL_COLORS = STAGE_COLOR_ARRAY;
+const money = (n) => (n == null ? '—' : new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(n));
 
 const STEPS = [
   { id: 1, title: 'Analyze Data', sub: 'Track how visitors move through your funnel with analytics to find drop-off points.', icon: BarChart3 },
@@ -75,6 +76,7 @@ export default function ConversionOptimization() {
   const [hypotheses, setHypotheses] = useState([]);
   const [tests, setTests] = useState([]);
   const [impls, setImpls] = useState([]);
+  const [summary, setSummary] = useState(null);
 
   const [newFr, setNewFr] = useState({ title: '', stage: '', category: 'form', severity: 'medium', note: '' });
   const [newHy, setNewHy] = useState({ statement: '', metric: '', expected_lift: '', stage: '' });
@@ -88,12 +90,13 @@ export default function ConversionOptimization() {
   }, []);
 
   const refresh = useCallback(async () => {
-    const [fn, fr, hy, ts, im] = await Promise.all([
+    const [fn, fr, hy, ts, im, sm] = await Promise.all([
       fetch(`${API_URL}/api/analytics/cro`, { credentials: 'include' }).then((r) => r.ok ? r.json() : null),
       croReq('/friction').catch(() => []), croReq('/hypotheses').catch(() => []),
       croReq('/tests').catch(() => []), croReq('/implementations').catch(() => []),
+      croReq('/summary').catch(() => null),
     ]);
-    setFunnel(fn); setFriction(fr || []); setHypotheses(hy || []); setTests(ts || []); setImpls(im || []);
+    setFunnel(fn); setFriction(fr || []); setHypotheses(hy || []); setTests(ts || []); setImpls(im || []); setSummary(sm);
   }, [croReq]);
 
   useEffect(() => { refresh().finally(() => setLoading(false)); }, [refresh]);
@@ -131,15 +134,23 @@ export default function ConversionOptimization() {
   const saveTest = async (t) => {
     setBusy(`ts-${t.test_id}`);
     try {
-      const upd = await croReq(`/tests/${t.test_id}`, { method: 'PUT', body: JSON.stringify({ status: t.status, control_visitors: +t.control_visitors || 0, control_conversions: +t.control_conversions || 0, variant_visitors: +t.variant_visitors || 0, variant_conversions: +t.variant_conversions || 0 }) });
+      const upd = await croReq(`/tests/${t.test_id}`, { method: 'PUT', body: JSON.stringify({ status: t.status, control_visitors: +t.control_visitors || 0, control_conversions: +t.control_conversions || 0, variant_visitors: +t.variant_visitors || 0, variant_conversions: +t.variant_conversions || 0, monthly_visitors: +t.monthly_visitors || 0, value_per_conversion: (t.value_per_conversion === '' || t.value_per_conversion == null) ? null : +t.value_per_conversion }) });
       setTests((p) => p.map((x) => x.test_id === t.test_id ? upd : x)); toast.success('Test saved');
     } catch (e) { toast.error(e.message); } setBusy('');
   };
   const delTest = async (id) => { setTests((p) => p.filter((x) => x.test_id !== id)); try { await croReq(`/tests/${id}`, { method: 'DELETE' }); } catch (e) { toast.error(e.message); refresh(); } };
+  const projFor = (t) => {
+    const s = abStats(t.control_visitors, t.control_conversions, t.variant_visitors, t.variant_conversions);
+    const vpc = +(t.value_per_conversion ?? summary?.avg_deal_value ?? 0);
+    const mv = +(t.monthly_visitors || 0);
+    if (!s || !vpc || !mv) return null;
+    return Math.round(((s.variant_rate - s.control_rate) / 100) * mv * vpc * 12);
+  };
   const implementTest = async (t) => {
     const s = abStats(t.control_visitors, t.control_conversions, t.variant_visitors, t.variant_conversions);
     const win = s?.winner === 'variant' ? t.variant_label : s?.winner === 'control' ? t.control_label : 'winning variant';
-    try { const im = await croReq('/implementations', { method: 'POST', body: JSON.stringify({ title: `Rolled out: ${t.name}`, test_id: t.test_id, hypothesis_id: t.hypothesis_id, impact: s ? `${s.improvement > 0 ? '+' : ''}${s.improvement}% ${t.metric || 'lift'}` : '', note: `Applied ${win}.` }) }); setImpls((p) => [im, ...p]); await refresh(); setStage(5); toast.success('Winning change logged as implemented'); } catch (e) { toast.error(e.message); }
+    const proj = projFor(t);
+    try { const im = await croReq('/implementations', { method: 'POST', body: JSON.stringify({ title: `Rolled out: ${t.name}`, test_id: t.test_id, hypothesis_id: t.hypothesis_id, impact: proj ? `${proj > 0 ? '+' : ''}${money(proj)}/yr` : (s ? `${s.improvement > 0 ? '+' : ''}${s.improvement}% ${t.metric || 'lift'}` : ''), revenue_impact: proj || 0, note: `Applied ${win}.` }) }); setImpls((p) => [im, ...p]); await refresh(); setStage(5); toast.success('Winning change logged as implemented'); } catch (e) { toast.error(e.message); }
   };
 
   // Implementations
@@ -351,6 +362,7 @@ export default function ConversionOptimization() {
               <div className="space-y-3" data-testid="tests-list">
                 {tests.map((t) => {
                   const live = abStats(t.control_visitors, t.control_conversions, t.variant_visitors, t.variant_conversions);
+                  const proj = projFor(t);
                   return (
                     <div key={t.test_id} className={`rounded-2xl p-4 ${glass}`} data-testid={`test-${t.test_id}`}>
                       <div className="flex items-start justify-between gap-2 mb-3">
@@ -371,6 +383,16 @@ export default function ConversionOptimization() {
                             {live && <div className="text-[11px] text-slate-300 mt-1.5">Rate: {k === 'control' ? live.control_rate : live.variant_rate}%</div>}
                           </div>
                         ))}
+                      </div>
+                      <div className="flex flex-wrap items-end gap-3 mb-3 p-3 rounded-lg bg-white/[0.02] border border-white/5">
+                        <div><label className="text-[10px] text-zinc-500 block">Monthly visitors</label><Input type="number" value={t.monthly_visitors ?? 0} onChange={(e) => setTestField(t.test_id, 'monthly_visitors', e.target.value)} className="bg-zinc-900 border-zinc-700 text-white h-8 text-sm w-32" data-testid={`test-monthly-visitors-${t.test_id}`} /></div>
+                        <div><label className="text-[10px] text-zinc-500 block">Value / conversion ($)</label><Input type="number" value={t.value_per_conversion ?? ''} onChange={(e) => setTestField(t.test_id, 'value_per_conversion', e.target.value)} placeholder={summary?.avg_deal_value ? String(summary.avg_deal_value) : 'e.g. 200'} className="bg-zinc-900 border-zinc-700 text-white h-8 text-sm w-40" data-testid={`test-vpc-${t.test_id}`} /></div>
+                        {proj != null && (
+                          <div className="ml-auto text-right">
+                            <div className="text-[10px] text-zinc-500">Projected annual impact</div>
+                            <div className={`text-lg font-bold ${proj >= 0 ? 'text-emerald-400' : 'text-red-400'}`} data-testid={`test-projected-${t.test_id}`}>{proj > 0 ? '+' : ''}{money(proj)}</div>
+                          </div>
+                        )}
                       </div>
                       {live ? (
                         <div className="flex items-center flex-wrap gap-x-4 gap-y-1 text-xs mb-3" data-testid={`test-stats-${t.test_id}`}>
@@ -394,8 +416,9 @@ export default function ConversionOptimization() {
         {/* ===================== STAGE 5: IMPLEMENT ===================== */}
         {stage === 5 && (
           <div className="space-y-5" data-testid="stage-implement">
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-              <Metric label="Changes shipped" value={impls.length} icon={Rocket} color="text-emerald-400" testid="metric-shipped" />
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <Metric label="Revenue lift shipped" value={`${money(summary?.revenue_lift_shipped || 0)}/yr`} sub="from winning tests" icon={DollarSign} color="text-emerald-400" testid="metric-revenue-lift" />
+              <Metric label="Changes shipped" value={impls.length} icon={Rocket} color="text-white" testid="metric-shipped" />
               <Metric label="Validated hypotheses" value={validatedCount} icon={CheckCircle2} color="text-white" testid="metric-validated" />
               <Metric label="Tests completed" value={tests.filter((t) => t.status === 'completed').length} icon={FlaskConical} color="text-white" testid="metric-tests-completed" />
             </div>
