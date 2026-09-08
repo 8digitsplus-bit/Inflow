@@ -13,6 +13,12 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
+### Sign-in UI redesigned to glass-card layout (Jun 2026) — UI
+- Rebuilt `frontend/src/pages/AuthPage.js` to the user-provided 21st.dev "SignIn1" aesthetic: a centered `rounded-3xl` glass card (`bg-gradient-to-r from-[#ffffff10] to-[#121212] backdrop-blur-sm`) on a dark radial background, pill inputs (`rounded-xl bg-white/10`), a `rounded-full` "Sign in" button, a dark-gradient "Continue with Google" pill, a "Sign up, it's free!" toggle link, and a social-proof block (avatars + "Join thousands of revenue teams already using InFlow").
+- FLATTENED the old two-step (options → email form) into a single view showing email + password directly (register adds a Full name field). Password has an eye toggle; client validation now shows an inline red error (`data-testid="auth-error"`) instead of a toast.
+- ALL functionality preserved: Google OAuth, email login/register, 2FA verify view (restyled), Google-style account chooser (restyled), corrupt-localStorage guard, post-auth checkout-intent redirect, rate-limit toasts, Terms/Privacy footer. All existing data-testids kept (`auth-email-input`, `auth-password-input`, `auth-name-input`, `auth-submit-btn`, `auth-google-btn`, `auth-toggle-mode`, `back-to-home`, `account-chooser`, `saved-account-card`, `use-another-account-btn`, `2fa-verify-form`, `otp-input-0..5`, `verify-2fa-btn`, `resend-2fa-btn`, `back-to-login-btn`). Removed the intermediate `auth-email-btn` step. Dropped unused imports (Button, Input, CanvasRevealEffect, Mail).
+- Verified: renders correctly (screenshot — logo, welcome/register states, social proof); backend login curl 200 with session cookie; frontend compiles clean.
+
 ### Option A — revenue attribution for CRO & Competitor Intelligence (Jun 2026)
 Re-focused the two "drifting" features so each resolves to its OWN distinct $ number (attribution, not aggregation — no reprinting of dashboard totals):
 - **CRO** now shows **revenue impact**: each A/B test takes `monthly_visitors` + `value_per_conversion` (prefilled with the org avg deal value from `/api/cro/summary`) and computes a **Projected annual impact** = `(variant_rate−control_rate) × monthly_visitors × value_per_conversion × 12`. Implementing a winner stores `revenue_impact`, and Stage 5's hero metric **"Revenue lift shipped $/yr"** rolls up all implementations (`GET /cro/summary`). Backend: test fields + `_decorate_test.projected_impact`, implementation `revenue_impact`, new `/cro/summary`.
