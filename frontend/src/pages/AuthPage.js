@@ -402,23 +402,6 @@ const AuthPage = () => {
         )}
       </div>
 
-      {/* Social proof */}
-      <div className="relative z-10 mt-10 flex flex-col items-center text-center">
-        <p className="text-gray-400 text-sm mb-3">
-          Join <span className="font-medium text-white">thousands</span> of revenue teams already using InFlow.
-        </p>
-        <div className="flex -space-x-2">
-          {[
-            'https://cdn.21st.dev/assets/mirror/a6/a634d4f02fe5b77804943c1d74b8d70e35ffe26454e0e9af9717432a2c72bfde.jpg',
-            'https://cdn.21st.dev/assets/mirror/d8/d8dab29a5736d5c2b0084d720d3db02c785560071609be501541922928fdf831.jpg',
-            'https://cdn.21st.dev/assets/mirror/d1/d1a3e08d4e37d6ee2b7de1db8df87c1dc7acd8ffb004caaf980917de518a60c9.jpg',
-            'https://cdn.21st.dev/assets/mirror/f0/f07b84f12ef125cbb837a7bd64da401992f5f62bd55fee10d01cd3dcc8abae80.jpg',
-          ].map((src, i) => (
-            <img key={i} src={src} alt="user" className="w-8 h-8 rounded-full border-2 border-[#050507] object-cover" />
-          ))}
-        </div>
-      </div>
-
       <p className="text-xs text-gray-600 text-center mt-8 relative z-10 max-w-sm">
         By continuing, you agree to our <a href="/terms" className="text-gray-500 hover:text-gray-400 underline underline-offset-2">Terms of Service</a> and <a href="/privacy" className="text-gray-500 hover:text-gray-400 underline underline-offset-2">Privacy Policy</a>.
       </p>
