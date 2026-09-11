@@ -27,7 +27,7 @@ from utils.email import send_email
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-ESCALATION_EMAIL = os.environ.get("CONTACT_ESCALATION_EMAIL", "hello@inflow.io")
+ESCALATION_EMAIL = os.environ.get("CONTACT_ESCALATION_EMAIL", "hello@inflowft.com")
 RATE_LIMIT_PER_IP_PER_HOUR = 30  # higher than form because chat is multi-turn
 AI_TIMEOUT = 30
 MAX_HISTORY_TURNS = 12
@@ -210,7 +210,7 @@ async def _ask_agent(history: list, user_message: str) -> dict:
     api_key = os.environ.get("EMERGENT_LLM_KEY")
     if not api_key:
         return {
-            "message": "I'm temporarily unavailable. Please email hello@inflow.io and we'll get back to you.",
+            "message": "I'm temporarily unavailable. Please email hello@inflowft.com and we'll get back to you.",
             "category": "other",
             "needs": None,
             "proposed_action": None,
@@ -250,7 +250,7 @@ async def _ask_agent(history: list, user_message: str) -> dict:
     except Exception as e:
         logger.error("Claude contact agent failed: %s", e)
         return {
-            "message": "Something went wrong on my end. You can email hello@inflow.io directly and we'll respond there.",
+            "message": "Something went wrong on my end. You can email hello@inflowft.com directly and we'll respond there.",
             "category": "other",
             "needs": None,
             "proposed_action": None,

@@ -502,7 +502,7 @@ const Contact = () => {
                       Connection lost
                     </p>
                     <p className="text-zinc-400 text-xs mt-1" style={{ fontFamily: FONT_BODY }}>
-                      {bootError}. Email <a href="mailto:hello@inflow.io" className="underline decoration-zinc-600 hover:decoration-white">hello@inflow.io</a> directly.
+                      {bootError}. Email <a href="mailto:hello@inflowft.com" className="underline decoration-zinc-600 hover:decoration-white">hello@inflowft.com</a> directly.
                     </p>
                   </div>
                 </div>
