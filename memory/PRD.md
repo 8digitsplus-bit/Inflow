@@ -13,6 +13,12 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
+### Email sending fixed — valid Resend key + verified domain sender (Jun 2026) — P0
+- Root cause of "didn't receive email": the env `RESEND_API_KEY` was invalid ("API key is invalid"), the sender was the shared sandbox `onboarding@resend.dev` (delivers only to the Resend account owner), and the app's support/escalation address was the wrong domain (`hello@inflow.io`).
+- Fixes: (1) set a valid `RESEND_API_KEY` (Sending-access key, restricted to the verified `inflowft.com` domain); (2) set `SENDER_EMAIL=hello@inflowft.com` (on the verified domain, so it delivers to ANY recipient, not just the owner); (3) standardized the escalation + Contact-page fallback address from `hello@inflow.io` → `hello@inflowft.com` in `backend/routes/contact.py` (default for `CONTACT_ESCALATION_EMAIL`) and `frontend/src/pages/Contact.js`.
+- Verified LIVE: `resend.Emails.send` from `hello@inflowft.com` to both an external Gmail and `hello@inflowft.com` returned delivery IDs (accepted) — proving the verified-domain "send to anyone" works. Note: the key is Sending-access only, so status-read via API is (intentionally) blocked.
+- STILL ON USER'S SIDE: RECEIVING mail at `hello@inflowft.com` requires a real mailbox + MX records for `inflowft.com` (Resend is send-only). App legal pages also reference `support@inflowft.com` / `privacy@inflowft.com` (unchanged).
+
 ### Sign-in UI redesigned to glass-card layout (Jun 2026) — UI
 - Rebuilt `frontend/src/pages/AuthPage.js` to the user-provided 21st.dev "SignIn1" aesthetic: a centered `rounded-3xl` glass card (`bg-gradient-to-r from-[#ffffff10] to-[#121212] backdrop-blur-sm`) on a dark radial background, pill inputs (`rounded-xl bg-white/10`), a `rounded-full` "Sign in" button, a dark-gradient "Continue with Google" pill, a "Sign up, it's free!" toggle link, and a social-proof block (avatars + "Join thousands of revenue teams already using InFlow").
 - FLATTENED the old two-step (options → email form) into a single view showing email + password directly (register adds a Full name field). Password has an eye toggle; client validation now shows an inline red error (`data-testid="auth-error"`) instead of a toast.
