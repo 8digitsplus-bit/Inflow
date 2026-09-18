@@ -13,6 +13,11 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
+### Route code-splitting + hero image AVIF/WebP (Jun 2026) — P1 mobile perf
+Follow-up to the perf hardening, targeting Vercel (frontend host):
+- **Route-level code splitting**: converted ALL authenticated dashboard/analytics/tools pages + secondary public pages (legal, contact, choose-plan, support, onboarding) in `App.js` to `React.lazy` under the existing `<Suspense>` boundary. Kept eager only: `Landing`, `AuthPage`, `AuthCallback` (needed for first paint / session-id render path). Removed the dead unused `GlowPreview` import. Result: **main bundle 487.67 kB → 235.32 kB gzip (~52% smaller)**; 40 route chunks; **Recharts (103 kB gzip) fully out of the main bundle** (now an on-demand chunk loaded only on chart pages). Verified via `yarn build`.
+- **Hero image compression**: converted `public/dashboard-preview.png` (489 KB) to **WebP (108 KB)** and **AVIF (59 KB)** via Pillow + pillow-avif-plugin (one-off; NOT added to requirements — the outputs are static files). `HeroSection.js` now uses a `<picture>` with AVIF → WebP → PNG fallback (`?v=7`, added `width/height` to kill CLS). Fixed the preload in `index.html` to `href="/dashboard-preview.avif?v=7" type="image/avif"` so it MATCHES the picture's AVIF source (the old preload pointed at `.png` with no `?v=6`, so it was never used); non-AVIF browsers skip the typed preload and fall back via `<picture>`. All three variants serve 200 on preview; landing renders with no regression.
+
 ### Frontend performance + secure-build hardening (Jun 2026) — P1
 Four structural changes to cut mobile LCP and secure production builds (all verified via a real `yarn build`):
 1. **Hero preload** — `public/index.html` now has `<link rel="preload" as="image" href="/dashboard-preview.png" fetchpriority="high">` in `<head>` (confirmed in built output).
