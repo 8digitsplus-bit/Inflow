@@ -13,6 +13,14 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
+### Frontend performance + secure-build hardening (Jun 2026) — P1
+Four structural changes to cut mobile LCP and secure production builds (all verified via a real `yarn build`):
+1. **Hero preload** — `public/index.html` now has `<link rel="preload" as="image" href="/dashboard-preview.png" fetchpriority="high">` in `<head>` (confirmed in built output).
+2. **Stripe code-split** — `Checkout` converted to `React.lazy(() => import('./pages/Checkout'))` with a `<Suspense>` boundary in `App.js` (the only file importing `@stripe/*`). Stripe.js now loads ONLY on `/checkout` — it lives in a dedicated `~7.4kB` chunk and the main landing bundle is verified Stripe-free (`grep js.stripe.com` → chunk only).
+3. **Source maps disabled** — `GENERATE_SOURCEMAP=false` baked into the `frontend/package.json` build script (`"build": "GENERATE_SOURCEMAP=false craco build"`) AND `vercel.json` buildCommand, so it holds on every deploy path (Emergent/Vercel/local). Build produces 0 `.js.map` files. (Note: a `.env.production` was tried first but the repo's `.env*` gitignore excludes it from deploys, so the authoritative fix is the build script.)
+4. **Immutable asset caching** — `vercel.json` `headers` serve `Cache-Control: public, max-age=31536000, immutable` for `/static/*` and image/font extensions (png/jpg/jpeg/gif/svg/webp/avif/ico/mp4/woff/woff2).
+- Verified: `find build/static -name '*.map'` → 0; Stripe strings only in `636.chunk.js`; preload tag in built `index.html`; landing page renders with no regression from lazy/Suspense.
+
 ### Email sending fixed — valid Resend key + verified domain sender (Jun 2026) — P0
 - Root cause of "didn't receive email": the env `RESEND_API_KEY` was invalid ("API key is invalid"), the sender was the shared sandbox `onboarding@resend.dev` (delivers only to the Resend account owner), and the app's support/escalation address was the wrong domain (`hello@inflow.io`).
 - Fixes: (1) set a valid `RESEND_API_KEY` (Sending-access key, restricted to the verified `inflowft.com` domain); (2) set `SENDER_EMAIL=hello@inflowft.com` (on the verified domain, so it delivers to ANY recipient, not just the owner); (3) standardized the escalation + Contact-page fallback address from `hello@inflow.io` → `hello@inflowft.com` in `backend/routes/contact.py` (default for `CONTACT_ESCALATION_EMAIL`) and `frontend/src/pages/Contact.js`.

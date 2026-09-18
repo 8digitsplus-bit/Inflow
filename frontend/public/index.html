@@ -12,6 +12,8 @@
         <link rel="icon" type="image/png" sizes="16x16" href="%PUBLIC_URL%/favicon-16.png?v=6" />
         <link rel="apple-touch-icon" sizes="180x180" href="%PUBLIC_URL%/apple-touch-icon.png?v=6" />
         <link rel="manifest" href="%PUBLIC_URL%/manifest.json" />
+        <!-- High-priority preload of the landing hero/dashboard image to cut mobile LCP -->
+        <link rel="preload" as="image" href="/dashboard-preview.png" fetchpriority="high" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@600&display=swap" rel="stylesheet" />

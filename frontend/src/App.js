@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import Landing from './pages/Landing';
@@ -19,7 +20,6 @@ import ConnectBusiness from './pages/ConnectBusiness';
 import AuthPage from './pages/AuthPage';
 import Onboarding from './pages/Onboarding';
 import ChoosePlan from './pages/ChoosePlan';
-import Checkout from './pages/Checkout';
 import CheckoutReturn from './pages/CheckoutReturn';
 import Support from './pages/Support';
 import RevenueForecast from './pages/RevenueForecast';
@@ -36,6 +36,10 @@ import ProtectedRoute from './components/ProtectedRoute';
 import TierGate from './components/TierGate';
 import './App.css';
 
+// Stripe.js (@stripe/stripe-js + @stripe/react-stripe-js) is heavy — keep it out of the
+// baseline landing bundle by loading the checkout route lazily on demand.
+const Checkout = lazy(() => import('./pages/Checkout'));
+
 // Router component that handles session_id detection
 const AppRouter = () => {
   const location = useLocation();
@@ -47,6 +51,7 @@ const AppRouter = () => {
   }
 
   return (
+    <Suspense fallback={<div style={{ minHeight: '100vh', background: '#050507' }} />}>
     <Routes>
       <Route path="/" element={<Landing />} />
       <Route path="/auth" element={<AuthPage />} />
@@ -239,6 +244,7 @@ const AppRouter = () => {
         } 
       />
     </Routes>
+    </Suspense>
   );
 };
 
