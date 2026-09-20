@@ -13,6 +13,11 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
+### Auth network gating + webhook idempotency index (Jun 2026) — P1
+- **Skip `/api/auth/me` for anonymous visitors** (`frontend/src/contexts/AuthContext.js`): the session cookie is httpOnly (JS can't read it), so a `inflow_authed` localStorage flag (set on login/register/verify2FA/exchangeSession, cleared on logout and on a 401 from `/auth/me`) now gates `checkAuth`. If the flag is absent, the app goes straight to anonymous state without any network call. Verified via Playwright: anonymous load = 0 `/auth/me` calls; flagged load = ≥1.
+- **Webhook idempotency hardened** (`backend/server.py`): the Stripe dedupe (`processed_webhook_events`, already added in the prior round — check at top by `event.id`, marker written only after success) is now backed by a unique index on `processed_webhook_events.event_id` created at startup (race-safe). Verified: `event_id_1` index present.
+- Git/deploy note: git remote + committing are handled by Emergent's "Save to GitHub" UI (not manual git commands); this pod is already Node 20 with an existing yarn.lock.
+
 ### Multi-file security/concurrency/perf hardening — round 2 (Jun 2026) — P0
 Eight fixes across 6 files:
 1. **Registration TOCTOU** (`auth.py`, `server.py`): startup now creates a unique index on `users.email`; `register_with_email` inserts the user FIRST inside `try/except DuplicateKeyError → 400` (kept the `find_one` fast-path), and creates the org only after (no orphan org). Verified: unique `email_1` index present; duplicate → 400; valid → 200.

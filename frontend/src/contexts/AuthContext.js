@@ -41,15 +41,24 @@ export const AuthProvider = ({ children }) => {
   const [error, setError] = useState(null);
 
   const checkAuth = useCallback(async () => {
+    // The session cookie is httpOnly (JS can't read it), so we use a localStorage
+    // presence flag — set on login, cleared on logout/401 — to decide whether a
+    // session might exist. Anonymous visitors skip the /api/auth/me round-trip entirely.
+    if (!localStorage.getItem('inflow_authed')) {
+      setUser(null);
+      setLoading(false);
+      return;
+    }
     try {
       const response = await fetch(`${API_URL}/api/auth/me`, {
         credentials: 'include',
       });
-      
+
       if (response.ok) {
         const userData = await response.json();
         setUser(userData);
       } else {
+        localStorage.removeItem('inflow_authed');
         setUser(null);
       }
     } catch (err) {
@@ -98,6 +107,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     setUser(data);
+    localStorage.setItem('inflow_authed', '1');
     localStorage.setItem('inflow_last_account', JSON.stringify({ name: data.name, email: data.email }));
     return data;
   };
@@ -122,6 +132,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     setUser(data);
+    localStorage.setItem('inflow_authed', '1');
     localStorage.setItem('inflow_last_account', JSON.stringify({ name: data.name, email: data.email }));
     return data;
   };
@@ -146,6 +157,7 @@ export const AuthProvider = ({ children }) => {
     }
 
     setUser(data);
+    localStorage.setItem('inflow_authed', '1');
     localStorage.setItem('inflow_last_account', JSON.stringify({ name: data.name, email: data.email }));
     return data;
   };
@@ -156,6 +168,7 @@ export const AuthProvider = ({ children }) => {
         method: 'POST',
         credentials: 'include',
       });
+      localStorage.removeItem('inflow_authed');
       setUser(null);
       window.location.href = '/';
     } catch (err) {
@@ -178,6 +191,7 @@ export const AuthProvider = ({ children }) => {
 
       const userData = await response.json();
       setUser(userData);
+      localStorage.setItem('inflow_authed', '1');
       localStorage.setItem('inflow_last_account', JSON.stringify({ name: userData.name, email: userData.email }));
       return userData;
     } catch (err) {
