@@ -33,36 +33,63 @@ def _scoped(user: User, sources: Optional[str]) -> dict:
     return {**org_filter(user), **_source_filter(sources)}
 
 
+def _num(v, default=0.0):
+    """Safely coerce a possibly non-numeric value (e.g. from CSV/integration sync) to
+    float. Returns `default` on None/unparseable input instead of raising ValueError,
+    so one bad row can't 500 the whole analytics/forecast pipeline."""
+    try:
+        return float(v)
+    except (TypeError, ValueError):
+        return default
+
+
 @router.get("/analytics/revenue")
 async def get_revenue_analytics(user: User = Depends(get_current_user), sources: Optional[str] = Query(None)):
-    """Get revenue analytics for dashboard"""
-    deals = await db.deals.find(_scoped(user, sources), {"_id": 0}).to_list(1000)
+    """Get revenue analytics for dashboard.
 
-    total_pipeline = sum(d.get("value", 0) for d in deals)
-    closed_won = [d for d in deals if d.get("stage") == "closed_won"]
-    closed_revenue = sum(d.get("value", 0) for d in closed_won)
-
+    Uses a MongoDB aggregation grouped by stage instead of materialising every deal,
+    so totals stay accurate and memory-light at any scale (no hardcoded to_list cap).
+    Values are $convert-coerced, so a bad CSV/integration row counts as 0 rather than 500.
+    """
+    stages = ["lead", "qualified", "proposal", "negotiation", "closed_won", "closed_lost"]
     open_stages = {"lead", "qualified", "proposal", "negotiation"}
-    _stage_prob = {"lead": 10, "qualified": 25, "proposal": 50, "negotiation": 75}
-    def _win_prob(d):
-        p = d.get("probability")
-        if p is None:
-            p = _stage_prob.get(d.get("stage", "lead"), 10)
-        return max(0.0, min(1.0, float(p) / 100.0))
-    weighted_open = sum(d.get("value", 0) * _win_prob(d) for d in deals if d.get("stage") in open_stages)
+
+    value_expr = {"$convert": {"input": "$value", "to": "double", "onError": 0.0, "onNull": 0.0}}
+    # Per-deal win probability: the deal's own probability when set, else a stage default.
+    prob_pct = {"$ifNull": [
+        {"$convert": {"input": "$probability", "to": "double", "onError": None, "onNull": None}},
+        {"$switch": {"branches": [
+            {"case": {"$eq": ["$stage", "lead"]}, "then": 10},
+            {"case": {"$eq": ["$stage", "qualified"]}, "then": 25},
+            {"case": {"$eq": ["$stage", "proposal"]}, "then": 50},
+            {"case": {"$eq": ["$stage", "negotiation"]}, "then": 75},
+        ], "default": 0}},
+    ]}
+    prob_frac = {"$max": [0.0, {"$min": [1.0, {"$divide": [prob_pct, 100]}]}]}
+
+    pipeline = [
+        {"$match": _scoped(user, sources)},
+        {"$group": {
+            "_id": {"$ifNull": ["$stage", "lead"]},
+            "count": {"$sum": 1},
+            "value": {"$sum": value_expr},
+            "weighted": {"$sum": {"$multiply": [value_expr, prob_frac]}},
+        }},
+    ]
+    rows = await db.deals.aggregate(pipeline).to_list(length=None)  # <= 6 grouped rows
+    by_stage = {r["_id"]: r for r in rows}
+
+    total_deals = sum(int(r.get("count", 0)) for r in rows)
+    total_pipeline = sum(float(r.get("value", 0.0)) for r in rows)
+    stage_counts = {s: int(by_stage.get(s, {}).get("count", 0)) for s in stages}
+    stage_values = {s: float(by_stage.get(s, {}).get("value", 0.0)) for s in stages}
+    closed_revenue = stage_values.get("closed_won", 0.0)
+    closed_won_count = stage_counts.get("closed_won", 0)
+    weighted_open = sum(float(by_stage.get(s, {}).get("weighted", 0.0)) for s in open_stages)
     projected_revenue = closed_revenue + weighted_open
 
-    stages = ["lead", "qualified", "proposal", "negotiation", "closed_won", "closed_lost"]
-    stage_counts = {stage: 0 for stage in stages}
-    stage_values = {stage: 0 for stage in stages}
-
-    for deal in deals:
-        stage = deal.get("stage", "lead")
-        stage_counts[stage] = stage_counts.get(stage, 0) + 1
-        stage_values[stage] = stage_values.get(stage, 0) + deal.get("value", 0)
-
-    win_rate = (len(closed_won) / max(len(deals), 1)) * 100
-    avg_deal_size = total_pipeline / max(len(deals), 1)
+    win_rate = (closed_won_count / max(total_deals, 1)) * 100
+    avg_deal_size = total_pipeline / max(total_deals, 1)
 
     monthly_data = []
     for i in range(6):
@@ -70,7 +97,7 @@ async def get_revenue_analytics(user: User = Depends(get_current_user), sources:
         monthly_data.append({
             "month": (datetime.now(timezone.utc) - timedelta(days=30 * month_offset)).strftime("%b"),
             "revenue": closed_revenue * (0.6 + (i * 0.08)),
-            "deals": max(1, len(closed_won) - month_offset),
+            "deals": max(1, closed_won_count - month_offset),
             "forecast": closed_revenue * (0.7 + (i * 0.1))
         })
 
@@ -80,7 +107,7 @@ async def get_revenue_analytics(user: User = Depends(get_current_user), sources:
         "projected_revenue": round(projected_revenue, 2),
         "win_rate": round(win_rate, 1),
         "avg_deal_size": round(avg_deal_size, 2),
-        "total_deals": len(deals),
+        "total_deals": total_deals,
         "stage_breakdown": [{"stage": s, "count": stage_counts[s], "value": round(stage_values[s], 2)} for s in stages],
         "monthly_data": monthly_data
     }
@@ -89,7 +116,7 @@ async def get_revenue_analytics(user: User = Depends(get_current_user), sources:
 @router.get("/analytics/pipeline")
 async def get_pipeline_analytics(user: User = Depends(get_current_user), sources: Optional[str] = Query(None)):
     """Pipeline analytics: velocity, conversion rates, bottleneck detection"""
-    deals = await db.deals.find(_scoped(user, sources), {"_id": 0}).to_list(1000)
+    deals = await db.deals.find(_scoped(user, sources), {"_id": 0}).to_list(length=None)
     now = datetime.now(timezone.utc)
 
     stage_probabilities = {
@@ -170,7 +197,7 @@ async def get_pipeline_analytics(user: User = Depends(get_current_user), sources
 @router.get("/analytics/churn")
 async def get_churn_analytics(user: User = Depends(get_current_user), sources: Optional[str] = Query(None)):
     """Get comprehensive churn and retention analytics"""
-    deals = await db.deals.find(_scoped(user, sources), {"_id": 0}).to_list(1000)
+    deals = await db.deals.find(_scoped(user, sources), {"_id": 0}).to_list(length=None)
 
     total_deals = len(deals)
     closed_won = [d for d in deals if d.get("stage") == "closed_won"]
@@ -334,7 +361,7 @@ async def get_churn_analytics(user: User = Depends(get_current_user), sources: O
 @router.get("/analytics/cro")
 async def get_cro_analytics(user: User = Depends(get_current_user), sources: Optional[str] = Query(None)):
     """Get conversion rate optimization analytics"""
-    deals = await db.deals.find(_scoped(user, sources), {"_id": 0}).to_list(1000)
+    deals = await db.deals.find(_scoped(user, sources), {"_id": 0}).to_list(length=None)
 
     stages = ["lead", "qualified", "proposal", "negotiation", "closed_won", "closed_lost"]
     stage_counts = {stage: len([d for d in deals if d.get("stage") == stage]) for stage in stages}
@@ -401,7 +428,7 @@ async def get_cro_analytics(user: User = Depends(get_current_user), sources: Opt
 @router.get("/analytics/sales-performance")
 async def get_sales_performance(user: User = Depends(get_current_user), sources: Optional[str] = Query(None)):
     """Sales Performance: cycle length, deal aging, close rate by size, activity-to-close"""
-    deals = await db.deals.find(_scoped(user, sources), {"_id": 0}).to_list(1000)
+    deals = await db.deals.find(_scoped(user, sources), {"_id": 0}).to_list(length=None)
     now = datetime.now(timezone.utc)
 
     closed_won = [d for d in deals if d.get("stage") == "closed_won"]
@@ -523,7 +550,7 @@ async def get_sales_performance(user: User = Depends(get_current_user), sources:
 @router.get("/analytics/sales-revenue")
 async def get_sales_revenue(user: User = Depends(get_current_user), sources: Optional[str] = Query(None)):
     """Revenue Analytics: concentration risk, ARPU, expansion revenue, NRR"""
-    deals = await db.deals.find(_scoped(user, sources), {"_id": 0}).to_list(1000)
+    deals = await db.deals.find(_scoped(user, sources), {"_id": 0}).to_list(length=None)
 
     closed_won = [d for d in deals if d.get("stage") == "closed_won"]
     active_deals = [d for d in deals if d.get("stage") not in ["closed_won", "closed_lost"]]
@@ -587,7 +614,7 @@ async def get_sales_revenue(user: User = Depends(get_current_user), sources: Opt
 @router.get("/analytics/revenue-intelligence")
 async def get_revenue_intelligence(user: User = Depends(get_current_user), sources: Optional[str] = Query(None)):
     """Get unified revenue intelligence overview combining pipeline, performance and revenue data"""
-    deals = await db.deals.find(_scoped(user, sources), {"_id": 0}).to_list(1000)
+    deals = await db.deals.find(_scoped(user, sources), {"_id": 0}).to_list(length=None)
 
     total_deals = len(deals)
     closed_won = [d for d in deals if d.get("stage") == "closed_won"]
@@ -697,7 +724,7 @@ async def get_pricing_analytics(user: User = Depends(get_current_user), sources:
         org_filter(user), {"_id": 0}
     ).sort("created_at", -1).to_list(50)
 
-    deals = await db.deals.find(_scoped(user, sources), {"_id": 0}).to_list(1000)
+    deals = await db.deals.find(_scoped(user, sources), {"_id": 0}).to_list(length=None)
     closed_won = [d for d in deals if d.get("stage") == "closed_won"]
 
     total_revenue = sum(d.get("value", 0) for d in closed_won)
@@ -897,7 +924,7 @@ async def _compute_forecast(user: User, sources: Optional[str], target: Optional
     Returns P10/P50/P90 bands (monthly + quarterly + total), calibrated on the
     org's own win rate and sales cycle. Deterministic math — no LLM in the numbers.
     """
-    deals = await db.deals.find(_scoped(user, sources), {"_id": 0}).to_list(2000)
+    deals = await db.deals.find(_scoped(user, sources), {"_id": 0}).to_list(length=None)
 
     open_stages = ["lead", "qualified", "proposal", "negotiation"]
     stage_prob = {"lead": 10, "qualified": 25, "proposal": 50, "negotiation": 75}
@@ -918,7 +945,7 @@ async def _compute_forecast(user: User, sources: Optional[str], target: Optional
         return max(0.0, min(1.0, float(p) / 100.0))
 
     probs = np.array([base_prob(d) for d in open_deals], dtype=float)
-    values = np.array([float(d.get("value", 0) or 0) for d in open_deals], dtype=float)
+    values = np.array([_num(d.get("value")) for d in open_deals], dtype=float)
 
     calib_factor = 1.0
     if calibrated and probs.size and probs.mean() > 0:

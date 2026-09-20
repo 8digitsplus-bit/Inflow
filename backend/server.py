@@ -11,7 +11,7 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
 
 from utils.rate_limit import limiter
-from database import client
+from database import client, db
 from routes.auth import router as auth_router
 from routes.deals import router as deals_router
 from routes.notifications import router as notifications_router
@@ -176,7 +176,7 @@ else:
     app.add_middleware(
         CORSMiddleware,
         allow_credentials=True,
-        allow_origin_regex=r"https?://(localhost(:\d+)?|127\.0\.0\.1(:\d+)?|.*\.preview\.emergentagent\.com|.*\.emergent\.host|.*\.emergentagent\.com|(.*\.)?inflowft\.com)",
+        allow_origin_regex=r"https://(localhost(:\d+)?|127\.0\.0\.1(:\d+)?|(\..*\.)?inflowft\.com)",
         allow_methods=["*"],
         allow_headers=["*"],
     )
@@ -188,6 +188,12 @@ async def startup_migrations():
         await migrate_users_to_orgs()
     except Exception as e:
         logging.error("Org migration failed: %s", e)
+    # Enforce a unique index on users.email so concurrent signups can't create
+    # duplicate accounts (register relies on the resulting DuplicateKeyError).
+    try:
+        await db.users.create_index("email", unique=True)
+    except Exception as e:
+        logging.error("Failed to ensure unique index on users.email: %s", e)
 
 
 @app.on_event("shutdown")

@@ -599,6 +599,12 @@ async def stripe_webhook(request: Request):
 
             now_iso = datetime.now(timezone.utc).isoformat()
 
+            # Idempotency guard — Stripe can redeliver the same event. Skip if we've
+            # already fully processed this event id (the marker is written at the end,
+            # AFTER successful handling, so a failed+retried event still gets processed).
+            if await db.processed_webhook_events.find_one({"event_id": event["id"]}):
+                return {"received": True}
+
             if event_type == "checkout.session.completed":
                 session_id = data_obj.get("id")
                 metadata = data_obj.get("metadata", {}) or {}
@@ -613,7 +619,10 @@ async def stripe_webhook(request: Request):
                 )
 
                 if metadata.get("user_id"):
-                    plan = metadata.get("plan", "pro_monthly")
+                    plan = metadata.get("plan")
+                    if plan not in SUBSCRIPTION_PLANS:
+                        logger.error("Webhook with unknown plan %r for session %s", plan, session_id)
+                        raise HTTPException(status_code=400, detail="Unknown plan")
                     user_update = {
                         "subscription_tier": plan,
                         "subscription_status": "active",
@@ -728,6 +737,11 @@ async def stripe_webhook(request: Request):
                                 {"$set": {"subscription_status": "past_due"}},
                             )
 
+            # Mark this event processed only AFTER successful handling so a transient
+            # failure (which re-raises 500) leaves no marker and Stripe's retry re-runs it,
+            # while a genuine duplicate delivery is skipped by the guard above.
+            await db.processed_webhook_events.insert_one({"event_id": event["id"], "at": now_iso})
+
         else:
             from emergentintegrations.payments.stripe.checkout import StripeCheckout
             signature = request.headers.get("Stripe-Signature")
@@ -744,7 +758,10 @@ async def stripe_webhook(request: Request):
                 )
 
                 if metadata and "user_id" in metadata:
-                    plan = metadata.get("plan", "pro_monthly")
+                    plan = metadata.get("plan")
+                    if plan not in SUBSCRIPTION_PLANS:
+                        logger.error("Webhook with unknown plan %r for session %s", plan, session_id)
+                        raise HTTPException(status_code=400, detail="Unknown plan")
                     await db.users.update_one(
                         {"user_id": metadata["user_id"]},
                         {"$set": {

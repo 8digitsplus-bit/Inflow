@@ -13,6 +13,17 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
+### Multi-file security/concurrency/perf hardening — round 2 (Jun 2026) — P0
+Eight fixes across 6 files:
+1. **Registration TOCTOU** (`auth.py`, `server.py`): startup now creates a unique index on `users.email`; `register_with_email` inserts the user FIRST inside `try/except DuplicateKeyError → 400` (kept the `find_one` fast-path), and creates the org only after (no orphan org). Verified: unique `email_1` index present; duplicate → 400; valid → 200.
+2. **CORS regex tightened** (`server.py`): fallback `allow_origin_regex` no longer trusts `*.emergentagent.com` / `*.emergent.host` (anyone could host a preview there and ride a victim's cookies). Now `https://(localhost|127.0.0.1|(\..*\.)?inflowft\.com)`. NOTE: production should keep `CORS_ORIGINS` env set (takes precedence); the provided fallback regex matches the `inflowft.com` apex — set the env for `www.` etc.
+3. **Server-side register validation** (`models.py`): `RegisterRequest` → `email: EmailStr`, `password: Field(min_length=8, max_length=72)` (bcrypt-safe), `name: Field(1..100)`. Verified: bad email/short password → 422.
+4. **Webhook plan validation + idempotency** (`payments.py`): both the real-Stripe and sandbox branches now reject `plan not in SUBSCRIPTION_PLANS` with a logged 400 (no silent Pro fallback). Idempotency guard checks `processed_webhook_events` by `event["id"]` at the top and writes the marker only AFTER successful handling (so a failed+retried event still processes, while true duplicates skip). NOTE: real-Stripe path is static-verified only (preview uses the sandbox key).
+5. **Safe numeric coercion** (`analytics.py`): added `_num(v, default=0.0)` and routed raw deal-value floats through it so a non-numeric CSV/integration value yields 0 instead of a 500.
+6. **Removed silent `to_list` caps** (`analytics.py`): per-deal reads changed `to_list(1000/2000)` → `to_list(length=None)` (no silent truncation of totals). The dashboard **`/analytics/revenue`** endpoint rewritten to a stage-grouped **aggregation pipeline** (≤6 rows, `$convert`-guarded) — accurate + memory-light at any scale. Verified: returns identical numbers to the old loop (projected_revenue 846,550).
+7. **Deduped trial logic** (`auth.py`): single async `apply_trial_status(user_doc)` helper (ceil-rounded days, persists expiry) now called by both `create_session` and `get_me`.
+8. **Client financial parse fix** (`RevenueForecast.js`): `Number(targetInput.trim())` + finiteness/`>0` check, so `-5000`/scientific notation no longer parse to a bogus positive target.
+
 ### Security/logic hardening — webhook, session & trial fixes (Jun 2026) — P0
 Six targeted fixes across `routes/payments.py`, `routes/auth.py`, `dependencies.py`:
 1. **Stripe webhook signature gate** (`payments.py`): removed the permissive unsigned-fallback branch. If `STRIPE_WEBHOOK_SECRET` is unset/empty → `logger.critical` + `HTTPException(500, "Webhook not configured")`. No webhook is ever processed unsigned.

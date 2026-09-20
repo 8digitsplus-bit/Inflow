@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, ConfigDict
+from pydantic import BaseModel, Field, ConfigDict, EmailStr
 from typing import List, Optional, Dict, Any
 import uuid
 from datetime import datetime, timezone
@@ -136,9 +136,9 @@ class PaymentTransaction(BaseModel):
 
 
 class RegisterRequest(BaseModel):
-    email: str
-    password: str
-    name: str
+    email: EmailStr
+    password: str = Field(min_length=8, max_length=72)
+    name: str = Field(min_length=1, max_length=100)
 
 
 class LoginRequest(BaseModel):

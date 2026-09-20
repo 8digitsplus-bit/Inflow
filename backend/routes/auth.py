@@ -8,6 +8,8 @@ import random
 import secrets
 import math
 
+from pymongo.errors import DuplicateKeyError
+
 from database import db
 from models import User, RegisterRequest, LoginRequest, OnboardingData
 from dependencies import get_current_user
@@ -20,6 +22,31 @@ from utils.rate_limit import (
 )
 
 router = APIRouter()
+
+
+async def apply_trial_status(user_doc: dict) -> dict:
+    """Unified trial evaluation shared by create_session and get_me (avoids drift).
+    Rounds remaining time UP to the next whole day and expires the trial once elapsed,
+    persisting the flip to the DB. Mutates and returns user_doc."""
+    if not user_doc or user_doc.get("subscription_tier") != "trial":
+        return user_doc
+    trial_end = user_doc.get("trial_end")
+    if not trial_end:
+        return user_doc
+    now = datetime.now(timezone.utc)
+    if isinstance(trial_end, str):
+        end = datetime.fromisoformat(trial_end.replace("Z", "+00:00"))
+    else:
+        end = trial_end.replace(tzinfo=timezone.utc) if trial_end.tzinfo is None else trial_end
+    days_left = max(0, math.ceil((end - now).total_seconds() / 86400))
+    user_doc["trial_days_left"] = days_left
+    if days_left <= 0:
+        user_doc["subscription_tier"] = "expired"
+        await db.users.update_one(
+            {"user_id": user_doc["user_id"]},
+            {"$set": {"subscription_tier": "expired"}},
+        )
+    return user_doc
 
 
 def _build_2fa_email_html(code: str, user_name: str) -> str:
@@ -158,23 +185,7 @@ async def create_session(request: Request, response: Response):
     )
 
     user_doc = await db.users.find_one({"user_id": user_id}, {"_id": 0})
-    
-    # Compute trial days left for trial users
-    if user_doc and user_doc.get("subscription_tier") == "trial":
-        trial_end = user_doc.get("trial_end")
-        if trial_end:
-            now = datetime.now(timezone.utc)
-            if isinstance(trial_end, str):
-                end = datetime.fromisoformat(trial_end.replace("Z", "+00:00"))
-            else:
-                end = trial_end.replace(tzinfo=timezone.utc) if trial_end.tzinfo is None else trial_end
-            delta = end - now
-            days_left = max(0, math.ceil(delta.total_seconds() / 86400))
-            user_doc["trial_days_left"] = days_left
-            if days_left <= 0:
-                user_doc["subscription_tier"] = "expired"
-                await db.users.update_one({"user_id": user_id}, {"$set": {"subscription_tier": "expired"}})
-    
+    user_doc = await apply_trial_status(user_doc)
     return user_doc
 
 
@@ -182,29 +193,7 @@ async def create_session(request: Request, response: Response):
 async def get_me(user: User = Depends(get_current_user)):
     """Get current authenticated user with trial status"""
     user_doc = await db.users.find_one({"user_id": user.user_id}, {"_id": 0, "password_hash": 0})
-
-    # Check trial expiration
-    if user_doc and user_doc.get("subscription_tier") == "trial":
-        trial_end = user_doc.get("trial_end")
-        if trial_end:
-            from datetime import datetime, timezone
-            now = datetime.now(timezone.utc)
-            # Handle both string and datetime objects
-            if isinstance(trial_end, str):
-                end = datetime.fromisoformat(trial_end.replace("Z", "+00:00"))
-            else:
-                # Ensure datetime has timezone info
-                end = trial_end.replace(tzinfo=timezone.utc) if trial_end.tzinfo is None else trial_end
-            delta = end - now
-            days_left = max(0, math.ceil(delta.total_seconds() / 86400))
-            user_doc["trial_days_left"] = days_left
-            if days_left <= 0:
-                user_doc["subscription_tier"] = "expired"
-                await db.users.update_one(
-                    {"user_id": user.user_id},
-                    {"$set": {"subscription_tier": "expired"}}
-                )
-
+    user_doc = await apply_trial_status(user_doc)
     return user_doc
 
 
@@ -234,6 +223,28 @@ async def register_with_email(request: Request, req: RegisterRequest, response: 
     org_id = f"org_{uuid.uuid4().hex[:12]}"
     now_iso = datetime.now(timezone.utc).isoformat()
 
+    # Insert the user FIRST so the unique index on `email` is the authoritative guard
+    # against the find_one -> insert_one TOCTOU race under concurrent signups. Creating
+    # the user before the org also avoids leaving an orphan org if this raises.
+    try:
+        await db.users.insert_one({
+            "user_id": user_id,
+            "email": req.email,
+            "name": req.name,
+            "picture": None,
+            "password_hash": hashed,
+            "auth_provider": "email",
+            "subscription_tier": "trial",
+            "subscription_status": "active",
+            "org_id": org_id,
+            "role": "owner",
+            "trial_start": datetime.now(timezone.utc).isoformat(),
+            "trial_end": (datetime.now(timezone.utc) + timedelta(days=14)).isoformat(),
+            "created_at": now_iso
+        })
+    except DuplicateKeyError:
+        raise HTTPException(status_code=400, detail="Email already registered")
+
     await db.organizations.insert_one({
         "org_id": org_id,
         "name": f"{req.name}'s Team",
@@ -241,22 +252,6 @@ async def register_with_email(request: Request, req: RegisterRequest, response: 
         "subscription_tier": "trial",
         "subscription_status": "active",
         "created_at": now_iso,
-    })
-
-    await db.users.insert_one({
-        "user_id": user_id,
-        "email": req.email,
-        "name": req.name,
-        "picture": None,
-        "password_hash": hashed,
-        "auth_provider": "email",
-        "subscription_tier": "trial",
-        "subscription_status": "active",
-        "org_id": org_id,
-        "role": "owner",
-        "trial_start": datetime.now(timezone.utc).isoformat(),
-        "trial_end": (datetime.now(timezone.utc) + timedelta(days=14)).isoformat(),
-        "created_at": now_iso
     })
 
     session_token = f"session_{uuid.uuid4().hex}"

@@ -63,7 +63,7 @@ const RevenueForecast = () => {
   useEffect(() => { fetchData(); fetchNarrative(); }, [fetchData, fetchNarrative]);
 
   const applyTarget = () => {
-    const t = parseFloat(targetInput.replace(/[^0-9.]/g, ''));
+    const t = Number(targetInput.trim());
     const val = Number.isFinite(t) && t > 0 ? t : null;
     setAppliedTarget(val);
     fetchData(val);
