@@ -13,6 +13,16 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
+### Security/logic hardening — webhook, session & trial fixes (Jun 2026) — P0
+Six targeted fixes across `routes/payments.py`, `routes/auth.py`, `dependencies.py`:
+1. **Stripe webhook signature gate** (`payments.py`): removed the permissive unsigned-fallback branch. If `STRIPE_WEBHOOK_SECRET` is unset/empty → `logger.critical` + `HTTPException(500, "Webhook not configured")`. No webhook is ever processed unsigned.
+2. **Webhook exception no longer swallowed** (`payments.py`): the catch-all now logs `exc_info=True` and `raise HTTPException(500, "Webhook processing failed")` instead of returning 200, so Stripe retries on transient DB/processing failures.
+3. **Org state sync on sandbox checkout** (`payments.py`): the sandbox/test-key branch now, after setting the user's tier/status active, looks up `org_id` and syncs `db.organizations` tier/status — so `require_paid` (which reads the org) doesn't instantly deny a valid paying user.
+4. **Session token decoupled from upstream** (`auth.py` `create_session`): mints our own `session_token = f"session_{secrets.token_urlsafe(32)}"` instead of reusing the Emergent auth host's token. Added `import secrets`.
+5. **Session parse guard** (`dependencies.py` `get_current_user`): missing `expires_at` → `HTTPException(401, "Invalid session")`; string parse wrapped in `try/except ValueError` → 401 (was an unhandled crash → 500). Verified: malformed + missing both return 401.
+6. **Trial day rounding** (`auth.py` `get_me` + `create_session`): `days_left = max(0, math.ceil(delta.total_seconds()/86400))` instead of `.days` truncation, so 18h left shows 1 day (not 0 → premature expiry). Added `import math`.
+- Verified: backend restarts clean; login→/auth/me 200; no-auth & bogus token → 401; injected malformed/missing `expires_at` → 401 (not 500); ceil math confirmed (18h→1, 13.5d→14, expired→0).
+
 ### Route code-splitting + hero image AVIF/WebP (Jun 2026) — P1 mobile perf
 Follow-up to the perf hardening, targeting Vercel (frontend host):
 - **Route-level code splitting**: converted ALL authenticated dashboard/analytics/tools pages + secondary public pages (legal, contact, choose-plan, support, onboarding) in `App.js` to `React.lazy` under the existing `<Suspense>` boundary. Kept eager only: `Landing`, `AuthPage`, `AuthCallback` (needed for first paint / session-id render path). Removed the dead unused `GlowPreview` import. Result: **main bundle 487.67 kB → 235.32 kB gzip (~52% smaller)**; 40 route chunks; **Recharts (103 kB gzip) fully out of the main bundle** (now an on-demand chunk loaded only on chart pages). Verified via `yarn build`.

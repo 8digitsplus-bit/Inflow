@@ -572,30 +572,30 @@ async def stripe_webhook(request: Request):
             import json
             import stripe as stripe_sdk
 
-            # Verify signature when secret is configured (production path)
-            if webhook_secret:
-                try:
-                    stripe_sdk.api_key = api_key
-                    event = stripe_sdk.Webhook.construct_event(
-                        payload=body,
-                        sig_header=signature,
-                        secret=webhook_secret,
-                    )
-                except stripe_sdk.error.SignatureVerificationError as e:
-                    logger.warning("Stripe webhook signature verification failed: %s", e)
-                    raise HTTPException(status_code=400, detail="Invalid signature")
-                except ValueError as e:
-                    logger.warning("Stripe webhook payload could not be parsed: %s", e)
-                    raise HTTPException(status_code=400, detail="Invalid payload")
-                # construct_event returns a stripe Event object; normalize to dict-like access
-                event_type = event["type"]
-                data_obj = event["data"]["object"]
-            else:
-                # Dev / unconfigured fallback — accept but log loudly
-                logger.warning("STRIPE_WEBHOOK_SECRET not set; webhook accepted WITHOUT signature verification")
-                event = json.loads(body)
-                event_type = event.get("type", "")
-                data_obj = event.get("data", {}).get("object", {})
+            # Strict configuration gate — we NEVER accept unsigned webhooks.
+            if not webhook_secret:
+                logger.critical(
+                    "STRIPE_WEBHOOK_SECRET is not set; refusing to process Stripe webhook"
+                )
+                raise HTTPException(status_code=500, detail="Webhook not configured")
+
+            # Verify the Stripe signature (production path).
+            try:
+                stripe_sdk.api_key = api_key
+                event = stripe_sdk.Webhook.construct_event(
+                    payload=body,
+                    sig_header=signature,
+                    secret=webhook_secret,
+                )
+            except stripe_sdk.error.SignatureVerificationError as e:
+                logger.warning("Stripe webhook signature verification failed: %s", e)
+                raise HTTPException(status_code=400, detail="Invalid signature")
+            except ValueError as e:
+                logger.warning("Stripe webhook payload could not be parsed: %s", e)
+                raise HTTPException(status_code=400, detail="Invalid payload")
+            # construct_event returns a stripe Event object; normalize to dict-like access
+            event_type = event["type"]
+            data_obj = event["data"]["object"]
 
             now_iso = datetime.now(timezone.utc).isoformat()
 
@@ -744,21 +744,38 @@ async def stripe_webhook(request: Request):
                 )
 
                 if metadata and "user_id" in metadata:
+                    plan = metadata.get("plan", "pro_monthly")
                     await db.users.update_one(
                         {"user_id": metadata["user_id"]},
                         {"$set": {
-                            "subscription_tier": metadata.get("plan", "pro_monthly"),
+                            "subscription_tier": plan,
                             "subscription_status": "active"
                         }}
                     )
+
+                    # Sync the user's organization too — require_paid reads the org's
+                    # subscription_tier, so skipping this instantly denies a paying user.
+                    u_doc = await db.users.find_one(
+                        {"user_id": metadata["user_id"]}, {"_id": 0, "org_id": 1}
+                    )
+                    if u_doc and u_doc.get("org_id"):
+                        await db.organizations.update_one(
+                            {"org_id": u_doc["org_id"]},
+                            {"$set": {
+                                "subscription_tier": plan,
+                                "subscription_status": "active"
+                            }}
+                        )
 
         return {"received": True}
 
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"Webhook error: {str(e)}")
-        return {"received": True}
+        logger.error(f"Webhook error: {str(e)}", exc_info=True)
+        # Re-raise so Stripe receives a 5xx and RETRIES delivery. Returning 200 here
+        # would permanently drop the event during a transient DB/processing failure.
+        raise HTTPException(status_code=500, detail="Webhook processing failed")
 
 
 @router.get("/subscription/plans")

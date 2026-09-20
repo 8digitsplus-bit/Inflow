@@ -5,6 +5,8 @@ import os
 import httpx
 import bcrypt
 import random
+import secrets
+import math
 
 from database import db
 from models import User, RegisterRequest, LoginRequest, OnboardingData
@@ -132,7 +134,10 @@ async def create_session(request: Request, response: Response):
             "created_at": now_iso
         })
 
-    session_token = auth_data.get("session_token", f"session_{uuid.uuid4().hex}")
+    # Mint our OWN cryptographically-random session key. Never reuse the upstream
+    # provider's token as our app session key — this decouples our sessions from the
+    # third-party auth host so a leaked/rotated upstream token can't ride our session.
+    session_token = f"session_{secrets.token_urlsafe(32)}"
     expires_at = datetime.now(timezone.utc) + timedelta(days=7)
 
     await db.user_sessions.insert_one({
@@ -163,8 +168,9 @@ async def create_session(request: Request, response: Response):
                 end = datetime.fromisoformat(trial_end.replace("Z", "+00:00"))
             else:
                 end = trial_end.replace(tzinfo=timezone.utc) if trial_end.tzinfo is None else trial_end
-            days_left = (end - now).days
-            user_doc["trial_days_left"] = max(0, days_left)
+            delta = end - now
+            days_left = max(0, math.ceil(delta.total_seconds() / 86400))
+            user_doc["trial_days_left"] = days_left
             if days_left <= 0:
                 user_doc["subscription_tier"] = "expired"
                 await db.users.update_one({"user_id": user_id}, {"$set": {"subscription_tier": "expired"}})
@@ -189,8 +195,9 @@ async def get_me(user: User = Depends(get_current_user)):
             else:
                 # Ensure datetime has timezone info
                 end = trial_end.replace(tzinfo=timezone.utc) if trial_end.tzinfo is None else trial_end
-            days_left = (end - now).days
-            user_doc["trial_days_left"] = max(0, days_left)
+            delta = end - now
+            days_left = max(0, math.ceil(delta.total_seconds() / 86400))
+            user_doc["trial_days_left"] = days_left
             if days_left <= 0:
                 user_doc["subscription_tier"] = "expired"
                 await db.users.update_one(

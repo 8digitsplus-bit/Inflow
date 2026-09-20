@@ -26,8 +26,13 @@ async def get_current_user(request: Request) -> User:
         raise HTTPException(status_code=401, detail="Invalid session")
 
     expires_at = session_doc.get("expires_at")
+    if not expires_at:
+        raise HTTPException(status_code=401, detail="Invalid session")
     if isinstance(expires_at, str):
-        expires_at = datetime.fromisoformat(expires_at)
+        try:
+            expires_at = datetime.fromisoformat(expires_at)
+        except ValueError:
+            raise HTTPException(status_code=401, detail="Invalid session")
     if expires_at.tzinfo is None:
         expires_at = expires_at.replace(tzinfo=timezone.utc)
     if expires_at < datetime.now(timezone.utc):
