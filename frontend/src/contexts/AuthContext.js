@@ -112,14 +112,14 @@ export const AuthProvider = ({ children }) => {
     return data;
   };
 
-  const verify2FA = async (userId, code) => {
+  const verify2FA = async (challengeId, code) => {
     let response;
     try {
       response = await fetch(`${API_URL}/api/auth/2fa/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ user_id: userId, code }),
+        body: JSON.stringify({ challenge_id: challengeId, code }),
       });
     } catch {
       throw new Error("We couldn't reach the server. Please check your connection and try again.");

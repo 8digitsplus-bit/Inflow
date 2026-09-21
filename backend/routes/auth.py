@@ -303,9 +303,19 @@ async def login_with_email(request: Request, req: LoginRequest, response: Respon
     # Check if 2FA is enabled
     if user_doc.get("two_fa_enabled"):
         _, email_sent = await _send_2fa_code(user_doc)
+        # Mint a short-TTL, single-use, server-side challenge. The client only ever sees
+        # the opaque challenge_id — never the user_id — so it cannot assert an identity.
+        challenge_id = f"chal_{secrets.token_urlsafe(32)}"
+        await db.two_factor_challenges.insert_one({
+            "challenge_id": challenge_id,
+            "user_id": user_doc["user_id"],
+            "used": False,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+            "expires_at": (datetime.now(timezone.utc) + timedelta(minutes=10)).isoformat(),
+        })
         return {
             "requires_2fa": True,
-            "user_id": user_doc["user_id"],
+            "challenge_id": challenge_id,
             "email_hint": user_doc["email"][:3] + "***" + user_doc["email"][user_doc["email"].index("@"):],
             "email_sent": email_sent,
         }
@@ -317,22 +327,50 @@ async def login_with_email(request: Request, req: LoginRequest, response: Respon
 @router.post("/auth/2fa/verify")
 @limiter.limit("10/15 minutes")
 async def verify_2fa(request: Request, response: Response):
-    """Verify OTP code and complete login"""
+    """Verify the OTP against a server-side challenge and complete login.
+
+    The client sends {challenge_id, code} — never a raw user_id. We resolve the user
+    strictly from the single-use challenge, so a caller cannot assert another identity.
+    """
     data = await request.json()
-    user_id = data.get("user_id")
+    challenge_id = data.get("challenge_id")
     code = data.get("code")
 
-    if not user_id or not code:
-        raise HTTPException(status_code=400, detail="user_id and code are required")
+    if not challenge_id or not code:
+        raise HTTPException(status_code=400, detail="challenge_id and code are required")
+
+    challenge = await db.two_factor_challenges.find_one(
+        {"challenge_id": challenge_id, "used": False}, {"_id": 0}
+    )
+    if not challenge:
+        raise HTTPException(status_code=401, detail="Invalid or expired verification session. Please log in again.")
+
+    chal_exp = datetime.fromisoformat(challenge["expires_at"])
+    if chal_exp.tzinfo is None:
+        chal_exp = chal_exp.replace(tzinfo=timezone.utc)
+    if datetime.now(timezone.utc) > chal_exp:
+        raise HTTPException(status_code=401, detail="Verification session expired. Please log in again.")
+
+    # Identity comes from the server-side challenge, NOT the client.
+    user_id = challenge["user_id"]
 
     otp_doc = await db.otp_codes.find_one({"user_id": user_id, "code": code}, {"_id": 0})
     if not otp_doc:
+        # Wrong code — do NOT consume the challenge, so the user can retry (rate-limited).
         raise HTTPException(status_code=401, detail="Invalid verification code")
 
-    expires_at = datetime.fromisoformat(otp_doc["expires_at"].replace("Z", "+00:00"))
-    if datetime.now(timezone.utc) > expires_at:
+    otp_exp = datetime.fromisoformat(otp_doc["expires_at"].replace("Z", "+00:00"))
+    if datetime.now(timezone.utc) > otp_exp:
         await db.otp_codes.delete_many({"user_id": user_id})
         raise HTTPException(status_code=401, detail="Code has expired. Please log in again.")
+
+    # Code correct → atomically consume the single-use challenge (replay/race-safe).
+    consumed = await db.two_factor_challenges.find_one_and_update(
+        {"challenge_id": challenge_id, "used": False},
+        {"$set": {"used": True, "used_at": datetime.now(timezone.utc).isoformat()}},
+    )
+    if not consumed:
+        raise HTTPException(status_code=401, detail="This verification session was already used. Please log in again.")
 
     await db.otp_codes.delete_many({"user_id": user_id})
 
@@ -394,12 +432,17 @@ async def disable_2fa(current_user: User = Depends(get_current_user)):
 @router.post("/auth/2fa/resend")
 @limiter.limit("3/5 minutes")
 async def resend_2fa_code(request: Request):
-    """Re-send the OTP during login (public — needs only user_id from the prior /auth/login response)."""
+    """Re-send the OTP for an in-flight login challenge (public — keyed by challenge_id)."""
     data = await request.json()
-    user_id = data.get("user_id")
-    if not user_id:
-        raise HTTPException(status_code=400, detail="user_id is required")
-    user_doc = await db.users.find_one({"user_id": user_id}, {"_id": 0})
+    challenge_id = data.get("challenge_id")
+    if not challenge_id:
+        raise HTTPException(status_code=400, detail="challenge_id is required")
+    challenge = await db.two_factor_challenges.find_one(
+        {"challenge_id": challenge_id, "used": False}, {"_id": 0}
+    )
+    if not challenge:
+        raise HTTPException(status_code=404, detail="Invalid or expired verification session")
+    user_doc = await db.users.find_one({"user_id": challenge["user_id"]}, {"_id": 0})
     if not user_doc or not user_doc.get("two_fa_enabled"):
         raise HTTPException(status_code=404, detail="2FA not enabled for this user")
     _, email_sent = await _send_2fa_code(user_doc)
@@ -439,22 +482,7 @@ async def _create_session_and_respond(user_doc: dict, response: Response):
     )
 
     safe_user = {k: v for k, v in user_doc.items() if k != "password_hash"}
-
-    # Compute trial days left for trial users
-    if safe_user.get("subscription_tier") == "trial":
-        trial_end = safe_user.get("trial_end")
-        if trial_end:
-            now = datetime.now(timezone.utc)
-            if isinstance(trial_end, str):
-                end = datetime.fromisoformat(trial_end.replace("Z", "+00:00"))
-            else:
-                end = trial_end.replace(tzinfo=timezone.utc) if trial_end.tzinfo is None else trial_end
-            days_left = (end - now).days
-            safe_user["trial_days_left"] = max(0, days_left)
-            if days_left <= 0:
-                safe_user["subscription_tier"] = "expired"
-                await db.users.update_one({"user_id": user_doc["user_id"]}, {"$set": {"subscription_tier": "expired"}})
-
+    safe_user = await apply_trial_status(safe_user)
     return safe_user
 
 

@@ -199,6 +199,11 @@ async def startup_migrations():
         await db.processed_webhook_events.create_index("event_id", unique=True)
     except Exception as e:
         logging.error("Failed to ensure unique index on processed_webhook_events.event_id: %s", e)
+    # Unique index backing the single-use 2FA login challenge.
+    try:
+        await db.two_factor_challenges.create_index("challenge_id", unique=True)
+    except Exception as e:
+        logging.error("Failed to ensure unique index on two_factor_challenges.challenge_id: %s", e)
 
 
 @app.on_event("shutdown")

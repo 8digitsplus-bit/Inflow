@@ -230,7 +230,11 @@ async def scan_leaks(user: User = Depends(require_enterprise)):
     for u in usage:
         usage_by_key.setdefault(u["account_key"].strip().lower(), u)
 
-    now = datetime.now(timezone.utc).isoformat()
+    now_dt = datetime.now(timezone.utc)
+    now = now_dt.isoformat()
+    # Start of the current billing cycle (monthly). Used to decide whether a previously
+    # recovered leak should re-open because a brand-new overage appeared this period.
+    period_start_iso = now_dt.replace(day=1, hour=0, minute=0, second=0, microsecond=0).isoformat()
     leaks_found = 0
     scanned = 0
 
@@ -257,7 +261,7 @@ async def scan_leaks(user: User = Depends(require_enterprise)):
             # No overage: close any previously-open leak
             if existing and existing.get("status") == "open":
                 await db.leaks.update_one(
-                    {"leak_id": existing["leak_id"]},
+                    {"leak_id": existing["leak_id"], **org_filter(user)},
                     {"$set": {"status": "resolved", "overage_seats": 0, "est_unbilled_amount": 0, "updated_at": now}},
                 )
             continue
@@ -284,12 +288,18 @@ async def scan_leaks(user: User = Depends(require_enterprise)):
             "updated_at": now,
         }
         if existing:
-            # keep status unless it was resolved; preserve completed actions
+            # Keep the current status UNLESS it was resolved, OR it was recovered in a
+            # PRIOR billing cycle and a fresh overage has appeared now — a new-cycle
+            # overage is effectively a brand-new leak and should re-open for review.
             new_status = existing.get("status")
-            if new_status in ("resolved",):
+            if new_status in ("resolved",) or (
+                new_status == "recovered" and existing.get("recovered_at", "") < period_start_iso
+            ):
                 new_status = "open"
             base["status"] = new_status or "open"
-            await db.leaks.update_one({"leak_id": existing["leak_id"]}, {"$set": base})
+            await db.leaks.update_one(
+                {"leak_id": existing["leak_id"], **org_filter(user)}, {"$set": base}
+            )
         else:
             base["leak_id"] = f"leak_{uuid.uuid4().hex[:12]}"
             base["status"] = "open"
@@ -404,7 +414,7 @@ async def draft_recovery(leak_id: str, user: User = Depends(require_enterprise))
         "email": email_draft,
         "generated_at": datetime.now(timezone.utc).isoformat(),
     }
-    await db.leaks.update_one({"leak_id": leak_id}, {"$set": {"draft": draft}})
+    await db.leaks.update_one({"leak_id": leak_id, **org_filter(user)}, {"$set": {"draft": draft}})
     return draft
 
 
@@ -414,13 +424,25 @@ async def approve_recovery(leak_id: str, email: EmailEdit = EmailEdit(), user: U
     leak = await db.leaks.find_one({"leak_id": leak_id, **org_filter(user)}, {"_id": 0})
     if not leak:
         raise HTTPException(status_code=404, detail="Leak not found")
-    if leak.get("status") == "recovered":
-        raise HTTPException(status_code=400, detail="This leak has already been recovered.")
+
+    TERMINAL = {"recovered", "dismissed", "resolved"}
+    if leak.get("status") in TERMINAL:
+        raise HTTPException(status_code=400, detail=f"Leak is {leak['status']} and cannot be approved.")
+
     draft = leak.get("draft")
     if not draft:
         raise HTTPException(status_code=400, detail="Generate a recovery draft before approving.")
 
     now = datetime.now(timezone.utc).isoformat()
+
+    # Atomically CLAIM the leak before any external Stripe/email I/O so a double-click or
+    # retry can't execute billing twice (idempotency). Only an 'open' leak can be claimed.
+    claim = await db.leaks.find_one_and_update(
+        {"leak_id": leak_id, "status": "open", **org_filter(user)},
+        {"$set": {"status": "recovering", "claimed_at": now}},
+    )
+    if not claim:
+        raise HTTPException(status_code=409, detail="Leak is not open or is already being recovered.")
     over = leak["overage_seats"]
     unit = leak["unit_price_per_seat"]
     cur = leak.get("currency", "usd")
@@ -510,7 +532,7 @@ async def approve_recovery(leak_id: str, email: EmailEdit = EmailEdit(), user: U
     actions["email"] = email_result
 
     await db.leaks.update_one(
-        {"leak_id": leak_id},
+        {"leak_id": leak_id, **org_filter(user)},
         {"$set": {"status": "recovered", "actions": actions, "recovered_at": now, "updated_at": now}},
     )
     return {"status": "recovered", "leak_id": leak_id, "actions": actions}
@@ -518,10 +540,11 @@ async def approve_recovery(leak_id: str, email: EmailEdit = EmailEdit(), user: U
 
 @router.post("/telemetry/leaks/{leak_id}/dismiss")
 async def dismiss_leak(leak_id: str, user: User = Depends(require_enterprise)):
+    # State guard directly in the filter: only an actively OPEN leak can be dismissed.
     res = await db.leaks.update_one(
-        {"leak_id": leak_id, **org_filter(user)},
+        {"leak_id": leak_id, "status": "open", **org_filter(user)},
         {"$set": {"status": "dismissed", "updated_at": datetime.now(timezone.utc).isoformat()}},
     )
     if res.matched_count == 0:
-        raise HTTPException(status_code=404, detail="Leak not found")
+        raise HTTPException(status_code=409, detail="Only an open leak can be dismissed.")
     return {"status": "dismissed", "leak_id": leak_id}

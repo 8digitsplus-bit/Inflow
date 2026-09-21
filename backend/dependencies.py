@@ -71,7 +71,10 @@ async def require_paid(user: User = Depends(get_current_user)) -> User:
     subscription internally, so 'paid' simply means not trial/expired/cancelled/free.
     """
     org = await db.organizations.find_one({"org_id": user.org_id}, {"_id": 0})
-    tier = (org or {}).get("subscription_tier") or user.subscription_tier or "trial"
+    if not org:
+        raise HTTPException(status_code=500, detail="Organization not found for user")
+    # Organization is the single source of truth for subscription tier (no user fallback).
+    tier = org.get("subscription_tier", "trial")
     if (tier or "trial") in {"trial", "expired", "cancelled", "free"}:
         raise HTTPException(status_code=403, detail="This feature requires an active InFlow subscription.")
     return user

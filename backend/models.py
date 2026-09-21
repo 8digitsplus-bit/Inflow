@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, ConfigDict, EmailStr
-from typing import List, Optional, Dict, Any
+from typing import List, Optional, Dict, Any, Literal
 import uuid
 from datetime import datetime, timezone
 
@@ -54,6 +54,9 @@ class Notification(BaseModel):
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
+DealStage = Literal["lead", "qualified", "proposal", "negotiation", "closed_won", "closed_lost"]
+
+
 class Deal(BaseModel):
     model_config = ConfigDict(extra="ignore")
     deal_id: str = Field(default_factory=lambda: f"deal_{uuid.uuid4().hex[:12]}")
@@ -74,8 +77,8 @@ class DealCreate(BaseModel):
     name: str
     company: str
     value: float
-    stage: str = "lead"
-    probability: int = 20
+    stage: DealStage = "lead"
+    probability: int = Field(20, ge=0, le=100)
     expected_close_date: Optional[str] = None
     notes: Optional[str] = None
 
@@ -84,8 +87,8 @@ class DealUpdate(BaseModel):
     name: Optional[str] = None
     company: Optional[str] = None
     value: Optional[float] = None
-    stage: Optional[str] = None
-    probability: Optional[int] = None
+    stage: Optional[DealStage] = None
+    probability: Optional[int] = Field(None, ge=0, le=100)
     expected_close_date: Optional[str] = None
     notes: Optional[str] = None
 

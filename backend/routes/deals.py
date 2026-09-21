@@ -38,15 +38,29 @@ async def update_deal(deal_id: str, deal_data: DealUpdate, user: User = Depends(
     if not existing:
         raise HTTPException(status_code=404, detail="Deal not found")
 
-    update_data = {k: v for k, v in deal_data.model_dump().items() if v is not None}
-    update_data["updated_at"] = datetime.now(timezone.utc).isoformat()
+    # exclude_unset so clients CAN explicitly clear optional fields (e.g. notes / close date)
+    update_data = deal_data.model_dump(exclude_unset=True)
+    now = datetime.now(timezone.utc).isoformat()
+    update_data["updated_at"] = now
 
+    # Scope the WRITE to the org too — never rely on the read check alone (multi-tenancy).
     await db.deals.update_one(
-        {"deal_id": deal_id},
+        {"deal_id": deal_id, **org_filter(user)},
         {"$set": update_data}
     )
 
-    updated = await db.deals.find_one({"deal_id": deal_id}, {"_id": 0})
+    # Append an audit record on stage transitions to build accurate cycle-time analytics.
+    new_stage = update_data.get("stage")
+    if new_stage and new_stage != existing.get("stage"):
+        await db.deal_stage_events.insert_one({
+            "deal_id": deal_id,
+            "org_id": user.org_id,
+            "from_stage": existing.get("stage"),
+            "to_stage": new_stage,
+            "changed_at": now,
+        })
+
+    updated = await db.deals.find_one({"deal_id": deal_id, **org_filter(user)}, {"_id": 0})
     return updated
 
 

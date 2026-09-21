@@ -13,6 +13,21 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
+### State-machine, auth-2FA & multi-tenancy hardening — round 3 (Jun 2026) — P0
+Across `dependencies.py`, `auth.py`, `telemetry.py`, `deals.py`, `models.py`, `server.py`, `AuthContext.js`, `AuthPage.js`:
+1. **Org = single source of truth** (`dependencies.py` `require_paid`): removed the `user.subscription_tier` fallback; strict org lookup, `HTTPException(500)` if org missing. (Sandbox webhook already syncs org tier from a prior round.)
+2. **Trial rounding in the login path** (`auth.py` `_create_session_and_respond`): replaced the last `(end - now).days` truncation + duplicated block with the shared `apply_trial_status()` (ceil rounding). All three session paths now share one helper.
+3. **Secure 2FA** (`auth.py` + frontend): `/auth/login` now mints a short-TTL, single-use, server-side `challenge_id` (new `two_factor_challenges` collection, unique index) and returns it INSTEAD of `user_id`. `/auth/2fa/verify` takes `{challenge_id, code}`, resolves identity server-side, allows wrong-code retries (challenge not consumed), and atomically consumes the challenge on success (replay-safe). `/auth/2fa/resend` keyed by `challenge_id`. Frontend `verify2FA(challengeId, code)` + AuthPage updated. Verified: no user_id leak, wrong code retryable, replay/bogus → 401.
+4. **Atomic leak claim** (`telemetry.py` `approve_recovery`): `find_one_and_update({status:"open"} → "recovering")` BEFORE any Stripe/email I/O; `409` if not claimable (idempotent double-click protection).
+5. **Terminal-state block**: approve rejects `{"recovered","dismissed","resolved"}` with `400`.
+6. **Dismiss state-guard**: `dismiss_leak` filter now requires `status:"open"` → `409` otherwise.
+7. **Period-scoped rescan**: a recovered leak re-opens only if a NEW overage appears in a new billing cycle (`recovered_at < period_start_iso`, start-of-month). All leak writes now include `org_filter(user)`.
+8. **Deal validation** (`models.py`): `DealCreate`/`DealUpdate` use `Stage = Literal[6 stages]` + `probability = Field(ge=0, le=100)`. (`Deal` response model left as `str` to avoid breaking legacy/server-created rows.) Verified: bad stage/probability → 422.
+9. **update_deal scope leak fixed** (`deals.py`): write + read-back filters now include `org_filter(user)`.
+10. **Optional clears**: `deal_data.model_dump(exclude_unset=True)` so clients can explicitly null out notes/close date.
+11. **Deal stage audit**: new append-only `deal_stage_events` collection records `{deal_id, org_id, from_stage, to_stage, changed_at}` on transitions. Verified.
+- Verified live: deals 422/200/clear/audit; 2FA challenge flow; leak terminal/claim/dismiss guards. Not e2e-tested (static only): period-scoped rescan full scan, and the org-missing 500 path.
+
 ### Auth network gating + webhook idempotency index (Jun 2026) — P1
 - **Skip `/api/auth/me` for anonymous visitors** (`frontend/src/contexts/AuthContext.js`): the session cookie is httpOnly (JS can't read it), so a `inflow_authed` localStorage flag (set on login/register/verify2FA/exchangeSession, cleared on logout and on a 401 from `/auth/me`) now gates `checkAuth`. If the flag is absent, the app goes straight to anonymous state without any network call. Verified via Playwright: anonymous load = 0 `/auth/me` calls; flagged load = ≥1.
 - **Webhook idempotency hardened** (`backend/server.py`): the Stripe dedupe (`processed_webhook_events`, already added in the prior round — check at top by `event.id`, marker written only after success) is now backed by a unique index on `processed_webhook_events.event_id` created at startup (race-safe). Verified: `event_id_1` index present.

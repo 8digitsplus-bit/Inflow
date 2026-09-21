@@ -146,7 +146,7 @@ const AuthPage = () => {
     if (code.length !== 6) { toast.error('Please enter the full 6-digit code'); return; }
     setLoading('2fa');
     try {
-      await verify2FA(twoFAState.user_id, code);
+      await verify2FA(twoFAState.challenge_id, code);
       navigate(getPostAuthDestination('/dashboard'));
     } catch (err) {
       toast.error(err.message);
@@ -266,7 +266,7 @@ const AuthPage = () => {
                   const res = await fetch(`${process.env.REACT_APP_BACKEND_URL}/api/auth/2fa/resend`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ user_id: twoFAState.user_id }),
+                    body: JSON.stringify({ challenge_id: twoFAState.challenge_id }),
                   });
                   const d = await res.json();
                   if (res.ok && d.email_sent) toast.success(`Code re-sent to ${twoFAState.email_hint}`);
