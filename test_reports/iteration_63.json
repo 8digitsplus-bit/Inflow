@@ -1,0 +1,42 @@
+{
+  "summary": "Iteration 63 — Full backend + frontend e2e regression pass for the 7 audit items in review_request. Backend: 10/10 pytest tests pass (auth cookie, churn deltas, deal CRUD owner path, forecast target parsing, revenue-leaks endpoint, empty-state new account). Frontend: All 7 audit items verified via Playwright against testpro@test.com and a brand-new registered account. Key items: cookie session survives localStorage.clear+reload; sidebar labels correct (High-Intent Buyers→/discover, Upsell Engine→/upsell); /discover H1 = 'High-Intent Buyer Detection', /upsell H1 = 'Upsell Engine' with 'Upsell candidates' (no 'High-intent accounts' leak); churn page has no hardcoded '+2.3%' / '-1.2%'; /api/analytics/churn returns retention_delta/churn_delta/total_customers keys; deal owner CRUD returns 200s (no 500s); support dates render as 'DD MMM YYYY' (e.g. '18 Jun 2026') with no numeric MM/DD; forecast target=-5000 produces no goal object; forecast target=1e9 correctly parsed as 1000000000; dashboard/pipeline/cro empty-state CTAs render for a brand-new account.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "/churn on trial account", "issues": ["churn-empty-cta is NOT rendered for a fresh trial account because /churn is behind the tier-gate overlay (tier-gate-overlay is shown instead). The CTA never becomes visible for trial users with 0 customers. Consider either exposing the empty CTA under the gate or removing it from the empty-state spec for trial-tier users."]}
+    ]
+  },
+  "verifications": {
+    "auth_cookie_session_#3": "PASS — Login as testpro reaches /dashboard. localStorage.clear() + reload keeps user logged in via httpOnly cookie (URL after reload: /dashboard). /api/auth/me with no cookie -> 401.",
+    "nav_and_headings_#1": "PASS — Sidebar shows 'High-Intent Buyers' (href /discover) and 'Upsell Engine' (href /upsell). /discover data-testid=high-intent-page: eyebrow 'REVENUE EXECUTION · HIGH-INTENT', H1 'High-Intent Buyer Detection', section 'High-intent opportunities'. /upsell data-testid=upsell-engine-page: eyebrow 'REVENUE EXECUTION · UPSELL', H1 'Upsell Engine', label 'Upsell candidates'. No 'High-intent accounts' leak on /upsell.",
+    "churn_dynamic_deltas_#7": "PASS — GET /api/analytics/churn (testpro cookie) returns retention_delta/churn_delta/total_customers. /churn page contains NO hardcoded '+2.3%' or '-1.2%' literals. For new account, deltas are null and total_customers=0 (no fabricated positive trend).",
+    "empty_state_ctas_#10": "PASS (majority) — Brand-new registered account: data-testid dashboard-empty-cta ✓, dashboard-empty-cta-btn ✓, pipeline-empty-cta ✓, cro-empty-cta ✓. churn-empty-cta not shown (blocked by tier-gate for trial). leaks-empty-cta not shown for testpro (has seeded contracts) — expected.",
+    "deal_write_permissions_#11": "PASS (owner path) — testpro CRUD: POST /api/deals→200, PUT stage+value→200, DELETE→200/204, list-verify→gone. PUT with invalid id returns 422 (not 500). Note: 403 second-member path not tested (no second member seeded — as allowed by request).",
+    "support_date_format_#12": "PASS — /support page renders dates as '18 Jun 2026', '01 May 2026', '22 Mar 2026' etc. No numeric MM/DD or DD/MM matches found in body.",
+    "forecast_regression": "PASS — GET /api/analytics/forecasting?target=-5000 → no goal object (negative filtered). GET /api/analytics/forecasting?target=1e9 → goal.target == 1000000000.0 (correctly parsed, not $19).",
+    "revenue_leaks_regression": "PASS — /telemetry/leaks and related endpoints return non-500 for testpro (enterprise owner). /revenue-leaks page loads without runtime error for testpro."
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration_63.py",
+    "/app/test_reports/pytest/iteration_63.xml"
+  ],
+  "action_items": [
+    "Consider: for trial-tier users, either surface churn-empty-cta below the tier-gate overlay or drop it from the empty-state spec. Currently /churn shows only the tier-gate for a fresh trial account, so the empty CTA is never visible for that flow.",
+    "Consider fixing the recharts console warning: 'The width(-1) and height(-1) of chart should be greater than 0' seen after login reload — set an explicit min height on the chart container(s) on dashboard.",
+    "Minor: data-testid=dashboard-empty-cta-btn has no href attribute (button/Link with onClick). If a Link, consider adding an anchor href for accessibility + open-in-new-tab support."
+  ],
+  "critical_code_review_comments": [
+    "Auth cookie-only session is now correctly the single source of truth (checkAuth always hits /api/auth/me) — the previous localStorage short-circuit bug is fixed.",
+    "Deal writes: PUT with non-existent id returns 422 (validation) — acceptable but a 404 would be semantically better for 'deal not found'.",
+    "Forecast target parsing correctly rejects negatives via `if target and target > 0` in _compute_forecast; scientific notation parsed correctly as float."
+  ],
+  "updated_files": ["/app/backend/tests/test_iteration_63.py"],
+  "success_rate": {"backend": "100% (10/10)", "frontend": "100% on all requested items; 1 tier-gate design note on /churn empty CTA"},
+  "test_credentials": "testpro@test.com / password (enterprise owner). Fresh registered TEST_empty_* accounts used for empty-state checks.",
+  "seed_data_creation": "Registered two throwaway TEST_empty_* accounts during frontend empty-state validation; created + deleted a TEST_iter63_* deal for owner CRUD test (self-cleaned).",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "All 7 audit items from iteration 63 pass. Only follow-up: /churn empty-state CTA is currently blocked by the tier-gate overlay for trial users — main agent may choose to relax gating for the empty CTA or accept as-is."
+}
