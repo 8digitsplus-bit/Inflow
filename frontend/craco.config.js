@@ -65,6 +65,13 @@ const webpackConfig = {
       if (config.enableHealthCheck && healthPluginInstance) {
         webpackConfig.plugins.push(healthPluginInstance);
       }
+
+      // Guarantee NO source maps ship to production, regardless of whether the
+      // GENERATE_SOURCEMAP env flag is honored by the build pipeline. Setting
+      // devtool false here is the authoritative kill-switch for production builds.
+      if (process.env.NODE_ENV === "production") {
+        webpackConfig.devtool = false;
+      }
       return webpackConfig;
     },
   },

@@ -341,7 +341,7 @@ const Support = () => {
                       {c.conversation_id?.startsWith('agent_') && <BrainCircuit className="w-3 h-3 text-violet-400 flex-shrink-0" />}
                       <p className="text-zinc-300 text-xs truncate">{c.last_message || 'New conversation'}</p>
                     </div>
-                    <p className="text-zinc-600 text-[10px] mt-1">{new Date(c.updated_at).toLocaleDateString()}</p>
+                    <p className="text-zinc-600 text-[10px] mt-1">{new Date(c.updated_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
                   </button>
                 ))}
               </CardContent>
@@ -592,7 +592,7 @@ const Support = () => {
                         )}
                       </div>
                       <p className="text-zinc-500 text-xs line-clamp-2">{t.description}</p>
-                      <p className="text-zinc-600 text-[10px] mt-2">Created {new Date(t.created_at).toLocaleDateString()}</p>
+                      <p className="text-zinc-600 text-[10px] mt-2">Created {new Date(t.created_at).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}</p>
                     </div>
                   </div>
                 </CardContent>

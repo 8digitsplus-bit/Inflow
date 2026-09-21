@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
+import ConnectDataCTA from '../components/ConnectDataCTA';
 import {
   BarChart3, Activity, AlertTriangle, Lightbulb, FlaskConical, Rocket, Sparkles, Loader2,
   Plus, Trash2, Target, TrendingUp, TrendingDown, ArrowRight, ChevronLeft, ChevronRight,
@@ -192,6 +193,13 @@ export default function ConversionOptimization() {
         {/* ===================== STAGE 1: ANALYZE ===================== */}
         {stage === 1 && (
           <div className="space-y-5" data-testid="stage-analyze">
+            {funnel && (funnel.total_opportunities ?? 0) === 0 && (
+              <ConnectDataCTA
+                title="No funnel data yet"
+                message="Conversion metrics are empty because no CRM or deal source is linked. Connect a data source (or add deals in Pipeline) to analyze your funnel."
+                testid="cro-empty-cta"
+              />
+            )}
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <Metric label="Overall conversion" value={`${funnel?.overall_conversion ?? 0}%`} sub="Lead → Closed Won" icon={Target} color="text-emerald-400" testid="metric-overall-conversion" />
               <Metric label="Opportunities" value={funnel?.total_opportunities ?? 0} sub="In the funnel" icon={TrendingUp} color="text-white" testid="metric-opportunities" />

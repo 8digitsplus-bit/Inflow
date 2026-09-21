@@ -176,8 +176,8 @@ export default function HighIntent() {
       <DashboardLayout>
         <div className="flex flex-col items-center justify-center min-h-[70vh] px-4 text-center" data-testid="intent-paid-gate">
           <div className="w-14 h-14 rounded-2xl bg-slate-500/10 flex items-center justify-center mb-5"><Telescope className="w-7 h-7 text-slate-400" /></div>
-          <h2 className="text-2xl font-bold text-white mb-2" style={{ fontFamily: 'Outfit' }}>Upsell Engine</h2>
-          <p className="text-zinc-400 text-sm max-w-md">Grow revenue from the accounts most ready to move. Available on any active InFlow subscription.</p>
+          <h2 className="text-2xl font-bold text-white mb-2" style={{ fontFamily: 'Outfit' }}>High-Intent Buyer Detection</h2>
+          <p className="text-zinc-400 text-sm max-w-md">Find and act on the accounts showing the strongest buying intent. Available on any active InFlow subscription.</p>
         </div>
       </DashboardLayout>
     );
@@ -197,9 +197,9 @@ export default function HighIntent() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-8">
           <div>
-            <div className="flex items-center gap-2 text-slate-400 text-xs font-semibold uppercase tracking-widest mb-2"><Telescope className="w-4 h-4" /> Revenue Execution · Upsell</div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>Upsell Engine</h1>
-            <p className="text-zinc-400 text-sm mt-1 max-w-2xl">Spot an account that's ready to grow, let AI analyze everything, understand <span className="text-white">why it matters</span>, see the <span className="text-white">predicted outcome</span>, and execute the <span className="text-white">one action</span> that expands revenue — then measure the impact.</p>
+            <div className="flex items-center gap-2 text-slate-400 text-xs font-semibold uppercase tracking-widest mb-2"><Telescope className="w-4 h-4" /> Revenue Execution · High-Intent</div>
+            <h1 className="text-2xl sm:text-3xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>High-Intent Buyer Detection</h1>
+            <p className="text-zinc-400 text-sm mt-1 max-w-2xl">Spot an account showing strong buying intent, let AI analyze everything, understand <span className="text-white">why it matters</span>, see the <span className="text-white">predicted outcome</span>, and execute the <span className="text-white">one action</span> that moves the deal — then measure the impact.</p>
           </div>
           <Button onClick={handleScan} disabled={busy === 'scan'} className="bg-[#0052ff] hover:bg-[#0047d6] text-white h-9 text-sm flex-shrink-0" data-testid="scan-buyers-btn">
             {busy === 'scan' ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : <ScanLine className="w-4 h-4 mr-1.5" />} Scan for buyers
@@ -227,7 +227,7 @@ export default function HighIntent() {
 
         {/* Leads */}
         <div className={`rounded-2xl ${glass} overflow-hidden`}>
-          <div className="px-5 py-4 border-b border-white/[0.06] flex items-center gap-2"><Target className="w-4 h-4 text-slate-400" /><h2 className="text-sm font-semibold text-white">Upsell opportunities</h2>{!isOwner && <span className="text-[11px] text-zinc-500 ml-auto">Flow actions are owner-only</span>}</div>
+          <div className="px-5 py-4 border-b border-white/[0.06] flex items-center gap-2"><Target className="w-4 h-4 text-slate-400" /><h2 className="text-sm font-semibold text-white">High-intent opportunities</h2>{!isOwner && <span className="text-[11px] text-zinc-500 ml-auto">Flow actions are owner-only</span>}</div>
           {openL.length === 0 ? (
             <div className="px-5 py-12 text-center text-zinc-500 text-sm" data-testid="no-leads">No buyers detected yet. Click <span className="text-white font-medium">Scan for buyers</span> to analyze your open opportunities for buying-intent signals.</div>
           ) : (

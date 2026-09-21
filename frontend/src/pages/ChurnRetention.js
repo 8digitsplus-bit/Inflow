@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import DashboardLayout from '../components/DashboardLayout';
+import ConnectDataCTA from '../components/ConnectDataCTA';
 import { AIResponseRenderer } from '../components/AIResponseRenderer';
 import {
   Users,
@@ -96,6 +97,19 @@ const ChurnRetention = () => {
   const getRiskColor = (r) => r === 'critical' ? 'text-red-500 bg-red-500/10 border-red-500/20' : r === 'high' ? 'text-red-400 bg-red-500/10 border-red-500/20' : 'text-amber-400 bg-amber-500/10 border-amber-500/20';
   const getCohortColor = (v) => v >= 90 ? 'bg-emerald-500/30 text-emerald-300' : v >= 75 ? 'bg-emerald-500/20 text-emerald-400' : v >= 60 ? 'bg-amber-500/20 text-amber-400' : 'bg-red-500/20 text-red-400';
 
+  // Real period-over-period trend chip. Renders nothing when the backend can't compute
+  // a delta (insufficient real data) so a zero-customer account never shows a fake trend.
+  const DeltaChip = ({ value, goodWhenUp = true }) => {
+    if (value === null || value === undefined) return null;
+    const good = goodWhenUp ? value >= 0 : value <= 0;
+    const Icon = value >= 0 ? ArrowUpRight : ArrowDownRight;
+    return (
+      <div className={`flex items-center gap-1 mt-1 text-[10px] ${good ? 'text-emerald-400' : 'text-red-400'}`}>
+        <Icon className="w-3 h-3" />{`${value > 0 ? '+' : ''}${value}%`}<span className="text-zinc-600 ml-1">vs prev 30d</span>
+      </div>
+    );
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6" data-testid="churn-retention-page">
@@ -105,6 +119,14 @@ const ChurnRetention = () => {
             <p className="text-zinc-400 mt-1 text-sm">Monitor customer health, predict churn, and protect revenue</p>
           </div>
         </div>
+
+        {data && data.total_customers === 0 && (
+          <ConnectDataCTA
+            title="No customer data yet"
+            message="Churn and retention are empty because no CRM or billing source is linked. Connect a data source to track real retention, churn and revenue at risk."
+            testid="churn-empty-cta"
+          />
+        )}
 
         {/* Primary KPIs */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 sm:gap-4">
@@ -125,7 +147,7 @@ const ChurnRetention = () => {
                 <TrendingUp className="w-4 h-4 text-emerald-400" />
               </div>
               <div className="text-lg sm:text-2xl font-bold font-mono truncate text-emerald-400">{data?.retention_rate || 0}%</div>
-              <div className="flex items-center gap-1 mt-1 text-emerald-400 text-[10px]"><ArrowUpRight className="w-3 h-3" />+2.3%</div>
+              <DeltaChip value={data?.retention_delta} goodWhenUp />
             </CardContent>
           </Card>
           <Card className="bg-zinc-950/50 border-white/10" data-testid="churn-rate-card">
@@ -135,7 +157,7 @@ const ChurnRetention = () => {
                 <TrendingDown className="w-4 h-4 text-red-400" />
               </div>
               <div className="text-lg sm:text-2xl font-bold font-mono truncate text-red-400">{data?.churn_rate || 0}%</div>
-              <div className="flex items-center gap-1 mt-1 text-emerald-400 text-[10px]"><ArrowDownRight className="w-3 h-3" />-1.2%</div>
+              <DeltaChip value={data?.churn_delta} goodWhenUp={false} />
             </CardContent>
           </Card>
           <Card className="bg-zinc-950/50 border-white/10" data-testid="nrr-card">

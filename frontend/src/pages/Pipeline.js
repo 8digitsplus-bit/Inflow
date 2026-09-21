@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import DashboardLayout from '../components/DashboardLayout';
+import ConnectDataCTA from '../components/ConnectDataCTA';
 import { 
   Plus, 
   MoreVertical, 
@@ -236,6 +237,14 @@ const Pipeline = () => {
             <Plus className="w-4 h-4 mr-1.5" /> Add Deal
           </Button>
         </div>
+
+        {!loading && deals.length === 0 && (
+          <ConnectDataCTA
+            title="No deals yet"
+            message="Your pipeline is empty because no CRM source is linked. Connect a data source to import deals, or add one manually to get started."
+            testid="pipeline-empty-cta"
+          />
+        )}
 
         {/* KPI Cards — Pipeline Specific */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-4">

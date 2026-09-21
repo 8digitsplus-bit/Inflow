@@ -326,9 +326,47 @@ async def get_churn_analytics(user: User = Depends(get_current_user), sources: O
 
     health_score = round(min(100, max(0, retention_rate * 0.5 + (100 - len(at_risk_deals) * 5) * 0.3 + nrr * 0.2)), 0)
 
+    # Real period-over-period deltas from actual closed-deal activity. Null (hidden in
+    # the UI) when there isn't enough real data in BOTH windows — so a brand-new /
+    # zero-customer account never shows a fabricated trend chip.
+    def _closed_counts(age_min, age_max):
+        won = lost = 0
+        for d in deals:
+            st = d.get("stage")
+            if st not in ("closed_won", "closed_lost"):
+                continue
+            ts = d.get("updated_at") or d.get("created_at")
+            if not ts:
+                continue
+            try:
+                dt = _parse_dt(ts)
+            except Exception:
+                dt = None
+            if not dt:
+                continue
+            age = (datetime.now(timezone.utc) - dt).days
+            if age_min <= age < age_max:
+                if st == "closed_won":
+                    won += 1
+                else:
+                    lost += 1
+        return won, lost
+
+    cur_won, cur_lost = _closed_counts(0, 30)
+    prev_won, prev_lost = _closed_counts(30, 60)
+    retention_delta = None
+    churn_delta = None
+    if (cur_won + cur_lost) > 0 and (prev_won + prev_lost) > 0:
+        cur_churn = (cur_lost / (cur_won + cur_lost)) * 100
+        prev_churn = (prev_lost / (prev_won + prev_lost)) * 100
+        churn_delta = round(cur_churn - prev_churn, 1)
+        retention_delta = round((100 - cur_churn) - (100 - prev_churn), 1)
+
     return {
         "churn_rate": round(churn_rate, 1),
         "retention_rate": round(retention_rate, 1),
+        "retention_delta": retention_delta,
+        "churn_delta": churn_delta,
         "nrr": nrr,
         "clv": clv,
         "arpa": arpa,

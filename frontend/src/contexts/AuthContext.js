@@ -41,14 +41,11 @@ export const AuthProvider = ({ children }) => {
   const [error, setError] = useState(null);
 
   const checkAuth = useCallback(async () => {
-    // The session cookie is httpOnly (JS can't read it), so we use a localStorage
-    // presence flag — set on login, cleared on logout/401 — to decide whether a
-    // session might exist. Anonymous visitors skip the /api/auth/me round-trip entirely.
-    if (!localStorage.getItem('inflow_authed')) {
-      setUser(null);
-      setLoading(false);
-      return;
-    }
+    // The session cookie is httpOnly (JS can't read it), so the backend cookie is the
+    // single source of truth. We ALWAYS ask /api/auth/me — a valid 7-day session must
+    // authenticate even when the localStorage hint is missing (privacy mode, Safari ITP
+    // 7-day eviction, or cleared site data). The `inflow_authed` flag is only a UX hint
+    // (e.g. the saved-account chooser) and never gates this check.
     try {
       const response = await fetch(`${API_URL}/api/auth/me`, {
         credentials: 'include',
@@ -57,6 +54,7 @@ export const AuthProvider = ({ children }) => {
       if (response.ok) {
         const userData = await response.json();
         setUser(userData);
+        localStorage.setItem('inflow_authed', '1');
       } else {
         localStorage.removeItem('inflow_authed');
         setUser(null);

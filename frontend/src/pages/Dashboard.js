@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import DashboardLayout from '../components/DashboardLayout';
+import ConnectDataCTA from '../components/ConnectDataCTA';
 import { AIResponseRenderer } from '../components/AIResponseRenderer';
 import {
   TrendingUp,
@@ -256,6 +257,14 @@ const Dashboard = () => {
             </span>
           </div>
         </div>
+
+        {!loading && deals.length === 0 && (
+          <ConnectDataCTA
+            title="No revenue data yet"
+            message="Your dashboard is empty because no data source is linked. Connect your CRM or billing tool to see real revenue, pipeline and health metrics."
+            testid="dashboard-empty-cta"
+          />
+        )}
 
         {/* Source Filter Dropdown — visible only when integrations exist */}
         {connectedSources.length > 0 && (() => {

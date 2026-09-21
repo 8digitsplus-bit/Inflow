@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
+import ConnectDataCTA from '../components/ConnectDataCTA';
 import { useAuth } from '../contexts/AuthContext';
 import {
   Radar, RefreshCw, ScanLine, Plus, Trash2, AlertTriangle, TrendingUp,
@@ -234,6 +235,14 @@ export default function RevenueLeaks() {
             </div>
           </div>
         </div>
+
+        {contracts.length === 0 && leaks.length === 0 && (
+          <ConnectDataCTA
+            title="No contracts or usage linked yet"
+            message="Revenue-leak detection needs a usage source (Mixpanel/Amplitude) and at least one contract. Connect a data source, then add a contract below to start scanning."
+            testid="leaks-empty-cta"
+          />
+        )}
 
         {/* Leaks */}
         <div className={`rounded-2xl ${glass} mb-8 overflow-hidden`}>
