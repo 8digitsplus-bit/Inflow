@@ -1826,6 +1826,42 @@ async def sync_platform(platform: str, current_user: User = Depends(require_owne
     }
 
 
+@router.get("/business/test/{platform}")
+async def test_platform_connection(platform: str, current_user: User = Depends(require_owner)):
+    """Lightweight, read-only health check for a connected platform (no re-import)."""
+    if platform not in PLATFORMS:
+        raise HTTPException(status_code=404, detail="Platform not found")
+
+    connection = await db.business_connections.find_one(
+        {**org_filter(current_user), "platform": platform}, {"_id": 0}
+    )
+    if not connection:
+        raise HTTPException(status_code=404, detail="Platform not connected")
+
+    api_key_enc = connection.get("api_key_encrypted")
+    if not api_key_enc:
+        raise HTTPException(status_code=400, detail="No credentials found. Please reconnect.")
+
+    name = PLATFORMS[platform]["name"]
+    records = connection.get("records_synced", 0) or 0
+
+    # Live credential check for platforms that support a cheap validation (HubSpot today).
+    if platform == "hubspot":
+        result = await validate_hubspot_key(decrypt(api_key_enc))
+        if not result.get("valid"):
+            raise HTTPException(
+                status_code=400,
+                detail=f"{name} token is no longer valid ({result.get('error', 'auth failed')}) — please reconnect.",
+            )
+
+    return {
+        "ok": True,
+        "platform": platform,
+        "records_synced": records,
+        "message": f"\u2705 {name} connection is healthy — {records} records synced.",
+    }
+
+
 @router.get("/business/summary")
 async def get_business_summary(current_user: User = Depends(get_current_user)):
     connections = await db.business_connections.find(

@@ -7,6 +7,7 @@ import {
   CreditCard, ShoppingBag, Users, Cloud, Calculator, Check, Loader2, RefreshCw, Unplug,
   ArrowRight, Zap, Database, TrendingUp, Clock, Key, ExternalLink, Shield, X,
   FileSpreadsheet, Globe, Sparkles, Upload, AlertTriangle, Lock, DollarSign, BarChart3, Search,
+  Activity, HelpCircle, ChevronDown,
 } from 'lucide-react';
 import { Card, CardContent } from '../components/ui/card';
 import { Button } from '../components/ui/button';
@@ -14,6 +15,30 @@ import { toast } from 'sonner';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 const ICON_MAP = { CreditCard, ShoppingBag, Users, Cloud, Calculator, DollarSign, BarChart3 };
+
+// Platforms that support confirmed write-backs (2-way sync), not read-only.
+const WRITE_CAPABLE = ['hubspot', 'salesforce', 'pipedrive'];
+
+// Step-by-step token setup shown inside the connect modal.
+const SETUP_GUIDES = {
+  hubspot: {
+    title: 'How to get your HubSpot token',
+    steps: [
+      'In HubSpot: Settings → Integrations → Private Apps → "Create a private app".',
+      'Name it "InFlow", then open the Scopes tab.',
+      'Grant CRM scopes: crm.objects.deals.read + write, crm.objects.contacts.read + write, crm.schemas.deals.read (add crm.objects.quotes.read/write only for offers).',
+      'Click "Create app", confirm, then copy the Access token — it starts with "pat-".',
+      'Paste that pat- token in the field above and click Connect.',
+    ],
+    altTitle: 'Only see HubSpot\u2019s CLI / Projects flow?',
+    altSteps: [
+      'npm i -g @hubspot/cli@latest',
+      'hs init   (authenticates the CLI to your account)',
+      'hs project create  →  choose "App"  →  finish the prompts',
+      'hs project upload, then hs project open, and copy the token from the app\u2019s Auth tab.',
+    ],
+  },
+};
 
 const ConnectBusiness = () => {
   const { user } = useAuth();
@@ -30,6 +55,7 @@ const ConnectBusiness = () => {
   const [apiModal, setApiModal] = useState(false);
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [showGuide, setShowGuide] = useState(false);
 
   const TIER_LEVEL = { trial: 0, expired: -1, cancelled: -1, free: 0, essential_monthly: 1, essential_yearly: 1, pro_monthly: 2, pro_yearly: 2, enterprise_monthly: 3, enterprise_yearly: 3 };
   const userTier = user?.subscription_tier || 'trial';
@@ -68,6 +94,7 @@ const ConnectBusiness = () => {
     const initial = {};
     (platform.key_fields || []).forEach(f => { initial[f.name] = ''; });
     setConnectFields(initial);
+    setShowGuide(false);
   };
 
   const handleConnect = async () => {
@@ -130,6 +157,19 @@ const ConnectBusiness = () => {
       if (res.ok) { toast.success(data.message); await fetchData(); }
       else toast.error(data.detail || 'Sync failed');
     } catch { toast.error('Sync failed'); }
+    finally { setActionLoading(null); }
+  };
+
+  const handleTest = async (platformId) => {
+    setActionLoading(`test-${platformId}`);
+    try {
+      const res = await fetch(`${API_URL}/api/business/test/${platformId}`, {
+        method: 'GET', credentials: 'include',
+      });
+      const data = await res.json();
+      if (res.ok && data.ok) toast.success(data.message);
+      else toast.error(data.detail || 'Connection test failed — try reconnecting.');
+    } catch { toast.error('Connection test failed'); }
     finally { setActionLoading(null); }
   };
 
@@ -553,6 +593,12 @@ const ConnectBusiness = () => {
                                 data-testid={`sync-${platform.platform_id}`}>
                                 {isSyncing ? <Loader2 className="w-3 h-3 animate-spin mr-1.5" /> : <RefreshCw className="w-3 h-3 mr-1.5" />} Re-sync
                               </Button>
+                              <Button size="sm" variant="outline"
+                                className="border-zinc-700 text-emerald-300/80 hover:bg-emerald-500/10 hover:text-emerald-300 hover:border-emerald-500/30 text-xs h-8"
+                                onClick={() => handleTest(platform.platform_id)} disabled={actionLoading === `test-${platform.platform_id}`}
+                                data-testid={`test-${platform.platform_id}`}>
+                                {actionLoading === `test-${platform.platform_id}` ? <Loader2 className="w-3 h-3 animate-spin mr-1.5" /> : <Activity className="w-3 h-3 mr-1.5" />} Test
+                              </Button>
                               <Button size="sm" variant="ghost"
                                 className="text-zinc-500 hover:text-red-400 hover:bg-red-500/10 text-xs h-8 px-3"
                                 onClick={() => handleDisconnect(platform.platform_id)} disabled={isDisconnecting}
@@ -644,9 +690,47 @@ const ConnectBusiness = () => {
               <div className="flex items-start gap-2 p-3 bg-zinc-800/50 rounded-lg border border-zinc-700/50">
                 <Shield className="w-4 h-4 text-slate-400 mt-0.5 flex-shrink-0" />
                 <div className="text-[11px] text-zinc-400 leading-relaxed">
-                  Your credentials are stored securely and only used to read your {connectModal.name} data. We never modify your account.
+                  {WRITE_CAPABLE.includes(connectModal.platform_id)
+                    ? `Your credentials are stored encrypted and used to read your ${connectModal.name} data. Any changes back to ${connectModal.name} only happen when you explicitly confirm them in Workspace.`
+                    : `Your credentials are stored encrypted and only used to read your ${connectModal.name} data. We never modify your account.`}
                 </div>
               </div>
+
+              {SETUP_GUIDES[connectModal.platform_id] && (
+                <div className="rounded-lg border border-zinc-700/60 bg-zinc-800/40 overflow-hidden" data-testid="setup-guide">
+                  <button
+                    type="button"
+                    onClick={() => setShowGuide(v => !v)}
+                    className="w-full flex items-center gap-2 px-3 py-2.5 text-left text-xs font-medium text-slate-300 hover:bg-zinc-800/60 transition-colors"
+                    data-testid="setup-guide-toggle">
+                    <HelpCircle className="w-3.5 h-3.5 text-slate-400" />
+                    {SETUP_GUIDES[connectModal.platform_id].title}
+                    <ChevronDown className={`w-3.5 h-3.5 ml-auto text-zinc-500 transition-transform ${showGuide ? 'rotate-180' : ''}`} />
+                  </button>
+                  {showGuide && (
+                    <div className="px-3 pb-3 pt-1 space-y-3 border-t border-zinc-700/50">
+                      <ol className="space-y-1.5 mt-2">
+                        {SETUP_GUIDES[connectModal.platform_id].steps.map((s, i) => (
+                          <li key={i} className="flex gap-2 text-[11px] text-zinc-400 leading-relaxed">
+                            <span className="flex-shrink-0 w-4 h-4 rounded-full bg-slate-500/20 text-slate-300 text-[9px] font-bold flex items-center justify-center mt-0.5">{i + 1}</span>
+                            <span>{s}</span>
+                          </li>
+                        ))}
+                      </ol>
+                      {SETUP_GUIDES[connectModal.platform_id].altSteps && (
+                        <div className="pt-1">
+                          <p className="text-[10px] font-semibold text-zinc-500 uppercase tracking-wide mb-1.5">{SETUP_GUIDES[connectModal.platform_id].altTitle}</p>
+                          <div className="space-y-1">
+                            {SETUP_GUIDES[connectModal.platform_id].altSteps.map((s, i) => (
+                              <code key={i} className="block text-[10px] text-emerald-300/80 bg-zinc-950/50 rounded px-2 py-1 font-mono overflow-x-auto">{s}</code>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {connectModal.key_help_url && (
                 <a href={connectModal.key_help_url} target="_blank" rel="noopener noreferrer"

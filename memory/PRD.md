@@ -13,6 +13,14 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
+### Beta onboarding polish — HubSpot connect UX (Jun 2026)
+Also validated the full HubSpot 2-way flow live with a real (EU sandbox) Private App token: import worked, and a real note write-back succeeded (`/workspace/actions` → execute → HubSpot note id created). Confirmed the beta model = each org connects its own non-expiring Private App token (no shared key, no OAuth build needed for a ≤10-user closed beta).
+Three connect-UX fixes (all self-tested via curl + screenshots):
+1. **Fixed broken HubSpot "instructions" link** — `business.py` HubSpot `key_help_url` pointed at `https://app.hubspot.com/private-apps/` (no portal ID → HubSpot 404). Repointed to the one confirmed-live official page (`developers.hubspot.com/docs/apps/developer-platform/build-apps/create-an-app`) and updated `key_help_text` to include the required CRM read+write scopes. (Note: HubSpot sunset legacy private-app UI creation Sept 2026 and reorganized docs — most other candidate URLs are dead.)
+2. **In-app setup walkthrough** — `ConnectBusiness.js` connect modal now has an expandable "How to get your HubSpot token" (`SETUP_GUIDES` map, `setup-guide-toggle`): numbered steps for the Settings→Private Apps path + a CLI/Projects alt path with exact `hs` commands.
+3. **Honest connect-modal copy** — replaced the blanket "We never modify your account" with a write-capable-aware message (`WRITE_CAPABLE = hubspot/salesforce/pipedrive`): "…used to read your data. Any changes back to {platform} only happen when you explicitly confirm them in Workspace."
+4. **"Test connection" button** — new read-only backend `GET /api/business/test/{platform}` (owner-only; live `validate_hubspot_key` check for HubSpot, no re-import) + green **Test** button (`test-{platform}`) on connected cards → toast "✅ {platform} connection is healthy — N records synced."
+
 ### Audit batch — routing/security/UX fixes (Jun 2026) — forked job, verified iteration_63
 Actioned a 13-item system audit. IMPORTANT: 4 "critical" items were ALREADY implemented by prior round-3 work and only needed regression confirmation — #4 Stripe webhook now rejects unsigned payloads (500 if secret unset / 400 on bad sig, no unsigned fallback), #5 telemetry leak guards (approve = terminal-state block + atomic `find_one_and_update` claim; dismiss = `status:"open"` filter guard), #6 subscription single-source-of-truth (both webhook branches sync `db.organizations`; `require_paid` reads the org), #9 RevenueForecast `Number(x.trim())` + `isFinite && >0` (rejects `-5000`, parses `1e9`). All confirmed PASS.
 New code changes this session:
