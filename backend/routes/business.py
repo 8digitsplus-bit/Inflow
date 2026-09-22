@@ -93,8 +93,8 @@ PLATFORMS = {
         "key_fields": [
             {"name": "api_key", "label": "Private App Access Token", "placeholder": "pat-na1-...", "type": "password"},
         ],
-        "key_help_url": "https://app.hubspot.com/private-apps/",
-        "key_help_text": "Go to HubSpot > Settings > Integrations > Private Apps > Create > Grant CRM scopes (crm.objects.deals.read, crm.objects.contacts.read) > Create app > Copy access token.",
+        "key_help_url": "https://developers.hubspot.com/docs/apps/developer-platform/build-apps/create-an-app",
+        "key_help_text": "Create a HubSpot Private App and copy its access token (pat-...). Grant CRM scopes: crm.objects.deals.read/write, crm.objects.contacts.read/write, crm.schemas.deals.read (add crm.objects.quotes.write for offers).",
     },
     "salesforce": {
         "default_revenue_role": "pipeline",
