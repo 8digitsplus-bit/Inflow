@@ -183,9 +183,10 @@ PLATFORMS = {
         "key_fields": [
             {"name": "company_id", "label": "Company ID (Realm ID)", "placeholder": "1234567890", "type": "text"},
             {"name": "api_key", "label": "Access Token", "placeholder": "Your QuickBooks access token", "type": "password"},
+            {"name": "sandbox", "label": "Sandbox token (check if from the Intuit OAuth Playground)", "type": "checkbox"},
         ],
         "key_help_url": "https://developer.intuit.com/app/developer/playground",
-        "key_help_text": "Use the Intuit Developer OAuth Playground to get an access token and Company ID. Note: tokens expire after ~1 hour.",
+        "key_help_text": "Use the Intuit Developer OAuth Playground to get an Access Token and Company ID (Realm ID). If the token is from the Playground/sandbox, tick the Sandbox box. Note: access tokens expire after ~1 hour.",
         "token_expires": True,
     },
     "paypal": {
