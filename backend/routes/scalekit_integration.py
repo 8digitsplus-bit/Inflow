@@ -25,13 +25,13 @@ SK_ID = os.environ.get("SCALEKIT_CLIENT_ID")
 SK_SECRET = os.environ.get("SCALEKIT_CLIENT_SECRET")
 APP_BASE_URL = os.environ.get("APP_BASE_URL", "").rstrip("/")
 
-CONNECTORS = {"quickbooks", "salesforce", "intercom"}
+CONNECTORS = {"quickbooks", "salesforce", "xero"}
 # Dashboard connection names can differ from the bare provider key (e.g. "quickbooks-connect").
 # Override per-connector via env if your Scalekit dashboard names them differently.
 _CONN_NAMES = {
     "quickbooks": os.environ.get("SCALEKIT_CONNECTION_QUICKBOOKS", "quickbooks"),
     "salesforce": os.environ.get("SCALEKIT_CONNECTION_SALESFORCE", "salesforce"),
-    "intercom": os.environ.get("SCALEKIT_CONNECTION_INTERCOM", "intercom"),
+    "xero": os.environ.get("SCALEKIT_CONNECTION_XERO", "xero"),
 }
 _token_cache = {"tok": None, "exp": 0.0}
 
@@ -124,8 +124,8 @@ def _map_records(connector: str, data, user_id: str):
     deals = []
     items = data if isinstance(data, list) else (data.get("data") or data.get("records") or data.get("QueryResponse") or [])
     if isinstance(items, dict):
-        # QuickBooks-style {"Invoice": [...]} or Intercom {"data":[...]}
-        items = items.get("Invoice") or items.get("records") or items.get("data") or []
+        # QuickBooks {"Invoice":[...]} / Xero {"Invoices":[...]} / Intercom {"data":[...]}
+        items = items.get("Invoice") or items.get("Invoices") or items.get("records") or items.get("data") or []
     if not isinstance(items, list):
         items = []
     for it in items:
@@ -144,11 +144,15 @@ def _map_records(connector: str, data, user_id: str):
             deals.append(_deal(user_id, it.get("Name"), "Salesforce", it.get("Amount"),
                                stage, 100 if stage == "closed_won" else 40, "salesforce",
                                it.get("CloseDate"), "Salesforce opportunity"))
-        elif connector == "intercom":
-            spend = _num(it.get("monthly_spend"))
-            deals.append(_deal(user_id, it.get("name") or f"Company {it.get('id','')}",
-                               it.get("name"), spend * 12, "closed_won", 100, "intercom",
-                               None, f"Intercom customer • ${spend:.0f}/mo"))
+        elif connector == "xero":
+            if it.get("Type") and it.get("Type") != "ACCREC":
+                continue  # keep sales invoices (ACCREC); skip bills/payables (ACCPAY)
+            status = str(it.get("Status", "")).upper()
+            stage = "closed_won" if status in ("PAID", "AUTHORISED") else "proposal"
+            deals.append(_deal(user_id, it.get("InvoiceNumber") or f"Invoice {it.get('InvoiceID','')}",
+                               (it.get("Contact") or {}).get("Name", "Xero"),
+                               it.get("Total"), stage, 100 if stage == "closed_won" else 50, "xero",
+                               it.get("DateString") or it.get("Date"), "Xero invoice"))
     return deals
 
 
@@ -156,7 +160,7 @@ async def _import_and_store(connector: str, account_id: str, user: User) -> int:
     tool, params = {
         "quickbooks": ("quickbooks_invoices_list", {}),
         "salesforce": ("salesforce_opportunities_list", {}),
-        "intercom": ("intercom_list_companies", {}),
+        "xero": ("xero_invoices_list", {}),
     }[connector]
     data = await _execute(account_id, tool, params)
     deals = _map_records(connector, data, user.user_id)

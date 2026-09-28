@@ -4,7 +4,7 @@ import CsvImportModal from '../components/CsvImportModal';
 import CustomApiModal from '../components/CustomApiModal';
 import { useAuth } from '../contexts/AuthContext';
 import {
-  CreditCard, ShoppingBag, Users, Cloud, Calculator, Check, Loader2, RefreshCw, Unplug,
+  CreditCard, ShoppingBag, Users, Cloud, Calculator, Receipt, Check, Loader2, RefreshCw, Unplug,
   ArrowRight, Zap, Database, TrendingUp, Clock, Key, ExternalLink, Shield, X,
   FileSpreadsheet, Globe, Sparkles, Upload, AlertTriangle, Lock, DollarSign, BarChart3, Search,
   Activity, HelpCircle, ChevronDown,
@@ -23,7 +23,7 @@ const WRITE_CAPABLE = ['hubspot', 'salesforce', 'pipedrive'];
 const SCALEKIT_CONNECTORS = [
   { id: 'quickbooks', name: 'QuickBooks', icon: Calculator, color: '#2CA01C', desc: 'Import paid invoices as attributable closed-won revenue.' },
   { id: 'salesforce', name: 'Salesforce', icon: Cloud, color: '#00A1E0', desc: 'Sync open & won opportunities straight into your pipeline.' },
-  { id: 'intercom', name: 'Intercom', icon: Users, color: '#1F8DED', desc: 'Pull customers and monthly spend into revenue accounts.' },
+  { id: 'xero', name: 'Xero', icon: Receipt, color: '#13B5EA', desc: 'Import issued & paid invoices as attributable revenue.' },
 ];
 
 // Step-by-step token setup shown inside the connect modal.
