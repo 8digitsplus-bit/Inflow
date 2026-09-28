@@ -24,7 +24,18 @@ SK_SECRET = os.environ.get("SCALEKIT_CLIENT_SECRET")
 APP_BASE_URL = os.environ.get("APP_BASE_URL", "").rstrip("/")
 
 CONNECTORS = {"quickbooks", "salesforce", "intercom"}
+# Dashboard connection names can differ from the bare provider key (e.g. "quickbooks-connect").
+# Override per-connector via env if your Scalekit dashboard names them differently.
+_CONN_NAMES = {
+    "quickbooks": os.environ.get("SCALEKIT_CONNECTION_QUICKBOOKS", "quickbooks"),
+    "salesforce": os.environ.get("SCALEKIT_CONNECTION_SALESFORCE", "salesforce"),
+    "intercom": os.environ.get("SCALEKIT_CONNECTION_INTERCOM", "intercom"),
+}
 _token_cache = {"tok": None, "exp": 0.0}
+
+
+def _conn_name(connector: str) -> str:
+    return _CONN_NAMES.get(connector, connector)
 
 
 def _configured() -> bool:
@@ -61,6 +72,23 @@ async def _sk_get(path: str, params: dict) -> httpx.Response:
     tok = await _sk_token()
     async with httpx.AsyncClient(timeout=40.0) as c:
         return await c.get(f"{SK_ENV}{path}", params=params, headers={"Authorization": f"Bearer {tok}"})
+
+
+async def _get_or_create_account(conn_name: str, identifier: str) -> httpx.Response:
+    """Create (or fetch existing) connected account. Scalekit requires this before a magic link.
+    Body must wrap details in `connected_account` (empty for OAuth — the user authorizes via the link)."""
+    return await _sk_post("/api/v1/connected_accounts",
+                          {"connected_account": {}, "connector": conn_name, "identifier": identifier})
+
+
+def _account_from(resp: httpx.Response) -> dict:
+    if resp.status_code >= 400:
+        return {}
+    j = resp.json() if resp.content else {}
+    if not isinstance(j, dict):
+        return {}
+    acc = j.get("connected_account", j)
+    return acc if isinstance(acc, dict) else {}
 
 
 async def _execute(account_id: str, tool_name: str, params: dict) -> dict:
@@ -144,7 +172,15 @@ async def _import_and_store(connector: str, account_id: str, user: User) -> int:
 
 @router.get("/integrations/scalekit/status")
 async def scalekit_status(user: User = Depends(require_owner)):
-    return {"configured": _configured(), "connectors": sorted(CONNECTORS)}
+    conns = await db.business_connections.find(
+        {"org_id": user.org_id, "provider": "scalekit"}, {"_id": 0}).to_list(50)
+    connected = {c["platform"]: {
+        "status": c.get("status"),
+        "records_synced": c.get("records_synced", 0),
+        "last_synced": c.get("last_synced"),
+        "account_name": c.get("account_name"),
+    } for c in conns if c.get("scalekit_account_id")}
+    return {"configured": _configured(), "connectors": sorted(CONNECTORS), "connected": connected}
 
 
 @router.get("/integrations/scalekit/{connector}/start")
@@ -152,19 +188,30 @@ async def scalekit_start(connector: str, user: User = Depends(require_owner)):
     _require_config()
     if connector not in CONNECTORS:
         raise HTTPException(status_code=404, detail="Unsupported connector")
+    conn_name = _conn_name(connector)
     state = secrets.token_urlsafe(24)
     await db.scalekit_oauth_states.insert_one({
         "state": state, "org_id": user.org_id, "connector": connector,
         "created_at": datetime.now(timezone.utc).isoformat()})
+    # Scalekit requires the connected account to exist before a magic link can be issued.
+    cr = await _get_or_create_account(conn_name, user.org_id)
+    # 409 = account already exists (fine). "connection not found" = the connector isn't set up in the dashboard.
+    if cr.status_code >= 400 and cr.status_code != 409 and "connection not found" in cr.text.lower():
+        raise HTTPException(status_code=400, detail=(
+            f"No '{conn_name}' connection exists in your Scalekit environment yet. "
+            f"In the Scalekit dashboard, open AgentKit → Connections → Create Connection, "
+            f"add {connector.title()}, then try again."))
     resp = await _sk_post("/api/v1/connected_accounts/magic_link", {
-        "connector": connector,
+        "connector": conn_name,
         "identifier": user.org_id,
-        "organization_id": user.org_id,
         "state": state,
         "user_verify_url": f"{APP_BASE_URL}/api/integrations/scalekit/verify",
     })
     if resp.status_code >= 400:
-        raise HTTPException(status_code=400, detail=f"Scalekit start failed: {resp.text[:200]}")
+        detail = resp.text[:250]
+        if cr.status_code >= 400 and cr.status_code != 409:
+            detail = f"{detail} | create_account: {cr.text[:150]}"
+        raise HTTPException(status_code=400, detail=f"Scalekit start failed: {detail}")
     return {"url": resp.json().get("link")}
 
 
@@ -180,8 +227,9 @@ async def scalekit_verify(auth_request_id: str = Query(...), state: str = Query(
     if vr.status_code >= 400:
         return RedirectResponse(f"{APP_BASE_URL}/connect-business?scalekit_error={connector}")
 
-    dr = await _sk_get("/api/v1/connected_accounts/details", {"connector": connector, "identifier": org_id})
-    account = (dr.json() or {}).get("connected_account", {}) if dr.status_code < 400 else {}
+    dr = await _sk_get("/api/v1/connected_accounts/details",
+                       {"connector": _conn_name(connector), "identifier": org_id})
+    account = _account_from(dr)
     account_id = account.get("id")
 
     owner = await db.users.find_one({"org_id": org_id, "role": "owner"}, {"_id": 0})

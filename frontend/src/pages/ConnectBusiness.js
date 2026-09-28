@@ -19,6 +19,13 @@ const ICON_MAP = { CreditCard, ShoppingBag, Users, Cloud, Calculator, DollarSign
 // Platforms that support confirmed write-backs (2-way sync), not read-only.
 const WRITE_CAPABLE = ['hubspot', 'salesforce', 'pipedrive'];
 
+// One-click OAuth connectors handled by Scalekit AgentKit (managed OAuth + auto-refresh).
+const SCALEKIT_CONNECTORS = [
+  { id: 'quickbooks', name: 'QuickBooks', icon: Calculator, color: '#2CA01C', desc: 'Import paid invoices as attributable closed-won revenue.' },
+  { id: 'salesforce', name: 'Salesforce', icon: Cloud, color: '#00A1E0', desc: 'Sync open & won opportunities straight into your pipeline.' },
+  { id: 'intercom', name: 'Intercom', icon: Users, color: '#1F8DED', desc: 'Pull customers and monthly spend into revenue accounts.' },
+];
+
 // Step-by-step token setup shown inside the connect modal.
 const SETUP_GUIDES = {
   hubspot: {
@@ -56,6 +63,7 @@ const ConnectBusiness = () => {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showGuide, setShowGuide] = useState(false);
+  const [scalekit, setScalekit] = useState(null);
 
   const TIER_LEVEL = { trial: 0, expired: -1, cancelled: -1, free: 0, essential_monthly: 1, essential_yearly: 1, pro_monthly: 2, pro_yearly: 2, enterprise_monthly: 3, enterprise_yearly: 3 };
   const userTier = user?.subscription_tier || 'trial';
@@ -65,12 +73,13 @@ const ConnectBusiness = () => {
 
   const fetchData = useCallback(async () => {
     try {
-      const [platRes, sumRes, customRes, detectRes, usageRes] = await Promise.all([
+      const [platRes, sumRes, customRes, detectRes, usageRes, scalekitRes] = await Promise.all([
         fetch(`${API_URL}/api/business/platforms`, { credentials: 'include' }),
         fetch(`${API_URL}/api/business/summary`, { credentials: 'include' }),
         fetch(`${API_URL}/api/business/custom-sources`, { credentials: 'include' }),
         fetch(`${API_URL}/api/business/detect-platforms`, { credentials: 'include' }),
         fetch(`${API_URL}/api/business/integration-usage`, { credentials: 'include' }),
+        fetch(`${API_URL}/api/integrations/scalekit/status`, { credentials: 'include' }),
       ]);
       if (platRes.ok) setPlatforms(await platRes.json());
       if (sumRes.ok) setSummary(await sumRes.json());
@@ -80,6 +89,7 @@ const ConnectBusiness = () => {
         setDetectedPlatforms(d.detected_platforms || []);
       }
       if (usageRes.ok) setUsage(await usageRes.json());
+      if (scalekitRes.ok) setScalekit(await scalekitRes.json());
     } catch (err) {
       console.error('Failed to fetch business data:', err);
     } finally {
@@ -88,6 +98,20 @@ const ConnectBusiness = () => {
   }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  // Handle return from the Scalekit OAuth round-trip.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const ok = params.get('scalekit');
+    const err = params.get('scalekit_error');
+    if (ok || err) {
+      const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
+      if (ok) toast.success(`${cap(ok)} connected via Scalekit`);
+      if (err) toast.error(`Could not connect ${cap(err)}. Please try again.`);
+      window.history.replaceState({}, '', window.location.pathname);
+      fetchData();
+    }
+  }, [fetchData]);
 
   const openConnectModal = (platform) => {
     setConnectModal(platform);
@@ -170,6 +194,33 @@ const ConnectBusiness = () => {
       if (res.ok && data.ok) toast.success(data.message);
       else toast.error(data.detail || 'Connection test failed — try reconnecting.');
     } catch { toast.error('Connection test failed'); }
+    finally { setActionLoading(null); }
+  };
+
+  const handleScalekitConnect = async (connector) => {
+    setActionLoading(`sk-connect-${connector}`);
+    try {
+      const res = await fetch(`${API_URL}/api/integrations/scalekit/${connector}/start`, { credentials: 'include' });
+      const data = await res.json();
+      if (res.ok && data.url) {
+        window.location.href = data.url;
+        return;
+      }
+      toast.error(data.detail || 'Could not start connection');
+    } catch { toast.error('Could not start connection'); }
+    setActionLoading(null);
+  };
+
+  const handleScalekitSync = async (connector) => {
+    setActionLoading(`sk-sync-${connector}`);
+    try {
+      const res = await fetch(`${API_URL}/api/integrations/scalekit/${connector}/sync`, {
+        method: 'POST', credentials: 'include',
+      });
+      const data = await res.json();
+      if (res.ok) { toast.success(data.message); await fetchData(); }
+      else toast.error(data.detail || 'Sync failed');
+    } catch { toast.error('Sync failed'); }
     finally { setActionLoading(null); }
   };
 
@@ -448,6 +499,73 @@ const ConnectBusiness = () => {
                               {isDisconnecting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Unplug className="w-3 h-3" />}
                             </Button>
                           </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* One-Click OAuth via Scalekit */}
+            {scalekit?.configured && (
+              <div className="space-y-4" data-testid="scalekit-section">
+                <div className="flex items-center gap-2">
+                  <h2 className="text-sm font-medium text-zinc-500 uppercase tracking-wider">One-Click OAuth</h2>
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-blue-500/15 text-blue-300 border border-blue-500/20">Beta</span>
+                </div>
+                <p className="text-xs text-zinc-500 -mt-2 max-w-2xl">
+                  Connect with a single click — no API keys to paste. Tokens refresh automatically, so these connections never expire on you.
+                </p>
+                <div className="grid md:grid-cols-3 gap-4" data-testid="scalekit-grid">
+                  {SCALEKIT_CONNECTORS.map((c) => {
+                    const conn = scalekit.connected?.[c.id];
+                    const connected = !!conn;
+                    const Icon = c.icon;
+                    const connecting = actionLoading === `sk-connect-${c.id}`;
+                    const syncing = actionLoading === `sk-sync-${c.id}`;
+                    return (
+                      <Card key={c.id}
+                        className={`bg-zinc-950/50 border transition-all duration-300 ${connected ? 'border-blue-500/30' : 'border-white/10 hover:border-blue-500/20'}`}
+                        data-testid={`scalekit-card-${c.id}`}>
+                        <CardContent className="p-5">
+                          <div className="flex items-start gap-3 mb-3">
+                            <div className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0" style={{ backgroundColor: `${c.color}18` }}>
+                              <Icon className="w-5 h-5" style={{ color: c.color }} />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <h3 className="text-white font-semibold text-sm" style={{ fontFamily: 'Outfit' }}>{c.name}</h3>
+                                {connected && (
+                                  <span className="bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded-full text-[10px] font-medium flex items-center gap-1" data-testid={`scalekit-connected-${c.id}`}>
+                                    <Zap className="w-2.5 h-2.5" /> Connected
+                                  </span>
+                                )}
+                              </div>
+                              <span className="text-[11px] text-zinc-500 font-medium">via Scalekit</span>
+                            </div>
+                          </div>
+                          <p className="text-zinc-400 text-xs leading-relaxed mb-4">{c.desc}</p>
+                          {connected ? (
+                            <div className="space-y-3">
+                              <div className="flex items-center gap-x-3 text-[11px] text-zinc-500 flex-wrap">
+                                <span>{conn.records_synced || 0} records</span>
+                                <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{formatDate(conn.last_synced)}</span>
+                              </div>
+                              <Button size="sm" variant="outline"
+                                className="w-full border-zinc-700 text-zinc-300 hover:bg-blue-500/10 hover:text-blue-300 hover:border-blue-500/30 text-xs h-8"
+                                onClick={() => handleScalekitSync(c.id)} disabled={syncing}
+                                data-testid={`scalekit-sync-${c.id}`}>
+                                {syncing ? <Loader2 className="w-3 h-3 animate-spin mr-1.5" /> : <RefreshCw className="w-3 h-3 mr-1.5" />} Re-sync
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button className="w-full bg-blue-600 hover:bg-blue-500 text-white text-xs h-9"
+                              onClick={() => handleScalekitConnect(c.id)} disabled={connecting}
+                              data-testid={`scalekit-connect-${c.id}`}>
+                              {connecting ? <><Loader2 className="w-3.5 h-3.5 animate-spin mr-2" />Redirecting...</> : <><Zap className="w-3.5 h-3.5 mr-2" />Connect (via Scalekit)</>}
+                            </Button>
+                          )}
                         </CardContent>
                       </Card>
                     );

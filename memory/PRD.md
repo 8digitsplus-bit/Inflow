@@ -13,6 +13,18 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
+### Scalekit AgentKit one-click OAuth (QuickBooks/Salesforce/Intercom) — REST, corrected API (Jun 2026)
+- Prior REST plumbing was written against an ASSUMED Scalekit API and did not work. Rewrote key parts of `routes/scalekit_integration.py` against the VERIFIED live REST API:
+  1. Create connected account FIRST: `POST /api/v1/connected_accounts` body `{"connected_account":{}, "connector":<name>, "identifier":<org_id>}` — the `connected_account` wrapper is REQUIRED (409 = already exists = fine).
+  2. Magic link: `POST /api/v1/connected_accounts/magic_link` `{connector, identifier, state, user_verify_url}` → `{link}`.
+  3. Custom user-verification callback `/api/integrations/scalekit/verify?auth_request_id&state`: `POST /api/v1/connected_accounts/user/verify {auth_request_id, identifier}`, then `GET /api/v1/connected_accounts/details?connector&identifier` for {id,status}, store + import.
+- Connection `connector` = the dashboard connection key_id (usually `quickbooks`/`salesforce`/`intercom`). Overridable via env `SCALEKIT_CONNECTION_{QUICKBOOKS,SALESFORCE,INTERCOM}`.
+- `/api/integrations/scalekit/status` returns `{configured, connectors, connected:{...}}`. `start` returns a friendly "create the connection in AgentKit → Connections" message when a connector isn't provisioned.
+- Frontend `ConnectBusiness.js`: new "One-Click OAuth (Beta)" section — "Connect (via Scalekit)" + Re-sync per connector; handles `?scalekit=`/`?scalekit_error=` return params.
+- Env: DEV/sandbox creds live in backend/.env (`SCALEKIT_ENVIRONMENT_URL` ends in `.scalekit.dev`). Client-credentials token exchange verified working; `status` returns configured:true.
+- BLOCKER (user-side): the Scalekit env has NO AgentKit connectors yet (only SSO Passwordless/WebAuthn/Google exist). User must create QuickBooks/Salesforce/Intercom connections in **AgentKit → Connections** and set **User Verification = Custom user verifier**. Live OAuth round-trip is UNTESTED until then.
+
+
 ### Beta onboarding polish — HubSpot connect UX (Jun 2026)
 Also validated the full HubSpot 2-way flow live with a real (EU sandbox) Private App token: import worked, and a real note write-back succeeded (`/workspace/actions` → execute → HubSpot note id created). Confirmed the beta model = each org connects its own non-expiring Private App token (no shared key, no OAuth build needed for a ≤10-user closed beta).
 Three connect-UX fixes (all self-tested via curl + screenshots):
