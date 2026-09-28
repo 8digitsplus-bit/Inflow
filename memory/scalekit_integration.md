@@ -50,9 +50,18 @@ This environment has NO AgentKit connectors (only SSO Passwordless/WebAuthn/Goog
    "None" / "Scalekit users only" won't record the connection back into InFlow).
 4. Provider sandbox accounts for beta data: QuickBooks sandbox company, Salesforce Developer org, Intercom test workspace.
 
-## Data mapping (UNVERIFIED — needs live data)
-tool names guessed: quickbooks_invoices_list / salesforce_query(SOQL) / intercom_list_companies -> deals.
-Verify real Scalekit tool names + payload shapes once a connection is live, then fix _import_and_store/_map_records.
+## Data mapping (VERIFIED tool names against live catalog Jun 2026)
+- Execute endpoint: `POST /api/v1/execute_tool` body {connected_account_id, tool_name, params} -> {data}. CONFIRMED path.
+- Tool names (confirmed present in /api/v1/tools catalog):
+  - quickbooks -> `quickbooks_invoices_list`  (also available: quickbooks_payments_list, quickbooks_customers_list, quickbooks_report_profit_and_loss)
+  - salesforce -> `salesforce_opportunities_list`  (NOT salesforce_query; also salesforce_query_soql / salesforce_soql_execute exist)
+  - intercom   -> `intercom_list_companies`  (also intercom_list_contacts)
+- Params: currently sent as {} (empty) to avoid INVALID_ARGUMENT on unverified param names; list tools return a default page.
+  Once a connection is authorized, inspect real output shape and add paging/limit params + refine _map_records if needed.
+- _map_records reads: QB invoice {DocNumber, CustomerRef.name, TotalAmt, TxnDate}; SF opp {Name, Amount, StageName, CloseDate};
+  Intercom company {name, monthly_spend}. Verify these field names against real tool output on first live sync.
+- QuickBooks connection (Individual/per-user mode) name = `quickbooks-TijdKCMK` -> env SCALEKIT_CONNECTION_QUICKBOOKS.
+  User chose INDIVIDUAL credentials (per-workspace isolation), NOT org-wide. identifier=org_id gives per-org sharing.
 
 ## Beta vs live
 - Development (.scalekit.dev) creds => sandbox/beta only. Production is a SEPARATE environment (.scalekit.com)

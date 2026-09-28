@@ -152,9 +152,9 @@ def _map_records(connector: str, data, user_id: str):
 
 async def _import_and_store(connector: str, account_id: str, user: User) -> int:
     tool, params = {
-        "quickbooks": ("quickbooks_invoices_list", {"max_results": 100}),
-        "salesforce": ("salesforce_query", {"soql": "SELECT Id, Name, Amount, StageName, CloseDate FROM Opportunity LIMIT 100"}),
-        "intercom": ("intercom_list_companies", {"per_page": 100}),
+        "quickbooks": ("quickbooks_invoices_list", {}),
+        "salesforce": ("salesforce_opportunities_list", {}),
+        "intercom": ("intercom_list_companies", {}),
     }[connector]
     data = await _execute(account_id, tool, params)
     deals = _map_records(connector, data, user.user_id)
