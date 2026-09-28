@@ -8,6 +8,7 @@ import time
 import secrets
 import uuid
 import httpx
+import logging
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import RedirectResponse
@@ -17,6 +18,7 @@ from dependencies import require_owner
 from models import User
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 SK_ENV = os.environ.get("SCALEKIT_ENVIRONMENT_URL")
 SK_ID = os.environ.get("SCALEKIT_CLIENT_ID")
@@ -170,6 +172,35 @@ async def _import_and_store(connector: str, account_id: str, user: User) -> int:
     return len(deals)
 
 
+async def _store_and_import(connector: str, org_id: str) -> dict:
+    """Fetch the connected account; if authorized, store the mapping + import records.
+    Mode-independent: works whether or not the connection uses Custom user-verification."""
+    dr = await _sk_get("/api/v1/connected_accounts/details",
+                       {"connector": _conn_name(connector), "identifier": org_id})
+    account = _account_from(dr)
+    account_id = account.get("id")
+    status = str(account.get("status", "")).upper()
+    if not account_id or status != "ACTIVE":
+        return {"connected": False, "status": status or "UNKNOWN", "records": 0}
+    owner = await db.users.find_one({"org_id": org_id, "role": "owner"}, {"_id": 0})
+    await db.business_connections.update_one(
+        {"org_id": org_id, "platform": connector, "provider": "scalekit"},
+        {"$set": {
+            "org_id": org_id, "user_id": (owner or {}).get("user_id"),
+            "platform": connector, "provider": "scalekit",
+            "scalekit_account_id": account_id, "status": status or "ACTIVE",
+            "account_name": f"{connector.title()} (via Scalekit)",
+            "connected_at": datetime.now(timezone.utc).isoformat(), "is_live": True,
+        }}, upsert=True)
+    records = 0
+    if owner:
+        try:
+            records = await _import_and_store(connector, account_id, User(**owner))
+        except Exception as e:
+            logger.warning(f"Scalekit import failed for {connector}: {e}")
+    return {"connected": True, "status": status or "ACTIVE", "records": records}
+
+
 @router.get("/integrations/scalekit/status")
 async def scalekit_status(user: User = Depends(require_owner)):
     conns = await db.business_connections.find(
@@ -179,7 +210,7 @@ async def scalekit_status(user: User = Depends(require_owner)):
         "records_synced": c.get("records_synced", 0),
         "last_synced": c.get("last_synced"),
         "account_name": c.get("account_name"),
-    } for c in conns if c.get("scalekit_account_id")}
+    } for c in conns if c.get("scalekit_account_id") and str(c.get("status", "")).upper() == "ACTIVE"}
     return {"configured": _configured(), "connectors": sorted(CONNECTORS), "connected": connected}
 
 
@@ -221,34 +252,12 @@ async def scalekit_verify(auth_request_id: str = Query(...), state: str = Query(
     if not row:
         raise HTTPException(status_code=400, detail="Invalid or expired state")
     org_id, connector = row["org_id"], row["connector"]
-
-    vr = await _sk_post("/api/v1/connected_accounts/user/verify",
-                        {"auth_request_id": auth_request_id, "identifier": org_id})
-    if vr.status_code >= 400:
-        return RedirectResponse(f"{APP_BASE_URL}/connect-business?scalekit_error={connector}")
-
-    dr = await _sk_get("/api/v1/connected_accounts/details",
-                       {"connector": _conn_name(connector), "identifier": org_id})
-    account = _account_from(dr)
-    account_id = account.get("id")
-
-    owner = await db.users.find_one({"org_id": org_id, "role": "owner"}, {"_id": 0})
-    await db.business_connections.update_one(
-        {"org_id": org_id, "platform": connector, "provider": "scalekit"},
-        {"$set": {
-            "org_id": org_id, "user_id": (owner or {}).get("user_id"),
-            "platform": connector, "provider": "scalekit",
-            "scalekit_account_id": account_id, "status": account.get("status", "ACTIVE"),
-            "account_name": f"{connector.title()} (via Scalekit)",
-            "connected_at": datetime.now(timezone.utc).isoformat(), "is_live": True,
-        }}, upsert=True)
-
-    if account_id and owner:
-        try:
-            await _import_and_store(connector, account_id, User(**owner))
-        except Exception:
-            pass
-    return RedirectResponse(f"{APP_BASE_URL}/connect-business?scalekit={connector}")
+    # Best-effort user verification (only meaningful when the connection uses Custom user-verification).
+    await _sk_post("/api/v1/connected_accounts/user/verify",
+                   {"auth_request_id": auth_request_id, "identifier": org_id})
+    result = await _store_and_import(connector, org_id)
+    param = "scalekit" if result["connected"] else "scalekit_error"
+    return RedirectResponse(f"{APP_BASE_URL}/connect-business?{param}={connector}")
 
 
 @router.post("/integrations/scalekit/{connector}/sync")
@@ -263,3 +272,19 @@ async def scalekit_sync(connector: str, user: User = Depends(require_owner)):
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Sync failed: {str(e)[:200]}")
     return {"ok": True, "records_synced": n, "message": f"✅ Synced {n} records from {connector.title()} (via Scalekit)."}
+
+
+@router.post("/integrations/scalekit/{connector}/finalize")
+async def scalekit_finalize(connector: str, user: User = Depends(require_owner)):
+    """Fallback for connections without Custom user-verification (no redirect callback):
+    reconcile the account status directly and import if it's authorized."""
+    _require_config()
+    if connector not in CONNECTORS:
+        raise HTTPException(status_code=404, detail="Unsupported connector")
+    result = await _store_and_import(connector, user.org_id)
+    if not result["connected"]:
+        raise HTTPException(status_code=400, detail=(
+            f"{connector.title()} isn't authorized yet (status: {result['status']}). "
+            f"Finish the sign-in in the Scalekit window, then try again."))
+    return {"ok": True, "records_synced": result["records"],
+            "message": f"✅ Connected {connector.title()} — synced {result['records']} records (via Scalekit)."}

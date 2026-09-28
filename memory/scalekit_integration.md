@@ -26,9 +26,19 @@
 
 ## Our routes (all prefixed /api)
 - GET  /api/integrations/scalekit/status         -> {configured, connectors, connected:{platform:{...}}}
+                                                    (only status=="ACTIVE" rows are reported as connected)
 - GET  /api/integrations/scalekit/{connector}/start (owner) -> {url}  (create-account + magic_link)
-- GET  /api/integrations/scalekit/verify?auth_request_id&state   (Scalekit redirect target)
-- POST /api/integrations/scalekit/{connector}/sync  (owner)
+- GET  /api/integrations/scalekit/verify?auth_request_id&state   (Scalekit redirect target; Custom-mode)
+- POST /api/integrations/scalekit/{connector}/sync  (owner)  (re-import for an already-connected connector)
+- POST /api/integrations/scalekit/{connector}/finalize (owner)  FALLBACK: reconcile status via /details and
+        import if ACTIVE. Used when the connection is NOT in Custom user-verification mode (no redirect callback).
+
+## Connected-account statuses (observed live)
+- Not yet authorized: status == "PENDING_AUTH" (account exists after create, no OAuth done).
+- Authorized/ready:    status == "ACTIVE"  -> only then do we store the mapping + import.
+- _store_and_import() allowlists ACTIVE only; verify() and finalize() both call it.
+- details response confirms individual mode: is_org_wide_credential:false. provider:"QUICKBOOKS", id starts "ca_".
+- verify() calls user/verify best-effort (ignore failure) then _store_and_import (mode-independent).
 
 ## Naming
 - `connector` value sent to Scalekit = the dashboard connection's key_id (usually quickbooks/salesforce/intercom).

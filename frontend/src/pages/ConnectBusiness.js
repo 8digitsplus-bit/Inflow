@@ -224,6 +224,19 @@ const ConnectBusiness = () => {
     finally { setActionLoading(null); }
   };
 
+  const handleScalekitFinalize = async (connector) => {
+    setActionLoading(`sk-finalize-${connector}`);
+    try {
+      const res = await fetch(`${API_URL}/api/integrations/scalekit/${connector}/finalize`, {
+        method: 'POST', credentials: 'include',
+      });
+      const data = await res.json();
+      if (res.ok) { toast.success(data.message); await fetchData(); }
+      else toast.error(data.detail || 'Not authorized yet');
+    } catch { toast.error('Could not finish setup'); }
+    finally { setActionLoading(null); }
+  };
+
   const handleCustomSync = async (connectionId) => {
     setActionLoading(`sync-custom-${connectionId}`);
     try {
@@ -560,11 +573,20 @@ const ConnectBusiness = () => {
                               </Button>
                             </div>
                           ) : (
-                            <Button className="w-full bg-blue-600 hover:bg-blue-500 text-white text-xs h-9"
-                              onClick={() => handleScalekitConnect(c.id)} disabled={connecting}
-                              data-testid={`scalekit-connect-${c.id}`}>
-                              {connecting ? <><Loader2 className="w-3.5 h-3.5 animate-spin mr-2" />Redirecting...</> : <><Zap className="w-3.5 h-3.5 mr-2" />Connect (via Scalekit)</>}
-                            </Button>
+                            <div className="space-y-2">
+                              <Button className="w-full bg-blue-600 hover:bg-blue-500 text-white text-xs h-9"
+                                onClick={() => handleScalekitConnect(c.id)} disabled={connecting}
+                                data-testid={`scalekit-connect-${c.id}`}>
+                                {connecting ? <><Loader2 className="w-3.5 h-3.5 animate-spin mr-2" />Redirecting...</> : <><Zap className="w-3.5 h-3.5 mr-2" />Connect (via Scalekit)</>}
+                              </Button>
+                              <button
+                                onClick={() => handleScalekitFinalize(c.id)}
+                                disabled={actionLoading === `sk-finalize-${c.id}`}
+                                className="w-full text-[11px] text-zinc-500 hover:text-blue-400 transition-colors disabled:opacity-50"
+                                data-testid={`scalekit-finalize-${c.id}`}>
+                                {actionLoading === `sk-finalize-${c.id}` ? 'Checking…' : 'Already authorized? Finish setup'}
+                              </button>
+                            </div>
                           )}
                         </CardContent>
                       </Card>
