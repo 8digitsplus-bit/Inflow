@@ -25,13 +25,13 @@ SK_ID = os.environ.get("SCALEKIT_CLIENT_ID")
 SK_SECRET = os.environ.get("SCALEKIT_CLIENT_SECRET")
 APP_BASE_URL = os.environ.get("APP_BASE_URL", "").rstrip("/")
 
-CONNECTORS = {"quickbooks", "salesforce", "xero"}
+CONNECTORS = {"quickbooks", "salesforce", "stripe"}
 # Dashboard connection names can differ from the bare provider key (e.g. "quickbooks-connect").
 # Override per-connector via env if your Scalekit dashboard names them differently.
 _CONN_NAMES = {
     "quickbooks": os.environ.get("SCALEKIT_CONNECTION_QUICKBOOKS", "quickbooks"),
     "salesforce": os.environ.get("SCALEKIT_CONNECTION_SALESFORCE", "salesforce"),
-    "xero": os.environ.get("SCALEKIT_CONNECTION_XERO", "xero"),
+    "stripe": os.environ.get("SCALEKIT_CONNECTION_STRIPE", "stripe"),
 }
 _token_cache = {"tok": None, "exp": 0.0}
 
@@ -144,15 +144,20 @@ def _map_records(connector: str, data, user_id: str):
             deals.append(_deal(user_id, it.get("Name"), "Salesforce", it.get("Amount"),
                                stage, 100 if stage == "closed_won" else 40, "salesforce",
                                it.get("CloseDate"), "Salesforce opportunity"))
-        elif connector == "xero":
-            if it.get("Type") and it.get("Type") != "ACCREC":
-                continue  # keep sales invoices (ACCREC); skip bills/payables (ACCPAY)
-            status = str(it.get("Status", "")).upper()
-            stage = "closed_won" if status in ("PAID", "AUTHORISED") else "proposal"
-            deals.append(_deal(user_id, it.get("InvoiceNumber") or f"Invoice {it.get('InvoiceID','')}",
-                               (it.get("Contact") or {}).get("Name", "Xero"),
-                               it.get("Total"), stage, 100 if stage == "closed_won" else 50, "xero",
-                               it.get("DateString") or it.get("Date"), "Xero invoice"))
+        elif connector == "stripe":
+            status = str(it.get("status", "")).lower()
+            if status and status != "succeeded":
+                continue  # only successful charges count as collected revenue
+            amount = _num(it.get("amount")) / 100.0  # Stripe amounts are in cents
+            created = it.get("created")
+            try:
+                close = datetime.fromtimestamp(int(created), tz=timezone.utc).date().isoformat() if created else None
+            except (ValueError, TypeError, OSError):
+                close = None
+            bill = it.get("billing_details") or {}
+            deals.append(_deal(user_id, it.get("description") or bill.get("name") or f"Charge {it.get('id','')}",
+                               bill.get("name") or it.get("receipt_email") or "Stripe",
+                               amount, "closed_won", 100, "stripe", close, "Stripe payment"))
     return deals
 
 
@@ -160,7 +165,7 @@ async def _import_and_store(connector: str, account_id: str, user: User) -> int:
     tool, params = {
         "quickbooks": ("quickbooks_invoices_list", {}),
         "salesforce": ("salesforce_opportunities_list", {}),
-        "xero": ("xero_invoices_list", {}),
+        "stripe": ("stripe_list_charges_dahlia", {}),
     }[connector]
     data = await _execute(account_id, tool, params)
     deals = _map_records(connector, data, user.user_id)

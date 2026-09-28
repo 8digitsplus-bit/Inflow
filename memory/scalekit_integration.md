@@ -65,11 +65,11 @@ This environment has NO AgentKit connectors (only SSO Passwordless/WebAuthn/Goog
 - Tool names (confirmed present in /api/v1/tools catalog):
   - quickbooks -> `quickbooks_invoices_list`  (also available: quickbooks_payments_list, quickbooks_customers_list, quickbooks_report_profit_and_loss)
   - salesforce -> `salesforce_opportunities_list`  (NOT salesforce_query; also salesforce_query_soql / salesforce_soql_execute exist)
-  - xero       -> `xero_invoices_list`  (also xero_contacts_list, xero_payments_list, xero_reports_list)  [replaced Intercom]
+  - stripe     -> `stripe_list_charges_dahlia`  (NOTE the _dahlia suffix; also stripe_list_payment_intents_dahlia, stripe_list_invoices_dahlia)  [replaced Xero/Intercom]
 - Params: currently sent as {} (empty) to avoid INVALID_ARGUMENT on unverified param names; list tools return a default page.
   Once a connection is authorized, inspect real output shape and add paging/limit params + refine _map_records if needed.
 - _map_records reads: QB invoice {DocNumber, CustomerRef.name, TotalAmt, TxnDate}; SF opp {Name, Amount, StageName, CloseDate};
-  Xero invoice {InvoiceNumber, Contact.Name, Total, DateString/Date, Status PAID/AUTHORISED=closed_won, Type ACCREC only}. Verify field names on first live sync.
+  Stripe charge {amount IN CENTS -> /100, status=='succeeded' only, billing_details.name, description, created unix->date}. Verify field names on first live sync.
 - QuickBooks connection (Individual/per-user mode) name = `quickbooks-TijdKCMK` -> env SCALEKIT_CONNECTION_QUICKBOOKS.
   User chose INDIVIDUAL credentials (per-workspace isolation), NOT org-wide. identifier=org_id gives per-org sharing.
 
