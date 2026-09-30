@@ -1,129 +1,231 @@
 {
-  "theme": "Dark",
-  "archetype": "Archetype 4: Swiss & High-Contrast",
-  "fonts": {
-    "headings": {
-      "family": "Cabinet Grotesk",
-      "fallbacks": ["sans-serif"],
-      "usage": "Hero title, card titles",
-      "style": "tracking-tight, bold/black weights"
-    },
-    "body": {
-      "family": "IBM Plex Sans",
-      "fallbacks": ["Inter", "sans-serif"],
-      "usage": "Chat messages, descriptions",
-      "style": "leading-relaxed"
-    },
-    "mono": {
-      "family": "JetBrains Mono",
-      "fallbacks": ["monospace"],
-      "usage": "Labels, overlines, technical metadata",
-      "style": "tracking-widest, uppercase"
+  "project_name": "InFlow Revenue Execution Action Workspace Redesign Blueprint",
+  "app_type": "saas_app",
+  "theme_mode": "dark",
+  "target_file_type": "js",
+  "component_path": "/app/frontend/src/pages/Workspace.js",
+  "secondary_components": [
+    "/app/frontend/src/pages/AccountWorkspace.js",
+    "/app/frontend/src/components/ActionComposer.js",
+    "/app/frontend/src/components/ActionQueue.js",
+    "/app/frontend/src/components/ConfirmPushModal.js"
+  ],
+  "typography": {
+    "font_family_headings": "Outfit, sans-serif",
+    "font_family_body": "Inter, sans-serif",
+    "font_family_mono": "JetBrains Mono, monospace",
+    "text_sizes": {
+      "h1_hero": "text-3xl sm:text-4xl font-bold tracking-tight text-white",
+      "h2_section": "text-xl sm:text-2xl font-semibold tracking-tight text-white",
+      "h3_card": "text-base sm:text-lg font-medium text-slate-100",
+      "h4_subheading": "text-sm sm:text-base font-medium text-slate-200",
+      "body_main": "text-sm leading-relaxed text-slate-300",
+      "body_small": "text-xs leading-normal text-slate-400",
+      "caption_labels": "text-[11px] uppercase tracking-wider font-semibold text-slate-400"
     }
   },
   "colors": {
-    "background": {
-      "base": "#050507",
-      "surface": "#0C0C0F",
-      "surface_hover": "rgba(255,255,255,0.04)"
-    },
-    "border": {
-      "subtle": "rgba(255,255,255,0.1)",
-      "strong": "rgba(255,255,255,0.25)",
-      "glow": "rgba(255,255,255,0.4)"
-    },
-    "text": {
-      "primary": "#FFFFFF",
-      "secondary": "#A1A1AA",
-      "muted": "#71717A",
-      "inverted": "#000000"
-    },
-    "accent": {
-      "primary": "#0057FF",
-      "primary_hover": "#004CE6",
-      "alert": "#FF3B30",
-      "warning": "#FFCC00",
-      "success": "#34C759"
-    },
-    "sentiment": {
-      "positive": "#34C759",
-      "neutral": "rgba(255,255,255,0.4)",
-      "frustrated": "#FF3B30",
-      "anxious": "#FFCC00",
-      "confused": "#0057FF"
+    "background_main": "#050507",
+    "card_glass_bg": "rgba(255, 255, 255, 0.04)",
+    "card_glass_hover_bg": "rgba(255, 255, 255, 0.07)",
+    "card_border": "rgba(255, 255, 255, 0.10)",
+    "card_border_accent": "rgba(0, 82, 255, 0.35)",
+    "primary_brand": "#0052ff",
+    "primary_hover": "#0047d6",
+    "primary_light": "#4d8bff",
+    "text_primary": "#ffffff",
+    "text_secondary": "#94a3b8",
+    "text_muted": "#64748b",
+    "status": {
+      "draft": {
+        "badge_bg": "rgba(234, 179, 8, 0.12)",
+        "badge_border": "rgba(234, 179, 8, 0.30)",
+        "text": "#eab308"
+      },
+      "executed": {
+        "badge_bg": "rgba(34, 197, 94, 0.12)",
+        "badge_border": "rgba(34, 197, 94, 0.30)",
+        "text": "#22c55e"
+      },
+      "failed": {
+        "badge_bg": "rgba(239, 68, 68, 0.12)",
+        "badge_border": "rgba(239, 68, 68, 0.30)",
+        "text": "#ef4444"
+      }
     }
   },
-  "layout_and_spacing": {
-    "container": "max-w-3xl mx-auto px-4 sm:px-6",
-    "section_gap": "gap-8",
-    "border_radius": {
-      "card": "rounded-sm",
-      "pill": "rounded-full",
-      "bubble": "rounded-2xl rounded-br-sm"
+  "visual_enhancers": {
+    "backdrop_blur": "backdrop-blur-xl",
+    "glass_card_class": "bg-white/[0.04] border border-white/10 backdrop-blur-xl rounded-xl shadow-2xl transition-all duration-200",
+    "glass_card_hover": "hover:bg-white/[0.07] hover:border-white/20 hover:shadow-blue-900/10",
+    "glow_effect": "shadow-[0_0_25px_rgba(0,82,255,0.15)]",
+    "inner_border": "border border-white/[0.08]"
+  },
+  "layout_architecture": {
+    "section_1_top_header": {
+      "name": "Workspace Header & CRM Connection Status",
+      "elements": [
+        "Greeting & Subtitle ('Action Workspace — Revenue Execution Engine')",
+        "CRM Destination Selector (HubSpot / Salesforce / Pipedrive)",
+        "Connection Status Pill (Connected / Syncing / Disconnected)",
+        "Synced Record & Contact Count Badges",
+        "Sync/Refresh Trigger Button"
+      ]
+    },
+    "section_2_kpi_row": {
+      "name": "Revenue Attributable KPI Stat Cards (Inspired by Neue AI)",
+      "cards": [
+        {
+          "title": "Pipeline Influenced ($)",
+          "metric": "$1,420,000",
+          "delta": "+18.4% vs last cycle",
+          "trend": "up",
+          "icon": "DollarSign"
+        },
+        {
+          "title": "Revenue Pushed ($)",
+          "metric": "$385,500",
+          "delta": "+24.1% MoM",
+          "trend": "up",
+          "icon": "TrendingUp"
+        },
+        {
+          "title": "Actions Executed",
+          "metric": "142 queued / 98 pushed",
+          "delta": "82% success rate",
+          "trend": "neutral",
+          "icon": "Zap"
+        },
+        {
+          "title": "Offer Win-Rate",
+          "metric": "64.2%",
+          "delta": "+5.8% lift",
+          "trend": "up",
+          "icon": "Target"
+        }
+      ]
+    },
+    "section_3_analytics_summary": {
+      "name": "Revenue Execution Activity & Attributed Value Chart (Neue AI inspired)",
+      "type": "Recharts Area/Line Chart",
+      "metrics": ["Daily Revenue Pushed ($)", "Executed Actions Count"],
+      "description": "Visualizes daily pushed revenue impact alongside total action velocity across time."
+    },
+    "section_4_record_header": {
+      "name": "Target Account / Record Context Bar (Inspired by Taskey)",
+      "fields": [
+        "Status: In Queue / In Review / Pushed to CRM",
+        "Timeline: Target execution date & deadline",
+        "Tag / Priority: High Impact / Tier-1 Account / Discount Override",
+        "Assignee: Account Executive Avatar & Name",
+        "Milestone / Completion Progress: e.g. 4/8 Actions Completed progress bar"
+      ]
+    },
+    "section_5_action_workspace_main": {
+      "name": "Dual-Pane Action Studio",
+      "left_pane_composer": {
+        "title": "Action Composer",
+        "action_types": [
+          "Note",
+          "Task",
+          "Call",
+          "Log Email",
+          "New Deal",
+          "Create Offer"
+        ],
+        "features": [
+          "Dynamic field inputs tailored per action type",
+          "AI Draft assistant trigger button with loading shimmer",
+          "Save as Draft button",
+          "Owner write gating badge / lock indicator"
+        ]
+      },
+      "right_pane_queue": {
+        "title": "Action Execution Pipeline & Views (Taskey inspired view-switcher)",
+        "view_switcher_tabs": ["List / Table View", "Kanban View", "Timeline / Gantt View"],
+        "view_implementations": {
+          "list_view": "Data-rich table view with sortable columns, inline review status, batch actions, and row action triggers.",
+          "kanban_view": "Status columns (Draft -> Pending Review -> Executed -> Failed) with draggable/sortable card layouts containing deal impact metrics.",
+          "timeline_view": "Timeline horizontal cards aligned by scheduled execution time with urgency indicators."
+        }
+      }
     }
   },
-  "components_design": {
-    "top_bar": {
-      "style": "sticky top-0 z-50 border-b border-white/10 bg-[#050507]/80 backdrop-blur-xl py-3",
-      "brand_mark": "Crisp white square with black text '[ F ]', no gradients. Font: JetBrains Mono.",
-      "new_chat_btn": "Ghost button, px-3 py-1.5 hover:bg-white/5, text-sm rounded-md transition-colors text-zinc-400 hover:text-white"
+  "key_functionalities": {
+    "1_crm_destination_selector": "Dropdown to toggle HubSpot, Salesforce, Pipedrive destination with live auth status and record sync counts.",
+    "2_action_composer": "Support 6 distinct action types (Note, Task, Call, Log Email, New Deal, Create Offer) with specific validation, AI prompt drafting support, and draft saving.",
+    "3_action_queue": "Manage draft, pending, pushed, and failed actions. Includes 'Review & Push' CTA, single or bulk selection, retry for failed items, and delete capability.",
+    "4_human_in_the_loop_modal": "Confirmation dialog summarizing exact CRM payload changes (fields, deal amount, contact email) before triggering CRM write API.",
+    "5_owner_write_gating": "Read-only view banner and disabled forms when the current user is not the record/account owner.",
+    "6_empty_state": "Sleek dark glass empty state card prompting 'Connect a CRM' with step-by-step setup CTA when no CRM integration is linked.",
+    "7_view_switcher": "Seamless tab switcher toggling between List, Kanban (by status), and Timeline (by scheduled date) views for queued actions."
+  },
+  "component_name": "Workspace",
+  "grids": {
+    "kpi_grid": "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6",
+    "main_workspace_grid": "grid grid-cols-1 lg:grid-cols-12 gap-6 items-start",
+    "composer_span": "lg:col-span-5 xl:col-span-4",
+    "queue_span": "lg:col-span-7 xl:col-span-8",
+    "kanban_grid": "grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4"
+  },
+  "layouts": {
+    "container_padding": "p-4 sm:p-6 lg:p-8 space-y-6 sm:space-y-8 max-w-7xl mx-auto",
+    "header_flex": "flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+  },
+  "motion": {
+    "framer_motion_usage": "Animate view switcher tab transitions using layoutId, fade-in staggered entrance for queue items, and smooth dialog modal open/close scaling.",
+    "button_hover": "transition-transform active:scale-95 duration-150 ease-in-out",
+    "card_hover": "transition-all duration-200 hover:-translate-y-0.5"
+  },
+  "accessibility": {
+    "contrast_standard": "APCA / WCAG AA compliant contrast ratio text on dark glass backgrounds",
+    "keyboard_navigation": "Full focus-visible outline rings on all interactive tabs, buttons, and form elements",
+    "reduced_motion": "respect prefers-reduced-motion CSS media query"
+  },
+  "3d libraries": {
+    "library": "None required for dashboard action workspace; relies on Canvas/Recharts and Framer Motion for high-density responsiveness"
+  },
+  "media": {
+    "hero_image_overlay": "N/A — uses SVG icons and subtle particle/glass gradient background mesh"
+  },
+  "image_urls": [
+    {
+      "category": "CRM Integration Icons",
+      "description": "Logos for HubSpot, Salesforce, Pipedrive",
+      "url": "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=100&q=80"
     },
-    "welcome_hero": {
-      "layout": "Flex column, centered, generous negative space (py-20 md:py-32)",
-      "title": "text-4xl md:text-5xl font-black text-white tracking-tighter. NO GRADIENTS. Solid white.",
-      "subtitle": "text-base md:text-lg text-zinc-400 font-body max-w-md mx-auto mt-4",
-      "prompt_cards_grid": "grid grid-cols-1 md:grid-cols-2 gap-4 mt-12 w-full max-w-2xl",
-      "prompt_card": "p-5 border border-white/10 bg-transparent hover:border-white/40 hover:bg-white/[0.02] transition-all duration-200 text-left flex flex-col gap-2 rounded-sm cursor-pointer group",
-      "prompt_card_category": "text-[10px] font-mono text-zinc-500 uppercase tracking-widest group-hover:text-zinc-300 transition-colors",
-      "prompt_card_text": "text-sm text-zinc-200 font-medium"
-    },
-    "chat_interface": {
-      "user_bubble": "max-w-[85%] sm:max-w-[75%] bg-white text-black px-5 py-3 rounded-2xl rounded-br-sm text-[15px] font-medium shadow-sm",
-      "ai_message_container": "flex gap-4 mt-6",
-      "ai_mark": "w-7 h-7 flex-shrink-0 bg-[#0057FF] text-white flex items-center justify-center rounded-sm text-xs font-mono shadow-[0_0_15px_rgba(0,87,255,0.3)]",
-      "ai_text": "text-[15px] text-zinc-100 leading-[1.7] font-body",
-      "typing_indicator": "A sleek blinking block cursor (██) or monospace 'Decrypting...' text loader. No bouncing dots."
-    },
-    "action_card": {
-      "container": "mt-5 border border-white/20 bg-[#0C0C0F] rounded-sm overflow-hidden shadow-2xl",
-      "header": "px-4 py-3 border-b border-white/10 flex justify-between items-center bg-white/[0.02]",
-      "header_title": "text-xs font-mono uppercase tracking-widest flex items-center gap-2 text-zinc-300",
-      "fields_container": "px-5 py-4 space-y-4",
-      "field_row": "flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-4 border-b border-white/5 pb-3 last:border-0 last:pb-0",
-      "field_label": "text-[11px] font-mono text-zinc-500 w-20 shrink-0 uppercase tracking-wider",
-      "field_value": "text-sm text-zinc-200",
-      "footer": "px-4 py-3 bg-[#050507] border-t border-white/10 flex justify-end gap-3",
-      "approve_btn": "bg-[#0057FF] text-white hover:bg-[#004CE6] px-5 py-2 text-sm font-medium rounded-sm transition-colors flex items-center gap-2",
-      "cancel_btn": "text-zinc-400 hover:text-white px-4 py-2 text-sm transition-colors font-medium rounded-sm hover:bg-white/5"
-    },
-    "composer": {
-      "container": "relative z-20 border-t border-white/10 bg-[#050507]/90 backdrop-blur-2xl pb-6 pt-4 px-4 sm:px-6",
-      "input_wrapper": "relative flex items-end gap-2 rounded-full border border-white/20 bg-[#0C0C0F] focus-within:border-white/50 focus-within:bg-[#0F0F12] transition-all max-w-3xl mx-auto pl-5 pr-2 py-2 shadow-lg",
-      "textarea": "bg-transparent border-0 text-white text-[15px] min-h-[40px] max-h-32 py-2.5 focus:ring-0 resize-none w-full font-body placeholder:text-zinc-600",
-      "send_btn": "bg-white text-black hover:bg-zinc-200 h-10 w-10 rounded-full flex-shrink-0 flex items-center justify-center transition-colors disabled:opacity-50 disabled:bg-zinc-800 disabled:text-zinc-500",
-      "helper_text": "text-[11px] font-mono text-zinc-500 text-center mt-3 tracking-wide flex items-center justify-center gap-1.5"
+    {
+      "category": "User Avatars",
+      "description": "Avatars for Account Executives and assignees in Taskey-style record header",
+      "url": "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=120&q=80"
     }
+  ],
+  "testing_attributes": {
+    "rule": "Every button, input, tab, modal trigger, card, and metric display MUST include data-testid with kebab-case identifiers.",
+    "examples": [
+      "data-testid='crm-destination-select'",
+      "data-testid='crm-sync-button'",
+      "data-testid='kpi-card-pipeline-influenced'",
+      "data-testid='kpi-card-revenue-pushed'",
+      "data-testid='kpi-card-actions-executed'",
+      "data-testid='kpi-card-offer-win-rate'",
+      "data-testid='record-header-status'",
+      "data-testid='record-header-progress-bar'",
+      "data-testid='action-composer-tab-note'",
+      "data-testid='action-composer-tab-offer'",
+      "data-testid='action-composer-ai-draft-button'",
+      "data-testid='action-composer-save-draft-button'",
+      "data-testid='view-switcher-list'",
+      "data-testid='view-switcher-kanban'",
+      "data-testid='view-switcher-timeline'",
+      "data-testid='action-queue-list'",
+      "data-testid='action-queue-item-1'",
+      "data-testid='action-queue-review-push-button'",
+      "data-testid='confirm-push-modal'",
+      "data-testid='confirm-push-modal-submit-button'",
+      "data-testid='owner-write-gating-banner'"
+    ]
   },
-  "micro_interactions": {
-    "hover_states": "All interactive elements must change color explicitly. Borders lighten from white/10 to white/40.",
-    "focus_states": "Visible focus rings (focus:ring-2 focus:ring-[#0057FF] focus:outline-none) for accessibility.",
-    "animation": "Use subtle Tailwind utility animations (animate-in fade-in slide-in-from-bottom-2 duration-300). No exaggerated bouncing."
-  },
-  "sentiment_cue": {
-    "description": "Implicitly show sentiment via a small status dot next to the brand name in the header.",
-    "implementation": "A 6px rounded-full dot in the header next to 'Flow AI'. Use the sentiment colors: Green for positive/neutral, Red for frustrated, Yellow for confused. Add a subtle animate-pulse effect."
-  },
-  "trust_signals": {
-    "privacy_badge": "Include a small lock icon (🔒 or Shield) in the composer helper text: '🔒 Flow AI confirms with you before acting.'"
-  },
-  "instructions_to_main_agent": [
-    "Replace generic sans fonts with 'IBM Plex Sans' for body and 'Cabinet Grotesk' for headings in the CSS/Tailwind config.",
-    "Remove all indigo-to-violet gradient classes (e.g., from-indigo-500 to-violet-600). The aesthetic is strict monochrome with a single electric blue accent.",
-    "Implement the bento grid for the 4 prompt cards using 'gap-4', 'rounded-sm', and hard 'border-white/10' classes.",
-    "Update the User message bubble to be solid white background with black text for maximum high-contrast.",
-    "Redesign the ActionCard to be a technical, hard-edged table layout (use rounded-sm instead of rounded-2xl). Separate fields with subtle border bottoms.",
-    "Refactor the typing indicator from 3 bouncing dots to a blinking terminal block cursor or linear pulse.",
-    "Add the sentiment status dot in the header next to the brand name.",
-    "Ensure all 'data-testid' attributes are preserved and correctly placed exactly as they were in the original file."
-  ]
+  "instructions_to_main_agent": "Ensure all 7 key functionalities and layout sections are seamlessly integrated into the React JavaScript (.js) workspace codebase under /app/frontend/src/pages/Workspace.js and sub-components. Maintain the dark electric blue (#0052ff) glassmorphic aesthetic while incorporating the Taskey header + view-switcher patterns and Neue AI KPI + activity chart elements. Ensure full responsiveness, interactive action composition with AI triggers, human-in-the-loop modal confirmation, read-only gating state, and data-testid tags on all actionable elements.",
+  "UNIVERSAL GUIDELINES FOR MAIN AGENT": "1. Do not use generic light theme or Inter-only headers. Use Outfit font for headings. 2. Maintain dark glass panels with bg-white/[0.04], border border-white/10, and backdrop-blur-xl. 3. Accent color MUST be Electric Blue (#0052ff). 4. Never use unstyled HTML select; use Radix / shadcn Dropdown/Select. 5. Include explicit data-testid attributes on all interactive elements. 6. Support JS (.js) file syntax."
 }

@@ -1,8 +1,13 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import DashboardLayout from '../components/DashboardLayout';
+import { motion } from 'framer-motion';
+import {
+  ComposedChart, Area, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
+} from 'recharts';
 import {
   Workflow, Loader2, StickyNote, CheckSquare, Phone, Mail, Handshake, BadgePercent, Sparkles,
   Send, Trash2, Check, X, AlertTriangle, Plug, RefreshCw, Clock,
+  DollarSign, TrendingUp, Zap, Target, LayoutList, Columns, CalendarClock,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
@@ -15,6 +20,26 @@ import { toast } from 'sonner';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 const glass = 'bg-white/[0.04] border border-white/10 backdrop-blur-xl';
+
+const num = (v) => { const n = parseFloat(v); return isNaN(n) ? 0 : n; };
+const fmt$ = (n) => (n >= 1000 ? `$${(n / 1000).toFixed(n >= 10000 ? 0 : 1)}k` : `$${Math.round(n || 0)}`);
+
+const StatCard = ({ title, value, sub, trend, Icon, testid }) => (
+  <div className={`rounded-xl ${glass} p-4 hover:bg-white/[0.07] hover:border-white/20 transition-all duration-200`} data-testid={testid}>
+    <div className="flex items-start justify-between gap-2">
+      <div className="min-w-0">
+        <div className="text-[11px] uppercase tracking-wider font-semibold text-zinc-500">{title}</div>
+        <div className="text-2xl font-bold text-white mt-1 truncate" style={{ fontFamily: 'Outfit' }}>{value}</div>
+      </div>
+      <div className="w-9 h-9 rounded-lg bg-[#0052ff]/15 flex items-center justify-center flex-shrink-0"><Icon className="w-4 h-4 text-[#4d8bff]" /></div>
+    </div>
+    {sub && (
+      <div className={`text-[11px] mt-2 flex items-center gap-1 ${trend === 'up' ? 'text-emerald-400' : trend === 'down' ? 'text-red-400' : 'text-zinc-500'}`}>
+        {trend === 'up' && <TrendingUp className="w-3 h-3" />}{sub}
+      </div>
+    )}
+  </div>
+);
 
 const PROVIDER_NAMES = { hubspot: 'HubSpot', salesforce: 'Salesforce', pipedrive: 'Pipedrive' };
 
@@ -85,6 +110,7 @@ export default function Workspace() {
 
   const [confirm, setConfirm] = useState(null); // action being confirmed
   const [pushing, setPushing] = useState(false);
+  const [queueView, setQueueView] = useState('list');
 
   const isOwner = !!status?.is_owner;
   const providers = status?.providers || [];
@@ -197,6 +223,71 @@ export default function Workspace() {
     catch (e) { toast.error(e.message); }
   };
 
+  const kpis = useMemo(() => {
+    const dealish = actions.filter((a) => a.kind === 'deal' || a.kind === 'offer');
+    const pipeline = dealish.reduce((s, a) => s + num(a.payload?.amount), 0);
+    const pushed = dealish.filter((a) => a.status === 'executed').reduce((s, a) => s + num(a.payload?.amount), 0);
+    const executed = actions.filter((a) => a.status === 'executed').length;
+    const failed = actions.filter((a) => a.status === 'failed').length;
+    const attempted = executed + failed;
+    const successRate = attempted ? Math.round((executed / attempted) * 100) : null;
+    const offers = actions.filter((a) => a.kind === 'offer');
+    const offersWon = offers.filter((a) => a.status === 'executed').length;
+    const winRate = offers.length ? Math.round((offersWon / offers.length) * 100) : null;
+    return { pipeline, pushed, executed, drafts: status?.drafts ?? 0, successRate, winRate, offersCount: offers.length, dealCount: dealish.length };
+  }, [actions, status]);
+
+  const chartData = useMemo(() => {
+    const order = [];
+    const map = {};
+    for (let i = 13; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const key = d.toISOString().slice(0, 10);
+      map[key] = { key, label: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }), actions: 0, value: 0 };
+      order.push(key);
+    }
+    actions.forEach((a) => {
+      const key = (a.created_at || '').slice(0, 10);
+      if (map[key]) {
+        map[key].actions += 1;
+        if (a.kind === 'deal' || a.kind === 'offer') map[key].value += num(a.payload?.amount);
+      }
+    });
+    return order.map((k) => map[k]);
+  }, [actions]);
+
+  const execProgress = actions.length ? Math.round((kpis.executed / actions.length) * 100) : 0;
+
+  const renderCard = (a) => {
+    const Icon = KIND_META[a.kind]?.icon || StickyNote;
+    const provName = PROVIDER_NAMES[a.provider] || 'CRM';
+    return (
+      <div key={a.action_id} className="rounded-lg bg-white/[0.02] border border-white/[0.06] p-3 hover:border-white/15 transition-colors" data-testid={`action-${a.action_id}`}>
+        <div className="flex items-start gap-2">
+          <Icon className="w-4 h-4 text-zinc-400 mt-0.5 flex-shrink-0" />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-white text-sm font-medium">{KIND_META[a.kind]?.label || a.kind}</span>
+              <span className="px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-white/[0.06] text-zinc-400 border border-white/10">{provName}</span>
+              <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-semibold uppercase border ${STATUS_STYLE[a.status]}`} data-testid={`action-status-${a.action_id}`}>{a.status}</span>
+            </div>
+            {a.target?.label && <div className="text-[11px] text-zinc-500 mt-0.5 truncate">→ {a.target.label}</div>}
+            <div className="text-xs text-zinc-400 mt-1 line-clamp-2">{summarize(a)}</div>
+            {a.status === 'failed' && a.result?.error && <div className="text-[11px] text-red-300/90 mt-1 flex items-start gap-1"><AlertTriangle className="w-3 h-3 mt-0.5 flex-shrink-0" /> {a.result.error}</div>}
+            {a.status === 'executed' && <div className="text-[11px] text-emerald-400/80 mt-1">Pushed to {provName}{(a.result?.external_id || a.result?.hubspot_id) ? ` · id ${a.result.external_id || a.result.hubspot_id}` : ''}</div>}
+          </div>
+        </div>
+        {isOwner && a.status !== 'executed' && (
+          <div className="flex items-center gap-2 mt-2.5">
+            <Button size="sm" onClick={() => setConfirm(a)} className="bg-[#0052ff] hover:bg-[#0047d6] text-white h-7 text-[11px]" data-testid={`push-${a.action_id}`}><Send className="w-3 h-3 mr-1" /> {a.status === 'failed' ? 'Retry push' : 'Review & push'}</Button>
+            <Button size="sm" variant="ghost" onClick={() => removeAction(a)} className="h-7 text-[11px] text-zinc-500 hover:text-red-400 ml-auto" data-testid={`delete-${a.action_id}`}><Trash2 className="w-3 h-3" /></Button>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   if (loading) return <DashboardLayout><div className="flex items-center justify-center min-h-[70vh]" data-testid="workspace-loading"><Loader2 className="w-6 h-6 text-slate-400 animate-spin" /></div></DashboardLayout>;
 
   const pipelines = targets.pipelines || [];
@@ -249,9 +340,50 @@ export default function Workspace() {
           </div>
         )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
+        {/* Revenue-attributable KPI cards (derived from real action data) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" data-testid="workspace-kpis">
+          <StatCard testid="kpi-card-pipeline-influenced" title="Pipeline Influenced" value={fmt$(kpis.pipeline)} sub={`${kpis.dealCount} deal & offer actions`} trend="neutral" Icon={DollarSign} />
+          <StatCard testid="kpi-card-revenue-pushed" title="Revenue Pushed" value={fmt$(kpis.pushed)} sub={kpis.pushed > 0 ? 'written to CRM' : 'nothing pushed yet'} trend={kpis.pushed > 0 ? 'up' : 'neutral'} Icon={TrendingUp} />
+          <StatCard testid="kpi-card-actions-executed" title="Actions Executed" value={`${kpis.executed} / ${kpis.executed + kpis.drafts}`} sub={kpis.successRate != null ? `${kpis.successRate}% success rate` : 'no pushes yet'} trend={kpis.successRate != null && kpis.successRate >= 50 ? 'up' : 'neutral'} Icon={Zap} />
+          <StatCard testid="kpi-card-offer-win-rate" title="Offer Win-Rate" value={kpis.winRate != null ? `${kpis.winRate}%` : '—'} sub={kpis.offersCount ? `${kpis.offersCount} offers created` : 'no offers yet'} trend={kpis.winRate != null && kpis.winRate >= 50 ? 'up' : 'neutral'} Icon={Target} />
+        </div>
+
+        {/* Execution activity chart (real, from action created_at + amounts) */}
+        <div className={`rounded-2xl ${glass} p-5 mb-6`} data-testid="workspace-activity-chart">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <div className="text-sm font-semibold text-white" style={{ fontFamily: 'Outfit' }}>Execution Activity</div>
+              <div className="text-[11px] text-zinc-500">Actions created &amp; pipeline value influenced · last 14 days</div>
+            </div>
+            <div className="flex items-center gap-3 text-[11px]">
+              <span className="flex items-center gap-1.5 text-zinc-400"><span className="w-2.5 h-2.5 rounded-sm bg-[#0052ff]" /> Pipeline $</span>
+              <span className="flex items-center gap-1.5 text-zinc-400"><span className="w-2.5 h-0.5 rounded-sm bg-[#4d8bff]" /> Actions</span>
+            </div>
+          </div>
+          <div className="h-[220px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <ComposedChart data={chartData} margin={{ top: 5, right: 8, left: -12, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="wsValueGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#0052ff" stopOpacity={0.35} />
+                    <stop offset="100%" stopColor="#0052ff" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1f1f23" vertical={false} />
+                <XAxis dataKey="label" stroke="#52525b" fontSize={11} tickLine={false} axisLine={false} interval={2} />
+                <YAxis yAxisId="left" stroke="#52525b" fontSize={11} tickLine={false} axisLine={false} width={46} tickFormatter={(v) => (v >= 1000 ? `$${(v / 1000).toFixed(0)}k` : `$${v}`)} />
+                <YAxis yAxisId="right" orientation="right" stroke="#52525b" fontSize={11} tickLine={false} axisLine={false} width={26} allowDecimals={false} />
+                <Tooltip contentStyle={{ background: '#0a0a0f', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, fontSize: 12 }} labelStyle={{ color: '#fff' }} formatter={(val, name) => (name === 'Pipeline $' ? [fmt$(val), name] : [val, name])} />
+                <Area yAxisId="left" type="monotone" dataKey="value" name="Pipeline $" stroke="#0052ff" fill="url(#wsValueGrad)" strokeWidth={2} />
+                <Line yAxisId="right" type="monotone" dataKey="actions" name="Actions" stroke="#4d8bff" strokeWidth={2} dot={false} />
+              </ComposedChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
           {/* Composer */}
-          <div className={`lg:col-span-3 rounded-2xl ${glass} p-5`} data-testid="workspace-composer">
+          <div className={`lg:col-span-5 xl:col-span-4 rounded-2xl ${glass} p-5`} data-testid="workspace-composer">
             <div className="text-sm font-semibold text-white mb-3 flex items-center gap-2"><KindIcon className="w-4 h-4 text-[#4d8bff]" /> New action</div>
             {/* kind pills */}
             <div className="flex flex-wrap gap-2 mb-5">
@@ -356,45 +488,73 @@ export default function Workspace() {
             </div>
           </div>
 
-          {/* History */}
-          <div className={`lg:col-span-2 rounded-2xl ${glass} p-5`} data-testid="workspace-history">
-            <div className="flex items-center justify-between mb-3">
-              <div className="text-sm font-semibold text-white flex items-center gap-2"><Clock className="w-4 h-4 text-slate-400" /> Action queue</div>
-              <span className="text-[11px] text-zinc-500">{status?.drafts || 0} draft · {status?.executed || 0} pushed</span>
-            </div>
-            {actions.length === 0 ? (
-              <div className="text-center text-zinc-500 text-sm py-10" data-testid="no-actions">No actions yet. Compose one on the left, review it, then push to your CRM.</div>
-            ) : (
-              <div className="space-y-2 max-h-[520px] overflow-y-auto" data-testid="actions-list">
-                {actions.map((a) => {
-                  const Icon = KIND_META[a.kind]?.icon || StickyNote;
-                  const provName = PROVIDER_NAMES[a.provider] || 'CRM';
-                  return (
-                    <div key={a.action_id} className="rounded-lg bg-white/[0.02] border border-white/[0.06] p-3" data-testid={`action-${a.action_id}`}>
-                      <div className="flex items-start gap-2">
-                        <Icon className="w-4 h-4 text-zinc-400 mt-0.5 flex-shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-white text-sm font-medium">{KIND_META[a.kind]?.label || a.kind}</span>
-                            <span className="px-1.5 py-0.5 rounded-full text-[10px] font-medium bg-white/[0.06] text-zinc-400 border border-white/10">{provName}</span>
-                            <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-semibold uppercase border ${STATUS_STYLE[a.status]}`} data-testid={`action-status-${a.action_id}`}>{a.status}</span>
-                          </div>
-                          {a.target?.label && <div className="text-[11px] text-zinc-500 mt-0.5 truncate">→ {a.target.label}</div>}
-                          <div className="text-xs text-zinc-400 mt-1 line-clamp-2">{summarize(a)}</div>
-                          {a.status === 'failed' && a.result?.error && <div className="text-[11px] text-red-300/90 mt-1 flex items-start gap-1"><AlertTriangle className="w-3 h-3 mt-0.5 flex-shrink-0" /> {a.result.error}</div>}
-                          {a.status === 'executed' && <div className="text-[11px] text-emerald-400/80 mt-1">Pushed to {provName}{(a.result?.external_id || a.result?.hubspot_id) ? ` · id ${a.result.external_id || a.result.hubspot_id}` : ''}</div>}
-                        </div>
-                      </div>
-                      {isOwner && a.status !== 'executed' && (
-                        <div className="flex items-center gap-2 mt-2.5">
-                          <Button size="sm" onClick={() => setConfirm(a)} className="bg-[#0052ff] hover:bg-[#0047d6] text-white h-7 text-[11px]" data-testid={`push-${a.action_id}`}><Send className="w-3 h-3 mr-1" /> {a.status === 'failed' ? 'Retry push' : 'Review & push'}</Button>
-                          <Button size="sm" variant="ghost" onClick={() => removeAction(a)} className="h-7 text-[11px] text-zinc-500 hover:text-red-400 ml-auto" data-testid={`delete-${a.action_id}`}><Trash2 className="w-3 h-3" /></Button>
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+          {/* Execution Pipeline — List / Kanban / Timeline (Taskey-style view switcher) */}
+          <div className={`lg:col-span-7 xl:col-span-8 rounded-2xl ${glass} p-5`} data-testid="workspace-queue">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+              <div className="flex items-center gap-2 flex-wrap">
+                <Clock className="w-4 h-4 text-slate-400" />
+                <span className="text-sm font-semibold text-white" style={{ fontFamily: 'Outfit' }}>Execution Pipeline</span>
+                <span className="text-[11px] text-zinc-500">{kpis.drafts} draft · {kpis.executed} pushed</span>
               </div>
+              <div className="flex items-center gap-1 bg-white/[0.03] border border-white/10 rounded-lg p-1 self-start sm:self-auto" data-testid="workspace-view-switcher">
+                {[{ k: 'list', label: 'List', Icon: LayoutList }, { k: 'kanban', label: 'Kanban', Icon: Columns }, { k: 'timeline', label: 'Timeline', Icon: CalendarClock }].map(({ k, label, Icon }) => (
+                  <button key={k} onClick={() => setQueueView(k)} data-testid={`view-switcher-${k}`}
+                    className={`relative px-2.5 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors ${queueView === k ? 'text-white' : 'text-zinc-400 hover:text-white'}`}>
+                    {queueView === k && <motion.div layoutId="ws-view-pill" className="absolute inset-0 bg-[#0052ff]/20 border border-[#0052ff]/40 rounded-md" transition={{ type: 'spring', stiffness: 400, damping: 30 }} />}
+                    <Icon className="w-3.5 h-3.5 relative z-10" /><span className="relative z-10 hidden sm:inline">{label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Execution progress (Taskey-style milestone bar) */}
+            <div className="mb-4" data-testid="record-header-progress-bar">
+              <div className="flex items-center justify-between text-[11px] text-zinc-500 mb-1"><span>Execution progress</span><span>{kpis.executed}/{actions.length} pushed</span></div>
+              <div className="h-1.5 rounded-full bg-white/[0.06] overflow-hidden"><div className="h-full bg-gradient-to-r from-[#0052ff] to-[#4d8bff] rounded-full transition-all duration-500" style={{ width: `${execProgress}%` }} /></div>
+            </div>
+
+            {actions.length === 0 ? (
+              <div className="text-center text-zinc-500 text-sm py-12" data-testid="no-actions">No actions yet. Compose one on the left, review it, then push to your CRM.</div>
+            ) : (
+              <>
+                {queueView === 'list' && (
+                  <div className="space-y-2 max-h-[560px] overflow-y-auto pr-1" data-testid="action-queue-list">
+                    {actions.map(renderCard)}
+                  </div>
+                )}
+                {queueView === 'kanban' && (
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3" data-testid="action-queue-kanban">
+                    {[{ k: 'draft', label: 'Draft' }, { k: 'executed', label: 'Pushed' }, { k: 'failed', label: 'Failed' }].map(({ k, label }) => {
+                      const items = actions.filter((a) => a.status === k);
+                      return (
+                        <div key={k} className="rounded-xl bg-white/[0.02] border border-white/[0.06] p-2.5" data-testid={`kanban-col-${k}`}>
+                          <div className="flex items-center justify-between px-1 mb-2">
+                            <span className="text-xs font-semibold text-zinc-300">{label}</span>
+                            <span className="text-[10px] text-zinc-500 bg-white/[0.06] rounded-full px-1.5 py-0.5">{items.length}</span>
+                          </div>
+                          <div className="space-y-2 max-h-[500px] overflow-y-auto pr-0.5">
+                            {items.length ? items.map(renderCard) : <div className="text-[11px] text-zinc-600 text-center py-6">Empty</div>}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                {queueView === 'timeline' && (
+                  <div className="space-y-4 max-h-[560px] overflow-y-auto pr-1" data-testid="action-queue-timeline">
+                    {Object.entries(actions.reduce((acc, a) => { const d = (a.created_at || '').slice(0, 10) || '—'; (acc[d] = acc[d] || []).push(a); return acc; }, {})).map(([day, items]) => (
+                      <div key={day}>
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="w-1.5 h-1.5 rounded-full bg-[#4d8bff]" />
+                          <span className="text-[11px] font-semibold text-zinc-400">{day === '—' ? 'Undated' : new Date(day).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</span>
+                          <span className="h-px flex-1 bg-white/[0.06]" />
+                        </div>
+                        <div className="space-y-2 pl-3.5">{items.map(renderCard)}</div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
             )}
           </div>
         </div>
