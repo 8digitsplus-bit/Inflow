@@ -13,6 +13,14 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
+### Revenue Execution "Action Workspace" redesign (Jun 2026)
+- Redesigned `/workspace` (`Workspace.js`) blending two user-provided references — Taskey (dark List/Kanban/Timeline view-switcher + execution progress bar) and Neue AI (KPI stat-card row + activity area/line chart) — kept fully in InFlow's dark electric-blue (#0052ff) glassmorphism.
+- KPI cards (Pipeline Influenced, Revenue Pushed, Actions Executed, Offer Win-Rate) and the 14-day Execution Activity chart are DERIVED FROM REAL `/api/workspace/actions` data (created_at, payload.amount, status) — no fabricated numbers.
+- Action queue now renders in 3 views (List / Kanban-by-status / Timeline-by-day) via a framer-motion view switcher. ALL prior functionality preserved: 6-type composer (note/task/call/email/deal/offer), AI draft, save-as-draft, review-&-push human-in-the-loop confirm modal, owner write-gating, empty state.
+- Verified by testing_agent `iteration_64.json` — 100% frontend pass, no UI/integration/design bugs. Minor: 2 console hydration warnings from Emergent visual-editor span wrappers around native `<select>` (instrumentation, not an app bug).
+- Design blueprint saved at `/app/design_guidelines.json`. Libs: recharts 3.6, framer-motion 12.34 (already installed).
+
+
 ### Scalekit AgentKit one-click OAuth (QuickBooks/Salesforce/Intercom) — REST, corrected API (Jun 2026)
 - Prior REST plumbing was written against an ASSUMED Scalekit API and did not work. Rewrote key parts of `routes/scalekit_integration.py` against the VERIFIED live REST API:
   1. Create connected account FIRST: `POST /api/v1/connected_accounts` body `{"connected_account":{}, "connector":<name>, "identifier":<org_id>}` — the `connected_account` wrapper is REQUIRED (409 = already exists = fine).

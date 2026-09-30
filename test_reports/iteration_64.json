@@ -1,0 +1,30 @@
+{
+  "summary": "Frontend-only redesign verification of /workspace (Action Workspace). Logged in as testpro@test.com via /auth (not /login), navigated to /workspace. Page loads without crash. All required data-testids present: workspace-kpis, kpi-card-pipeline-influenced/revenue-pushed/actions-executed/offer-win-rate, workspace-activity-chart (recharts SVG rendered), workspace-view-switcher with view-switcher-list/kanban/timeline, record-header-progress-bar, workspace-connection (Salesforce demo connection detected — no-connection empty state therefore not shown, acceptable), workspace-queue, ai-draft-btn, save-draft-btn, all six kind-note/task/call/email/deal/offer pills. KPI values are derived from real /api/workspace/actions data ($0 pipeline influenced, $0 revenue pushed, 1/1 actions executed, 100% success rate, offer win-rate '—' since no offers). Chart renders area+line with a Sep 22 data point (Actions:1, Pipeline $:$0). View switcher toggles correctly between List (default), Kanban (with kanban-col-draft/executed/failed columns) and Timeline. Pill switching between all six action kinds works without errors. Existing composer intact (Attach to / deal selector present). Dark electric-blue glass theme preserved.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "console_warnings": [
+    "Hydration warning: '<span> cannot be a child of <option>' and '<span> cannot be a child of <select>'. Root cause: Emergent visual-editor wrappers (data-ve-dynamic spans) inserted around <option> elements produced by providers.map in Workspace.js (~line 322-329) around workspace-provider-select. This is instrumentation-injected, not application code. No functional impact but produces recurring console warnings. If desired, could be silenced by moving the <select><option> outside the tracked wrapper or using a headless Select component (shadcn Select) instead of native <select>."
+  ],
+  "test_report_links": [],
+  "action_items": [
+    "Optional: replace native <select> for workspace-provider-select and Attach-to/Salesforce-deal selects with shadcn Select component to eliminate the '<span> in <select>/<option>' hydration warnings caused by Emergent visual-editor span wrappers, OR mark those <option> elements to opt out of visual-editor instrumentation."
+  ],
+  "critical_code_review_comments": [
+    "Workspace.js is 587 lines — approaching the 700-line split threshold but acceptable. Consider extracting KpiRow, ActivityChart, QueueList/Kanban/Timeline into subcomponents for maintainability.",
+    "KPI/chart calculations correctly use useMemo over the real actions list — no fabricated numbers.",
+    "Composer render is correctly gated by write-CRM connectivity per spec.",
+    "Login route is /auth (not /login). The review request mentioned /login — updated test to use /auth (matches App.js routing)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (skipped)", "frontend": "100%"},
+  "test_credentials": "testpro@test.com / password (via /auth toggled to Sign in mode using data-testid auth-toggle-mode)",
+  "seed_data_creation": "None — used existing seeded action (1 executed HubSpot note on Acme).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Login page is at /auth and starts in 'Create account' mode — must click [data-testid=auth-toggle-mode] before filling email/password. All Action Workspace redesign testids verified. Two hydration warnings about span-in-option/select come from Emergent visual editor wrappers around native <select><option>, not real app bugs.",
+  "rca of the issue": "n/a — no functional bugs found."
+}
