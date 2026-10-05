@@ -76,3 +76,20 @@ This environment has NO AgentKit connectors (only SSO Passwordless/WebAuthn/Goog
 ## Beta vs live
 - Development (.scalekit.dev) creds => sandbox/beta only. Production is a SEPARATE environment (.scalekit.com)
   with its own URL + client id/secret. Swap env vars + deploy to go live; redirect switches automatically via APP_BASE_URL.
+
+
+## TROUBLESHOOTING (observed Jun 2026)
+### QuickBooks: "failed_to_exchange_token / Error executing post auth hooks" on the Scalekit hosted page
+- Meaning (per docs.scalekit.com/agentkit/troubleshooting): Scalekit DID exchange the provider tokens OK,
+  but a POST-AUTH HOOK failed afterward. NOT an InFlow bug — fails inside Scalekit's hosted flow.
+- Most likely cause here: the **Custom user verifier** hook (we set User Verification = Custom). That hook
+  errors => whole flow marked failed_to_exchange_token. Screenshot also shows "Verification pending".
+- Secondary causes: Redirect URI mismatch in the Intuit Developer console vs the URI Scalekit shows; wrong
+  client id/secret; or transient server_error (retry clears it).
+- RECOMMENDED FIX (uses our fallback): set Scalekit User Verification = **None** for the connection, retry
+  Connect -> account goes ACTIVE directly -> click InFlow "Already authorized? Finish setup" (=> POST
+  /finalize -> /details -> import). This SUPERSEDES the line-59 note that Custom verifier is required:
+  the /finalize fallback makes Custom verifier OPTIONAL. If verification is None there is NO /verify
+  redirect, so the user MUST click "Finish setup" to trigger the import.
+- Diagnose exact hook: Scalekit dashboard -> Authentication -> Logs -> filter ALL events -> open the
+  Auth Request ID from the error (e.g. req_146172225265861122).
