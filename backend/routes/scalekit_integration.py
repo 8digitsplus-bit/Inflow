@@ -169,6 +169,18 @@ async def _import_and_store(connector: str, account_id: str, user: User) -> int:
     }[connector]
     data = await _execute(account_id, tool, params)
     deals = _map_records(connector, data, user.user_id)
+    try:
+        _sample = str(data)[:900]
+        _first = deals[0] if deals else None
+        logger.info(f"[scalekit-sync] connector={connector} tool={tool} "
+                    f"raw_type={type(data).__name__} mapped_deals={len(deals)} "
+                    f"raw_sample={_sample}")
+        if _first:
+            logger.info(f"[scalekit-sync] first_mapped_deal name={_first.get('name')!r} "
+                        f"company={_first.get('company')!r} value={_first.get('value')} "
+                        f"stage={_first.get('stage')} close={_first.get('expected_close_date')}")
+    except Exception:
+        pass
     # Replace previously synced deals from this source for this org.
     await db.deals.delete_many({"org_id": user.org_id, "source": connector, "synced": True})
     if deals:
