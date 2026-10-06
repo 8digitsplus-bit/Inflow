@@ -8,6 +8,12 @@
 - Role: owner
 - Subscription: enterprise_monthly (org + user) — upgraded from pro_monthly by /app/backend/seed_telemetry.py so the Enterprise-gated Multi-Platform Telemetry Sync (Revenue Leaks) feature is reachable.
 
+## Scalekit SAMPLE data (Jun 2026)
+- `cd /app/backend && python3 seed_scalekit_sample.py` seeds 16 sample synced deals into testpro's org
+  (org_15337f4cefc9): QuickBooks 6, Salesforce 5, Stripe 5. Every doc tagged `sample:True` (and `synced:True`).
+- Visible on the Deals page filtered by source; feeds revenue metrics. Remove with `python3 seed_scalekit_sample.py --clean`.
+- Seeded because live Scalekit DEV QuickBooks OAuth fails on Scalekit's side (managed dev creds; "Error executing post auth hooks").
+
 ## Multi-Platform Telemetry Sync / Revenue Leaks (Jun 2026)
 - Page: /revenue-leaks (Enterprise-tier + owner only). Sidebar: Tools → "Revenue Leaks".
 - Seed: `cd /app/backend && PYTHONPATH=/app/backend python3 seed_telemetry.py` then POST /api/telemetry/scan.

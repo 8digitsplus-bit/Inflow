@@ -542,3 +542,16 @@ All AI responses: no emojis, clean plain-text formatting, rendered via shared AI
 ## Test Credentials
 - Email: testpro@test.com / Password: password (Pro plan)
 - Email: testdemo@inflow.com / Password: password (Demo account)
+
+## Jun 2026 — Scalekit live-connect blocked (3rd-party) + sample-data unblock
+- User (testpro@test.com, org_15337f4cefc9) attempted live Scalekit DEV connect for QuickBooks and hit
+  Scalekit-side errors: `failed_to_exchange_token / Error executing post auth hooks`, then a generic
+  "Failed to load page" on Scalekit's auth window. Confirmed: using Scalekit MANAGED dev credentials,
+  User Verification still "Custom user verifier". No request reached InFlow — failure is inside Scalekit infra.
+- Added debug logging (tag `[scalekit-sync]`) in routes/scalekit_integration.py `_import_and_store` to print
+  the raw tool payload + first mapped deal on any real sync, for live mapping verification.
+- Created `/app/backend/seed_scalekit_sample.py` — seeds 16 SAMPLE synced deals (QB 6 / SF 5 / Stripe 5,
+  every doc tagged `sample:True`) mirroring `_map_records` output, so the InFlow side (Deals page + revenue
+  metrics) is testable now. Verified live via GET /api/deals. Clean with `--clean`.
+- KNOWN MAPPING LIMITATION surfaced: Salesforce opportunities map company→hardcoded "Salesforce" (not the
+  Account name). Candidate improvement when a real SF sync lands.
