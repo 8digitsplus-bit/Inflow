@@ -16,6 +16,8 @@ from fastapi.responses import RedirectResponse
 from database import db
 from dependencies import require_owner
 from models import User
+from utils.deal_sync import apply_sync
+from utils.revenue import _DEFAULT_ROLE
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -107,7 +109,7 @@ def _num(v) -> float:
         return 0.0
 
 
-def _deal(user_id, name, company, value, stage, probability, source, close=None, notes=""):
+def _deal(user_id, name, company, value, stage, probability, source, close=None, notes="", external_id=None):
     now = datetime.now(timezone.utc).isoformat()
     return {
         "deal_id": f"deal_{uuid.uuid4().hex[:12]}", "user_id": user_id,
@@ -115,6 +117,7 @@ def _deal(user_id, name, company, value, stage, probability, source, close=None,
         "value": round(_num(value), 2), "stage": stage, "probability": probability,
         "expected_close_date": str(close)[:10] if close else None,
         "notes": notes, "source": source, "synced": True,
+        "external_id": str(external_id) if external_id else None,
         "created_at": now, "updated_at": now,
     }
 
@@ -135,7 +138,7 @@ def _map_records(connector: str, data, user_id: str):
             deals.append(_deal(user_id, it.get("DocNumber") or f"Invoice {it.get('Id','')}",
                                (it.get("CustomerRef") or {}).get("name", "QuickBooks"),
                                it.get("TotalAmt"), "closed_won", 100, "quickbooks",
-                               it.get("TxnDate"), "QuickBooks invoice"))
+                               it.get("TxnDate"), "QuickBooks invoice", external_id=it.get("Id")))
         elif connector == "salesforce":
             stage_raw = str(it.get("StageName", "")).lower()
             stage = ("closed_won" if "won" in stage_raw else "closed_lost" if "lost" in stage_raw
@@ -143,7 +146,7 @@ def _map_records(connector: str, data, user_id: str):
                      else "qualified")
             deals.append(_deal(user_id, it.get("Name"), "Salesforce", it.get("Amount"),
                                stage, 100 if stage == "closed_won" else 40, "salesforce",
-                               it.get("CloseDate"), "Salesforce opportunity"))
+                               it.get("CloseDate"), "Salesforce opportunity", external_id=it.get("Id")))
         elif connector == "stripe":
             status = str(it.get("status", "")).lower()
             if status and status != "succeeded":
@@ -157,7 +160,7 @@ def _map_records(connector: str, data, user_id: str):
             bill = it.get("billing_details") or {}
             deals.append(_deal(user_id, it.get("description") or bill.get("name") or f"Charge {it.get('id','')}",
                                bill.get("name") or it.get("receipt_email") or "Stripe",
-                               amount, "closed_won", 100, "stripe", close, "Stripe payment"))
+                               amount, "closed_won", 100, "stripe", close, "Stripe payment", external_id=it.get("id")))
     return deals
 
 
@@ -181,16 +184,12 @@ async def _import_and_store(connector: str, account_id: str, user: User) -> int:
                         f"stage={_first.get('stage')} close={_first.get('expected_close_date')}")
     except Exception:
         pass
-    # Replace previously synced deals from this source for this org.
-    await db.deals.delete_many({"org_id": user.org_id, "source": connector, "synced": True})
-    if deals:
-        for d in deals:
-            d["org_id"] = user.org_id
-        await db.deals.insert_many(deals)
+    # Reconcile (provider-scoped delete + preserve locally-edited deals).
+    res = await apply_sync(user.org_id, connector, deals, "scalekit")
     await db.business_connections.update_one(
         {"org_id": user.org_id, "platform": connector, "provider": "scalekit"},
-        {"$set": {"records_synced": len(deals), "last_synced": datetime.now(timezone.utc).isoformat()}})
-    return len(deals)
+        {"$set": {"records_synced": res["synced"], "last_synced": datetime.now(timezone.utc).isoformat()}})
+    return res["synced"]
 
 
 async def _active_account(connector: str, org_id: str, owner: dict) -> dict:
@@ -228,6 +227,7 @@ async def _store_and_import(connector: str, org_id: str) -> dict:
             "platform": connector, "provider": "scalekit",
             "scalekit_account_id": account_id, "status": status or "ACTIVE",
             "account_name": f"{connector.title()} (via Scalekit)",
+            "revenue_role": _DEFAULT_ROLE.get(connector, "revenue"),
             "connected_at": datetime.now(timezone.utc).isoformat(), "is_live": True,
         }}, upsert=True)
     records = 0
@@ -257,6 +257,13 @@ async def scalekit_start(connector: str, user: User = Depends(require_owner)):
     _require_config()
     if connector not in CONNECTORS:
         raise HTTPException(status_code=404, detail="Unsupported connector")
+    # Collision guard: block if this platform is already connected directly (native) — else
+    # the two systems share the same `source` and their syncs would clobber each other.
+    clash = await db.business_connections.find_one(
+        {"org_id": user.org_id, "platform": connector, "provider": {"$ne": "scalekit"}})
+    if clash:
+        raise HTTPException(status_code=400, detail=(
+            f"{connector.title()} is already connected directly. Disconnect it first to connect it via Scalekit."))
     conn_name = _conn_name(connector)
     state = secrets.token_urlsafe(24)
     await db.scalekit_oauth_states.insert_one({

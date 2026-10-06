@@ -6,6 +6,7 @@ from typing import Optional
 from database import db
 from models import User
 from dependencies import get_current_user, org_filter
+from utils.revenue import get_revenue_context, counts_as_revenue, revenue_source_match
 
 router = APIRouter()
 
@@ -79,11 +80,19 @@ async def get_revenue_analytics(user: User = Depends(get_current_user), sources:
     rows = await db.deals.aggregate(pipeline).to_list(length=None)  # <= 6 grouped rows
     by_stage = {r["_id"]: r for r in rows}
 
+    # Collected revenue = primary source of truth + manual deals only (no multi-source double-count).
+    ctx = await get_revenue_context(user.org_id)
+    rev_match = {"$and": [_scoped(user, sources), {"stage": "closed_won"}, revenue_source_match(ctx)]}
+    rev_rows = await db.deals.aggregate([
+        {"$match": rev_match},
+        {"$group": {"_id": None, "value": {"$sum": value_expr}}},
+    ]).to_list(1)
+
     total_deals = sum(int(r.get("count", 0)) for r in rows)
     total_pipeline = sum(float(r.get("value", 0.0)) for r in rows)
     stage_counts = {s: int(by_stage.get(s, {}).get("count", 0)) for s in stages}
     stage_values = {s: float(by_stage.get(s, {}).get("value", 0.0)) for s in stages}
-    closed_revenue = stage_values.get("closed_won", 0.0)
+    closed_revenue = float(rev_rows[0]["value"]) if rev_rows else 0.0
     closed_won_count = stage_counts.get("closed_won", 0)
     weighted_open = sum(float(by_stage.get(s, {}).get("weighted", 0.0)) for s in open_stages)
     projected_revenue = closed_revenue + weighted_open
@@ -206,16 +215,19 @@ async def get_churn_analytics(user: User = Depends(get_current_user), sources: O
 
     churn_rate = (len(closed_lost) / max(total_deals, 1)) * 100
     retention_rate = 100 - churn_rate
-    total_revenue = sum(d.get("value", 0) for d in closed_won)
-    lost_revenue = sum(d.get("value", 0) for d in closed_lost)
+    ctx = await get_revenue_context(user.org_id)
+    rev_won = [d for d in closed_won if counts_as_revenue(d, ctx)]
+    rev_lost = [d for d in closed_lost if counts_as_revenue(d, ctx)]
+    total_revenue = sum(d.get("value", 0) for d in rev_won)
+    lost_revenue = sum(d.get("value", 0) for d in rev_lost)
 
     # Net Revenue Retention
     nrr = round(((total_revenue - lost_revenue) / max(total_revenue, 1)) * 100, 1) if total_revenue > 0 else 100
     # Customer Lifetime Value
-    avg_deal_value = total_revenue / max(len(closed_won), 1)
+    avg_deal_value = total_revenue / max(len(rev_won), 1)
     clv = round(avg_deal_value * (retention_rate / max(churn_rate, 1)), 2) if churn_rate > 0 else round(avg_deal_value * 10, 2)
     # Average Revenue Per Account
-    arpa = round(total_revenue / max(len(closed_won), 1), 2)
+    arpa = round(total_revenue / max(len(rev_won), 1), 2)
 
     # Revenue at risk
     at_risk_deals = []
@@ -593,6 +605,10 @@ async def get_sales_revenue(user: User = Depends(get_current_user), sources: Opt
     closed_won = [d for d in deals if d.get("stage") == "closed_won"]
     active_deals = [d for d in deals if d.get("stage") not in ["closed_won", "closed_lost"]]
 
+    # Collected revenue = primary source of truth + manual only (avoids multi-source double-count).
+    ctx = await get_revenue_context(user.org_id)
+    closed_won = [d for d in closed_won if counts_as_revenue(d, ctx)]
+
     total_revenue = sum(d.get("value", 0) for d in closed_won)
     mrr = round(total_revenue / max(6, 1), 2)
     arr = round(mrr * 12, 2)
@@ -659,11 +675,13 @@ async def get_revenue_intelligence(user: User = Depends(get_current_user), sourc
     closed_lost = [d for d in deals if d.get("stage") == "closed_lost"]
     active_deals = [d for d in deals if d.get("stage") not in ["closed_won", "closed_lost"]]
 
-    total_revenue = sum(d.get("value", 0) for d in closed_won)
+    ctx = await get_revenue_context(user.org_id)
+    rev_won = [d for d in closed_won if counts_as_revenue(d, ctx)]
+    total_revenue = sum(d.get("value", 0) for d in rev_won)
     pipeline_value = sum(d.get("value", 0) for d in active_deals)
     weighted_pipeline = sum(d.get("value", 0) * (d.get("probability", 50) / 100) for d in active_deals)
     win_rate = (len(closed_won) / max(len(closed_won) + len(closed_lost), 1)) * 100
-    avg_deal_value = total_revenue / max(len(closed_won), 1)
+    avg_deal_value = total_revenue / max(len(rev_won), 1)
 
     monthly_overview = []
     for i in range(6):
@@ -1026,8 +1044,9 @@ async def _compute_forecast(user: User, sources: Optional[str], target: Optional
     for i, d in enumerate(open_deals):
         onehot[i, month_index(d)] = 1.0
 
-    # --- Finance: recurring baseline from closed-won history
-    total_won_rev = sum(float(d.get("value", 0) or 0) for d in closed_won)
+    # --- Finance: recurring baseline from closed-won history (primary revenue source only)
+    ctx = await get_revenue_context(user.org_id)
+    total_won_rev = sum(float(d.get("value", 0) or 0) for d in closed_won if counts_as_revenue(d, ctx))
     recurring_base = round(total_won_rev / 6.0, 2)
 
     # --- Customer Success: retention -> NRR growth factor; low-prob revenue at risk

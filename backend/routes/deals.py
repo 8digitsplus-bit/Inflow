@@ -49,6 +49,10 @@ async def update_deal(deal_id: str, deal_data: DealUpdate, user: User = Depends(
     update_data = deal_data.model_dump(exclude_unset=True)
     now = datetime.now(timezone.utc).isoformat()
     update_data["updated_at"] = now
+    # Preserve this edit across re-syncs: a synced deal the user edited is marked so the
+    # import reconciler never overwrites or deletes it.
+    if existing.get("synced"):
+        update_data["locally_modified"] = True
 
     # Scope the WRITE to the org too — never rely on the read check alone (multi-tenancy).
     await db.deals.update_one(

@@ -8,6 +8,8 @@ from database import db
 from models import User
 from dependencies import get_current_user, require_owner, org_filter
 from utils.crypto import encrypt, decrypt
+from utils.deal_sync import apply_sync
+from utils.revenue import get_revenue_context
 from routes.stripe_integration import validate_stripe_key, fetch_stripe_data
 from routes.shopify_integration import validate_shopify_key, fetch_shopify_data
 from routes.hubspot_integration import validate_hubspot_key, fetch_hubspot_data
@@ -1662,6 +1664,43 @@ async def set_connection_role(platform: str, request: Request, current_user: Use
     return {"status": "updated", "platform": platform, "revenue_role": role}
 
 
+class PrimaryRevenueRequest(BaseModel):
+    primary_revenue_source: Optional[str] = None
+
+
+@router.get("/business/revenue-settings")
+async def get_revenue_settings(current_user: User = Depends(get_current_user)):
+    """Primary revenue source of truth + each connection's revenue role (for the settings UI)."""
+    ctx = await get_revenue_context(current_user.org_id)
+    conns = await db.business_connections.find(
+        org_filter(current_user), {"_id": 0, "platform": 1, "account_name": 1}
+    ).to_list(50)
+    options = []
+    for c in conns:
+        p = c.get("platform")
+        role = ctx["roles"].get(p, "revenue")
+        options.append({"source": p, "role": role, "is_revenue": role == "revenue",
+                        "account_name": c.get("account_name")})
+    return {
+        "primary_revenue_source": ctx["primary"],
+        "revenue_sources": ctx["revenue_sources"],
+        "options": options,
+    }
+
+
+@router.put("/business/revenue-settings")
+async def set_revenue_settings(body: PrimaryRevenueRequest, current_user: User = Depends(require_owner)):
+    """Pick the single source of truth for collected revenue (prevents multi-source double-count)."""
+    ctx = await get_revenue_context(current_user.org_id)
+    val = body.primary_revenue_source
+    if val and val not in ctx["revenue_sources"]:
+        raise HTTPException(status_code=400,
+                            detail="Primary revenue source must be a connected revenue-role integration.")
+    await db.organizations.update_one(
+        {"org_id": current_user.org_id}, {"$set": {"primary_revenue_source": val}})
+    return {"primary_revenue_source": val}
+
+
 @router.get("/business/integration-usage")
 async def get_integration_usage(current_user: User = Depends(get_current_user)):
     """Returns integration quota + usage for the user's org tier."""
@@ -1713,9 +1752,7 @@ async def connect_platform(platform: str, body: ConnectRequest = ConnectRequest(
     connection["revenue_role"] = PLATFORMS[platform].get("default_revenue_role", "revenue")
 
     if data["deals"]:
-        for d in data["deals"]:
-            d["org_id"] = current_user.org_id
-        await db.deals.insert_many(data["deals"])
+        await apply_sync(current_user.org_id, platform, data["deals"], "native")
 
     await db.business_connections.insert_one(connection)
     await db.users.update_one(
@@ -1783,7 +1820,6 @@ async def sync_platform(platform: str, current_user: User = Depends(require_owne
     api_key = decrypt(api_key)
 
     # Remove old synced deals for this org+platform
-    await db.deals.delete_many({**org_filter(current_user), "source": platform, "synced": True})
     now = datetime.now(timezone.utc).isoformat()
 
     try:
@@ -1937,9 +1973,7 @@ async def sync_platform(platform: str, current_user: User = Depends(require_owne
         raise HTTPException(status_code=400, detail=f"Sync failed: {str(e)}")
 
     if data["deals"]:
-        for d in data["deals"]:
-            d["org_id"] = current_user.org_id
-        await db.deals.insert_many(data["deals"])
+        await apply_sync(current_user.org_id, platform, data["deals"], "native")
 
     await db.business_connections.update_one(
         {**org_filter(current_user), "platform": platform},
