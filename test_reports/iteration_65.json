@@ -1,0 +1,35 @@
+{
+  "summary": "Backend-only verification of revenue-integrity fixes (double-count, revenue-settings API, collision guard, edit preservation + no duplicates, analytics regression). 17/18 passed, 1 skipped (owner-only PUT requires non-owner account, none seeded).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_revenue_integrity.py",
+    "/app/test_reports/pytest/iter65_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "GET /deals + PUT /deals use response_model=Deal with extra='ignore', so synced/external_id/locally_modified/provider are stripped from API responses. The data is correct in DB, but any frontend/API consumer that needs to show the 'locally_modified' badge or external_id will not see them. Consider adding these fields to the Deal model (optional) if the UI needs them.",
+    "test_put_requires_owner was skipped because no non-owner account is seeded for testpro's org. Consider adding a member fixture to future tests to assert require_owner guard on PUT /business/revenue-settings.",
+    "GET /api/business/revenue-settings 'options' is derived from connections; stale/removed connections are naturally excluded. revenue_sources auto-falls-back to the first connected revenue source if primary_revenue_source is unset/stale (good)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_revenue_integrity.py (created)"
+  ],
+  "success_rate": {
+    "backend": "100% (17/17 run, 1 skipped by design)",
+    "frontend": "N/A (not requested)"
+  },
+  "test_credentials": "testpro@test.com / password (org_15337f4cefc9) via /api/auth/login -> session_token in body as Bearer token.",
+  "seed_data_creation": "None. Edit-preservation test edits one existing synced stripe deal (value=999999.01, stage=negotiation) and then re-runs scalekit stripe sync. Test clears the locally_modified flag + re-syncs at end so the stripe-source value is restored on next sync; the stage/value may remain at the edited values until the next real sync overwrites them. The main agent should optionally run 'POST /api/integrations/scalekit/stripe/sync' once to restore live values if that matters.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Regression suite at /app/backend/tests/test_revenue_integrity.py exercises all three fixes + analytics smoke. Uses pymongo for DB-level assertions because Deal response_model strips synced/locally_modified/external_id. Verified figures: all_closed=$555038.60 (naive) vs primary(stripe+manual)=$444588.60 (correct). Collision guard 400 confirmed on both /api/integrations/scalekit/stripe/start and POST /api/business/connect/stripe. Edit preservation: 10 synced stripe deals before and after re-sync, 10 distinct external_ids, locally_modified=True set + preserved. If a non-owner member account is added, enable the test_put_requires_owner test.",
+  "rca of the issue": "N/A — all three previously-reported fixes behave correctly end-to-end."
+}
