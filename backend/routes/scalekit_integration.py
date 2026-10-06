@@ -193,17 +193,34 @@ async def _import_and_store(connector: str, account_id: str, user: User) -> int:
     return len(deals)
 
 
+async def _active_account(connector: str, org_id: str, owner: dict) -> dict:
+    """Locate the connected account. Individual-mode connections are sometimes keyed by the
+    user's email rather than org_id, so check org_id first, then the owner's email, and prefer
+    the first ACTIVE account. Returns the best account dict (ACTIVE if any, else last seen)."""
+    identifiers = [org_id]
+    if owner and owner.get("email"):
+        identifiers.append(owner["email"])
+    best = {}
+    for ident in identifiers:
+        dr = await _sk_get("/api/v1/connected_accounts/details",
+                           {"connector": _conn_name(connector), "identifier": ident})
+        acc = _account_from(dr)
+        if acc.get("id") and str(acc.get("status", "")).upper() == "ACTIVE":
+            return acc
+        if acc and not best:
+            best = acc
+    return best
+
+
 async def _store_and_import(connector: str, org_id: str) -> dict:
     """Fetch the connected account; if authorized, store the mapping + import records.
     Mode-independent: works whether or not the connection uses Custom user-verification."""
-    dr = await _sk_get("/api/v1/connected_accounts/details",
-                       {"connector": _conn_name(connector), "identifier": org_id})
-    account = _account_from(dr)
+    owner = await db.users.find_one({"org_id": org_id, "role": "owner"}, {"_id": 0})
+    account = await _active_account(connector, org_id, owner or {})
     account_id = account.get("id")
     status = str(account.get("status", "")).upper()
     if not account_id or status != "ACTIVE":
         return {"connected": False, "status": status or "UNKNOWN", "records": 0}
-    owner = await db.users.find_one({"org_id": org_id, "role": "owner"}, {"_id": 0})
     await db.business_connections.update_one(
         {"org_id": org_id, "platform": connector, "provider": "scalekit"},
         {"$set": {

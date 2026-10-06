@@ -555,3 +555,13 @@ All AI responses: no emojis, clean plain-text formatting, rendered via shared AI
   metrics) is testable now. Verified live via GET /api/deals. Clean with `--clean`.
 - KNOWN MAPPING LIMITATION surfaced: Salesforce opportunities map company→hardcoded "Salesforce" (not the
   Account name). Candidate improvement when a real SF sync lands.
+
+## Jun 2026 — Stripe (Scalekit) VERIFIED LIVE
+- Stripe connector now proven end-to-end with REAL data: 10 real charges imported into testpro's org
+  ($22,088.60 collected), mapping verified correct (amount/100, succeeded→closed_won, unix→date, desc→name,
+  billing name→company). Status endpoint reports stripe ACTIVE / records_synced=10.
+- Root cause of earlier "connected but empty": identifier mismatch — user authorized Stripe under personal
+  email (8digitsplus@gmail.com) outside InFlow's button; InFlow keys by org_id. Added `_active_account`
+  owner-email fallback; one-off linked the active account_id to the org (scalekit_integration.md has details).
+- QuickBooks + Salesforce live OAuth still blocked on Scalekit managed-dev creds (QB portal won't open; SF
+  OAUTH_APPROVAL_ERROR_GENERIC). Their sample data remains for InFlow-side testing. Need BYO OAuth apps to go live.

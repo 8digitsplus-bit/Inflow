@@ -93,3 +93,22 @@ This environment has NO AgentKit connectors (only SSO Passwordless/WebAuthn/Goog
   redirect, so the user MUST click "Finish setup" to trigger the import.
 - Diagnose exact hook: Scalekit dashboard -> Authentication -> Logs -> filter ALL events -> open the
   Auth Request ID from the error (e.g. req_146172225265861122).
+
+## IDENTIFIER MISMATCH — root cause of "connected but nothing imported" (Jun 2026)
+- Scalekit keys connected accounts by `identifier`. InFlow ALWAYS sends identifier = org_id (see /start).
+- Observed: user authorized Stripe OUTSIDE InFlow (Scalekit dashboard/quickstart) under identifier
+  `8digitsplus@gmail.com` (their personal email) -> that account went ACTIVE, while InFlow's org_id-keyed
+  account stayed PENDING_AUTH. So /finalize + /sync (which look up by org_id) never saw the ACTIVE one.
+- Verified the pipeline IS correct: POST /api/v1/execute_tool {connected_account_id: ca_..., tool_name:
+  stripe_list_charges_dahlia} -> 200, and _map_records mapped it perfectly (amount/100, succeeded->closed_won,
+  created unix->date, description->name, billing_details.name->company). Stripe charge shape confirmed:
+  {amount(cents), status, created(unix), description, billing_details:{name,email}, id, currency, livemode}.
+- To LIST a connector's accounts (debug): GET /api/v1/connected_accounts?connector=<key> -> connected_accounts[]
+  (listing with NO params 500s). Use this to spot ACTIVE accounts under unexpected identifiers.
+- FIX added: _active_account(connector, org_id, owner) checks [org_id, owner.email] and prefers the first
+  ACTIVE account. Only safe when the user authorized with their InFlow login email. If they used a DIFFERENT
+  email (as in this test: testpro@test.com vs 8digitsplus@gmail.com), the only robust path is to connect
+  THROUGH InFlow's "Connect (via Scalekit)" button so the account is org_id-keyed, OR a manual link by
+  account_id (we did a one-off: /tmp/import_stripe_active.py stored scalekit_account_id=ca_146313304220894217
+  on the org's stripe business_connections row; /sync works off that stored id thereafter).
+- Do NOT add "pick any ACTIVE account for the connector" — cross-tenant leakage risk in multi-org.
