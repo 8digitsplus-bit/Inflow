@@ -168,7 +168,7 @@ export default function AccountWorkspace() {
   };
 
   if (loading) return <DashboardLayout><div className="flex items-center justify-center min-h-[70vh]" data-testid="account-loading"><Loader2 className="w-6 h-6 text-slate-400 animate-spin" /></div></DashboardLayout>;
-  if (!lead) return <DashboardLayout><div className="p-8 text-center text-zinc-400" data-testid="account-not-found">Account not found. <button onClick={() => navigate('/discover')} className="text-[#4d8bff] underline">Back to Upsell Engine</button></div></DashboardLayout>;
+  if (!lead) return <DashboardLayout><div className="p-8 text-center text-zinc-400" data-testid="account-not-found">Account not found. <button onClick={() => navigate('/discover')} className="text-[#4d8bff] underline">Back to High-Intent Buyers</button></div></DashboardLayout>;
 
   const KindIcon = KIND_META[kind].icon;
 
@@ -176,7 +176,7 @@ export default function AccountWorkspace() {
     <DashboardLayout>
       <div className="p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto" data-testid="account-workspace-page">
         {/* Header */}
-        <button onClick={() => navigate('/discover')} className="flex items-center gap-1.5 text-zinc-400 hover:text-white text-xs mb-4" data-testid="account-back-btn"><ArrowLeft className="w-4 h-4" /> Back to Upsell Engine</button>
+        <button onClick={() => navigate('/discover')} className="flex items-center gap-1.5 text-zinc-400 hover:text-white text-xs mb-4" data-testid="account-back-btn"><ArrowLeft className="w-4 h-4" /> Back to High-Intent Buyers</button>
         <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 mb-6">
           <div>
             <div className="flex items-center gap-2 text-slate-400 text-xs font-semibold uppercase tracking-widest mb-2"><Handshake className="w-4 h-4" /> Account Workspace · 2-way sync</div>
