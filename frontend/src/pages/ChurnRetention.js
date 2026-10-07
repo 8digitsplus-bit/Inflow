@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import DashboardLayout from '../components/DashboardLayout';
 import ConnectDataCTA from '../components/ConnectDataCTA';
 import { AIResponseRenderer } from '../components/AIResponseRenderer';
+import { ChurnCards } from '../components/AiInsightCards';
 import {
   Users,
   TrendingDown,
@@ -71,7 +72,7 @@ const ChurnRetention = () => {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         credentials: 'include', body: JSON.stringify({ deal_data: deal })
       });
-      if (response.ok) { setAiPrediction(await response.json().then(r => r.prediction)); toast.success('Churn prediction generated'); }
+      if (response.ok) { setAiPrediction(await response.json()); toast.success('Retention playbook generated'); }
       else { toast.error((await response.json()).detail || 'Failed to get prediction'); }
     } catch { toast.error('Failed to get AI prediction'); }
     finally { setLoadingAI(false); }
@@ -415,11 +416,14 @@ const ChurnRetention = () => {
                   <Button className="bg-white/10 hover:bg-white/20" onClick={() => window.location.href = '/settings'}>Upgrade Now</Button>
                 </div>
               ) : aiPrediction ? (
-                <div className="max-h-[360px] overflow-y-auto"><AIResponseRenderer text={aiPrediction} /></div>
+                <div className="max-h-[360px] overflow-y-auto"><ChurnCards data={aiPrediction} /></div>
               ) : (
                 <div className="text-center py-8 text-zinc-500">
                   <Sparkles className="w-10 h-10 mx-auto mb-3 opacity-50" />
-                  <p className="text-sm">Select an at-risk deal to analyze</p>
+                  <p className="text-sm mb-3">Generate a retention playbook from your churn numbers</p>
+                  <Button onClick={() => getAIPrediction()} disabled={loadingAI} className="bg-[#0052ff] hover:bg-[#0047d6] text-white h-8 text-xs" data-testid="generate-churn-ai-btn">
+                    {loadingAI ? 'Analyzing…' : 'Generate retention playbook'}
+                  </Button>
                 </div>
               )}
             </CardContent>

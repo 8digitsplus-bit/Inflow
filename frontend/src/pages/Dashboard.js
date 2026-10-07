@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import DashboardLayout from '../components/DashboardLayout';
 import ConnectDataCTA from '../components/ConnectDataCTA';
 import { AIResponseRenderer } from '../components/AIResponseRenderer';
+import { InsightCards } from '../components/AiInsightCards';
 import {
   TrendingUp,
   TrendingDown,
@@ -140,7 +141,7 @@ const Dashboard = () => {
       });
       if (response.ok) {
         const data = await response.json();
-        setAiInsight(data.insight);
+        setAiInsight(data);
       }
     } catch (error) {
       console.error('Failed to get AI insight:', error);
@@ -545,7 +546,7 @@ const Dashboard = () => {
                   )}
                 </div>
                 {aiInsight ? (
-                  <div className="max-h-[160px] overflow-y-auto pr-1"><AIResponseRenderer text={aiInsight.substring(0, 400)} /></div>
+                  <div className="max-h-[260px] overflow-y-auto pr-1"><InsightCards data={aiInsight} /></div>
                 ) : (
                   <div className="text-center py-6">
                     <p className="text-xs text-zinc-500 mb-3">Get an on-demand read on your pipeline, revenue and churn.</p>

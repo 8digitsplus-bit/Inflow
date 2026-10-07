@@ -11,6 +11,7 @@ import { Input } from '../components/ui/input';
 import { Textarea } from '../components/ui/textarea';
 import { STAGE_COLOR_ARRAY } from '../constants/colors';
 import { toast } from 'sonner';
+import { CroCards } from '../components/AiInsightCards';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 const glass = 'bg-white/[0.04] border border-white/10 backdrop-blur-xl';
@@ -78,6 +79,8 @@ export default function ConversionOptimization() {
   const [tests, setTests] = useState([]);
   const [impls, setImpls] = useState([]);
   const [summary, setSummary] = useState(null);
+  const [aiCro, setAiCro] = useState(null);
+  const [aiCroBusy, setAiCroBusy] = useState(false);
 
   const [newFr, setNewFr] = useState({ title: '', stage: '', category: 'form', severity: 'medium', note: '' });
   const [newHy, setNewHy] = useState({ statement: '', metric: '', expected_lift: '', stage: '' });
@@ -156,6 +159,18 @@ export default function ConversionOptimization() {
 
   // Implementations
   const delImpl = async (id) => { setImpls((p) => p.filter((x) => x.impl_id !== id)); try { await croReq(`/implementations/${id}`, { method: 'DELETE' }); } catch (e) { toast.error(e.message); refresh(); } };
+
+  const genCroAI = async () => {
+    setAiCroBusy(true);
+    try {
+      const r = await fetch(`${API_URL}/api/ai/cro-recommendations`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, credentials: 'include', body: '{}',
+      });
+      if (r.ok) setAiCro(await r.json());
+      else toast.error((await r.json()).detail || 'Upgrade to Pro for AI CRO experiments');
+    } catch { toast.error('Failed to generate experiments'); }
+    finally { setAiCroBusy(false); }
+  };
 
   if (loading) return <DashboardLayout><div className="flex items-center justify-center min-h-[70vh]" data-testid="cro-loading"><Loader2 className="w-6 h-6 text-slate-400 animate-spin" /></div></DashboardLayout>;
 
@@ -236,6 +251,16 @@ export default function ConversionOptimization() {
                   ))}
                 </div>
               </div>
+            </div>
+
+            <div className={`rounded-2xl p-5 ${glass}`} data-testid="ai-cro-card">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2"><Sparkles className="w-5 h-5 text-cyan-400" /><span className="text-white font-semibold" style={{ fontFamily: 'Outfit' }}>AI experiments</span></div>
+                <Button onClick={genCroAI} disabled={aiCroBusy} className="bg-[#0052ff] hover:bg-[#0047d6] text-white h-8 text-xs gap-1.5" data-testid="generate-cro-ai-btn">
+                  {aiCroBusy ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Analyzing…</> : <><Sparkles className="w-3.5 h-3.5" /> Generate experiments</>}
+                </Button>
+              </div>
+              {aiCro ? <CroCards data={aiCro} /> : <p className="text-sm text-zinc-500">Turn your funnel drop-offs into testable experiments, each tied to a metric and expected lift.</p>}
             </div>
 
             <div className="flex items-start gap-2 text-xs text-zinc-500 bg-white/[0.02] border border-white/5 rounded-lg px-3 py-2" data-testid="analyze-note">

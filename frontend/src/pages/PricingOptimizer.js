@@ -24,6 +24,7 @@ import {
 import { useAuth } from '../contexts/AuthContext';
 import { toast } from 'sonner';
 import { AIResponseRenderer } from '../components/AIResponseRenderer';
+import { PricingCards } from '../components/AiInsightCards';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -91,7 +92,7 @@ const PricingOptimizer = () => {
       });
       if (res.ok) {
         const data = await res.json();
-        setAiAnalysis(data.analysis || data.recommendations);
+        setAiAnalysis(data);
       } else {
         toast.error('AI analysis failed. Try again.');
       }
@@ -323,8 +324,8 @@ const PricingOptimizer = () => {
               </CardHeader>
               <CardContent>
                 {aiAnalysis ? (
-                  <div className="max-h-[300px] overflow-y-auto">
-                    <AIResponseRenderer text={aiAnalysis} />
+                  <div className="max-h-[340px] overflow-y-auto">
+                    <PricingCards data={aiAnalysis} />
                   </div>
                 ) : (
                   <p className="text-zinc-500 text-sm text-center py-6">
