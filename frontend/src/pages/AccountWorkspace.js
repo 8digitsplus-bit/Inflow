@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
+import { MoneyInput } from '../components/MoneyInput';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
 import {
@@ -217,7 +218,7 @@ export default function AccountWorkspace() {
               )}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="sm:col-span-1"><Label className="text-zinc-500 text-[11px]">Deal name</Label><Input value={fields.dealname} onChange={(e) => setFields((f) => ({ ...f, dealname: e.target.value }))} className="bg-zinc-900 border-zinc-700 text-white h-9 text-sm mt-1" data-testid="account-field-name" /></div>
-                <div><Label className="text-zinc-500 text-[11px]">Amount</Label><Input value={fields.amount} onChange={(e) => setFields((f) => ({ ...f, amount: e.target.value }))} placeholder="—" className="bg-zinc-900 border-zinc-700 text-white h-9 text-sm mt-1" data-testid="account-field-amount" /></div>
+                <div><Label className="text-zinc-500 text-[11px]">Amount</Label><MoneyInput value={fields.amount} onChange={(e) => setFields((f) => ({ ...f, amount: e.target.value }))} placeholder="0" wrapperClassName="mt-1" className="bg-zinc-900 border-zinc-700 text-white h-9 text-sm" data-testid="account-field-amount" /></div>
                 <div><Label className="text-zinc-500 text-[11px]">Stage</Label><Input value={fields.dealstage} onChange={(e) => setFields((f) => ({ ...f, dealstage: e.target.value }))} placeholder="—" className="bg-zinc-900 border-zinc-700 text-white h-9 text-sm mt-1" data-testid="account-field-stage" /></div>
               </div>
               <div className="flex justify-end mt-3">
@@ -254,7 +255,7 @@ export default function AccountWorkspace() {
                 {kind === 'deal' && (<>
                   <div><Label className="text-zinc-500 text-[11px]">Deal name</Label><Input value={payload.dealname} onChange={(e) => setField('dealname', e.target.value)} className="bg-zinc-900 border-zinc-700 text-white h-9 text-sm mt-1" data-testid="account-deal-name" /></div>
                   <div className="grid grid-cols-2 gap-3">
-                    <div><Label className="text-zinc-500 text-[11px]">Amount ($)</Label><Input type="number" value={payload.amount} onChange={(e) => setField('amount', e.target.value)} className="bg-zinc-900 border-zinc-700 text-white h-9 text-sm mt-1" data-testid="account-deal-amount" /></div>
+                    <div><Label className="text-zinc-500 text-[11px]">Amount</Label><MoneyInput type="number" value={payload.amount} onChange={(e) => setField('amount', e.target.value)} wrapperClassName="mt-1" className="bg-zinc-900 border-zinc-700 text-white h-9 text-sm" data-testid="account-deal-amount" /></div>
                     <div><Label className="text-zinc-500 text-[11px]">Close date</Label><Input type="date" value={payload.closedate} onChange={(e) => setField('closedate', e.target.value)} className="bg-zinc-900 border-zinc-700 text-white h-9 text-sm mt-1" data-testid="account-deal-close" /></div>
                   </div>
                 </>)}

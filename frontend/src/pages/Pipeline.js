@@ -23,6 +23,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { STAGE_COLORS } from '../constants/colors';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
+import { MoneyInput } from '../components/MoneyInput';
 import { 
   Dialog, 
   DialogContent, 
@@ -614,7 +615,7 @@ const Pipeline = () => {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm text-zinc-400 mb-1.5 block">Value ($)</label>
-                  <Input type="number" value={dealForm.value} onChange={(e) => setDealForm({ ...dealForm, value: e.target.value })} placeholder="50000" className="bg-zinc-800 border-zinc-700 text-white" required data-testid="deal-value-input" />
+                  <MoneyInput type="number" value={dealForm.value} onChange={(e) => setDealForm({ ...dealForm, value: e.target.value })} placeholder="50000" className="bg-zinc-800 border-zinc-700 text-white" required data-testid="deal-value-input" />
                 </div>
                 <div>
                   <label className="text-sm text-zinc-400 mb-1.5 block">Stage</label>

@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
+import { MoneyInput } from '../components/MoneyInput';
 import { Textarea } from '../components/ui/textarea';
 import { STAGE_COLOR_ARRAY } from '../constants/colors';
 import { toast } from 'sonner';
@@ -419,7 +420,7 @@ export default function ConversionOptimization() {
                       </div>
                       <div className="flex flex-wrap items-end gap-3 mb-3 p-3 rounded-lg bg-white/[0.02] border border-white/5">
                         <div><label className="text-[10px] text-zinc-500 block">Monthly visitors</label><Input type="number" value={t.monthly_visitors ?? 0} onChange={(e) => setTestField(t.test_id, 'monthly_visitors', e.target.value)} className="bg-zinc-900 border-zinc-700 text-white h-8 text-sm w-32" data-testid={`test-monthly-visitors-${t.test_id}`} /></div>
-                        <div><label className="text-[10px] text-zinc-500 block">Value / conversion ($)</label><Input type="number" value={t.value_per_conversion ?? ''} onChange={(e) => setTestField(t.test_id, 'value_per_conversion', e.target.value)} placeholder={summary?.avg_deal_value ? String(summary.avg_deal_value) : 'e.g. 200'} className="bg-zinc-900 border-zinc-700 text-white h-8 text-sm w-40" data-testid={`test-vpc-${t.test_id}`} /></div>
+                        <div><label className="text-[10px] text-zinc-500 block">Value / conversion</label><MoneyInput type="number" value={t.value_per_conversion ?? ''} onChange={(e) => setTestField(t.test_id, 'value_per_conversion', e.target.value)} placeholder={summary?.avg_deal_value ? String(summary.avg_deal_value) : 'e.g. 200'} wrapperClassName="w-40" className="bg-zinc-900 border-zinc-700 text-white h-8 text-sm" data-testid={`test-vpc-${t.test_id}`} /></div>
                         {proj != null && (
                           <div className="ml-auto text-right">
                             <div className="text-[10px] text-zinc-500">Projected annual impact</div>

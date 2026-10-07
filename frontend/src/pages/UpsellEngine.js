@@ -6,6 +6,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
+import { MoneyInput } from '../components/MoneyInput';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
 import {
@@ -395,7 +396,7 @@ export default function UpsellEngine() {
           </DialogHeader>
           <div className="grid grid-cols-2 gap-3 py-2">
             <div className="col-span-2"><Label className="text-zinc-400 text-xs">Plan name</Label><Input value={planForm.name} onChange={(e) => setPlanForm({ ...planForm, name: e.target.value })} className="bg-zinc-900 border-zinc-700 text-white mt-1" placeholder="Pro / Premium / Growth" data-testid="plan-name-input" /></div>
-            <div><Label className="text-zinc-400 text-xs">Price ($)</Label><Input type="number" value={planForm.price} onChange={(e) => setPlanForm({ ...planForm, price: e.target.value })} className="bg-zinc-900 border-zinc-700 text-white mt-1" placeholder="149" data-testid="plan-price-input" /></div>
+            <div><Label className="text-zinc-400 text-xs">Price</Label><MoneyInput type="number" value={planForm.price} onChange={(e) => setPlanForm({ ...planForm, price: e.target.value })} wrapperClassName="mt-1" className="bg-zinc-900 border-zinc-700 text-white" placeholder="149" data-testid="plan-price-input" /></div>
             <div><Label className="text-zinc-400 text-xs">Billing period</Label>
               <select value={planForm.period} onChange={(e) => setPlanForm({ ...planForm, period: e.target.value })} className="w-full bg-zinc-900 border border-zinc-700 rounded-md text-white text-sm h-9 mt-1 px-2" data-testid="plan-period-select">
                 <option value="monthly">monthly</option><option value="yearly">yearly</option><option value="one-time">one-time</option>

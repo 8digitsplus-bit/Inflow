@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
+import { MoneyInput } from '../components/MoneyInput';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
 import {
@@ -345,7 +346,7 @@ export default function RevenueLeaks() {
             </div>
             <div>
               <Label className="text-zinc-400 text-xs">Price / seat ($)</Label>
-              <Input type="number" value={form.unit_price_per_seat} onChange={(e) => setForm({ ...form, unit_price_per_seat: e.target.value })} className="bg-zinc-900 border-zinc-700 text-white mt-1" data-testid="contract-price-input" placeholder="139" />
+              <MoneyInput type="number" value={form.unit_price_per_seat} onChange={(e) => setForm({ ...form, unit_price_per_seat: e.target.value })} wrapperClassName="mt-1" className="bg-zinc-900 border-zinc-700 text-white" data-testid="contract-price-input" placeholder="139" />
             </div>
             <div>
               <Label className="text-zinc-400 text-xs">Usage source</Label>

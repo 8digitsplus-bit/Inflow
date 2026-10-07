@@ -7,6 +7,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
+import { MoneyInput } from '../components/MoneyInput';
 import { Tooltip as UITooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '../components/ui/tooltip';
 import { STAGE_COLOR_ARRAY } from '../constants/colors';
 import {
@@ -174,12 +175,13 @@ const RevenueForecast = () => {
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-2 mb-4">
-                <Input
+                <MoneyInput
                   data-testid="forecast-target-input"
                   value={targetInput}
                   onChange={(e) => setTargetInput(e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') applyTarget(); }}
                   placeholder="e.g. 500000"
+                  wrapperClassName="flex-1"
                   className="bg-zinc-900 border-zinc-800 text-white h-9 text-sm"
                 />
                 <Button data-testid="forecast-target-apply" onClick={applyTarget} disabled={loading} className="h-9 shrink-0" size="sm">

@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Input } from '../components/ui/input';
+import { MoneyInput } from '../components/MoneyInput';
 import { Label } from '../components/ui/label';
 import { Textarea } from '../components/ui/textarea';
 import {
@@ -63,7 +64,7 @@ const PlanEditor = ({ plans, setPlans, testid }) => (
       <div key={i} className="rounded-lg border border-white/10 bg-white/[0.03] p-3 space-y-2">
         <div className="flex gap-2">
           <Input value={p.name} onChange={(e) => setPlans(plans.map((x, j) => j === i ? { ...x, name: e.target.value } : x))} placeholder="Plan name" className="bg-zinc-900 border-zinc-700 text-white h-8 text-sm" data-testid={`${testid}-name-${i}`} />
-          <Input type="number" value={p.price ?? ''} onChange={(e) => setPlans(plans.map((x, j) => j === i ? { ...x, price: e.target.value === '' ? null : parseFloat(e.target.value) } : x))} placeholder="Price" className="bg-zinc-900 border-zinc-700 text-white h-8 text-sm w-24" data-testid={`${testid}-price-${i}`} />
+          <MoneyInput type="number" value={p.price ?? ''} onChange={(e) => setPlans(plans.map((x, j) => j === i ? { ...x, price: e.target.value === '' ? null : parseFloat(e.target.value) } : x))} placeholder="0" wrapperClassName="w-24" className="bg-zinc-900 border-zinc-700 text-white h-8 text-sm" data-testid={`${testid}-price-${i}`} />
           <select value={p.period} onChange={(e) => setPlans(plans.map((x, j) => j === i ? { ...x, period: e.target.value } : x))} className="bg-zinc-900 border border-zinc-700 rounded-md text-white text-xs h-8 px-1">
             <option value="monthly">/mo</option>
             <option value="yearly">/yr</option>

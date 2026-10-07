@@ -579,3 +579,6 @@ All AI responses: no emojis, clean plain-text formatting, rendered via shared AI
 - Frontend: new `components/AiInsightCards.js` (InsightCards/ChurnCards/PricingCards/CroCards). Wired into Dashboard, ChurnRetention, PricingOptimizer, and a NEW "AI experiments" card on ConversionOptimization (Analyze step). Tested iteration_66.json (4/4 pass).
 - PENDING (pass 2, user said "do the rest after"): specialize remaining AI — upsell email, workspace drafts, lead intent, competitor analysis/actions, telemetry recovery email, forecast narrative (several still use the old `_ai_text` generic helper + claude-sonnet-4-5).
 - KNOWN non-blocking: ChurnRetention page has pre-existing invalid DOM nesting (<span> inside table) causing console hydration warnings — not from this change.
+
+## Jun 2026 — $ prefix on currency inputs (UI polish) — DONE
+- New reusable components/MoneyInput.js ($-prefixed field). Applied to all money inputs: RevenueForecast target, Pipeline deal value, AccountWorkspace amount x2, Workspace deal/offer amount, UpsellEngine price, CompetitorIntel price, RevenueLeaks price-per-seat, ConversionOptimization value/conversion. Non-money fields (%, counts, OTP) intentionally left as plain inputs. Removed now-redundant "($)" from those labels. Frontend compiles clean.
