@@ -1,0 +1,28 @@
+{
+  "summary": "Frontend verification of 4 specialized AI features (Dashboard Insights, Churn Retention, Pricing Optimizer, CRO Experiments) rendering structured per-feature cards. All 4 flows PASS: APIs return 200 with ai_used=true and grounded numbers; every required data-testid is present; card content is distinct across features (revenue signals vs retention plays vs pricing moves vs funnel experiments). Content is not generic / looping text any more.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "ChurnRetention page", "issues": ["React hydration warnings in console: <span> rendered as child of <tr>/<tbody>/<td> (invalid DOM nesting). Likely inside the Cohort Retention Analysis or At-Risk table. Not visually broken but should be fixed to remove console errors."]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "(Optional, non-blocking) Fix invalid HTML nesting in Churn/Retention page tables (<span> inside <tr>/<td>/<tbody>) to clear hydration warnings."
+  ],
+  "critical_code_review_comments": [
+    "Dashboard /api/ai/insights returned headline + 3 signals with $-impact and action lines - matches spec.",
+    "Churn: risk_score=76, at_risk_revenue=$1,517,000, 3 driver chips + save-play cards all render with correct testids.",
+    "Pricing: upside figure $941 (note: shown as $941 instead of e.g. $940.55 revenue uplift - formatted as a short figure, acceptable). Move cards show from->to price, delta $, confidence, rationale.",
+    "CRO: hypothesis cards per funnel stage (Qualified / Proposal / Negotiation) with metric + expected lift - correctly scoped to funnel experiments only."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (skipped per request)", "frontend": "100% (4/4 AI features render structured cards with ai_used=true)"},
+  "test_credentials": "testpro@test.com / password (Enterprise tier owner) - auth flow requires toggling from default 'register' mode to 'Sign in' via data-testid='auth-toggle-mode' before submit.",
+  "seed_data_creation": "none",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "To log in to UI: GET /auth, dismiss cookie banner, click [data-testid=\"use-another-account-btn\"] if present, click [data-testid=\"auth-toggle-mode\"] to switch from register->sign-in, fill auth-email-input + auth-password-input, click auth-submit-btn. Session cookie is httpOnly and automatic. Then /dashboard, /churn, /pricing, /cro routes work. AI endpoints: /api/ai/insights, /api/ai/churn-prediction, /api/ai/pricing-analysis, /api/ai/cro-recommendations - all return structured JSON (ai_used=true) in ~10-30s."
+}
