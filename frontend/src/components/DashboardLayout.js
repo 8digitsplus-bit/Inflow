@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import {
@@ -8,7 +8,6 @@ import {
   DollarSign,
   BarChart3,
   Settings,
-  LogOut,
   Menu,
   X,
   Zap,
@@ -24,12 +23,13 @@ import {
   Rocket,
   Telescope,
   Workflow,
+  CreditCard,
 } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from './ui/alert-dialog';
 import { Toaster } from './ui/sonner';
 import TrialBanner from './TrialBanner';
 import LegalBanner from './LegalBanner';
+import UserMenu from './UserMenu';
 
 const TIER_LEVEL = {
   trial: 0, expired: -1, cancelled: -1, free: 0,
@@ -89,18 +89,16 @@ const labelMotion = (open) => ({
 
 const DashboardLayout = ({ children }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, logout } = useAuth();
   const [expanded, setExpanded] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   const tier = user?.subscription_tier || 'trial';
   const userLevel = TIER_LEVEL[tier] ?? 0;
 
-  const getInitials = (name) => {
-    if (!name) return 'U';
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
-  };
   const isActive = (href) => location.pathname === href;
 
   const tierLabel = () => {
@@ -121,14 +119,19 @@ const DashboardLayout = ({ children }) => {
   };
 
   // open === true renders the full-width (expanded) state; false = icon rail.
+  const accountItems = [
+    { label: 'Settings', icon: Settings, onSelect: () => navigate('/settings') },
+    { label: 'Manage Plan', icon: CreditCard, onSelect: () => navigate('/choose-plan') },
+    { label: 'Integrations', icon: Plug, onSelect: () => navigate('/connect-business') },
+  ];
+
   const renderHeader = (open) => (
     <div className="h-14 flex items-center px-4 flex-shrink-0 border-b border-white/[0.06]">
       <Link to="/dashboard" className="flex items-center min-w-0" onClick={() => setMobileOpen(false)}>
-        <img src="/inflow-icon-transparent-512.png" alt="InFlow" className="h-7 w-7 flex-shrink-0 object-contain" />
         <motion.img
           src="/inflow-logo.png?v=6"
           alt="InFlow"
-          className="h-5 ml-2.5 object-contain pointer-events-none"
+          className="h-5 object-contain pointer-events-none"
           {...labelMotion(open)}
         />
       </Link>
@@ -183,22 +186,16 @@ const DashboardLayout = ({ children }) => {
   );
 
   const renderFooter = (open) => (
-    <div className="border-t border-white/[0.06] flex-shrink-0 p-2.5">
-      <div className="flex items-center gap-2.5 h-9 px-1">
-        <Avatar className="w-7 h-7 flex-shrink-0">
-          <AvatarImage src={user?.picture} alt={user?.name} />
-          <AvatarFallback className="bg-[#0052ff]/30 text-white text-[9px]">{getInitials(user?.name)}</AvatarFallback>
-        </Avatar>
-        <motion.div className="flex items-center gap-2 flex-1 min-w-0" {...labelMotion(open)}>
-          <div className="flex-1 min-w-0">
-            <p className="text-[12px] font-medium text-zinc-300 truncate">{user?.name}</p>
-          </div>
-          <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium whitespace-nowrap ${tierColor()}`}>{tierLabel()}</span>
-          <button onClick={() => setShowLogoutConfirm(true)} className="text-zinc-600 hover:text-red-400 transition-colors p-1 flex-shrink-0" data-testid="sidebar-logout-btn">
-            <LogOut className="w-3.5 h-3.5" />
-          </button>
-        </motion.div>
-      </div>
+    <div className="border-t border-white/[0.06] flex-shrink-0 p-2">
+      <UserMenu
+        user={user}
+        planLabel={tierLabel()}
+        planClass={tierColor()}
+        items={accountItems}
+        onSignOut={() => setShowLogoutConfirm(true)}
+        onOpenChange={setUserMenuOpen}
+        expanded={open}
+      />
     </div>
   );
 
@@ -208,14 +205,14 @@ const DashboardLayout = ({ children }) => {
       <motion.aside
         className="dashboard-sidebar hidden lg:flex lg:flex-col"
         data-testid="sidebar"
-        animate={{ width: expanded ? 280 : 64, boxShadow: expanded ? '8px 0 40px rgba(0,0,0,0.5)' : '0px 0 0px rgba(0,0,0,0)' }}
+        animate={{ width: (expanded || userMenuOpen) ? 280 : 64, boxShadow: (expanded || userMenuOpen) ? '8px 0 40px rgba(0,0,0,0.5)' : '0px 0 0px rgba(0,0,0,0)' }}
         transition={{ duration: 0.22, ease: [0.25, 0.1, 0.25, 1] }}
         onMouseEnter={() => setExpanded(true)}
         onMouseLeave={() => setExpanded(false)}
       >
-        {renderHeader(expanded)}
-        {renderNav(expanded)}
-        {renderFooter(expanded)}
+        {renderHeader(expanded || userMenuOpen)}
+        {renderNav(expanded || userMenuOpen)}
+        {renderFooter(expanded || userMenuOpen)}
       </motion.aside>
 
       {/* Mobile full-screen overlay drawer */}
