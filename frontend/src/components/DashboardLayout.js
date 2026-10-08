@@ -125,16 +125,17 @@ const DashboardLayout = ({ children }) => {
     { label: 'Integrations', icon: Plug, onSelect: () => navigate('/connect-business') },
   ];
 
-  const renderHeader = (open) => (
-    <div className="h-14 flex items-center px-4 flex-shrink-0 border-b border-white/[0.06]">
-      <Link to="/dashboard" className="flex items-center min-w-0" onClick={() => setMobileOpen(false)}>
-        <motion.img
-          src="/inflow-logo.png?v=6"
-          alt="InFlow"
-          className="h-5 object-contain pointer-events-none"
-          {...labelMotion(open)}
-        />
-      </Link>
+  const renderHeader = (open, isMobile = false) => (
+    <div className={`flex items-center px-2 py-2 flex-shrink-0 border-b border-white/[0.06] ${isMobile ? 'pr-12' : ''}`}>
+      <UserMenu
+        user={user}
+        planLabel={tierLabel()}
+        planClass={tierColor()}
+        items={accountItems}
+        onSignOut={() => setShowLogoutConfirm(true)}
+        onOpenChange={setUserMenuOpen}
+        expanded={open}
+      />
     </div>
   );
 
@@ -186,16 +187,15 @@ const DashboardLayout = ({ children }) => {
   );
 
   const renderFooter = (open) => (
-    <div className="border-t border-white/[0.06] flex-shrink-0 p-2">
-      <UserMenu
-        user={user}
-        planLabel={tierLabel()}
-        planClass={tierColor()}
-        items={accountItems}
-        onSignOut={() => setShowLogoutConfirm(true)}
-        onOpenChange={setUserMenuOpen}
-        expanded={open}
-      />
+    <div className="border-t border-white/[0.06] flex-shrink-0 px-4 py-3.5">
+      <Link to="/dashboard" className="flex items-center min-w-0" onClick={() => setMobileOpen(false)}>
+        <motion.img
+          src="/inflow-logo.png?v=6"
+          alt="InFlow"
+          className="h-4 object-contain pointer-events-none"
+          {...labelMotion(open)}
+        />
+      </Link>
     </div>
   );
 
@@ -233,7 +233,7 @@ const DashboardLayout = ({ children }) => {
             >
               <X className="w-5 h-5" />
             </button>
-            {renderHeader(true)}
+            {renderHeader(true, true)}
             {renderNav(true)}
             {renderFooter(true)}
           </motion.div>

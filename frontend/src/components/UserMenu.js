@@ -51,16 +51,21 @@ export const UserMenu = ({ user, planLabel, planClass, items = [], onSignOut, ex
     if (!v) { setActive(-1); setHl(null); }
   }, [onOpenChange]);
 
-  // position the desktop popover above the trigger
+  // position the desktop popover, flipping below/above the trigger by available room
   useLayoutEffect(() => {
     if (!open || compact) return;
     const place = () => {
       const t = triggerRef.current?.getBoundingClientRect();
       if (!t) return;
       const width = 256;
+      const estH = panelRef.current?.offsetHeight || 320;
       const left = Math.min(Math.max(12, t.left), window.innerWidth - width - 12);
-      const bottom = window.innerHeight - t.top + 8;
-      setPos({ left, bottom, width });
+      const openDown = (window.innerHeight - t.bottom) > (estH + 16) || t.top < (estH + 16);
+      if (openDown) {
+        setPos({ left, top: t.bottom + 8, bottom: undefined, width, origin: 'top left' });
+      } else {
+        setPos({ left, top: undefined, bottom: window.innerHeight - t.top + 8, width, origin: 'bottom left' });
+      }
     };
     place();
     window.addEventListener('resize', place);
@@ -243,7 +248,7 @@ export const UserMenu = ({ user, planLabel, planClass, items = [], onSignOut, ex
         <motion.div
           ref={panelRef}
           className="fixed z-[120] rounded-2xl border border-white/10 bg-zinc-950/95 backdrop-blur-xl shadow-2xl shadow-black/60 overflow-hidden"
-          style={{ left: pos.left, bottom: pos.bottom, width: pos.width, transformOrigin: 'bottom left' }}
+          style={{ left: pos.left, top: pos.top, bottom: pos.bottom, width: pos.width, transformOrigin: pos.origin }}
           data-testid="user-menu-panel"
           initial={{ opacity: 0, scale: 0.94 }}
           animate={{ opacity: 1, scale: 1 }}
