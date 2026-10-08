@@ -163,12 +163,12 @@ export default function OutreachWorkspace() {
     if (!l) return;
     const next = [...links, l];
     setLinks(next); setNewLink('');
-    patchCandidate({ links: next }).catch(() => {});
+    patchCandidate({ links: next }).catch((e) => toast.error(e.message));
   };
   const removeLink = (i) => {
     const next = links.filter((_, idx) => idx !== i);
     setLinks(next);
-    patchCandidate({ links: next }).catch(() => {});
+    patchCandidate({ links: next }).catch((e) => toast.error(e.message));
   };
 
   const saveAssignee = async () => {

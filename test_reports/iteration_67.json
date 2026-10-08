@@ -1,0 +1,31 @@
+{
+  "summary": "Frontend-only E2E verification of the reworked Upsell Engine candidates TABLE and the new in-app Outreach Workspace (/upsell/outreach). Logged in as testpro@test.com, exercised every data-testid flow listed in the review request (table rendering + 3 row action buttons + dismiss, in-app navigation to Outreach Workspace with preselected candidate, intent tabs with counts + filtering, AI draft generation, labels add/remove, category move toast, assignee routing with teammates datalist, link add/remove, Undo-Send with 10s countdown + Undo cancel, Slack invalid-webhook validation, Label-triggers dialog add/delete, HubSpot CRM push, and Back-to-Upsell navigation). All 13 scenarios PASSED end-to-end.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "UpsellEngine / OutreachWorkspace", "issues": [
+        "React dev-mode hydration warnings in console: '<span> cannot be a child of <tbody>' and '<span> cannot be a child of <select>/<option>'. These come from a 3rd-party dev instrumentation wrapper (data-ve-dynamic / x-excluded spans) inserted around .map() lists in UpsellEngine (candidates tbody rows), OutreachWorkspace (teammates datalist options and rule-color-select options). They don't break functionality but pollute the console and will trip hydration errors in production SSR. Harmless if the wrapper is a preview-only overlay."
+      ]}
+    ]
+  },
+  "test_report_links": ["/app/test_reports/iteration_67.json"],
+  "action_items": [
+    "No functional bugs. The Upgrade-email → Outreach Workspace rework is fully working.",
+    "Optional: investigate dev-instrumentation span wrappers producing hydration warnings in <tbody> and <select> contexts (likely visual-edit preview overlay, not production)."
+  ],
+  "critical_code_review_comments": [
+    "OutreachWorkspace.js (525 lines) is approaching the 700-line soft limit — fine for now, but if more features land, split dialogs (Slack dialog, Rules dialog) into their own components.",
+    "In OutreachWorkspace, addLink/removeLink optimistically updates local state but calls patchCandidate(...).catch(() => {}) silently swallowing errors — if backend rejects the write, the UI will drift from server state until next loadBoard. Consider surfacing a toast on failure.",
+    "The useEffect that hydrates compose fields depends only on selected?.candidate_id; after loadBoard() refetches, local 'links'/'subject'/'body' edits can be clobbered if the user re-selects the same candidate — current behavior is intentional but worth documenting."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (frontend-only)", "frontend": "100% (13/13 scenarios)"},
+  "test_credentials": "testpro@test.com / password (Enterprise owner, org has 15 upsell candidates + demo HubSpot/Salesforce). Login page is /auth (toggle to 'Sign in' link), NOT /login.",
+  "seed_data_creation": "None required. Candidates table already seeded (14 open candidates visible). AI draft generated real subject (56 chars) + body (792 chars). Added rule 'enterprise → Strategic' and TestLabel, both subsequently removed.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Observed test results per scenario: candidates-list contains <table> with columns ['', 'Account', 'Expansion signals', 'Score', 'Expansion /yr', 'Actions'] (first unlabeled col is checkbox/avatar). 14 rows present. Each row has email-/offer-/notify-/dismiss-candidate-{id} buttons. Clicking Upgrade-email navigates to /upsell/outreach?candidate={id} (NOT a dialog), preselecting that candidate (compose header showed 'Salesforce'). Intent tabs: tab-all 14, tab-priority 1, tab-sales 1, tab-marketing 12 — filtering works. AI draft populated subject+body. Labels add/remove works. category-select to 'sales' produced 'Moved to Sales' toast. Assignee save produced 'Assigned to qa@example.com' toast. Link add/remove works (links-list container stays visible if other persisted links exist from backend). Undo-Send with 10s delay opened banner with countdown '9s'; Undo click produced 'Send cancelled' toast and banner disappeared. Slack invalid webhook https://notslack.example.com/x produced toast 'Enter a valid Slack Incoming Webhook URL (https://hooks.slack.com/...)'. Label-triggers add/delete works. HubSpot push toast: 'Task created in HubSpot'. outreach-back-btn returns to /upsell.",
+  "rca of the issue": "No bugs found; nothing to RCA."
+}
