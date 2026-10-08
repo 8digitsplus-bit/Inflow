@@ -23,7 +23,6 @@ import {
   Rocket,
   Telescope,
   Workflow,
-  CreditCard,
 } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from './ui/alert-dialog';
 import { Toaster } from './ui/sonner';
@@ -77,7 +76,6 @@ const navGroups = [
       { name: 'Integration', href: '/connect-business', icon: Plug, minTier: 0 },
       { name: 'Revenue Leaks', href: '/revenue-leaks', icon: Radar, minTier: 3 },
       { name: 'Smart Assist', href: '/support', icon: Headphones, minTier: 0 },
-      { name: 'Settings', href: '/settings', icon: Settings, minTier: 0 },
     ]
   },
 ];
@@ -121,8 +119,6 @@ const DashboardLayout = ({ children }) => {
   // open === true renders the full-width (expanded) state; false = icon rail.
   const accountItems = [
     { label: 'Settings', icon: Settings, onSelect: () => navigate('/settings') },
-    { label: 'Manage Plan', icon: CreditCard, onSelect: () => navigate('/choose-plan') },
-    { label: 'Integrations', icon: Plug, onSelect: () => navigate('/connect-business') },
   ];
 
   const renderHeader = (open, isMobile = false) => (
