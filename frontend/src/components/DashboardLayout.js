@@ -1,14 +1,16 @@
-import { useState, useEffect } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
-import { 
-  LayoutDashboard, 
-  Target, 
-  DollarSign, 
-  BarChart3, 
-  Settings, 
+import {
+  LayoutDashboard,
+  Target,
+  DollarSign,
+  BarChart3,
+  Settings,
   LogOut,
   Menu,
+  X,
   Zap,
   Users,
   TrendingUp,
@@ -17,13 +19,11 @@ import {
   Lock,
   Tag,
   LineChart,
-  MessageCircle,
   Radar,
   Swords,
   Rocket,
   Telescope,
   Workflow,
-  ChevronDown,
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from './ui/avatar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from './ui/alert-dialog';
@@ -82,47 +82,25 @@ const navGroups = [
   },
 ];
 
+const labelMotion = (open) => ({
+  animate: { opacity: open ? 1 : 0, x: open ? 0 : -4 },
+  transition: { duration: 0.15 },
+});
+
 const DashboardLayout = ({ children }) => {
   const location = useLocation();
-  const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const [collapsed, setCollapsed] = useState(() => {
-    try { return localStorage.getItem('sidebar_collapsed') === 'true'; } catch { return false; }
-  });
-  const [openGroups, setOpenGroups] = useState(() => {
-    let saved = {};
-    try { saved = JSON.parse(localStorage.getItem('sidebar_groups') || '{}'); } catch {}
-    const init = {};
-    navGroups.forEach((g) => { if (g.label) init[g.label] = g.label in saved ? saved[g.label] : true; });
-    return init;
-  });
 
   const tier = user?.subscription_tier || 'trial';
   const userLevel = TIER_LEVEL[tier] ?? 0;
-
-  useEffect(() => {
-    try { localStorage.setItem('sidebar_collapsed', String(collapsed)); } catch {}
-  }, [collapsed]);
-
-  useEffect(() => {
-    try { localStorage.setItem('sidebar_groups', JSON.stringify(openGroups)); } catch {}
-  }, [openGroups]);
-
-  useEffect(() => {
-    const active = navGroups.find((g) => g.label && g.items.some((it) => it.href === location.pathname));
-    if (active) setOpenGroups((prev) => (prev[active.label] ? prev : { ...prev, [active.label]: true }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location.pathname]);
-
-  const toggleGroup = (label) => setOpenGroups((prev) => ({ ...prev, [label]: !prev[label] }));
 
   const getInitials = (name) => {
     if (!name) return 'U';
     return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
   };
-
   const isActive = (href) => location.pathname === href;
 
   const tierLabel = () => {
@@ -132,7 +110,6 @@ const DashboardLayout = ({ children }) => {
     if (t === 'cancelled') return 'Cancelled';
     return t?.split('_')[0]?.charAt(0).toUpperCase() + t?.split('_')[0]?.slice(1) || 'Trial';
   };
-
   const tierColor = () => {
     const t = user?.subscription_tier;
     if (t?.includes('enterprise')) return 'bg-purple-500/20 text-purple-400';
@@ -143,117 +120,132 @@ const DashboardLayout = ({ children }) => {
     return 'bg-zinc-700 text-zinc-300';
   };
 
+  // open === true renders the full-width (expanded) state; false = icon rail.
+  const renderHeader = (open) => (
+    <div className="h-14 flex items-center px-4 flex-shrink-0 border-b border-white/[0.06]">
+      <Link to="/dashboard" className="flex items-center min-w-0" onClick={() => setMobileOpen(false)}>
+        <img src="/inflow-icon-transparent-512.png" alt="InFlow" className="h-7 w-7 flex-shrink-0 object-contain" />
+        <motion.img
+          src="/inflow-logo.png?v=6"
+          alt="InFlow"
+          className="h-5 ml-2.5 object-contain pointer-events-none"
+          {...labelMotion(open)}
+        />
+      </Link>
+    </div>
+  );
+
+  const renderNav = (open) => (
+    <nav className="flex-1 py-3 overflow-y-auto overflow-x-hidden px-2.5">
+      {navGroups.map((group, gi) => (
+        <div key={gi}>
+          {group.label && (
+            <motion.div
+              className="px-2.5 mb-1 mt-4 text-[10px] font-semibold uppercase tracking-wider text-zinc-600 whitespace-nowrap overflow-hidden"
+              {...labelMotion(open)}
+            >
+              {group.label}
+            </motion.div>
+          )}
+          {group.items.map((item) => {
+            const Icon = item.icon;
+            const active = isActive(item.href);
+            const locked = userLevel < item.minTier;
+            return (
+              <Link
+                key={item.name}
+                to={item.href}
+                onClick={() => setMobileOpen(false)}
+                title={!open ? item.name : undefined}
+                className={`relative group/link flex items-center gap-3 rounded-lg h-9 px-2.5 whitespace-nowrap mb-0.5 transition-colors ${locked ? 'opacity-30' : ''} ${
+                  active && !locked ? 'bg-[#0052ff]/[0.14] text-white' : locked ? '' : 'text-zinc-500 hover:text-zinc-100 hover:bg-white/[0.04]'
+                }`}
+                data-testid={`nav-${item.name.toLowerCase().replace(/\s+/g, '-')}`}
+              >
+                {active && !locked && (
+                  <span className="absolute left-0 top-1/2 -translate-y-1/2 h-5 w-[3px] rounded-r-full bg-[#0052ff]" />
+                )}
+                <Icon className={`w-[18px] h-[18px] flex-shrink-0 transition-colors ${active && !locked ? 'text-[#4d8bff]' : 'group-hover/link:text-zinc-200'}`} />
+                <motion.span className="text-[13px] flex-1 min-w-0 truncate" {...labelMotion(open)}>
+                  {item.name}
+                </motion.span>
+                {locked && open && (
+                  <motion.span {...labelMotion(open)}>
+                    <Lock className="w-3 h-3 text-zinc-700 flex-shrink-0" />
+                  </motion.span>
+                )}
+              </Link>
+            );
+          })}
+        </div>
+      ))}
+    </nav>
+  );
+
+  const renderFooter = (open) => (
+    <div className="border-t border-white/[0.06] flex-shrink-0 p-2.5">
+      <div className="flex items-center gap-2.5 h-9 px-1">
+        <Avatar className="w-7 h-7 flex-shrink-0">
+          <AvatarImage src={user?.picture} alt={user?.name} />
+          <AvatarFallback className="bg-[#0052ff]/30 text-white text-[9px]">{getInitials(user?.name)}</AvatarFallback>
+        </Avatar>
+        <motion.div className="flex items-center gap-2 flex-1 min-w-0" {...labelMotion(open)}>
+          <div className="flex-1 min-w-0">
+            <p className="text-[12px] font-medium text-zinc-300 truncate">{user?.name}</p>
+          </div>
+          <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium whitespace-nowrap ${tierColor()}`}>{tierLabel()}</span>
+          <button onClick={() => setShowLogoutConfirm(true)} className="text-zinc-600 hover:text-red-400 transition-colors p-1 flex-shrink-0" data-testid="sidebar-logout-btn">
+            <LogOut className="w-3.5 h-3.5" />
+          </button>
+        </motion.div>
+      </div>
+    </div>
+  );
+
   return (
     <div className="dashboard-layout">
-      {sidebarOpen && (
-        <div className="fixed inset-0 bg-black/50 z-30 lg:hidden" onClick={() => setSidebarOpen(false)} />
-      )}
-
-      <aside 
-        className={`dashboard-sidebar ${sidebarOpen ? 'open' : ''} ${collapsed ? 'collapsed' : ''}`}
+      {/* Desktop hover-expand rail (overlays content when expanded; content never shifts) */}
+      <motion.aside
+        className="dashboard-sidebar hidden lg:flex lg:flex-col"
         data-testid="sidebar"
+        animate={{ width: expanded ? 280 : 64, boxShadow: expanded ? '8px 0 40px rgba(0,0,0,0.5)' : '0px 0 0px rgba(0,0,0,0)' }}
+        transition={{ duration: 0.22, ease: [0.25, 0.1, 0.25, 1] }}
+        onMouseEnter={() => setExpanded(true)}
+        onMouseLeave={() => setExpanded(false)}
       >
-        <div className="flex flex-col h-full overflow-hidden">
-          {/* Header */}
-          <div className={`h-12 flex items-center flex-shrink-0 border-b border-white/[0.06] ${collapsed ? 'justify-center px-2' : 'justify-between px-3'}`}>
-            {!collapsed && (
-              <Link to="/dashboard" className="flex items-center">
-                <img src="/inflow-logo.png?v=6" alt="InFlow" className="h-5 w-auto object-contain" />
-              </Link>
-            )}
+        {renderHeader(expanded)}
+        {renderNav(expanded)}
+        {renderFooter(expanded)}
+      </motion.aside>
+
+      {/* Mobile full-screen overlay drawer */}
+      <AnimatePresence>
+        {mobileOpen && (
+          <motion.div
+            className="fixed inset-0 z-[100] lg:hidden bg-[#050507] flex flex-col"
+            data-testid="mobile-drawer"
+            initial={{ x: '-100%', opacity: 0 }}
+            animate={{ x: 0, opacity: 1 }}
+            exit={{ x: '-100%', opacity: 0 }}
+            transition={{ duration: 0.28, ease: 'easeInOut' }}
+          >
             <button
-              onClick={() => setCollapsed(c => !c)}
-              className="hidden lg:flex items-center justify-center w-7 h-7 rounded-md text-zinc-500 hover:text-zinc-300 transition-colors"
-              data-testid="sidebar-toggle-btn"
+              onClick={() => setMobileOpen(false)}
+              className="absolute right-5 top-4 z-50 text-zinc-400 hover:text-white p-1"
+              data-testid="mobile-drawer-close"
             >
-              <Menu className="w-4 h-4" />
+              <X className="w-5 h-5" />
             </button>
-          </div>
+            {renderHeader(true)}
+            {renderNav(true)}
+            {renderFooter(true)}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-          {/* Nav */}
-          <nav className={`flex-1 py-2 overflow-y-auto overflow-x-hidden ${collapsed ? 'px-1.5' : 'px-2'}`}>
-            {navGroups.map((group, gi) => (
-              <div key={gi} className={gi > 0 ? 'mt-3' : ''}>
-                {group.label && !collapsed && (
-                  <button
-                    onClick={() => toggleGroup(group.label)}
-                    aria-expanded={openGroups[group.label]}
-                    className="w-full px-2 mb-1 flex items-center justify-between group/lbl"
-                    data-testid={`nav-group-${group.label.toLowerCase().replace(/\s+/g, '-')}`}
-                  >
-                    <span className="text-[10px] font-semibold uppercase tracking-wider text-zinc-600 group-hover/lbl:text-zinc-400 transition-colors">{group.label}</span>
-                    <ChevronDown className={`w-3 h-3 text-zinc-600 group-hover/lbl:text-zinc-400 transition-transform duration-200 ${openGroups[group.label] ? '' : '-rotate-90'}`} />
-                  </button>
-                )}
-                {collapsed && gi > 0 && <div className="mx-2 my-2 border-t border-white/[0.04]" />}
-                {(collapsed || !group.label || openGroups[group.label]) && group.items.map((item) => {
-                  const Icon = item.icon;
-                  const active = isActive(item.href);
-                  const locked = userLevel < item.minTier;
-
-                  return (
-                    <Link
-                      key={item.name}
-                      to={item.href}
-                      onClick={() => setSidebarOpen(false)}
-                      title={collapsed ? item.name : undefined}
-                      className={`flex items-center gap-2.5 rounded-md transition-colors whitespace-nowrap mb-px ${
-                        collapsed ? 'justify-center py-1.5 px-0' : 'py-1.5 px-2'
-                      } ${locked ? 'opacity-30' : ''} ${
-                        active && !locked
-                          ? 'bg-white/[0.06] text-white' 
-                          : locked ? '' : 'text-zinc-500 hover:text-zinc-200 hover:bg-white/[0.03]'
-                      }`}
-                      data-testid={`nav-${item.name.toLowerCase().replace(/\s+/g, '-')}`}
-                    >
-                      <Icon className={`w-4 h-4 flex-shrink-0 ${active && !locked ? 'text-slate-400' : ''}`} />
-                      {!collapsed && (
-                        <>
-                          <span className="text-[13px] truncate">{item.name}</span>
-                          {locked && <Lock className="w-2.5 h-2.5 ml-auto text-zinc-700 flex-shrink-0" />}
-                        </>
-                      )}
-                    </Link>
-                  );
-                })}
-              </div>
-            ))}
-          </nav>
-
-          {/* User */}
-          <div className={`border-t border-white/[0.06] flex-shrink-0 ${collapsed ? 'p-2' : 'p-2.5'}`}>
-            {collapsed ? (
-              <div className="flex flex-col items-center gap-1.5">
-                <Avatar className="w-7 h-7">
-                  <AvatarImage src={user?.picture} alt={user?.name} />
-                  <AvatarFallback className="bg-slate-600 text-white text-[9px]">{getInitials(user?.name)}</AvatarFallback>
-                </Avatar>
-                <button onClick={() => setShowLogoutConfirm(true)} className="text-zinc-600 hover:text-red-400 transition-colors p-1" data-testid="sidebar-logout-btn">
-                  <LogOut className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            ) : (
-              <div className="flex items-center gap-2">
-                <Avatar className="w-7 h-7 flex-shrink-0">
-                  <AvatarImage src={user?.picture} alt={user?.name} />
-                  <AvatarFallback className="bg-slate-600 text-white text-[9px]">{getInitials(user?.name)}</AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <p className="text-[12px] font-medium text-zinc-300 truncate">{user?.name}</p>
-                </div>
-                <span className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${tierColor()}`}>{tierLabel()}</span>
-                <button onClick={() => setShowLogoutConfirm(true)} className="text-zinc-600 hover:text-red-400 transition-colors p-1 flex-shrink-0" data-testid="sidebar-logout-btn">
-                  <LogOut className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      </aside>
-
-      <main className={`dashboard-content ${collapsed ? 'sidebar-collapsed' : ''}`}>
+      <main className="dashboard-content">
         <div className="lg:hidden fixed top-0 left-0 right-0 h-12 bg-[#050507] border-b border-white/[0.06] flex items-center px-4 z-20">
-          <button onClick={() => setSidebarOpen(true)} className="p-1.5 text-zinc-500 hover:text-white" data-testid="mobile-sidebar-btn">
+          <button onClick={() => setMobileOpen(true)} className="p-1.5 text-zinc-500 hover:text-white" data-testid="mobile-sidebar-btn">
             <Menu className="w-5 h-5" />
           </button>
           <div className="flex items-center ml-3">
