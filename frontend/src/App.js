@@ -21,6 +21,7 @@ const PricingOptimizer = lazy(() => import('./pages/PricingOptimizer'));
 const RevenueIntelligence = lazy(() => import('./pages/RevenueIntelligence'));
 const ChurnRetention = lazy(() => import('./pages/ChurnRetention'));
 const UpsellEngine = lazy(() => import('./pages/UpsellEngine'));
+const OutreachWorkspace = lazy(() => import('./pages/OutreachWorkspace'));
 const HighIntent = lazy(() => import('./pages/HighIntent'));
 const Workspace = lazy(() => import('./pages/Workspace'));
 const AccountWorkspace = lazy(() => import('./pages/AccountWorkspace'));
@@ -140,6 +141,16 @@ const AppRouter = () => {
           <ProtectedRoute>
             <TierGate requiredLevel={3}>
               <UpsellEngine />
+            </TierGate>
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/upsell/outreach" 
+        element={
+          <ProtectedRoute>
+            <TierGate requiredLevel={3}>
+              <OutreachWorkspace />
             </TierGate>
           </ProtectedRoute>
         } 

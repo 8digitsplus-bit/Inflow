@@ -31,6 +31,7 @@ from routes.telemetry import router as telemetry_router
 from routes.competitors import router as competitors_router
 from routes.cro import router as cro_router
 from routes.upsell import router as upsell_router
+from routes.outreach import router as outreach_router, process_outbound_queue_once
 from routes.intent import router as intent_router
 from routes.workspace import router as workspace_router
 from migrations.orgs import migrate_users_to_orgs
@@ -141,6 +142,7 @@ api_router.include_router(telemetry_router)
 api_router.include_router(competitors_router)
 api_router.include_router(cro_router)
 api_router.include_router(upsell_router)
+api_router.include_router(outreach_router)
 api_router.include_router(intent_router)
 api_router.include_router(workspace_router)
 
@@ -206,8 +208,24 @@ async def startup_migrations():
         await db.two_factor_challenges.create_index("challenge_id", unique=True)
     except Exception as e:
         logging.error("Failed to ensure unique index on two_factor_challenges.challenge_id: %s", e)
+    # Background worker: dispatch queued upsell outreach emails after their
+    # Undo-Send delay elapses (fires even if the composer page is closed).
+    import asyncio
+
+    async def _outbound_worker():
+        while True:
+            try:
+                await process_outbound_queue_once()
+            except Exception as e:
+                logging.error("Outreach outbound worker error: %s", e)
+            await asyncio.sleep(3)
+
+    app.state.outbound_task = asyncio.create_task(_outbound_worker())
 
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
+    task = getattr(app.state, "outbound_task", None)
+    if task:
+        task.cancel()
     client.close()

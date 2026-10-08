@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../components/DashboardLayout';
 import {
   Rocket, TrendingUp, ScanLine, Plus, Trash2, DollarSign, Users, Loader2, Sparkles,
@@ -39,6 +40,7 @@ const glass = 'bg-white/[0.04] border border-white/10 backdrop-blur-xl';
 const emptyPlan = { name: '', price: '', period: 'monthly', upgrade_url: '', description: '' };
 
 export default function UpsellEngine() {
+  const navigate = useNavigate();
   const [status, setStatus] = useState(null);
   const [plans, setPlans] = useState([]);
   const [candidates, setCandidates] = useState([]);
@@ -311,7 +313,7 @@ export default function UpsellEngine() {
         {/* Candidates */}
         <div className={`rounded-2xl ${glass} mb-8 overflow-hidden`}>
           <div className="px-5 py-4 border-b border-white/[0.06] flex items-center justify-between">
-            <div className="flex items-center gap-2"><Gauge className="w-4 h-4 text-slate-400" /><h2 className="text-sm font-semibold text-white">Upsell candidates</h2></div>
+            <div className="flex items-center gap-2"><Gauge className="w-4 h-4 text-slate-400" /><h2 className="text-sm font-semibold text-white">Upsell candidates</h2><span className="text-xs text-zinc-500 hidden sm:inline">· open the Outreach Workspace to triage & email</span></div>
             {selected.length > 0 && (
               <Button onClick={() => setCampOpen(true)} className="bg-[#0052ff] hover:bg-[#0047d6] text-white h-8 text-xs" data-testid="new-campaign-btn"><Megaphone className="w-4 h-4 mr-1" /> Campaign ({selected.length})</Button>
             )}
@@ -319,40 +321,56 @@ export default function UpsellEngine() {
           {openCandidates.length === 0 ? (
             <div className="px-5 py-12 text-center text-zinc-500 text-sm" data-testid="no-candidates">No candidates yet. Click <span className="text-white font-medium">Scan for candidates</span> to analyze your customer accounts for expansion signals.</div>
           ) : (
-            <div className="divide-y divide-white/[0.05]" data-testid="candidates-list">
-              {openCandidates.map((c) => (
-                <div key={c.candidate_id} className="px-5 py-4" data-testid={`candidate-row-${c.candidate_id}`}>
-                  <div className="flex flex-col lg:flex-row lg:items-start gap-4">
-                    <div className="flex items-start gap-3 flex-1 min-w-0">
-                      <input type="checkbox" checked={selected.includes(c.candidate_id)} onChange={() => toggleSelect(c.candidate_id)} className="mt-1.5 accent-[#0052ff] w-4 h-4" data-testid={`select-candidate-${c.candidate_id}`} />
-                      <div className="flex-1 min-w-0">
+            <div className="overflow-x-auto" data-testid="candidates-list">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-zinc-800">
+                    <th className="py-3 px-4 w-8"></th>
+                    <th className="text-left py-3 px-2 text-zinc-400 font-medium">Account</th>
+                    <th className="text-left py-3 px-2 text-zinc-400 font-medium hidden md:table-cell">Expansion signals</th>
+                    <th className="text-center py-3 px-2 text-zinc-400 font-medium">Score</th>
+                    <th className="text-right py-3 px-2 text-zinc-400 font-medium">Expansion /yr</th>
+                    <th className="text-right py-3 px-4 text-zinc-400 font-medium">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {openCandidates.map((c) => (
+                    <tr key={c.candidate_id} className="border-b border-zinc-800/50 hover:bg-white/[0.02]" data-testid={`candidate-row-${c.candidate_id}`}>
+                      <td className="py-3 px-4 align-top">
+                        <input type="checkbox" checked={selected.includes(c.candidate_id)} onChange={() => toggleSelect(c.candidate_id)} className="mt-0.5 accent-[#0052ff] w-4 h-4" data-testid={`select-candidate-${c.candidate_id}`} />
+                      </td>
+                      <td className="py-3 px-2 align-top">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-white font-medium truncate">{c.account}</span>
+                          <span className="text-white font-medium">{c.account}</span>
                           <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase border ${STATUS_STYLE[c.status] || STATUS_STYLE.open}`} data-testid={`candidate-status-${c.candidate_id}`}>{c.status}</span>
-                          <span className="text-[10px] text-zinc-500 flex items-center gap-1"><Gauge className="w-3 h-3" /> {c.expansion_score}/100</span>
                         </div>
-                        <div className="flex flex-wrap gap-1.5 mt-2">
+                        <div className="text-[11px] text-zinc-500 mt-0.5">now {money(c.current_value)}</div>
+                      </td>
+                      <td className="py-3 px-2 align-top hidden md:table-cell">
+                        <div className="flex flex-wrap gap-1.5 max-w-md">
                           {(c.signals || []).map((s) => (
-                            <span key={s.key} className={`px-2 py-0.5 rounded-md text-[10px] border ${SIGNAL_STYLE[s.key] || 'bg-white/5 text-zinc-300 border-white/10'}`} title={s.detail}>{s.label} · {s.detail}</span>
+                            <span key={s.key} className={`px-2 py-0.5 rounded-md text-[10px] border ${SIGNAL_STYLE[s.key] || 'bg-white/5 text-zinc-300 border-white/10'}`} title={s.detail}>{s.label}</span>
                           ))}
                         </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between lg:justify-end gap-4 lg:flex-shrink-0">
-                      <div className="text-right">
-                        <div className="text-lg font-bold text-emerald-400">{money(c.est_expansion_value)}<span className="text-xs text-zinc-500 font-normal">/yr</span></div>
-                        <div className="text-[11px] text-zinc-500">now {money(c.current_value)}</div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2 mt-3 lg:pl-7">
-                    <Button size="sm" onClick={() => openAction(c, 'email')} className="h-8 text-xs bg-white/10 hover:bg-white/20 text-white" data-testid={`email-candidate-${c.candidate_id}`}><Mail className="w-3.5 h-3.5 mr-1" /> Upgrade email</Button>
-                    <Button size="sm" onClick={() => openAction(c, 'offer')} className="h-8 text-xs bg-white/10 hover:bg-white/20 text-white" data-testid={`offer-candidate-${c.candidate_id}`}><Tag className="w-3.5 h-3.5 mr-1" /> Create offer</Button>
-                    <Button size="sm" onClick={() => setNotify({ candidate: c, to: status?.owner_email || '' })} className="h-8 text-xs bg-white/10 hover:bg-white/20 text-white" data-testid={`notify-candidate-${c.candidate_id}`}><BellRing className="w-3.5 h-3.5 mr-1" /> Notify sales</Button>
-                    <Button size="sm" variant="ghost" onClick={() => dismissCandidate(c)} className="h-8 text-xs text-zinc-500 hover:text-zinc-300" data-testid={`dismiss-candidate-${c.candidate_id}`}>Dismiss</Button>
-                  </div>
-                </div>
-              ))}
+                      </td>
+                      <td className="py-3 px-2 text-center align-top">
+                        <span className="px-2 py-1 rounded text-xs font-mono bg-sky-500/15 text-sky-300">{c.expansion_score}</span>
+                      </td>
+                      <td className="py-3 px-2 text-right align-top">
+                        <span className="text-emerald-400 font-bold">{money(c.est_expansion_value)}</span>
+                      </td>
+                      <td className="py-3 px-4 align-top">
+                        <div className="flex flex-wrap items-center justify-end gap-2">
+                          <Button size="sm" onClick={() => navigate(`/upsell/outreach?candidate=${c.candidate_id}`)} className="h-8 text-xs bg-[#0052ff] hover:bg-[#0047d6] text-white" data-testid={`email-candidate-${c.candidate_id}`}><Mail className="w-3.5 h-3.5 mr-1" /> Upgrade email</Button>
+                          <Button size="sm" onClick={() => openAction(c, 'offer')} className="h-8 text-xs bg-white/10 hover:bg-white/20 text-white" data-testid={`offer-candidate-${c.candidate_id}`}><Tag className="w-3.5 h-3.5 mr-1" /> Create offer</Button>
+                          <Button size="sm" onClick={() => setNotify({ candidate: c, to: status?.owner_email || '' })} className="h-8 text-xs bg-white/10 hover:bg-white/20 text-white" data-testid={`notify-candidate-${c.candidate_id}`}><BellRing className="w-3.5 h-3.5 mr-1" /> Notify sales</Button>
+                          <Button size="sm" variant="ghost" onClick={() => dismissCandidate(c)} className="h-8 text-xs text-zinc-500 hover:text-zinc-300" data-testid={`dismiss-candidate-${c.candidate_id}`}>Dismiss</Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
