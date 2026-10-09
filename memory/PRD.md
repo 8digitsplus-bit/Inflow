@@ -13,6 +13,11 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
+### Dashboard shell + Settings redesign (Jun 2026)
+- **Sidebar** (`DashboardLayout.js`): rebuilt as an Aceternity-style hover-expand rail (64px icon rail → 280px overlay on hover, framer-motion), dark #0052ff glass theme; groups always-expanded when open, tier-lock icons, active blue bar; full-screen slide-in drawer on mobile. Favicon mark removed from the header; InFlow wordmark moved to the footer.
+- **User profile menu** (`UserMenu.js`): account menu now lives at the **top (header)** of the sidebar. Popover auto-flips (opens downward from the header), bottom sheet < 640px, sliding highlight + keyboard nav. Items: **Settings** + Sign out (Sign out routes through the existing confirm dialog). "Manage Plan"/"Integrations" items removed per user; the Tools nav group's "Settings" item removed (now only in the profile menu).
+- **Settings page** (`Settings.js`): redesigned to a two-column glass card (GlassAccountSettingsCard reference) — Left: Security (email + 2FA toggle) & Renewal (auto-renew); Right: Current plan (real flat per-workspace price, feature list, Cancel + **Manage plan → /choose-plan**) & Billing (invoices/payment via Stripe portal). Inline 3-plan grid removed (use /choose-plan). Product-update-email toggle intentionally omitted. All wiring preserved (2FA, auto-renew, cancel, Stripe portal, checkout-return polling). Standalone Sign out removed (in profile menu). Verified via screenshots.
+
 ### Upsell Engine rework — Upgrade Outreach Workspace (Jun 2026)
 - `/upsell` (`UpsellEngine.js`): the "Upsell candidates" list is now a **cohort-style table** (mirrors the Churn page's Cohort Retention table) with columns Account / Expansion signals / Score / Expansion-per-yr / Actions, keeping the 3 row actions (Upgrade email / Create offer / Notify sales) + Dismiss + campaign-select checkbox.
 - "Upgrade email" now **navigates to a dedicated in-app Outreach Workspace** at `/upsell/outreach?candidate={id}` (new page `OutreachWorkspace.js`) instead of opening a dialog. "Create offer" and "Notify sales" still use their dialogs.

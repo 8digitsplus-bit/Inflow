@@ -2,22 +2,22 @@ import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import DashboardLayout from '../components/DashboardLayout';
-import { 
-  User, 
-  CreditCard, 
-  Check, 
-  Sparkles,
+import { motion } from 'framer-motion';
+import {
+  Check,
   Loader2,
-  ChevronRight,
-  LogOut,
+  ShieldCheck,
+  RefreshCw,
   AlertCircle,
   XCircle,
-  Clock,
-  ShieldCheck,
-  RefreshCw
+  FileText,
+  Wallet,
+  ArrowUpRight,
 } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Button } from '../components/ui/button';
+import { Badge } from '../components/ui/badge';
+import { Switch } from '../components/ui/switch';
+import { Label } from '../components/ui/label';
 import { Avatar, AvatarFallback, AvatarImage } from '../components/ui/avatar';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '../components/ui/alert-dialog';
 import Enable2FADialog from '../components/Enable2FADialog';
@@ -25,23 +25,30 @@ import { toast } from 'sonner';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
+const PLAN_PRICING = {
+  essential_monthly: { price: 75, period: 'month' },
+  essential_yearly: { price: 597, period: 'year' },
+  pro_monthly: { price: 179, period: 'month' },
+  pro_yearly: { price: 1356, period: 'year' },
+  enterprise_monthly: { price: 327, period: 'month' },
+  enterprise_yearly: { price: 1999, period: 'year' },
+};
+
 const Settings = () => {
-  const { user, logout, refreshUser } = useAuth();
+  const { user, refreshUser } = useAuth();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [plans, setPlans] = useState({});
-  const [processingPayment, setProcessingPayment] = useState(false);
   const [checkingStatus, setCheckingStatus] = useState(false);
-  const [billingPeriod, setBillingPeriod] = useState('monthly');
   const [cancellingSubscription, setCancellingSubscription] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
-  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [twoFAEnabled, setTwoFAEnabled] = useState(false);
   const [toggling2FA, setToggling2FA] = useState(false);
   const [show2FADialog, setShow2FADialog] = useState(false);
   const [org, setOrg] = useState(null);
   const [subDetails, setSubDetails] = useState(null);
   const [togglingAutoRenew, setTogglingAutoRenew] = useState(false);
+  const [loadingPortal, setLoadingPortal] = useState(false);
 
   useEffect(() => {
     fetch(`${API_URL}/api/org/me`, { credentials: 'include' })
@@ -57,116 +64,53 @@ const Settings = () => {
     } catch {}
   };
 
-  useEffect(() => {
-    fetchSubDetails();
-  }, [user?.subscription_tier]);
-
-  const handleToggleAutoRenew = async (enabled) => {
-    setTogglingAutoRenew(true);
-    try {
-      const res = await fetch(`${API_URL}/api/subscription/auto-renew`, {
-        method: 'POST',
-        credentials: 'include',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ enabled }),
-      });
-      if (res.ok) {
-        toast.success(enabled ? 'Auto-renew turned on' : 'Auto-renew turned off — your plan will end at the period end');
-        await fetchSubDetails();
-      } else {
-        const err = await res.json().catch(() => ({}));
-        toast.error(err.detail || 'Failed to update auto-renew');
-      }
-    } catch {
-      toast.error('Failed to update auto-renew');
-    } finally {
-      setTogglingAutoRenew(false);
-    }
-  };
+  useEffect(() => { fetchSubDetails(); }, [user?.subscription_tier]);
 
   useEffect(() => {
     fetchPlans();
     fetch2FAStatus();
-    
-    // Check for payment return
     const sessionId = searchParams.get('session_id');
     const success = searchParams.get('success');
-    
-    if (sessionId && success) {
-      pollPaymentStatus(sessionId);
-    }
+    if (sessionId && success) pollPaymentStatus(sessionId);
   }, [searchParams]);
 
   const fetch2FAStatus = async () => {
     try {
       const res = await fetch(`${API_URL}/api/auth/2fa/status`, { credentials: 'include' });
-      if (res.ok) {
-        const data = await res.json();
-        setTwoFAEnabled(data.enabled);
-      }
+      if (res.ok) setTwoFAEnabled((await res.json()).enabled);
     } catch {}
   };
 
   const toggle2FA = async () => {
-    // Enabling 2FA requires the email-code confirmation flow
-    if (!twoFAEnabled) {
-      setShow2FADialog(true);
-      return;
-    }
-    // Disabling is instant
+    if (!twoFAEnabled) { setShow2FADialog(true); return; }
     setToggling2FA(true);
     try {
       const res = await fetch(`${API_URL}/api/auth/2fa/disable`, { method: 'POST', credentials: 'include' });
-      if (res.ok) {
-        setTwoFAEnabled(false);
-        toast.success('Two-factor authentication disabled');
-      } else {
-        toast.error('Failed to update 2FA settings');
-      }
-    } catch {
-      toast.error('Failed to update 2FA settings');
-    } finally {
-      setToggling2FA(false);
-    }
+      if (res.ok) { setTwoFAEnabled(false); toast.success('Two-factor authentication disabled'); }
+      else toast.error('Failed to update 2FA settings');
+    } catch { toast.error('Failed to update 2FA settings'); }
+    finally { setToggling2FA(false); }
   };
 
   const fetchPlans = async () => {
     try {
       const response = await fetch(`${API_URL}/api/subscription/plans`);
-      if (response.ok) {
-        const data = await response.json();
-        setPlans(data);
-      }
-    } catch (error) {
-      console.error('Failed to fetch plans:', error);
-    }
+      if (response.ok) setPlans(await response.json());
+    } catch (error) { console.error('Failed to fetch plans:', error); }
   };
 
   const pollPaymentStatus = async (sessionId, attempts = 0) => {
     const maxAttempts = 5;
-    const pollInterval = 2000;
-
-    if (attempts >= maxAttempts) {
-      toast.error('Payment status check timed out. Please refresh the page.');
-      setCheckingStatus(false);
-      return;
-    }
-
+    if (attempts >= maxAttempts) { toast.error('Payment status check timed out. Please refresh the page.'); setCheckingStatus(false); return; }
     setCheckingStatus(true);
-
     try {
-      const response = await fetch(`${API_URL}/api/payments/status/${sessionId}`, {
-        credentials: 'include'
-      });
-
+      const response = await fetch(`${API_URL}/api/payments/status/${sessionId}`, { credentials: 'include' });
       if (response.ok) {
         const data = await response.json();
-        
         if (data.payment_status === 'paid') {
           toast.success('Payment successful! Your plan has been upgraded.');
           await refreshUser();
           setCheckingStatus(false);
-          // Clear URL params
           window.history.replaceState({}, '', '/settings');
           return;
         } else if (data.status === 'expired') {
@@ -175,473 +119,298 @@ const Settings = () => {
           return;
         }
       }
-
-      // Continue polling
-      setTimeout(() => pollPaymentStatus(sessionId, attempts + 1), pollInterval);
+      setTimeout(() => pollPaymentStatus(sessionId, attempts + 1), 2000);
     } catch (error) {
       console.error('Error checking payment status:', error);
-      setTimeout(() => pollPaymentStatus(sessionId, attempts + 1), pollInterval);
+      setTimeout(() => pollPaymentStatus(sessionId, attempts + 1), 2000);
     }
-  };
-
-  const handleUpgrade = async (planId) => {
-    if (planId === user?.subscription_tier) return;
-    // Flat per-workspace pricing — all plans go straight to embedded checkout.
-    // Pass where we came from so Checkout's Back button returns to Settings.
-    navigate(`/checkout?plan=${planId}&from=/settings`);
   };
 
   const handleCancelSubscription = async () => {
     setCancellingSubscription(true);
     try {
-      const response = await fetch(`${API_URL}/api/subscription/cancel`, {
-        method: 'POST',
-        credentials: 'include',
-      });
+      const response = await fetch(`${API_URL}/api/subscription/cancel`, { method: 'POST', credentials: 'include' });
       if (response.ok) {
         toast.success('Subscription cancelled successfully');
         setShowCancelConfirm(false);
         await refreshUser();
       } else {
-        const data = await response.json();
-        toast.error(data.detail || 'Failed to cancel');
+        toast.error((await response.json()).detail || 'Failed to cancel');
       }
-    } catch {
-      toast.error('Failed to cancel subscription');
-    } finally {
-      setCancellingSubscription(false);
-    }
+    } catch { toast.error('Failed to cancel subscription'); }
+    finally { setCancellingSubscription(false); }
   };
 
-  const [loadingPortal, setLoadingPortal] = useState(false);
   const handleOpenBillingPortal = async () => {
     setLoadingPortal(true);
     try {
       const response = await fetch(`${API_URL}/api/billing/portal-session`, {
-        method: 'POST',
-        credentials: 'include',
+        method: 'POST', credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ return_url: window.location.origin }),
       });
       const data = await response.json();
-      if (response.ok && data.url) {
-        window.location.href = data.url;
+      if (response.ok && data.url) window.location.href = data.url;
+      else toast.error(data.detail || 'Could not open billing portal');
+    } catch { toast.error('Could not open billing portal'); }
+    finally { setLoadingPortal(false); }
+  };
+
+  const handleToggleAutoRenew = async (enabled) => {
+    setTogglingAutoRenew(true);
+    try {
+      const res = await fetch(`${API_URL}/api/subscription/auto-renew`, {
+        method: 'POST', credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled }),
+      });
+      if (res.ok) {
+        toast.success(enabled ? 'Auto-renew turned on' : "Auto-renew turned off — your plan will end at the period end");
+        await fetchSubDetails();
       } else {
-        toast.error(data.detail || 'Could not open billing portal');
+        toast.error((await res.json().catch(() => ({}))).detail || 'Failed to update auto-renew');
       }
-    } catch {
-      toast.error('Could not open billing portal');
-    } finally {
-      setLoadingPortal(false);
-    }
+    } catch { toast.error('Failed to update auto-renew'); }
+    finally { setTogglingAutoRenew(false); }
   };
 
-  const hasActivePaidSub = user?.subscription_tier && !['trial', 'expired', 'cancelled', 'free', null, undefined].includes(user.subscription_tier);
+  const tier = org?.subscription_tier || user?.subscription_tier;
+  const isPaid = tier && !['trial', 'expired', 'cancelled', 'free', null, undefined].includes(tier);
+  const isOwner = org?.role === 'owner';
+  const canCancel = tier && !['expired', 'cancelled'].includes(tier) && isOwner;
+  const canChangePlan = isOwner;
+  const pricing = PLAN_PRICING[tier];
 
-  const canCancel = user?.subscription_tier && !['expired', 'cancelled'].includes(user.subscription_tier) && org?.role === 'owner';
-  const canChangePlan = org?.role === 'owner';
-
-  const getInitials = (name) => {
-    if (!name) return 'U';
-    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  const getInitials = (name) => !name ? 'U' : name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  const planBaseName = (t) => {
+    if (!t || t === 'cancelled') return 'Cancelled';
+    if (t === 'trial') return 'Free Trial';
+    if (t === 'expired') return 'Expired';
+    const base = t.split('_')[0];
+    return base.charAt(0).toUpperCase() + base.slice(1);
   };
-
-  const getTierDisplayName = (tier) => {
-    if (!tier || tier === 'cancelled') return 'Cancelled';
-    if (tier === 'trial') return 'Trial';
-    if (tier === 'expired') return 'Expired';
-    const parts = tier.split('_');
-    return parts[0].charAt(0).toUpperCase() + parts[0].slice(1) + (parts[1] ? ` (${parts[1]})` : '');
+  const billedLabel = (t) => {
+    if (!PLAN_PRICING[t]) return t === 'trial' ? 'No card on file' : '';
+    return t.includes('yearly') ? 'Billed yearly' : 'Billed monthly';
   };
-
-  const getTierColor = (tier) => {
-    if (!tier) return 'bg-zinc-700 text-zinc-300';
-    if (tier.includes('enterprise')) return 'bg-purple-500/20 text-purple-400';
-    if (tier.includes('pro')) return 'bg-slate-500/20 text-slate-400';
-    if (tier.includes('essential')) return 'bg-cyan-500/20 text-cyan-400';
-    if (tier === 'trial') return 'bg-amber-500/20 text-amber-400';
-    if (tier === 'expired' || tier === 'cancelled') return 'bg-red-500/20 text-red-400';
-    return 'bg-zinc-700 text-zinc-300';
-  };
-
-  const planConfig = {
-    monthly: [
-      { key: 'essential_monthly', name: 'Essential', price: 75 },
-      { key: 'pro_monthly', name: 'Pro', price: 179, featured: true },
-      { key: 'enterprise_monthly', name: 'Enterprise', price: 327 }
-    ],
-    yearly: [
-      { key: 'essential_yearly', name: 'Essential', price: 597, originalPrice: 747, savings: 150 },
-      { key: 'pro_yearly', name: 'Pro', price: 1356, originalPrice: 1695, featured: true, savings: 339 },
-      { key: 'enterprise_yearly', name: 'Enterprise', price: 1999, originalPrice: 2499, savings: 500 }
-    ]
+  const getTierColor = (t) => {
+    if (!t) return 'bg-zinc-700/40 text-zinc-300 border-zinc-600/40';
+    if (t.includes('enterprise')) return 'bg-purple-500/15 text-purple-300 border-purple-500/30';
+    if (t.includes('pro')) return 'bg-[#0052ff]/15 text-[#7aa6ff] border-[#0052ff]/40';
+    if (t.includes('essential')) return 'bg-cyan-500/15 text-cyan-300 border-cyan-500/30';
+    if (t === 'trial') return 'bg-amber-500/15 text-amber-300 border-amber-500/30';
+    return 'bg-red-500/15 text-red-300 border-red-500/30';
   };
   const money = (n) => Number(n).toLocaleString(undefined, { minimumFractionDigits: Number(n) % 1 ? 2 : 0, maximumFractionDigits: 2 });
+  const planFeatures = (plans[tier]?.features || []).slice(0, 4);
+
+  const innerCard = 'rounded-2xl border border-white/10 bg-black/30 p-6 backdrop-blur';
+  const pillOutline = 'rounded-full border border-white/15 bg-white/5 text-zinc-300 hover:text-white hover:border-white/25';
+  const pillPrimary = 'rounded-full bg-[#0052ff] text-white hover:bg-[#0047d6] shadow-[0_20px_60px_-30px_rgba(0,82,255,0.9)] transition-transform duration-300 hover:-translate-y-0.5';
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 max-w-4xl mx-auto" data-testid="settings-page">
+      <motion.div
+        initial={{ opacity: 0, y: 18 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+        className="group w-full max-w-5xl mx-auto rounded-3xl overflow-hidden border border-white/10 bg-white/[0.03] p-6 sm:p-10 backdrop-blur-xl relative"
+        data-testid="settings-page"
+      >
+        <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-br from-white/[0.04] via-transparent to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100 -z-10" />
+
         {/* Header */}
-        <div>
-          <h1 className="text-2xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>
-            Settings
-          </h1>
-          <p className="text-zinc-400 mt-1">Manage your account and subscription</p>
+        <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div className="flex items-start gap-4">
+            <Avatar className="w-12 h-12 flex-shrink-0 ring-2 ring-white/10">
+              <AvatarImage src={user?.picture} alt={user?.name} />
+              <AvatarFallback className="bg-[#0052ff]/30 text-white text-sm">{getInitials(user?.name)}</AvatarFallback>
+            </Avatar>
+            <div>
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-[10px] uppercase tracking-[0.28em] text-zinc-400">Account</div>
+              <h1 className="mt-3 text-2xl font-semibold text-white sm:text-3xl" style={{ fontFamily: 'Outfit' }}>Manage your account & subscription</h1>
+              <p className="mt-2 text-sm text-zinc-400">Update personal details, control security, and manage your current plan in one place.</p>
+            </div>
+          </div>
+          <Badge className={`rounded-full border px-4 py-2 text-xs font-medium whitespace-nowrap ${getTierColor(tier)}`} data-testid="settings-tier-badge">
+            {planBaseName(tier)} Plan
+          </Badge>
         </div>
 
-        {/* Payment Status Banner */}
+        {/* Payment status banner */}
         {checkingStatus && (
-          <div className="flex items-center gap-3 p-4 bg-slate-500/10 border border-slate-500/20 rounded-lg">
-            <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
-            <span className="text-slate-300">Verifying payment...</span>
+          <div className="mb-6 flex items-center gap-3 p-4 bg-[#0052ff]/10 border border-[#0052ff]/20 rounded-2xl" data-testid="payment-status-banner">
+            <Loader2 className="w-5 h-5 animate-spin text-[#7aa6ff]" />
+            <span className="text-zinc-200 text-sm">Verifying payment…</span>
           </div>
         )}
 
-        {/* Profile Section */}
-        <Card className="bg-zinc-950/50 border-white/10" data-testid="profile-card">
-          <CardHeader>
-            <CardTitle className="text-lg font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
-              <User className="w-5 h-5 text-slate-400" />
-              Profile
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center gap-4">
-              <Avatar className="w-16 h-16">
-                <AvatarImage src={user?.picture} alt={user?.name} />
-                <AvatarFallback className="bg-slate-600 text-white text-lg">
-                  {getInitials(user?.name)}
-                </AvatarFallback>
-              </Avatar>
-              <div>
-                <h3 className="text-lg font-semibold text-white">{user?.name}</h3>
-                <p className="text-zinc-400">{user?.email}</p>
-                <div className="mt-2">
-                  <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium ${getTierColor(org?.subscription_tier || user?.subscription_tier)}`}>
-                    <Sparkles className="w-3 h-3" />
-                    {getTierDisplayName(org?.subscription_tier || user?.subscription_tier)} Plan
-                  </span>
+        <div className="grid gap-6 lg:grid-cols-[2fr_3fr]">
+          {/* LEFT */}
+          <div className="space-y-6">
+            {/* Security */}
+            <div className={innerCard} data-testid="security-card">
+              <h2 className="text-sm font-semibold text-white flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-[#7aa6ff]" /> Security</h2>
+              <p className="mb-4 mt-0.5 text-xs text-zinc-500">Control how you access your account.</p>
+              <div className="space-y-4">
+                <div className="space-y-1">
+                  <Label className="text-xs font-medium text-zinc-300">Email</Label>
+                  <p className="text-sm text-zinc-400 truncate" title={user?.email}>{user?.email}</p>
+                </div>
+                <div className="flex items-start justify-between gap-3 pt-1">
+                  <div className="min-w-0">
+                    <Label className="text-xs font-medium text-zinc-300">Two-factor authentication</Label>
+                    <p className="text-xs text-zinc-500 mt-0.5">
+                      {twoFAEnabled ? 'A code is emailed to you at every sign-in.' : 'Require an emailed code when you sign in.'}
+                    </p>
+                  </div>
+                  <Switch
+                    checked={twoFAEnabled}
+                    onCheckedChange={() => toggle2FA()}
+                    disabled={toggling2FA}
+                    className="data-[state=checked]:bg-[#0052ff] flex-shrink-0 mt-0.5"
+                    data-testid="2fa-toggle"
+                  />
                 </div>
               </div>
             </div>
 
-            {/* Auto-renew status block — shown when there is a real Stripe subscription */}
-            {subDetails?.has_subscription && org?.role === 'owner' && (
-              <div className="mt-6 pt-6 border-t border-zinc-800" data-testid="auto-renew-block">
-                <div className="flex items-start justify-between gap-4 flex-wrap">
-                  <div className="flex items-start gap-3">
-                    <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${subDetails.auto_renew ? 'bg-emerald-500/10' : 'bg-amber-500/10'}`}>
-                      <RefreshCw className={`w-4 h-4 ${subDetails.auto_renew ? 'text-emerald-400' : 'text-amber-400'}`} />
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-medium text-white mb-0.5">
-                        {subDetails.auto_renew ? 'Auto-renew is on' : 'Auto-renew is off'}
-                      </h4>
-                      <p className="text-xs text-zinc-500">
-                        {subDetails.current_period_end ? (
-                          subDetails.auto_renew
-                            ? <>Your plan renews on <span className="text-zinc-300">{new Date(subDetails.current_period_end).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}</span>.</>
-                            : <>Your plan ends on <span className="text-zinc-300">{new Date(subDetails.current_period_end).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}</span>. You'll keep access until then.</>
-                        ) : 'Manage how your subscription continues.'}
-                      </p>
-                    </div>
+            {/* Renewal */}
+            <div className={innerCard} data-testid="renewal-card">
+              <h2 className="text-sm font-semibold text-white flex items-center gap-2"><RefreshCw className="w-4 h-4 text-[#7aa6ff]" /> Renewal</h2>
+              <p className="mb-4 mt-0.5 text-xs text-zinc-500">Decide whether your plan renews automatically.</p>
+              {subDetails?.has_subscription && isOwner ? (
+                <>
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-sm text-zinc-300">Auto-renew subscription</span>
+                    <Switch
+                      checked={!!subDetails?.auto_renew}
+                      onCheckedChange={(v) => handleToggleAutoRenew(v)}
+                      disabled={togglingAutoRenew}
+                      className="data-[state=checked]:bg-[#0052ff]"
+                      data-testid="auto-renew-toggle-btn"
+                    />
                   </div>
+                  {subDetails?.current_period_end && (
+                    <p className="mt-3 text-xs text-zinc-500">
+                      {subDetails.auto_renew
+                        ? <>Renews on <span className="text-zinc-300">{new Date(subDetails.current_period_end).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}</span>.</>
+                        : <>Ends on <span className="text-zinc-300">{new Date(subDetails.current_period_end).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}</span>. You keep access until then.</>}
+                    </p>
+                  )}
+                </>
+              ) : (
+                <div className="flex items-center justify-between gap-3 opacity-60">
+                  <span className="text-sm text-zinc-400">Auto-renew subscription</span>
+                  <Switch checked={false} disabled className="flex-shrink-0" />
+                </div>
+              )}
+              {!(subDetails?.has_subscription && isOwner) && (
+                <p className="mt-3 text-xs text-zinc-600">Available once you're on an active paid plan{!isOwner ? ' (owner only)' : ''}.</p>
+              )}
+            </div>
+          </div>
+
+          {/* RIGHT */}
+          <div className="space-y-6">
+            {/* Current plan */}
+            <div className={innerCard} data-testid="current-plan-card">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <h2 className="text-sm font-semibold text-white">Current plan</h2>
+                  <p className="text-xs text-zinc-500 mt-0.5">{planBaseName(tier)}{billedLabel(tier) ? ` — ${billedLabel(tier)}` : ''}</p>
+                </div>
+                {pricing && (
+                  <div className="text-right">
+                    <span className="text-2xl font-semibold text-white" style={{ fontFamily: 'Outfit' }}>${money(pricing.price)}</span>
+                    <p className="text-xs text-zinc-500">per {pricing.period} · per workspace</p>
+                  </div>
+                )}
+              </div>
+
+              {planFeatures.length > 0 && (
+                <div className="mt-5 space-y-3">
+                  {planFeatures.map((feature) => (
+                    <p key={feature} className="flex items-center gap-2 text-sm text-zinc-300">
+                      <span className="flex h-5 w-5 items-center justify-center rounded-full border border-[#0052ff]/40 bg-[#0052ff]/10 text-[#7aa6ff] flex-shrink-0">
+                        <Check className="h-3 w-3" aria-hidden />
+                      </span>
+                      {feature}
+                    </p>
+                  ))}
+                </div>
+              )}
+
+              <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                {canCancel && (
                   <Button
-                    size="sm"
                     variant="outline"
-                    className={subDetails.auto_renew
-                      ? 'border-zinc-700 text-zinc-300 hover:bg-zinc-800 text-xs h-8'
-                      : 'border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/10 text-xs h-8'}
-                    onClick={() => handleToggleAutoRenew(!subDetails.auto_renew)}
-                    disabled={togglingAutoRenew}
-                    data-testid="auto-renew-toggle-btn"
+                    className={`flex-1 ${pillOutline} px-6 py-3 text-sm border-red-500/30 text-red-300 hover:bg-red-500/10 hover:text-red-200`}
+                    onClick={() => setShowCancelConfirm(true)}
+                    data-testid="cancel-subscription-btn"
                   >
-                    {togglingAutoRenew ? <Loader2 className="w-3 h-3 mr-1.5 animate-spin" /> : null}
-                    {subDetails.auto_renew ? 'Turn off' : 'Turn on'}
+                    <XCircle className="w-4 h-4 mr-2" /> Cancel {tier === 'trial' ? 'trial' : 'subscription'}
+                  </Button>
+                )}
+                <Button
+                  className={`flex-1 ${pillPrimary} px-6 py-3 text-sm disabled:opacity-40 disabled:hover:translate-y-0`}
+                  onClick={() => navigate('/choose-plan')}
+                  disabled={!canChangePlan}
+                  data-testid="manage-plan-btn"
+                >
+                  {canChangePlan ? 'Manage plan' : 'Owner only'} <ArrowUpRight className="w-4 h-4 ml-1.5" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Billing */}
+            <div className={innerCard} data-testid="billing-card">
+              <h2 className="text-sm font-semibold text-white flex items-center gap-2"><Wallet className="w-4 h-4 text-[#7aa6ff]" /> Billing</h2>
+              <p className="mb-4 mt-0.5 text-xs text-zinc-500">Download invoices or update your payment details.</p>
+              {isPaid && isOwner ? (
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <Button variant="outline" className={`flex-1 ${pillOutline} px-6 py-3 text-sm`} onClick={handleOpenBillingPortal} disabled={loadingPortal} data-testid="view-invoices-btn">
+                    {loadingPortal ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <FileText className="w-4 h-4 mr-2" />} View invoices
+                  </Button>
+                  <Button variant="outline" className={`flex-1 ${pillOutline} px-6 py-3 text-sm`} onClick={handleOpenBillingPortal} disabled={loadingPortal} data-testid="update-payment-btn">
+                    {loadingPortal ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Wallet className="w-4 h-4 mr-2" />} Update payment method
                   </Button>
                 </div>
-              </div>
-            )}
-
-            <div className="mt-6 pt-6 border-t border-zinc-800 flex flex-wrap items-center gap-3">
-              <Button 
-                variant="outline" 
-                className="border-red-500/30 text-red-400 hover:bg-red-500/10"
-                onClick={() => setShowLogoutConfirm(true)}
-                data-testid="logout-btn"
-              >
-                <LogOut className="w-4 h-4 mr-2" />
-                Sign Out
-              </Button>
-              {hasActivePaidSub && org?.role === 'owner' && (
-                <Button
-                  variant="outline"
-                  className="border-slate-500/40 text-slate-300 hover:bg-slate-500/10 hover:border-slate-400"
-                  onClick={handleOpenBillingPortal}
-                  disabled={loadingPortal}
-                  data-testid="manage-billing-btn"
-                >
-                  {loadingPortal ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <CreditCard className="w-4 h-4 mr-2" />}
-                  Manage Billing
-                </Button>
+              ) : (
+                <p className="text-xs text-zinc-600">Invoices and payment methods appear once you're on an active paid plan{!isOwner ? ' (owner only)' : ''}.</p>
               )}
-              {canCancel && (
-                <Button
-                  variant="outline"
-                  className="border-zinc-700 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-200"
-                  onClick={() => setShowCancelConfirm(true)}
-                  data-testid="cancel-subscription-btn"
-                >
-                  <XCircle className="w-4 h-4 mr-2" />
-                  Cancel {user?.subscription_tier === 'trial' ? 'Trial' : 'Subscription'}
-                </Button>
-              )}
-            </div>
-
-            {/* Cancel Confirmation */}
-            {showCancelConfirm && (
-              <div className="mt-4 p-4 bg-red-500/5 border border-red-500/20 rounded-lg" data-testid="cancel-confirm-dialog">
-                <div className="flex items-start gap-3">
-                  <AlertCircle className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
-                  <div className="flex-1">
-                    <h4 className="text-sm font-medium text-white mb-1">
-                      {user?.subscription_tier === 'trial'
-                        ? 'Cancel your free trial?'
-                        : 'Cancel your subscription?'}
-                    </h4>
-                    <p className="text-xs text-zinc-400 mb-3">
-                      {user?.subscription_tier === 'trial'
-                        ? 'You will lose access to your trial immediately. You can resubscribe at any time.'
-                        : 'Your access will be revoked immediately. You can resubscribe to any plan at any time.'}
-                    </p>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        className="bg-red-600 hover:bg-red-500 text-white text-xs h-8"
-                        onClick={handleCancelSubscription}
-                        disabled={cancellingSubscription}
-                        data-testid="confirm-cancel-btn"
-                      >
-                        {cancellingSubscription ? (
-                          <Loader2 className="w-3 h-3 animate-spin mr-1.5" />
-                        ) : null}
-                        Yes, cancel
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="text-zinc-400 text-xs h-8"
-                        onClick={() => setShowCancelConfirm(false)}
-                        data-testid="keep-subscription-btn"
-                      >
-                        Keep my plan
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Security — Two-Factor Authentication */}
-        <Card className="bg-zinc-950/50 border-white/10" data-testid="security-2fa-card">
-          <CardHeader>
-            <CardTitle className="text-lg font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
-              <ShieldCheck className="w-5 h-5 text-slate-400" />
-              Security
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center justify-between p-4 bg-zinc-900/50 rounded-lg border border-zinc-800">
-              <div className="min-w-0 flex-1">
-                <h4 className="text-sm font-medium text-white mb-0.5">Two-Factor Authentication</h4>
-                <p className="text-xs text-zinc-500">
-                  {twoFAEnabled
-                    ? 'A verification code will be sent to your email each time you sign in.'
-                    : 'Add an extra layer of security by requiring a verification code at sign-in.'}
-                </p>
-              </div>
-              <button
-                onClick={toggle2FA}
-                disabled={toggling2FA}
-                className={`ml-4 relative inline-flex h-6 w-11 items-center rounded-full flex-shrink-0 transition-colors duration-200 focus:outline-none ${twoFAEnabled ? 'bg-slate-600' : 'bg-zinc-700'}`}
-                data-testid="2fa-toggle"
-              >
-                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform duration-200 ${twoFAEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
-              </button>
-            </div>
-            {twoFAEnabled && (
-              <div className="flex items-center gap-2 px-3 py-2 bg-slate-500/5 border border-slate-500/20 rounded-lg">
-                <ShieldCheck className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                <p className="text-xs text-slate-300">2FA is active. A code will be emailed to you on every sign-in.</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Subscription Plans */}
-        <Card className="bg-zinc-950/50 border-white/10" data-testid="subscription-card">
-          <CardHeader>
-            <CardTitle className="text-lg font-semibold text-white flex items-center gap-2" style={{ fontFamily: 'Outfit' }}>
-              <CreditCard className="w-5 h-5 text-emerald-400" />
-              Subscription
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {!canChangePlan && org?.role === 'member' && (
-              <div className="mb-4 flex items-start gap-2 p-3 rounded-lg bg-slate-500/5 border border-slate-500/15">
-                <ShieldCheck className="w-4 h-4 text-slate-400 shrink-0 mt-0.5" />
-                <p className="text-xs text-zinc-400">
-                  You're a <span className="text-slate-400 font-medium">member</span> of this team. Only the team owner can change the plan or cancel the subscription.
-                </p>
-              </div>
-            )}
-            {/* Billing Toggle */}
-            <div className="mb-6 flex flex-col items-center">
-              <div className="inline-flex items-center p-1 bg-zinc-900 rounded-full border border-zinc-800 relative">
-                <div
-                  className="absolute top-1 bottom-1 rounded-full bg-slate-600 shadow-lg shadow-slate-500/25 transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)]"
-                  style={{
-                    width: billingPeriod === 'monthly' ? 'calc(40% - 2px)' : 'calc(60% - 2px)',
-                    left: billingPeriod === 'monthly' ? '4px' : 'calc(40% + 2px)',
-                  }}
-                />
-                <button
-                  onClick={() => setBillingPeriod('monthly')}
-                  className={`relative z-10 px-6 py-2 rounded-full text-sm font-medium transition-colors duration-300 ${
-                    billingPeriod === 'monthly' ? 'text-white' : 'text-zinc-400 hover:text-zinc-200'
-                  }`}
-                >
-                  Monthly
-                </button>
-                <button
-                  onClick={() => setBillingPeriod('yearly')}
-                  className={`relative z-10 px-6 py-2 rounded-full text-sm font-medium transition-colors duration-300 ${
-                    billingPeriod === 'yearly' ? 'text-white' : 'text-zinc-400 hover:text-zinc-200'
-                  }`}
-                >
-                  Yearly <span className={`ml-1 transition-colors duration-300 ${billingPeriod === 'yearly' ? 'text-emerald-300' : 'text-emerald-400'}`}>Save more</span>
-                </button>
-              </div>
-              <p className="text-xs text-zinc-500 mt-2">*New customers get 20% off their first year</p>
-            </div>
-
-            <div className="grid md:grid-cols-3 gap-4">
-              {planConfig[billingPeriod].map((plan) => {
-                const planData = plans[plan.key];
-                const isCurrentPlan = user?.subscription_tier === plan.key;
-                
-                return (
-                  <div 
-                    key={plan.key}
-                    className={`relative p-5 rounded-xl border transition-all ${
-                      isCurrentPlan 
-                        ? 'bg-slate-500/10 border-slate-500/30' 
-                        : plan.featured
-                          ? 'bg-zinc-900/50 border-slate-500/20 hover:border-slate-500/40'
-                          : 'bg-zinc-900/50 border-zinc-800 hover:border-zinc-700'
-                    }`}
-                    data-testid={`plan-${plan.key}`}
-                  >
-                    {isCurrentPlan && (
-                      <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-emerald-600 text-white text-xs rounded-full">
-                          <Check className="w-3 h-3" /> Current
-                        </span>
-                      </div>
-                    )}
-                    
-                    <h3 className="text-lg font-semibold text-white" style={{ fontFamily: 'Outfit' }}>
-                      {plan.name}
-                    </h3>
-                    
-                    <div className="mt-2 flex items-baseline gap-2">
-                      <span className="text-2xl font-bold text-white" style={{ fontFamily: 'Outfit' }}>
-                        ${money(plan.price)}
-                      </span>
-                      {plan.originalPrice && (
-                        <span className="text-sm text-zinc-500 line-through">
-                          ${money(plan.originalPrice)}
-                        </span>
-                      )}
-                      <span className="text-zinc-400 text-sm">
-                        {`/${billingPeriod === 'monthly' ? 'mo' : 'yr'}`}
-                      </span>
-                    </div>
-
-                    {plan.savings && (
-                      <p className="text-emerald-400 text-xs mt-1">{`20% off — save $${money(plan.savings)} first year`}</p>
-                    )}
-                    
-                    <ul className="mt-4 space-y-2">
-                      {planData?.features?.slice(0, 4).map((feature, i) => (
-                        <li key={i} className="flex items-center gap-2 text-sm text-zinc-300">
-                          <Check className="w-4 h-4 text-emerald-400 flex-shrink-0" />
-                          {feature}
-                        </li>
-                      ))}
-                    </ul>
-                    
-                    <Button
-                      className={`w-full mt-4 ${
-                        isCurrentPlan
-                          ? 'bg-zinc-800 text-zinc-400 cursor-not-allowed'
-                          : 'bg-white/10 hover:bg-white/20 btn-glow disabled:opacity-40'
-                      }`}
-                      disabled={isCurrentPlan || processingPayment || !canChangePlan}
-                      onClick={() => handleUpgrade(plan.key)}
-                      data-testid={`upgrade-${plan.key}-btn`}
-                    >
-                      {processingPayment ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : isCurrentPlan ? (
-                        'Current Plan'
-                      ) : !canChangePlan ? (
-                        'Owner only'
-                      ) : (
-                        <>
-                          Upgrade <ChevronRight className="w-4 h-4 ml-1" />
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                );
-              })}
-            </div>
-            
-            <div className="mt-6 p-4 bg-zinc-900/50 border border-zinc-800 rounded-lg">
-              <div className="flex items-start gap-3">
-                <AlertCircle className="w-5 h-5 text-zinc-400 flex-shrink-0 mt-0.5" />
-                <div className="text-sm text-zinc-400">
-                  <p>Payments are processed securely through Stripe. You can cancel anytime.</p>
-                  <p className="mt-1">Priority plans include dedicated support and custom features.</p>
-                </div>
+              <div className="mt-4 flex items-start gap-2 text-xs text-zinc-600">
+                <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                <span>Payments are processed securely through Stripe. You can cancel anytime.</span>
               </div>
             </div>
-          </CardContent>
-        </Card>
-      </div>
+          </div>
+        </div>
+      </motion.div>
 
-      <AlertDialog open={showLogoutConfirm} onOpenChange={setShowLogoutConfirm}>
-        <AlertDialogContent className="bg-zinc-950 border-zinc-800" data-testid="settings-logout-confirm-dialog">
+      {/* Cancel confirmation */}
+      <AlertDialog open={showCancelConfirm} onOpenChange={setShowCancelConfirm}>
+        <AlertDialogContent className="bg-zinc-950 border-zinc-800" data-testid="cancel-confirm-dialog">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-white" style={{ fontFamily: 'Outfit' }}>Are you sure you want to sign out?</AlertDialogTitle>
+            <AlertDialogTitle className="text-white" style={{ fontFamily: 'Outfit' }}>
+              {tier === 'trial' ? 'Cancel your free trial?' : 'Cancel your subscription?'}
+            </AlertDialogTitle>
             <AlertDialogDescription className="text-zinc-400">
-              You'll need to sign back in to access your dashboard and analytics.
+              {tier === 'trial'
+                ? 'You will lose access to your trial immediately. You can resubscribe at any time.'
+                : 'Your access will be revoked immediately. You can resubscribe to any plan at any time.'}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel className="bg-zinc-900 border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white" data-testid="settings-logout-cancel-btn">Cancel</AlertDialogCancel>
-            <AlertDialogAction className="bg-red-600 hover:bg-red-500 text-white" onClick={logout} data-testid="settings-logout-confirm-btn">Sign Out</AlertDialogAction>
+            <AlertDialogCancel className="bg-zinc-900 border-zinc-700 text-zinc-300 hover:bg-zinc-800 hover:text-white" data-testid="keep-subscription-btn">Keep my plan</AlertDialogCancel>
+            <AlertDialogAction className="bg-red-600 hover:bg-red-500 text-white" onClick={handleCancelSubscription} disabled={cancellingSubscription} data-testid="confirm-cancel-btn">
+              {cancellingSubscription ? <Loader2 className="w-4 h-4 mr-1.5 animate-spin" /> : null} Yes, cancel
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      <Enable2FADialog
-        open={show2FADialog}
-        onOpenChange={setShow2FADialog}
-        onEnabled={() => setTwoFAEnabled(true)}
-      />
+
+      <Enable2FADialog open={show2FADialog} onOpenChange={setShow2FADialog} onEnabled={() => setTwoFAEnabled(true)} />
     </DashboardLayout>
   );
 };
