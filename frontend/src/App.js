@@ -41,6 +41,7 @@ const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 const CookiePolicy = lazy(() => import('./pages/CookiePolicy'));
 const Terms = lazy(() => import('./pages/Terms'));
 const Contact = lazy(() => import('./pages/Contact'));
+const RedCarpetQuote = lazy(() => import('./pages/RedCarpetQuote'));
 
 // Router component that handles session_id detection
 const AppRouter = () => {
@@ -61,6 +62,7 @@ const AppRouter = () => {
       <Route path="/cookies" element={<CookiePolicy />} />
       <Route path="/terms" element={<Terms />} />
       <Route path="/contact" element={<Contact />} />
+      <Route path="/rc/:token" element={<RedCarpetQuote />} />
       <Route path="/onboarding" element={
         <ProtectedRoute>
           <Onboarding />

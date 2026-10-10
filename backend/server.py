@@ -32,7 +32,10 @@ from routes.competitors import router as competitors_router
 from routes.cro import router as cro_router
 from routes.upsell import router as upsell_router
 from routes.outreach import router as outreach_router, process_outbound_queue_once
-from routes.intent import router as intent_router
+from routes.intent import router as intent_router, public_router as intent_public_router
+from routes.intent_routing import router as intent_routing_router
+from routes.storefront import router as storefront_router, public_router as storefront_public_router
+from routes.intent_engine import process_intent_routing_once
 from routes.workspace import router as workspace_router
 from migrations.orgs import migrate_users_to_orgs
 from utils.sentry_config import init_sentry
@@ -144,6 +147,10 @@ api_router.include_router(cro_router)
 api_router.include_router(upsell_router)
 api_router.include_router(outreach_router)
 api_router.include_router(intent_router)
+api_router.include_router(intent_public_router)
+api_router.include_router(intent_routing_router)
+api_router.include_router(storefront_router)
+api_router.include_router(storefront_public_router)
 api_router.include_router(workspace_router)
 
 
@@ -218,9 +225,20 @@ async def startup_migrations():
                 await process_outbound_queue_once()
             except Exception as e:
                 logging.error("Outreach outbound worker error: %s", e)
+            try:
+                await process_intent_routing_once()
+            except Exception as e:
+                logging.error("Speed-to-lead routing worker error: %s", e)
             await asyncio.sleep(3)
 
     app.state.outbound_task = asyncio.create_task(_outbound_worker())
+    try:
+        await db.intent_events.create_index([("org_id", 1), ("account_key", 1), ("ts", 1)])
+        await db.intent_events.create_index([("org_id", 1), ("received_at", -1)])
+        await db.intent_tracking.create_index("ingest_key", unique=True)
+        await db.storefront_links.create_index("token", unique=True)
+    except Exception as e:
+        logging.error("Failed to ensure intent indexes: %s", e)
 
 
 @app.on_event("shutdown")
