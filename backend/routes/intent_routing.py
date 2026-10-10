@@ -32,6 +32,16 @@ class AeReq(BaseModel):
     crm_owner_ids: dict = {}
 
 
+class AePatch(BaseModel):
+    name: Optional[str] = None
+    email: Optional[str] = None
+    territories: Optional[List[str]] = None
+    min_deal: Optional[float] = None
+    max_deal: Optional[float] = None
+    active: Optional[bool] = None
+    crm_owner_ids: Optional[dict] = None
+
+
 class Actions(BaseModel):
     email: bool = True
     slack: bool = False
@@ -98,10 +108,13 @@ async def create_ae(body: AeReq, user: User = Depends(require_paid_owner)):
 
 
 @router.put("/intent/aes/{ae_id}")
-async def update_ae(ae_id: str, body: AeReq, user: User = Depends(require_paid_owner)):
-    res = await db.intent_aes.update_one({"ae_id": ae_id, **org_filter(user)}, {"$set": _ae_doc(body)})
-    if res.matched_count == 0:
+async def update_ae(ae_id: str, body: AePatch, user: User = Depends(require_paid_owner)):
+    cur = await db.intent_aes.find_one({"ae_id": ae_id, **org_filter(user)}, {"_id": 0})
+    if not cur:
         raise HTTPException(status_code=404, detail="AE not found")
+    merged = {k: cur.get(k) for k in AeReq.model_fields if cur.get(k) is not None}
+    merged.update(body.model_dump(exclude_unset=True))
+    await db.intent_aes.update_one({"ae_id": ae_id}, {"$set": _ae_doc(AeReq(**merged))})
     return await db.intent_aes.find_one({"ae_id": ae_id}, {"_id": 0})
 
 

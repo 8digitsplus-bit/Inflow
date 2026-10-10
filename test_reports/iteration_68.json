@@ -1,0 +1,42 @@
+{
+  "summary": "Comprehensive end-to-end testing of Upsell Engine Feature 2 — High-Intent Buyers rework (/discover 4-tab hub + public /rc page). Backend: 32/32 pytest cases pass against the live preview URL covering /intent (status, tracking, patterns, profiles+detail+status/invalid-status, feed, events/simulate, rebuild, sync-analytics), Speed-to-Lead (AEs CRUD, routing-rules CRUD, routing-log+stats, slack-config bad URL, slack-test not configured), briefings list + push validation (slack 422, salesforce demo 422, briefing-without-briefing 400), storefronts (CRUD, matches, link idempotent, stripe-promo real create/409/deactivate on a fresh rule), and all public endpoints (snippet.js, text/plain collect with vid stitching, X-InFlow-Key batch events + 401 on bad key, personalize qualified+unknown with CORS *, hosted storefront token 200+shape, invalid token 404). Live Stripe test-mode coupon creation verified (RC783595 — created & deactivated inside the test, no leftover). Auto-routing verified end-to-end: Hooli quote_request EMEA → score 89 hot → auto-assigned (routing latency 3ms); manual /reroute reassigned to a different AE in <5s. AI briefing generation via Claude verified live — returned headline, summary, buying_stage, full script{opener,discovery_questions,value_points,objection_handling,close}, sequence[], recommended_offer, ai_used in ~8.6s. Frontend Playwright run through real email+password login → /discover with Termly cookie accepted: every single data-testid from the spec resolved (profiles 17/17, drawer 14/14, simulate dialog 6/6, tracking dialog 6/6 + 8 pattern inputs, routing 11/11, new-rule-dialog 5/5, ae-dialog 7/7, briefings 12 items + view 12/12 inner testids, storefronts 5/5 + 2 rules, storefront-dialog 8/8, /rc public page 12/12 + rc-error on invalid token). AccountWorkspace manage link reachable from drawer-manage-btn.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "PUT /api/intent/aes/{id}", "issue": "Update is non-partial: requires full payload (name + valid email, etc). Sending only {name:'…'} returns 422. Minor — should accept partial updates like other routes, but not blocking (FE always sends full form)."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Dashboard (unrelated to this feature)", "issues": ["React hydration warnings: <span> as child of <tr>/<tbody>/<td>/<option>/<select>, <th> inside <span>. Pre-existing in DashboardLayout — not introduced by this feature."]},
+      {"screen": "SimulateDialog / TrackingDialog (shadcn Dialog)", "issues": ["Radix warning: 'DialogContent requires a DialogTitle for accessibility'. Add a visually-hidden <DialogTitle> for a11y."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_intent_cloud.py",
+    "/app/test_reports/pytest/test_intent_cloud.xml"
+  ],
+  "action_items": [
+    "Consider making PUT /intent/aes/{id} accept partial updates (currently rejects without email with 422). Low priority — current FE sends full payload so no user-facing bug.",
+    "Add a (visually hidden) DialogTitle to SimulateDialog and TrackingDialog shadcn <DialogContent> to silence Radix a11y warnings.",
+    "Dashboard hydration warnings (<span> inside <tr>/<tbody>/<option>) are pre-existing and should be fixed separately — not blocking this feature."
+  ],
+  "critical_code_review_comments": [
+    "Routing engine returned a correctly scoped assignment payload (ae_id/ae_name/rule_id/trigger/latency_ms/alerted_ms) and auto-routed inside <2s thanks to the 3s background worker — matches the spec.",
+    "Stripe promo create endpoint requires a JSON body (even if empty {}) because of the Pydantic request model — document this on the spec OR make body optional in server.py for cleaner curl UX.",
+    "Public /collect endpoint accepts text/plain correctly and stitches anonymous visitor events — good. Snippet URL responded JS with correct content-type.",
+    "Personalize endpoint sets Access-Control-Allow-Origin: * — correct for embeddable use.",
+    "AE PUT should accept partial updates for API consistency (POST uses pydantic; PUT re-uses same required-field model)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_intent_cloud.py"
+  ],
+  "success_rate": {"backend": "100% (32/32)", "frontend": "100% (all documented testids resolved)"},
+  "test_credentials": "testpro@test.com / password (preserved; no credential changes). Ingest key NOT rotated.",
+  "seed_data_creation": "No destructive seed changes. The storefront/stripe-promo test creates a transient test rule + Stripe test-mode coupon and deletes both before exit. One extra test profile created via simulate (TEST_Simulated_Co, Acme Corp via public collect) and an EMEA 'Hooli' event (already seeded). AE/routing-rule CRUD tests clean up after themselves.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Comprehensive pytest regression at /app/backend/tests/test_intent_cloud.py (32 tests, run with BASE pulled from REACT_APP_BACKEND_URL or /app/frontend/.env). All intent/storefront/public endpoints covered. For frontend testing, note (a) auth route is /auth (NOT /login); (b) a Termly cookie banner must be dismissed by clicking button:has-text('Accept') after domcontentloaded; (c) auth page starts in sign-up mode — click [data-testid=auth-toggle-mode] to switch to sign-in; (d) existing valid rc token: rc_HcZRBxI3prOr5NtLARz2iw (Nakatomi Trading). Seeded Stripe promo RCDF0E1A on sf_seed_enterprise is still active and untouched. Ingest key not rotated."
+}

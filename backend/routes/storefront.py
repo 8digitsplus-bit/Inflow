@@ -163,7 +163,7 @@ def _create_promo(key: str, rule: dict, code: str, max_red: int) -> dict:
 
 
 @router.post("/storefronts/{rule_id}/stripe-promo")
-async def create_stripe_promo(rule_id: str, body: PromoReq, user: User = Depends(require_paid_owner)):
+async def create_stripe_promo(rule_id: str, body: PromoReq = PromoReq(), user: User = Depends(require_paid_owner)):
     rule = await _rule(rule_id, user)
     if not rule.get("discount_pct"):
         raise HTTPException(status_code=400, detail="Set a pre-approved discount % on this rule first.")

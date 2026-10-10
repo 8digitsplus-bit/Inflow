@@ -97,7 +97,7 @@ export const ProfileDrawer = ({ leadId, onClose, isOwner, destinations, onChange
   return (
     <Sheet open={!!leadId} onOpenChange={(o) => !o && onClose()}>
       <SheetContent side="right" className="bg-[#07080c] border-l border-white/10 text-white w-full sm:max-w-xl overflow-y-auto" data-testid="profile-drawer">
-        {!p ? <div className="flex justify-center py-20"><Loader2 className="w-6 h-6 text-slate-400 animate-spin" /></div> : (
+        {!p ? <div className="flex justify-center py-20"><SheetTitle className="sr-only">Loading profile</SheetTitle><SheetDescription className="sr-only">Loading</SheetDescription><Loader2 className="w-6 h-6 text-slate-400 animate-spin" /></div> : (
           <div className="space-y-4">
             <SheetHeader className="text-left">
               <div className="flex items-center gap-4">

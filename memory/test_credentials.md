@@ -42,3 +42,9 @@
 - Invite emails require RESEND_API_KEY in /app/backend/.env. If empty, the /api/org/invite endpoint still works — it returns the `accept_url` in the JSON response so the flow is testable without Resend. User needs to set the key for production email sending.
 - To temporarily upgrade testpro's org to Enterprise for testing: run `cd /app/backend && PYTHONPATH=/app/backend python3 /tmp/make_enterprise.py` (script lives in /tmp — recreate if missing).
 - Member test account: created dynamically by the org_team tests (TEST_MEMBER_* prefixes). No static member account currently seeded.
+
+## High-Intent Buyers hub (/discover) — Feature 2 (Oct 2026)
+- Seed/reset: `cd /app/backend && PYTHONPATH=/app/backend python3 seed_intent_cloud.py` (RESETS testpro intent data; loads SAMPLE events, 3 AEs, rule `rr_seed_hot`, storefront `sf_seed_enterprise`; points testpro's "Demo Stripe" connection at the .env Stripe TEST key so promo codes are real test-mode objects).
+- AEs: Jordan Lee (NA, ≤$100k) / Priya Shah (EMEA, APAC) / Marco Silva (≥$100k) — emails 8digitsplus+jordan|priya|marco@gmail.com.
+- Public hosted quote page example: /rc/rc_HcZRBxI3prOr5NtLARz2iw (Nakatomi Trading). Active Stripe promo on sf_seed_enterprise: RCDF0E1A.
+- testpro's HubSpot token is REAL (pushes create real notes/tasks); Salesforce/Pipedrive are demo tokens (422 by design); Slack not configured.
