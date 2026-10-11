@@ -164,13 +164,24 @@ def _map_records(connector: str, data, user_id: str):
     return deals
 
 
+async def _quickbooks_invoices(account_id: str) -> dict:
+    """QuickBooks' query API requires explicit paging (start_position/max_results)."""
+    page, invoices = 1000, []
+    for i in range(10):
+        data = await _execute(account_id, "quickbooks_invoices_list", {"start_position": 1 + i * page, "max_results": page})
+        batch = ((data or {}).get("QueryResponse") or {}).get("Invoice") or []
+        invoices.extend(batch)
+        if len(batch) < page:
+            break
+    return {"QueryResponse": {"Invoice": invoices}}
+
+
 async def _import_and_store(connector: str, account_id: str, user: User) -> int:
-    tool, params = {
-        "quickbooks": ("quickbooks_invoices_list", {}),
-        "salesforce": ("salesforce_opportunities_list", {}),
-        "stripe": ("stripe_list_charges_dahlia", {}),
-    }[connector]
-    data = await _execute(account_id, tool, params)
+    if connector == "quickbooks":
+        data = await _quickbooks_invoices(account_id)
+    else:
+        tool = {"salesforce": "salesforce_opportunities_list", "stripe": "stripe_list_charges_dahlia"}[connector]
+        data = await _execute(account_id, tool, {})
     deals = _map_records(connector, data, user.user_id)
     try:
         _sample = str(data)[:900]

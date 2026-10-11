@@ -48,3 +48,4 @@
 - AEs: Jordan Lee (NA, ≤$100k) / Priya Shah (EMEA, APAC) / Marco Silva (≥$100k) — emails 8digitsplus+jordan|priya|marco@gmail.com.
 - Public hosted quote page example: /rc/rc_HcZRBxI3prOr5NtLARz2iw (Nakatomi Trading). Active Stripe promo on sf_seed_enterprise: RCDF0E1A.
 - testpro's HubSpot token is REAL (pushes create real notes/tasks); Salesforce/Pipedrive are demo tokens (422 by design); Slack not configured.
+- Scalekit (Dev env) for testpro: QuickBooks ACTIVE + live (34 sandbox invoices synced via POST /api/integrations/scalekit/quickbooks/sync), Stripe ACTIVE, Salesforce PENDING_AUTH.

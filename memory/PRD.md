@@ -13,6 +13,10 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
+### QuickBooks via Scalekit — LIVE (Oct 2026)
+- Fixed import: QuickBooks query API requires paging; `_quickbooks_invoices` in `routes/scalekit_integration.py` now pages `quickbooks_invoices_list` with `start_position`/`max_results` (1000/page, max 10 pages). testpro synced 34 real sandbox invoices ($12,024.14). The 6 SAMPLE QuickBooks deals were removed (backup: `/app/memory/backup_testpro_sample_quickbooks_deals.json`).
+- Scalekit status (Dev env): Stripe ACTIVE (synced), QuickBooks ACTIVE (synced), Salesforce PENDING_AUTH (needs own Connected App creds). None configured in a Scalekit Production environment yet.
+
 ### Upsell Engine rework — Feature 2: High-Intent Buyers hub (Oct 2026) — verified iteration_68 (backend 32/32, frontend 100%)
 - `/discover` (`pages/HighIntent.js`) REPLACED the old 6-step guided flow with a **4-tab hub**: Intent Profiles · Speed-to-Lead · Agent Briefings · Red-Carpet Storefronts (`?tab=` deep-link). Components in `frontend/src/components/intent/`. Per-account "Manage" deal room (`/workspace/account/:leadId`) kept (profiles still live in `db.intent_leads`).
 - **Intent data cloud** (`routes/intent_engine.py`): `ingest_events` unifies signals from (a) embeddable snippet (`/api/public/intent/{ingest_key}/snippet.js` — page views classified by org URL patterns, PDF/whitepaper clicks, form submits capture email, `inflow.identify/track`), (b) Events API (`POST /api/public/intent/events`, header `X-InFlow-Key`), (c) analytics pull (`POST /api/intent/sync-analytics` — PostHog HogQL, Mixpanel export, Amplitude export, GA4 runReport w/ `customUser:inflow_account`; `routes/intent_sources.py`), (d) hosted storefront page, (e) test signals (`/intent/events/simulate`). Identity resolution: company → known profile by email domain → domain; anonymous visitor ids stitched on identify. Score = decayed digital weights (7-day half-life, cap 70) + CRM stage/probability (cap 30) + product usage (10); tiers hot ≥70 / warm ≥40; `surge` flag.
