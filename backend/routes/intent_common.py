@@ -15,10 +15,12 @@ from utils.crypto import decrypt
 from routes import hubspot_write as hs
 from routes import salesforce_write as sf
 from routes import pipedrive_write as pd
+from routes import zoho_write as zw
+from utils.crm_auth import crm_creds
 
 logger = logging.getLogger(__name__)
 
-CRM_PROVIDERS = {"hubspot": "HubSpot", "salesforce": "Salesforce", "pipedrive": "Pipedrive"}
+CRM_PROVIDERS = {"hubspot": "HubSpot", "salesforce": "Salesforce", "pipedrive": "Pipedrive", "zoho": "Zoho CRM"}
 PUSH_DESTINATIONS = {**CRM_PROVIDERS, "slack": "Slack"}
 
 # type -> (label, weight, category)
@@ -160,6 +162,11 @@ async def post_slack(org_id: str, title: str, fields: list, body: str = "", cont
     return {"ok": True}
 
 
+def linked_deal(lead: Optional[dict], provider: str) -> str:
+    lead = lead or {}
+    return (lead.get("crm_links") or {}).get(provider) or (lead.get("hubspot_deal_id") if provider == "hubspot" else "") or ""
+
+
 def _crm_missing(provider: str) -> dict:
     return {"ok": False, "error": f"Connect {CRM_PROVIDERS.get(provider, provider)} first to push this."}
 
@@ -169,16 +176,16 @@ async def crm_task(org_id: str, provider: str, title: str, body: str, owner_id: 
     conn = await org_conn(org_id, provider)
     if not conn:
         return _crm_missing(provider)
-    creds = conn_creds(conn)
+    creds = await crm_creds(conn)
     owner_id = (owner_id or "").strip()
     today = date.today().isoformat()
+    deal_id = linked_deal(lead, provider)
     if provider == "hubspot":
         props = {"hs_timestamp": str(hs.now_ms()), "hs_task_subject": title[:250], "hs_task_body": body,
                  "hs_task_status": "NOT_STARTED", "hs_task_priority": "HIGH"}
         if owner_id:
             props["hubspot_owner_id"] = owner_id
         payload = {"properties": props}
-        deal_id = (lead or {}).get("hubspot_deal_id")
         if deal_id:
             payload["associations"] = hs._assoc("task", "deal", deal_id)
         res = await hs._post(creds["token"], "/crm/v3/objects/tasks", payload)
@@ -191,12 +198,18 @@ async def crm_task(org_id: str, provider: str, title: str, body: str, owner_id: 
                  "Status": "Not Started", "ActivityDate": today}
         if owner_id:
             sbody["OwnerId"] = owner_id
+        if deal_id:
+            sbody["WhatId"] = deal_id
         return await sf._create(creds, "Task", sbody)
     if provider == "pipedrive":
         pbody = {"subject": title[:250], "type": "task", "done": False, "due_date": today, "note": pd._to_html(body)}
         if owner_id.isdigit():
             pbody["owner_id"] = int(owner_id)
+        if deal_id.isdigit():
+            pbody["deal_id"] = int(deal_id)
         return await pd._post(creds, "/api/v2/activities", pbody)
+    if provider == "zoho":
+        return await zw.create_task(creds, title, body, "HIGH", today, owner_id, "deal" if deal_id else "", deal_id)
     return {"ok": False, "error": "Unsupported CRM"}
 
 
@@ -204,10 +217,10 @@ async def crm_note(org_id: str, provider: str, title: str, body: str, lead: Opti
     conn = await org_conn(org_id, provider)
     if not conn:
         return _crm_missing(provider)
-    creds = conn_creds(conn)
+    creds = await crm_creds(conn)
     text = f"{title}\n\n{body}"
+    deal_id = linked_deal(lead, provider)
     if provider == "hubspot":
-        deal_id = (lead or {}).get("hubspot_deal_id")
         res = await hs.create_note(creds["token"], text.replace("\n", "<br/>"), "deal" if deal_id else None, deal_id)
         res.pop("raw", None)
         return res
@@ -217,4 +230,9 @@ async def crm_note(org_id: str, provider: str, title: str, body: str, lead: Opti
         # Pipedrive notes require a parent record, so standalone notes land as a done activity.
         return await pd._post(creds, "/api/v2/activities", {"subject": title[:250], "type": "task", "done": True,
                                                               "note": pd._to_html(body)})
+    if provider == "zoho":
+        if deal_id:
+            return await zw.create_note(creds, title, body, "deal", deal_id)
+        # Zoho notes require a parent record, so standalone notes land as a completed task.
+        return await zw.create_task(creds, title, body, "MEDIUM", done=True)
     return {"ok": False, "error": "Unsupported CRM"}

@@ -17,12 +17,11 @@ const API_URL = process.env.REACT_APP_BACKEND_URL;
 const ICON_MAP = { CreditCard, ShoppingBag, Users, Cloud, Calculator, DollarSign, BarChart3 };
 
 // Platforms that support confirmed write-backs (2-way sync), not read-only.
-const WRITE_CAPABLE = ['hubspot', 'salesforce', 'pipedrive'];
+const WRITE_CAPABLE = ['hubspot', 'salesforce', 'pipedrive', 'zoho'];
 
 // One-click OAuth connectors handled by Scalekit AgentKit (managed OAuth + auto-refresh).
 const SCALEKIT_CONNECTORS = [
   { id: 'quickbooks', name: 'QuickBooks', icon: Calculator, color: '#2CA01C', desc: 'Import paid invoices as attributable closed-won revenue.' },
-  { id: 'salesforce', name: 'Salesforce', icon: Cloud, color: '#00A1E0', desc: 'Sync open & won opportunities straight into your pipeline.' },
   { id: 'stripe', name: 'Stripe', icon: CreditCard, color: '#635BFF', desc: 'Import successful charges as collected revenue.' },
 ];
 
@@ -43,6 +42,26 @@ const SETUP_GUIDES = {
       'hs init   (authenticates the CLI to your account)',
       'hs project create  →  choose "App"  →  finish the prompts',
       'hs project upload, then hs project open, and copy the token from the app\u2019s Auth tab.',
+    ],
+  },
+  salesforce: {
+    title: 'How to set up Salesforce (one time, never expires)',
+    steps: [
+      'In Salesforce Setup, open App Manager → "New Connected App" (or "New External Client App" on newer orgs). Name it "InFlow".',
+      'Enable OAuth Settings: add any callback URL (e.g. https://login.salesforce.com), add the scope "Manage user data via APIs (api)", and tick "Enable Client Credentials Flow".',
+      'Save, then Manage → Edit Policies → under Client Credentials Flow set "Run As" to an integration user who can read/write Opportunities, Contacts and Tasks.',
+      'Open Manage Consumer Details and copy the Consumer Key and Consumer Secret.',
+      'Paste them above with your My Domain URL (Setup → My Domain, e.g. mycompany.my.salesforce.com) and click Connect. InFlow renews access automatically.',
+    ],
+  },
+  zoho: {
+    title: 'How to get your Zoho CRM credentials',
+    steps: [
+      'Go to api-console.zoho.com (use the same region as your Zoho account) → "Add Client" → "Self Client" → Create.',
+      'Copy the Client ID and Client Secret into the fields above.',
+      'Open the "Generate Code" tab, paste the scopes ZohoCRM.modules.ALL,ZohoCRM.settings.fields.READ,ZohoCRM.users.READ, pick the 10-minute duration and click Create.',
+      'Copy the grant code and paste it as "Grant Code or Refresh Token" right away — InFlow swaps it for a permanent refresh token.',
+      'Set Data Center to your Zoho domain: com (zoho.com), eu, in, com.au, jp, ca or sa — then click Connect.',
     ],
   },
 };
@@ -530,7 +549,7 @@ const ConnectBusiness = () => {
                 <p className="text-xs text-zinc-500 -mt-2 max-w-2xl">
                   Connect with a single click — no API keys to paste. Tokens refresh automatically, so these connections never expire on you.
                 </p>
-                <div className="grid md:grid-cols-3 gap-4" data-testid="scalekit-grid">
+                <div className="grid md:grid-cols-2 gap-4" data-testid="scalekit-grid">
                   {SCALEKIT_CONNECTORS.map((c) => {
                     const conn = scalekit.connected?.[c.id];
                     const connected = !!conn;

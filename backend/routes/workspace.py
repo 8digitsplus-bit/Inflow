@@ -10,8 +10,8 @@ Flow: compose (optional AI draft) -> save as DRAFT -> preview -> Confirm/execute
 token lacks write scopes, the action is saved as `failed` with a clear reason and
 can be retried after reconnecting — nothing is silently dropped.
 
-Paid-tier gated; the execute/write steps are owner-only. Architecture is provider
-generic so more integrations can plug in later (currently: hubspot).
+Paid-tier gated; the execute/write steps are owner-only. Providers: HubSpot,
+Salesforce, Pipedrive and Zoho CRM (credentials via utils.crm_auth).
 """
 import uuid
 import logging
@@ -23,17 +23,19 @@ from pydantic import BaseModel
 
 from database import db
 from models import User
-from dependencies import get_current_user, org_filter, require_paid, require_paid_owner
-from utils.crypto import decrypt
+from dependencies import org_filter, require_paid, require_paid_owner
 from routes.upsell import _ai_text
 from routes import hubspot_write as hs
 from routes import salesforce_write as sf
 from routes import pipedrive_write as pd
+from routes import zoho_write as zw
+from utils.crm_auth import crm_creds
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
-WRITE_PROVIDERS = {"hubspot": "HubSpot", "salesforce": "Salesforce", "pipedrive": "Pipedrive"}
+WRITE_PROVIDERS = {"hubspot": "HubSpot", "salesforce": "Salesforce", "pipedrive": "Pipedrive", "zoho": "Zoho CRM"}
+MODULES = {"salesforce": sf, "pipedrive": pd, "zoho": zw}
 KINDS = {"note", "task", "call", "email", "deal", "offer"}
 TARGET_KINDS = {"note", "task", "call", "email", "offer"}  # require an association target
 
@@ -71,38 +73,30 @@ def _clean(doc: dict) -> dict:
     return doc
 
 
-async def _hs_conn(user: User) -> Optional[dict]:
-    return await db.business_connections.find_one(
-        {**org_filter(user), "platform": "hubspot"}, {"_id": 0}
-    )
-
-
-def _hs_token(conn: Optional[dict]) -> str:
-    if not conn:
-        return ""
-    enc = conn.get("api_key_encrypted")
-    try:
-        return decrypt(enc) if enc else ""
-    except Exception:
-        return ""
-
-
 async def _conn(user: User, platform: str) -> Optional[dict]:
     return await db.business_connections.find_one(
-        {**org_filter(user), "platform": platform}, {"_id": 0}
-    )
+        {**org_filter(user), "platform": platform, "api_key_encrypted": {"$nin": [None, ""]}}, {"_id": 0}
+    ) or await db.business_connections.find_one({**org_filter(user), "platform": platform}, {"_id": 0})
 
 
-def _creds(conn: Optional[dict]) -> dict:
-    """Decrypted credentials for any write provider (token + instance_url)."""
-    if not conn:
-        return {"token": "", "instance_url": ""}
-    enc = conn.get("api_key_encrypted")
-    try:
-        token = decrypt(enc) if enc else ""
-    except Exception:
-        token = ""
-    return {"token": token, "instance_url": conn.get("instance_url", "")}
+async def _targets(provider: str, creds: dict) -> dict:
+    return await (hs.list_targets(creds["token"]) if provider == "hubspot" else MODULES[provider].list_targets(creds))
+
+
+async def _pipelines(provider: str, creds: dict) -> dict:
+    return await (hs.list_deal_pipelines(creds["token"]) if provider == "hubspot" else MODULES[provider].list_pipelines(creds))
+
+
+async def _get_deal(provider: str, creds: dict, deal_id: str) -> dict:
+    return await (hs.get_deal(creds["token"], deal_id) if provider == "hubspot" else MODULES[provider].get_deal(creds, deal_id))
+
+
+async def _update_deal(provider: str, creds: dict, deal_id: str, fields: dict) -> dict:
+    return await (hs.update_deal(creds["token"], deal_id, fields) if provider == "hubspot" else MODULES[provider].update_deal(creds, deal_id, fields))
+
+
+def _linked(lead: dict, provider: str) -> Optional[str]:
+    return (lead.get("crm_links") or {}).get(provider) or (lead.get("hubspot_deal_id") if provider == "hubspot" else None)
 
 
 async def _log(action_id: str, user: User, atype: str, detail: str):
@@ -146,16 +140,9 @@ async def workspace_targets(provider: str = "hubspot", user: User = Depends(requ
     conn = await _conn(user, provider)
     if not conn:
         raise HTTPException(status_code=400, detail=f"Connect {WRITE_PROVIDERS[provider]} first to load records.")
-    creds = _creds(conn)
-    if provider == "hubspot":
-        targets = await hs.list_targets(creds["token"])
-        pipelines = await hs.list_deal_pipelines(creds["token"])
-    elif provider == "salesforce":
-        targets = await sf.list_targets(creds)
-        pipelines = await sf.list_pipelines(creds)
-    else:  # pipedrive
-        targets = await pd.list_targets(creds)
-        pipelines = await pd.list_pipelines(creds)
+    creds = await crm_creds(conn)
+    targets = await _targets(provider, creds)
+    pipelines = await _pipelines(provider, creds)
     return {
         "deals": targets["deals"],
         "contacts": targets["contacts"],
@@ -281,7 +268,7 @@ async def execute_action(action_id: str, user: User = Depends(require_paid_owner
         raise HTTPException(status_code=400, detail="Unsupported provider")
     label = WRITE_PROVIDERS[provider]
     conn = await _conn(user, provider)
-    creds = _creds(conn)
+    creds = await crm_creds(conn)
     kind = action["kind"]
     p = action.get("payload") or {}
     tgt = action.get("target") or {}
@@ -304,10 +291,8 @@ async def execute_action(action_id: str, user: User = Depends(require_paid_owner
             res = await hs.create_quote(token, p.get("title"), p.get("expiration"), tid)
         else:
             raise HTTPException(status_code=400, detail="Unknown action kind")
-    elif provider == "salesforce":
-        res = await sf.write(kind, creds, p, tgt)
-    else:  # pipedrive
-        res = await pd.write(kind, creds, p, tgt)
+    else:
+        res = await MODULES[provider].write(kind, creds, p, tgt)
 
     now = _now()
     if res.get("ok"):
@@ -334,11 +319,14 @@ async def execute_action(action_id: str, user: User = Depends(require_paid_owner
 
 # ------------------------------------------------------------------ individual account workspace (2-way sync)
 class LinkReq(BaseModel):
-    hubspot_deal_id: str
+    provider: str = "hubspot"
+    deal_id: Optional[str] = None
+    hubspot_deal_id: Optional[str] = None
     label: Optional[str] = ""
 
 
 class FieldsReq(BaseModel):
+    provider: str = "hubspot"
     dealname: Optional[str] = None
     amount: Optional[str] = None
     dealstage: Optional[str] = None
@@ -371,31 +359,32 @@ def _action_summary(a: dict) -> str:
 
 
 @router.get("/workspace/account/{lead_id}")
-async def account_room(lead_id: str, user: User = Depends(require_paid)):
+async def account_room(lead_id: str, provider: Optional[str] = None, user: User = Depends(require_paid)):
     lead = await db.intent_leads.find_one({"lead_id": lead_id, **org_filter(user)}, {"_id": 0})
     if not lead:
         raise HTTPException(status_code=404, detail="Account not found")
-    conn = await _hs_conn(user)
-    token = _hs_token(conn)
-    linked = lead.get("hubspot_deal_id")
-    hub = {"connected": bool(conn), "error": None, "deal_fields": None, "deals": [], "contacts": []}
+    have = {c["platform"] for c in await db.business_connections.find(
+        {**org_filter(user), "platform": {"$in": list(WRITE_PROVIDERS)}}, {"_id": 0, "platform": 1}).to_list(20)}
+    providers = [{"platform": p, "name": n} for p, n in WRITE_PROVIDERS.items() if p in have]
+    if provider not in WRITE_PROVIDERS:
+        provider = providers[0]["platform"] if providers else "hubspot"
+    conn = await _conn(user, provider) if provider in have else None
+    linked = _linked(lead, provider)
+    crm = {"provider": provider, "name": WRITE_PROVIDERS[provider], "connected": bool(conn),
+           "error": None, "deal_fields": None, "deals": [], "contacts": []}
+    creds = await crm_creds(conn) if conn else {}
     if conn:
-        tg = await hs.list_targets(token)
-        hub["deals"] = tg["deals"]
-        hub["contacts"] = tg["contacts"]
-        hub["error"] = tg.get("error")
+        tg = await _targets(provider, creds)
+        crm["deals"], crm["contacts"], crm["error"] = tg["deals"], tg["contacts"], tg.get("error")
         if not linked and not tg.get("error"):
             nm = (lead.get("account") or "").strip().lower()
-            for d in tg["deals"]:
-                if (d.get("label") or "").strip().lower() == nm:
-                    linked = d["id"]
-                    break
+            linked = next((d["id"] for d in tg["deals"] if (d.get("label") or "").strip().lower() == nm), None)
         if linked:
-            gd = await hs.get_deal(token, linked)
+            gd = await _get_deal(provider, creds, linked)
             if gd.get("ok"):
-                hub["deal_fields"] = gd["fields"]
-            elif not hub["error"]:
-                hub["error"] = gd.get("error")
+                crm["deal_fields"] = gd["fields"]
+            elif not crm["error"]:
+                crm["error"] = gd.get("error")
     actions = await db.workspace_actions.find(
         {**org_filter(user), "account_ref": lead_id}, {"_id": 0}
     ).sort("created_at", -1).to_list(200)
@@ -406,38 +395,46 @@ async def account_room(lead_id: str, user: User = Depends(require_paid)):
     for a in actions:
         timeline.append({"source": "inflow", "kind": a["kind"], "detail": _action_summary(a),
                          "ts": a.get("updated_at") or a.get("created_at"), "status": a.get("status"),
-                         "by": a.get("created_by")})
-    if linked:
-        for e in await hs.list_deal_activity(token, linked):
+                         "by": a.get("created_by"), "provider": a.get("provider")})
+    if linked and provider == "hubspot" and conn:
+        for e in await hs.list_deal_activity(creds["token"], linked):
             timeline.append(e)
     timeline.sort(key=lambda x: _ts_key(x.get("ts")), reverse=True)
-    return {"lead": lead, "linked_deal_id": linked, "hubspot": hub, "actions": actions, "timeline": timeline}
+    return {"lead": lead, "provider": provider, "providers": providers, "linked_deal_id": linked,
+            "crm": crm, "actions": actions, "timeline": timeline}
 
 
 @router.post("/workspace/account/{lead_id}/link")
 async def link_account(lead_id: str, body: LinkReq, user: User = Depends(require_paid_owner)):
-    res = await db.intent_leads.update_one(
-        {"lead_id": lead_id, **org_filter(user)},
-        {"$set": {"hubspot_deal_id": body.hubspot_deal_id}},
-    )
+    if body.provider not in WRITE_PROVIDERS:
+        raise HTTPException(status_code=400, detail="Unsupported provider")
+    deal_id = (body.deal_id or body.hubspot_deal_id or "").strip()
+    if not deal_id:
+        raise HTTPException(status_code=400, detail="Pick a deal to link")
+    upd = {f"crm_links.{body.provider}": deal_id}
+    if body.provider == "hubspot":
+        upd["hubspot_deal_id"] = deal_id
+    res = await db.intent_leads.update_one({"lead_id": lead_id, **org_filter(user)}, {"$set": upd})
     if res.matched_count == 0:
         raise HTTPException(status_code=404, detail="Account not found")
-    return {"linked_deal_id": body.hubspot_deal_id}
+    return {"linked_deal_id": deal_id, "provider": body.provider}
 
 
 @router.post("/workspace/account/{lead_id}/fields")
 async def update_account_fields(lead_id: str, body: FieldsReq, user: User = Depends(require_paid_owner)):
+    if body.provider not in WRITE_PROVIDERS:
+        raise HTTPException(status_code=400, detail="Unsupported provider")
     lead = await db.intent_leads.find_one({"lead_id": lead_id, **org_filter(user)}, {"_id": 0})
     if not lead:
         raise HTTPException(status_code=404, detail="Account not found")
-    linked = lead.get("hubspot_deal_id")
+    label = WRITE_PROVIDERS[body.provider]
+    linked = _linked(lead, body.provider)
     if not linked:
-        raise HTTPException(status_code=400, detail="Link a HubSpot deal first, then push field updates.")
+        raise HTTPException(status_code=400, detail=f"Link a {label} deal first, then push field updates.")
     fields = {k: v for k, v in {"dealname": body.dealname, "amount": body.amount, "dealstage": body.dealstage}.items() if v not in (None, "")}
     if not fields:
         raise HTTPException(status_code=400, detail="No field changes to push")
-    conn = await _hs_conn(user)
-    res = await hs.update_deal(_hs_token(conn), linked, fields)
+    res = await _update_deal(body.provider, await crm_creds(await _conn(user, body.provider)), linked, fields)
     if res.get("ok"):
-        return {"ok": True, "fields": fields}
-    raise HTTPException(status_code=422, detail=res.get("error") or "HubSpot update failed")
+        return {"ok": True, "fields": fields, "provider": body.provider}
+    raise HTTPException(status_code=422, detail=res.get("error") or f"{label} update failed")

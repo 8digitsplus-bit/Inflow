@@ -96,6 +96,36 @@ async def _post(creds: dict, path: str, body: dict) -> dict:
     return _err(r.status_code, msg)
 
 
+async def get_deal(creds: dict, deal_id: str) -> dict:
+    rd = await _get(creds, f"/api/v2/deals/{int(deal_id) if str(deal_id).isdigit() else 0}")
+    if not rd.get("ok"):
+        return {**rd, "fields": {}}
+    d = rd["data"] if isinstance(rd["data"], dict) else {}
+    return {"ok": True, "fields": {"dealname": d.get("title") or "", "amount": str(d.get("value") or ""),
+                                   "dealstage": str(d.get("stage_id") or "")}}
+
+
+async def update_deal(creds: dict, deal_id: str, fields: dict) -> dict:
+    token, base = creds.get("token"), _base(creds.get("instance_url"))
+    if not token:
+        return {"ok": False, "code": 401, "error": "Pipedrive isn't authenticated. Reconnect Pipedrive."}
+    body = {}
+    if fields.get("dealname"):
+        body["title"] = fields["dealname"]
+    for src, dst, cast in (("amount", "value", float), ("dealstage", "stage_id", int)):
+        if fields.get(src) not in (None, ""):
+            try:
+                body[dst] = cast(fields[src])
+            except (ValueError, TypeError):
+                pass
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            r = await client.patch(f"{base}/api/v2/deals/{deal_id}", headers=_headers(token), json=body)
+    except Exception as e:
+        return {"ok": False, "error": f"Could not reach Pipedrive: {e}"}
+    return {"ok": True, "id": str(deal_id)} if r.status_code == 200 else _err(r.status_code)
+
+
 # ------------------------------------------------------------------ reads (pickers)
 async def list_targets(creds: dict, limit: int = 100) -> dict:
     out = {"deals": [], "contacts": [], "error": None}

@@ -27,7 +27,8 @@ SK_ID = os.environ.get("SCALEKIT_CLIENT_ID")
 SK_SECRET = os.environ.get("SCALEKIT_CLIENT_SECRET")
 APP_BASE_URL = os.environ.get("APP_BASE_URL", "").rstrip("/")
 
-CONNECTORS = {"quickbooks", "salesforce", "stripe"}
+# Salesforce is connected directly (client-credentials) instead — see routes/salesforce_integration.py.
+CONNECTORS = {"quickbooks", "stripe"}
 # Dashboard connection names can differ from the bare provider key (e.g. "quickbooks-connect").
 # Override per-connector via env if your Scalekit dashboard names them differently.
 _CONN_NAMES = {

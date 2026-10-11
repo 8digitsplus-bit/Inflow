@@ -15,6 +15,7 @@ const TRIGGERS = [
 const EMPTY = { name: '', enabled: true, priority: 10, event_types: ['pricing_view', 'quote_request'], min_score: 70, min_value: 0, window_hours: 24,
   ae_ids: [], sla_minutes: 5, actions: { email: true, slack: false, crm: '', briefing: true } };
 const field = 'bg-zinc-900 border-zinc-700 text-white h-9 text-sm mt-1';
+const CRM_NAMES = { hubspot: 'HubSpot', salesforce: 'Salesforce', pipedrive: 'Pipedrive', zoho: 'Zoho CRM' };
 
 const Chip = ({ on, onClick, children, testid }) => (
   <button type="button" onClick={onClick} className={`px-2.5 h-7 rounded-full text-[11px] border transition-colors ${on ? 'bg-[#0052ff]/20 border-[#0052ff]/50 text-[#9dbcff]' : 'border-white/10 text-zinc-400 hover:text-white'}`} data-testid={testid}>{children}</button>
@@ -69,7 +70,7 @@ export const RuleDialog = ({ open, onOpenChange, rule, aes, destinations, onSave
             <div className="flex items-center justify-between text-sm text-zinc-300"><span>Set owner + task in CRM</span>
               <select value={f.actions.crm} onChange={(e) => act('crm', e.target.value)} className="h-8 rounded-md bg-zinc-900 border border-zinc-700 text-xs px-2" data-testid="rule-action-crm">
                 <option value="">Don't push</option>
-                {['hubspot', 'salesforce', 'pipedrive'].map((p) => <option key={p} value={p} disabled={!destinations[p]}>{p[0].toUpperCase() + p.slice(1)}{destinations[p] ? '' : ' (not connected)'}</option>)}
+                {Object.entries(CRM_NAMES).map(([p, n]) => <option key={p} value={p} disabled={!destinations[p]}>{n}{destinations[p] ? '' : ' (not connected)'}</option>)}
               </select></div>
           </div>
           <div className="flex items-center justify-between text-sm text-zinc-300"><span>Rule enabled</span><Switch checked={f.enabled} onCheckedChange={(v) => set('enabled', v)} data-testid="rule-enabled-switch" /></div>
@@ -80,7 +81,7 @@ export const RuleDialog = ({ open, onOpenChange, rule, aes, destinations, onSave
   );
 };
 
-const AE_EMPTY = { name: '', email: '', territories: '', min_deal: '', max_deal: '', active: true, crm_owner_ids: { hubspot: '', salesforce: '', pipedrive: '' } };
+const AE_EMPTY = { name: '', email: '', territories: '', min_deal: '', max_deal: '', active: true, crm_owner_ids: { hubspot: '', salesforce: '', pipedrive: '', zoho: '' } };
 
 export const AeDialog = ({ open, onOpenChange, ae, onSaved }) => {
   const [f, setF] = useState(AE_EMPTY);
@@ -120,8 +121,8 @@ export const AeDialog = ({ open, onOpenChange, ae, onSaved }) => {
             <div><Label className="text-zinc-400 text-xs">Max deal ($)</Label><Input type="number" value={f.max_deal} onChange={set('max_deal')} className={field} data-testid="ae-max-deal-input" /></div>
           </div>
           <div><Label className="text-zinc-400 text-xs">CRM owner IDs (so pushed tasks land on this AE)</Label>
-            <div className="grid grid-cols-3 gap-2 mt-1">{['hubspot', 'salesforce', 'pipedrive'].map((p) => (
-              <Input key={p} value={f.crm_owner_ids[p]} onChange={(e) => setF((x) => ({ ...x, crm_owner_ids: { ...x.crm_owner_ids, [p]: e.target.value } }))} placeholder={p} className="bg-zinc-900 border-zinc-700 text-white h-8 text-xs" data-testid={`ae-owner-${p}`} />
+            <div className="grid grid-cols-2 gap-2 mt-1">{Object.entries(CRM_NAMES).map(([p, n]) => (
+              <Input key={p} value={f.crm_owner_ids[p]} onChange={(e) => setF((x) => ({ ...x, crm_owner_ids: { ...x.crm_owner_ids, [p]: e.target.value } }))} placeholder={`${n} owner ID`} className="bg-zinc-900 border-zinc-700 text-white h-8 text-xs" data-testid={`ae-owner-${p}`} />
             ))}</div></div>
           <div className="flex items-center justify-between text-sm text-zinc-300"><span>Active on the roster</span><Switch checked={f.active} onCheckedChange={(v) => setF((x) => ({ ...x, active: v }))} data-testid="ae-active-switch" /></div>
         </div>

@@ -33,6 +33,8 @@ from routes.telemetry import require_enterprise
 from routes.upsell import _ai_text, _pick_plan, _signal_summary, _email_html, _get_candidate
 from routes import hubspot_write as hs
 from routes import salesforce_write as sf
+from routes import zoho_write as zw
+from utils.crm_auth import crm_creds
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -74,7 +76,7 @@ class SlackAlertRequest(BaseModel):
 
 class PushCrmRequest(BaseModel):
     candidate_id: str
-    provider: str          # hubspot | salesforce
+    provider: str          # hubspot | salesforce | zoho
     kind: str = "task"     # task | note
 
 
@@ -114,17 +116,6 @@ async def _conn(user: User, platform: str) -> Optional[dict]:
     return await db.business_connections.find_one(
         {**org_filter(user), "platform": platform}, {"_id": 0}
     )
-
-
-def _creds(conn: Optional[dict]) -> dict:
-    if not conn:
-        return {"token": "", "instance_url": ""}
-    enc = conn.get("api_key_encrypted")
-    try:
-        token = decrypt(enc) if enc else ""
-    except Exception:
-        token = ""
-    return {"token": token, "instance_url": conn.get("instance_url", "")}
 
 
 def _builtin_labels(cand: dict, churn_set: set) -> List[dict]:
@@ -220,7 +211,7 @@ async def outreach_board(user: User = Depends(require_enterprise)):
     ).to_list(200)
 
     conns = await db.business_connections.find(
-        {**org_filter(user), "platform": {"$in": ["hubspot", "salesforce"]}}, {"_id": 0, "platform": 1}
+        {**org_filter(user), "platform": {"$in": ["hubspot", "salesforce", "zoho"]}}, {"_id": 0, "platform": 1}
     ).to_list(10)
     connected = {c["platform"] for c in conns}
     slack_cfg = await db.outreach_settings.find_one(org_filter(user), {"_id": 0})
@@ -238,6 +229,7 @@ async def outreach_board(user: User = Depends(require_enterprise)):
             "slack_channel": (slack_cfg or {}).get("channel_label", ""),
             "hubspot": "hubspot" in connected,
             "salesforce": "salesforce" in connected,
+            "zoho": "zoho" in connected,
         },
         "label_rules": rules,
         "queue": [{"queue_id": q["queue_id"], "candidate_id": q.get("candidate_id"),
@@ -439,15 +431,16 @@ async def slack_alert(body: SlackAlertRequest, user: User = Depends(require_ente
 @router.post("/outreach/push-crm")
 async def push_crm(body: PushCrmRequest, user: User = Depends(require_enterprise)):
     provider = body.provider
-    if provider not in ("hubspot", "salesforce"):
+    names = {"hubspot": "HubSpot", "salesforce": "Salesforce", "zoho": "Zoho CRM"}
+    if provider not in names:
         raise HTTPException(status_code=400, detail="Unsupported CRM provider")
     if body.kind not in ("task", "note"):
         raise HTTPException(status_code=400, detail="Unsupported action kind")
     conn = await _conn(user, provider)
     if not conn:
-        raise HTTPException(status_code=400, detail=f"Connect {provider.title()} first to push this opportunity.")
+        raise HTTPException(status_code=400, detail=f"Connect {names[provider]} first to push this opportunity.")
     cand = await _get_candidate(body.candidate_id, user)
-    creds = _creds(conn)
+    creds = await crm_creds(conn)
     title = f"Upsell: {cand['account']} (~${cand.get('est_expansion_value', 0):,.0f}/yr)"
     detail = (f"Expansion opportunity for {cand['account']}. "
               f"Score {cand.get('expansion_score', 0)}/100. "
@@ -458,11 +451,14 @@ async def push_crm(body: PushCrmRequest, user: User = Depends(require_enterprise
             res = await hs.create_task(creds["token"], title, detail, "HIGH", None, None, None)
         else:
             res = await hs.create_note(creds["token"], f"{title}\n\n{detail}", None, None)
+    elif provider == "zoho":
+        # Zoho notes need a parent record, so a standalone note lands as a completed task.
+        res = await zw.create_task(creds, title, detail, "HIGH", done=body.kind == "note")
     else:  # salesforce
         payload = {"title": title, "body": detail, "priority": "HIGH"} if body.kind == "task" else {"body": f"{title}\n\n{detail}"}
         res = await sf.write(body.kind, creds, payload, {})
     if not res.get("ok"):
-        raise HTTPException(status_code=422, detail=res.get("error") or f"{provider.title()} write failed")
+        raise HTTPException(status_code=422, detail=res.get("error") or f"{names[provider]} write failed")
     await db.upsell_candidates.update_one(
         {"candidate_id": body.candidate_id, **org_filter(user)},
         {"$set": {"status": "notified", "updated_at": _now()}},

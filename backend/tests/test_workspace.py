@@ -226,15 +226,16 @@ def test_account_room_shape(sess, a_lead_id):
     r = sess.get(f"{API}/workspace/account/{a_lead_id}", timeout=45)
     assert r.status_code == 200, r.text
     d = r.json()
-    for k in ("lead", "linked_deal_id", "hubspot", "actions", "timeline"):
+    for k in ("lead", "provider", "providers", "linked_deal_id", "crm", "actions", "timeline"):
         assert k in d, f"missing {k}"
     assert d["lead"]["lead_id"] == a_lead_id
     assert "_id" not in d["lead"]
-    hub = d["hubspot"]
-    assert hub["connected"] is True
-    # demo token -> error string expected; deals list empty
-    assert hub.get("error"), "expected hubspot.error with demo token"
-    assert isinstance(hub.get("deals"), list)
+    crm = d["crm"]
+    assert crm["provider"] == d["provider"]
+    assert crm["connected"] is True
+    assert isinstance(crm.get("deals"), list)
+    # every connected write provider (hubspot/salesforce/pipedrive/zoho) is selectable
+    assert {p["platform"] for p in d["providers"]} >= {"hubspot"}
     # timeline populated from intent activity
     assert isinstance(d["timeline"], list)
     assert len(d["timeline"]) >= 1

@@ -231,7 +231,7 @@ export default function OutreachWorkspace() {
     setBusy(`crm-${provider}`);
     try {
       await req('/outreach/push-crm', { method: 'POST', body: JSON.stringify({ candidate_id: selectedId, provider, kind: 'task' }) });
-      toast.success(`Task created in ${provider === 'hubspot' ? 'HubSpot' : 'Salesforce'}`);
+      toast.success(`Task created in ${{ hubspot: 'HubSpot', salesforce: 'Salesforce', zoho: 'Zoho CRM' }[provider]}`);
       await loadBoard();
     } catch (e) { toast.error(e.message); }
     setBusy('');
@@ -435,6 +435,7 @@ export default function OutreachWorkspace() {
                 )}
                 {integrations.hubspot && <Button onClick={() => pushCrm('hubspot')} disabled={busy === 'crm-hubspot'} size="sm" className="h-8 text-xs bg-white/10 hover:bg-white/20 text-white" data-testid="push-hubspot-btn">{busy === 'crm-hubspot' ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Building2 className="w-3.5 h-3.5 mr-1" />} HubSpot task</Button>}
                 {integrations.salesforce && <Button onClick={() => pushCrm('salesforce')} disabled={busy === 'crm-salesforce'} size="sm" className="h-8 text-xs bg-white/10 hover:bg-white/20 text-white" data-testid="push-salesforce-btn">{busy === 'crm-salesforce' ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Building2 className="w-3.5 h-3.5 mr-1" />} Salesforce task</Button>}
+                {integrations.zoho && <Button onClick={() => pushCrm('zoho')} disabled={busy === 'crm-zoho'} size="sm" className="h-8 text-xs bg-white/10 hover:bg-white/20 text-white" data-testid="push-zoho-btn">{busy === 'crm-zoho' ? <Loader2 className="w-3.5 h-3.5 mr-1 animate-spin" /> : <Building2 className="w-3.5 h-3.5 mr-1" />} Zoho task</Button>}
               </div>
 
               {/* send row / undo countdown */}

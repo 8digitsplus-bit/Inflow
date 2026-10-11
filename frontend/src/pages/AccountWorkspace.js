@@ -32,6 +32,7 @@ const STATUS_STYLE = {
   executed: 'bg-emerald-500/20 text-emerald-200 border-emerald-500/40',
   failed: 'bg-red-500/15 text-red-300 border-red-500/30',
 };
+const PROVIDER_NAMES = { hubspot: 'HubSpot', salesforce: 'Salesforce', pipedrive: 'Pipedrive', zoho: 'Zoho CRM' };
 const SOURCE_META = {
   intent: { label: 'InFlow AI', icon: Flame, color: 'text-amber-300' },
   inflow: { label: 'Pushed', icon: Send, color: 'text-[#4d8bff]' },
@@ -78,10 +79,12 @@ export default function AccountWorkspace() {
   const [confirm, setConfirm] = useState(null);
   const [pushing, setPushing] = useState(false);
   const [fieldConfirm, setFieldConfirm] = useState(false);
+  const [provider, setProvider] = useState('');
 
   const lead = data?.lead;
   const linked = data?.linked_deal_id;
-  const hub = data?.hubspot || {};
+  const hub = data?.crm || {};
+  const pName = hub.name || 'your CRM';
 
   const req = useCallback(async (path, opts = {}) => {
     const res = await fetch(`${API_URL}/api/workspace${path}`, {
@@ -94,24 +97,25 @@ export default function AccountWorkspace() {
 
   const load = useCallback(async () => {
     try {
-      const d = await req(`/account/${leadId}`);
+      const d = await req(`/account/${leadId}${provider ? `?provider=${provider}` : ''}`);
       setData(d);
-      const f = d.hubspot?.deal_fields || {};
+      const f = d.crm?.deal_fields || {};
       setFields({ dealname: f.dealname || d.lead?.account || '', amount: f.amount || '', dealstage: f.dealstage || '' });
     } catch (e) { toast.error(e.message); }
     setLoading(false);
-  }, [req, leadId]);
+  }, [req, leadId, provider]);
 
   useEffect(() => { load(); }, [load]);
 
   const setField = (f, v) => setPayload((p) => ({ ...p, [f]: v }));
 
   const linkDeal = async () => {
-    if (!linkId) { toast.error('Pick a HubSpot deal to link'); return; }
+    if (!linkId) { toast.error(`Pick a ${pName} deal to link`); return; }
     try {
       const d = (hub.deals || []).find((x) => x.id === linkId);
-      await req(`/account/${leadId}/link`, { method: 'POST', body: JSON.stringify({ hubspot_deal_id: linkId, label: d?.label || '' }) });
-      toast.success('Linked to HubSpot deal');
+      await req(`/account/${leadId}/link`, { method: 'POST', body: JSON.stringify({ provider: hub.provider, deal_id: linkId, label: d?.label || '' }) });
+      toast.success(`Linked to ${pName} deal`);
+      setLinkId('');
       await load();
     } catch (e) { toast.error(e.message); }
   };
@@ -119,8 +123,8 @@ export default function AccountWorkspace() {
   const pushFields = async () => {
     setFieldConfirm(false); setBusy(true);
     try {
-      await req(`/account/${leadId}/fields`, { method: 'POST', body: JSON.stringify(fields) });
-      toast.success('Fields pushed to HubSpot');
+      await req(`/account/${leadId}/fields`, { method: 'POST', body: JSON.stringify({ ...fields, provider: hub.provider }) });
+      toast.success(`Fields pushed to ${pName}`);
       await load();
     } catch (e) { toast.error(e.message); }
     setBusy(false);
@@ -138,12 +142,12 @@ export default function AccountWorkspace() {
 
   const saveDraft = async () => {
     const meta = KIND_META[kind];
-    if (meta.needsTarget && !linked) { toast.error('Link a HubSpot deal first to attach notes, tasks & activities'); return; }
+    if (meta.needsTarget && !linked) { toast.error(`Link a ${pName} deal first to attach notes, tasks & activities`); return; }
     setBusy(true);
     try {
       const target = meta.needsTarget ? { type: 'deal', id: linked, label: lead?.account } : null;
-      await req('/actions', { method: 'POST', body: JSON.stringify({ provider: 'hubspot', kind, target, payload, account_ref: leadId }) });
-      toast.success('Saved — review & push to HubSpot');
+      await req('/actions', { method: 'POST', body: JSON.stringify({ provider: hub.provider, kind, target, payload, account_ref: leadId }) });
+      toast.success(`Saved — review & push to ${pName}`);
       setPayload(emptyPayload(kind));
       await load();
     } catch (e) { toast.error(e.message); }
@@ -155,7 +159,7 @@ export default function AccountWorkspace() {
     setPushing(true);
     try {
       await req(`/actions/${confirm.action_id}/execute`, { method: 'POST' });
-      toast.success('Pushed to HubSpot');
+      toast.success(`Pushed to ${PROVIDER_NAMES[confirm.provider] || pName}`);
       setConfirm(null);
       await load();
     } catch (e) { toast.error(e.message); await load(); }
@@ -185,20 +189,27 @@ export default function AccountWorkspace() {
               <span className={`text-[10px] flex items-center gap-1 px-1.5 py-0.5 rounded-md border ${lead.intent_score >= 60 ? 'bg-amber-500/15 text-amber-300 border-amber-500/30' : 'bg-white/5 text-zinc-400 border-white/10'}`}><Flame className="w-3 h-3" /> intent {lead.intent_score}/100</span>
               <span className="text-xs text-zinc-500">{money(lead.value)} · {lead.best_stage} · {lead.probability}%</span>
               {linked ? (
-                <span className="text-[10px] px-1.5 py-0.5 rounded-md border bg-emerald-500/15 text-emerald-300 border-emerald-500/30 flex items-center gap-1" data-testid="account-linked-badge"><Link2 className="w-3 h-3" /> HubSpot linked</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded-md border bg-emerald-500/15 text-emerald-300 border-emerald-500/30 flex items-center gap-1" data-testid="account-linked-badge"><Link2 className="w-3 h-3" /> {pName} linked</span>
               ) : (
                 <span className="text-[10px] px-1.5 py-0.5 rounded-md border bg-zinc-600/15 text-zinc-400 border-zinc-600/30" data-testid="account-unlinked-badge">Not linked</span>
               )}
             </div>
           </div>
-          <Button variant="ghost" size="sm" onClick={load} disabled={busy} className="h-8 text-xs text-zinc-400 hover:text-white flex-shrink-0" data-testid="account-refresh-btn"><RefreshCw className="w-3.5 h-3.5 mr-1.5" /> Sync now</Button>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {(data.providers || []).length > 1 && (
+              <select value={hub.provider} onChange={(e) => { setLinkId(''); setProvider(e.target.value); }} className="bg-zinc-900 border border-zinc-700 rounded-md text-xs text-white h-8 px-2" data-testid="account-provider-select">
+                {data.providers.map((p) => <option key={p.platform} value={p.platform}>{p.name}</option>)}
+              </select>
+            )}
+            <Button variant="ghost" size="sm" onClick={load} disabled={busy} className="h-8 text-xs text-zinc-400 hover:text-white" data-testid="account-refresh-btn"><RefreshCw className="w-3.5 h-3.5 mr-1.5" /> Sync now</Button>
+          </div>
         </div>
 
         {hub.error && (
           <div className={`rounded-xl ${glass} px-4 py-2.5 mb-6 flex items-center gap-2 text-[11px] text-red-300/90`} data-testid="account-hub-error"><AlertTriangle className="w-3.5 h-3.5" /> {hub.error}</div>
         )}
         {!hub.connected && (
-          <div className={`rounded-xl ${glass} px-4 py-2.5 mb-6 flex items-center gap-2 text-[11px] text-amber-300/90`} data-testid="account-no-connection"><Plug className="w-3.5 h-3.5" /> Connect HubSpot to enable 2-way sync for this account.</div>
+          <div className={`rounded-xl ${glass} px-4 py-2.5 mb-6 flex items-center gap-2 text-[11px] text-amber-300/90`} data-testid="account-no-connection"><Plug className="w-3.5 h-3.5" /> Connect HubSpot, Salesforce, Pipedrive or Zoho CRM to enable 2-way sync for this account.</div>
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
@@ -206,11 +217,11 @@ export default function AccountWorkspace() {
           <div className="lg:col-span-3 space-y-6">
             {/* Link / fields */}
             <div className={`rounded-2xl ${glass} p-5`} data-testid="account-fields-card">
-              <div className="text-sm font-semibold text-white mb-3 flex items-center gap-2"><Link2 className="w-4 h-4 text-[#4d8bff]" /> HubSpot record</div>
+              <div className="text-sm font-semibold text-white mb-3 flex items-center gap-2"><Link2 className="w-4 h-4 text-[#4d8bff]" /> {pName} record</div>
               {!linked && hub.connected && (
                 <div className="flex flex-col sm:flex-row gap-2 mb-4">
                   <select value={linkId} onChange={(e) => setLinkId(e.target.value)} className="flex-1 bg-zinc-900 border border-zinc-700 rounded-md text-sm text-white h-9 px-2" data-testid="account-link-select">
-                    <option value="">Select the HubSpot deal for this account…</option>
+                    <option value="">Select the {pName} deal for this account…</option>
                     {(hub.deals || []).map((d) => <option key={d.id} value={d.id}>{d.label}</option>)}
                   </select>
                   <Button size="sm" onClick={linkDeal} className="bg-white/10 hover:bg-white/20 text-white h-9 text-xs" data-testid="account-link-btn"><Link2 className="w-3.5 h-3.5 mr-1.5" /> Link</Button>
@@ -222,7 +233,7 @@ export default function AccountWorkspace() {
                 <div><Label className="text-zinc-500 text-[11px]">Stage</Label><Input value={fields.dealstage} onChange={(e) => setFields((f) => ({ ...f, dealstage: e.target.value }))} placeholder="—" className="bg-zinc-900 border-zinc-700 text-white h-9 text-sm mt-1" data-testid="account-field-stage" /></div>
               </div>
               <div className="flex justify-end mt-3">
-                <Button size="sm" onClick={() => setFieldConfirm(true)} disabled={busy || !linked} className="bg-[#0052ff] hover:bg-[#0047d6] text-white h-8 text-xs disabled:opacity-40" data-testid="account-push-fields-btn"><Save className="w-3.5 h-3.5 mr-1.5" /> Push field updates to HubSpot</Button>
+                <Button size="sm" onClick={() => setFieldConfirm(true)} disabled={busy || !linked} className="bg-[#0052ff] hover:bg-[#0047d6] text-white h-8 text-xs disabled:opacity-40" data-testid="account-push-fields-btn"><Save className="w-3.5 h-3.5 mr-1.5" /> Push field updates to {pName}</Button>
               </div>
             </div>
 
@@ -260,7 +271,7 @@ export default function AccountWorkspace() {
                   </div>
                 </>)}
               </div>
-              {KIND_META[kind].needsTarget && !linked && <div className="text-[11px] text-amber-300/80 mt-3 flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> Link a HubSpot deal above to attach this.</div>}
+              {KIND_META[kind].needsTarget && !linked && <div className="text-[11px] text-amber-300/80 mt-3 flex items-center gap-1"><AlertTriangle className="w-3 h-3" /> Link a {pName} deal above to attach this.</div>}
               <div className="flex items-center gap-2 mt-4">
                 {kind !== 'deal' && <Button variant="outline" size="sm" onClick={runAI} disabled={aiBusy} className="border-zinc-700 text-zinc-300 hover:bg-white/5 h-9 text-xs" data-testid="account-ai-btn">{aiBusy ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5 mr-1.5 text-[#4d8bff]" />} AI draft</Button>}
                 <Button size="sm" onClick={saveDraft} disabled={busy} className="bg-[#0052ff] hover:bg-[#0047d6] text-white h-9 text-xs ml-auto" data-testid="account-save-btn">{busy ? <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" /> : <Check className="w-3.5 h-3.5 mr-1.5" />} Save as draft</Button>
@@ -331,8 +342,8 @@ export default function AccountWorkspace() {
       <Dialog open={!!confirm} onOpenChange={(o) => { if (!o) setConfirm(null); }}>
         <DialogContent className="bg-zinc-950 border-zinc-800 text-white max-w-lg" data-testid="account-confirm-dialog">
           <DialogHeader>
-            <DialogTitle style={{ fontFamily: 'Outfit' }} className="flex items-center gap-2"><Send className="w-5 h-5 text-[#4d8bff]" /> Push to HubSpot?</DialogTitle>
-            <DialogDescription className="text-zinc-400">This writes directly to {lead.account}'s HubSpot record.</DialogDescription>
+            <DialogTitle style={{ fontFamily: 'Outfit' }} className="flex items-center gap-2"><Send className="w-5 h-5 text-[#4d8bff]" /> Push to {PROVIDER_NAMES[confirm?.provider] || pName}?</DialogTitle>
+            <DialogDescription className="text-zinc-400">This writes directly to {lead.account}'s {PROVIDER_NAMES[confirm?.provider] || pName} record.</DialogDescription>
           </DialogHeader>
           {confirm && <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 text-sm text-zinc-200 whitespace-pre-wrap" data-testid="account-confirm-preview">{KIND_META[confirm.kind]?.label}: {summarize(confirm)}</div>}
           <DialogFooter>
@@ -346,8 +357,8 @@ export default function AccountWorkspace() {
       <Dialog open={fieldConfirm} onOpenChange={setFieldConfirm}>
         <DialogContent className="bg-zinc-950 border-zinc-800 text-white max-w-lg" data-testid="account-field-confirm-dialog">
           <DialogHeader>
-            <DialogTitle style={{ fontFamily: 'Outfit' }} className="flex items-center gap-2"><Save className="w-5 h-5 text-[#4d8bff]" /> Update HubSpot record?</DialogTitle>
-            <DialogDescription className="text-zinc-400">Push these field values to {lead.account}'s HubSpot deal.</DialogDescription>
+            <DialogTitle style={{ fontFamily: 'Outfit' }} className="flex items-center gap-2"><Save className="w-5 h-5 text-[#4d8bff]" /> Update {pName} record?</DialogTitle>
+            <DialogDescription className="text-zinc-400">Push these field values to {lead.account}'s {pName} deal.</DialogDescription>
           </DialogHeader>
           <div className="rounded-xl border border-white/10 bg-white/[0.03] p-4 space-y-1.5 text-sm">
             <div className="flex gap-2"><span className="text-zinc-500 w-24">Deal name</span><span className="text-white">{fields.dealname || '—'}</span></div>

@@ -13,7 +13,7 @@ from utils.revenue import get_revenue_context
 from routes.stripe_integration import validate_stripe_key, fetch_stripe_data
 from routes.shopify_integration import validate_shopify_key, fetch_shopify_data
 from routes.hubspot_integration import validate_hubspot_key, fetch_hubspot_data
-from routes.salesforce_integration import validate_salesforce_key, fetch_salesforce_data
+from routes.salesforce_integration import validate_salesforce_key, fetch_salesforce_data, client_credentials_token
 from routes.dynamics_integration import validate_dynamics_credentials, fetch_dynamics_data
 from routes.sheets_integration import validate_sheets_credentials, fetch_sheets_data
 from routes.intercom_integration import validate_intercom_key, fetch_intercom_data
@@ -21,7 +21,8 @@ from routes.quickbooks_integration import validate_quickbooks_key, fetch_quickbo
 from routes.paypal_integration import validate_paypal_credentials, fetch_paypal_data
 from routes.amplitude_integration import validate_amplitude_creds, fetch_amplitude_data
 from routes.mixpanel_integration import validate_mixpanel_creds, fetch_mixpanel_data
-from routes.zoho_integration import validate_zoho_credentials, fetch_zoho_data
+from routes.zoho_integration import validate_zoho_credentials, fetch_zoho_data, exchange_token, normalize_dc
+from utils.crm_auth import crm_creds
 from routes.xero_integration import validate_xero_credentials, fetch_xero_data
 from routes.square_integration import validate_square_key, fetch_square_data
 from routes.paddle_integration import validate_paddle_key, fetch_paddle_data
@@ -112,12 +113,12 @@ PLATFORMS = {
         "data_types": ["opportunities", "accounts", "contacts", "pipeline"],
         "requires_key": True,
         "key_fields": [
-            {"name": "instance_url", "label": "Instance URL", "placeholder": "mycompany.my.salesforce.com", "type": "text"},
-            {"name": "api_key", "label": "Access Token", "placeholder": "Your Salesforce access token", "type": "password"},
+            {"name": "instance_url", "label": "My Domain URL", "placeholder": "mycompany.my.salesforce.com", "type": "text"},
+            {"name": "client_id", "label": "Consumer Key", "placeholder": "3MVG9...", "type": "text"},
+            {"name": "client_secret", "label": "Consumer Secret", "placeholder": "Consumer secret", "type": "password"},
         ],
-        "key_help_url": "https://help.salesforce.com/s/articleView?id=sf.connected_app_create_api_integration.htm",
-        "key_help_text": "Use a Connected App or the Salesforce CLI to get an access token. Note: tokens expire after ~2 hours.",
-        "token_expires": True,
+        "key_help_url": "https://help.salesforce.com/s/articleView?id=xcloud.connected_app_client_credentials_setup.htm",
+        "key_help_text": "Create a Connected App (or External Client App) with Client Credentials Flow enabled and a Run As user. InFlow renews access automatically — no expiring tokens.",
     },
     "dynamics": {
         "default_revenue_role": "pipeline",
@@ -249,7 +250,7 @@ PLATFORMS = {
         "default_revenue_role": "pipeline",
         "platform_id": "zoho",
         "name": "Zoho CRM",
-        "description": "Pull deals, pipeline, and contacts from your Zoho CRM.",
+        "description": "Two-way sync with Zoho CRM — import deals and push notes, tasks, calls and deals back.",
         "icon": "Users",
         "color": "#C82127",
         "category": "CRM",
@@ -258,11 +259,11 @@ PLATFORMS = {
         "key_fields": [
             {"name": "client_id", "label": "Client ID", "placeholder": "1000.XXXXX", "type": "text"},
             {"name": "client_secret", "label": "Client Secret", "placeholder": "Zoho app secret", "type": "password"},
-            {"name": "api_key", "label": "Refresh Token", "placeholder": "1000.xxx.xxx", "type": "password"},
-            {"name": "instance_url", "label": "Data Center", "placeholder": "com, eu, in, com.au, jp", "type": "text"},
+            {"name": "api_key", "label": "Grant Code or Refresh Token", "placeholder": "1000.xxx.xxx", "type": "password"},
+            {"name": "instance_url", "label": "Data Center", "placeholder": "com, eu, in, com.au, jp, ca, sa", "type": "text"},
         ],
         "key_help_url": "https://api-console.zoho.com/",
-        "key_help_text": "Create a Self-Client in Zoho API Console. Generate a grant token with scope ZohoCRM.modules.deals.READ ZohoCRM.users.READ and exchange it for a refresh_token.",
+        "key_help_text": "Create a Self-Client in the Zoho API Console, generate a grant code with scopes ZohoCRM.modules.ALL,ZohoCRM.settings.fields.READ,ZohoCRM.users.READ and paste it here within a few minutes — InFlow exchanges it for a permanent refresh token.",
     },
     "xero": {
         "default_revenue_role": "revenue",
@@ -812,22 +813,27 @@ async def _connect_hubspot(body: ConnectRequest, user_id: str, now: str):
 
 
 async def _connect_salesforce(body: ConnectRequest, user_id: str, now: str):
-    if not body.api_key:
-        raise HTTPException(status_code=400, detail="Salesforce access token is required")
-    if not body.instance_url:
-        raise HTTPException(status_code=400, detail="Instance URL is required")
-    validation = await validate_salesforce_key(body.api_key, body.instance_url)
+    if not body.instance_url or not body.client_id or not body.client_secret:
+        raise HTTPException(status_code=400, detail="My Domain URL, Consumer Key and Consumer Secret are required")
+    try:
+        tok = await client_credentials_token(body.instance_url, body.client_id, body.client_secret)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    validation = await validate_salesforce_key(tok["access_token"], tok["instance_url"])
     if not validation["valid"]:
         raise HTTPException(status_code=400, detail=validation.get("error", "Invalid Salesforce credentials"))
-    data = await fetch_salesforce_data(body.api_key, validation["instance_url"], user_id)
+    data = await fetch_salesforce_data(tok["access_token"], validation["instance_url"], user_id)
     connection = {
         "connection_id": f"conn_{uuid.uuid4().hex[:12]}",
-        "user_id": user_id, "platform": "salesforce",
+        "user_id": user_id, "platform": "salesforce", "auth_type": "client_credentials",
         "connected_at": now, "last_synced": now,
         "records_synced": data["total_records"], "sync_status": "synced",
         "account_name": validation.get("account_name", "Salesforce Org"),
-        "api_key_last4": body.api_key[-4:],
-        "api_key_encrypted": encrypt(body.api_key),
+        "api_key_last4": body.client_id.strip()[-4:],
+        "api_key_encrypted": encrypt(tok["access_token"]),
+        "client_id": body.client_id.strip(),
+        "client_secret_encrypted": encrypt(body.client_secret.strip()),
+        "login_domain": body.instance_url.strip(),
         "instance_url": validation["instance_url"],
         "stats": data["stats"], "is_live": True,
     }
@@ -929,22 +935,29 @@ async def _connect_mixpanel(body: ConnectRequest, user_id: str, now: str):
 async def _connect_zoho(body: ConnectRequest, user_id: str, now: str):
     if not body.api_key or not body.client_id or not body.client_secret:
         raise HTTPException(status_code=400, detail="Zoho Refresh Token, Client ID, and Client Secret are required")
-    dc = (body.instance_url or "com").strip().lower() or "com"
-    validation = await validate_zoho_credentials(body.api_key, body.client_id, body.client_secret, dc)
+    dc = normalize_dc(body.instance_url)
+    try:
+        tok = await exchange_token(body.api_key, body.client_id, body.client_secret, dc)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    validation = await validate_zoho_credentials(tok["access_token"], tok["api_domain"])
     if not validation["valid"]:
         raise HTTPException(status_code=400, detail=validation.get("error", "Invalid Zoho credentials"))
-    data = await fetch_zoho_data(body.api_key, body.client_id, body.client_secret, dc, user_id)
+    try:
+        data = await fetch_zoho_data(tok["access_token"], tok["api_domain"], user_id)
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
     connection = {
         "connection_id": f"conn_{uuid.uuid4().hex[:12]}",
         "user_id": user_id, "platform": "zoho",
         "connected_at": now, "last_synced": now,
         "records_synced": data["total_records"], "sync_status": "synced",
         "account_name": validation.get("account_name", "Zoho CRM"),
-        "api_key_last4": body.api_key[-4:],
-        "api_key_encrypted": encrypt(body.api_key),
-        "client_id": body.client_id,
-        "client_secret_encrypted": encrypt(body.client_secret),
-        "instance_url": dc,
+        "api_key_last4": tok["refresh_token"][-4:],
+        "api_key_encrypted": encrypt(tok["refresh_token"]),
+        "client_id": body.client_id.strip(),
+        "client_secret_encrypted": encrypt(body.client_secret.strip()),
+        "instance_url": dc, "api_domain": tok["api_domain"],
         "stats": data["stats"], "is_live": True,
     }
     return data, connection, validation.get("account_name")
@@ -1830,7 +1843,10 @@ async def sync_platform(platform: str, current_user: User = Depends(require_owne
         elif platform == "hubspot":
             data = await fetch_hubspot_data(api_key, current_user.user_id)
         elif platform == "salesforce":
-            data = await fetch_salesforce_data(api_key, connection.get("instance_url", ""), current_user.user_id)
+            creds = await crm_creds(connection)
+            if creds.get("error"):
+                raise ValueError(creds["error"])
+            data = await fetch_salesforce_data(creds["token"], creds["instance_url"], current_user.user_id)
         elif platform == "quickbooks":
             data = await fetch_quickbooks_data(api_key, connection.get("company_id", ""), current_user.user_id, connection.get("sandbox", False))
         elif platform == "paypal":
@@ -1855,14 +1871,10 @@ async def sync_platform(platform: str, current_user: User = Depends(require_owne
                 current_user.user_id,
             )
         elif platform == "zoho":
-            client_secret = decrypt(connection.get("client_secret_encrypted", ""))
-            data = await fetch_zoho_data(
-                api_key,  # refresh_token
-                connection.get("client_id", ""),
-                client_secret,
-                connection.get("instance_url", "com"),
-                current_user.user_id,
-            )
+            creds = await crm_creds(connection)
+            if creds.get("error"):
+                raise ValueError(creds["error"])
+            data = await fetch_zoho_data(creds["token"], creds["instance_url"], current_user.user_id)
         elif platform == "xero":
             client_secret = decrypt(connection.get("client_secret_encrypted", ""))
             data = await fetch_xero_data(

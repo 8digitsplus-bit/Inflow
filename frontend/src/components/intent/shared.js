@@ -55,7 +55,7 @@ export const SOURCE_LABEL = {
   snippet: 'Website', api: 'Events API', sample: 'Sample', test: 'Test', storefront: 'Storefront',
   posthog: 'PostHog', mixpanel: 'Mixpanel', amplitude: 'Amplitude', ga4: 'GA4',
 };
-export const DEST_LABEL = { hubspot: 'HubSpot', salesforce: 'Salesforce', pipedrive: 'Pipedrive', slack: 'Slack' };
+export const DEST_LABEL = { hubspot: 'HubSpot', salesforce: 'Salesforce', pipedrive: 'Pipedrive', zoho: 'Zoho CRM', slack: 'Slack' };
 
 export function Pill({ className = '', children, ...rest }) {
   return <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-medium border ${className}`} {...rest}>{children}</span>;

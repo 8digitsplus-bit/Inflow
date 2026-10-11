@@ -42,7 +42,7 @@ const StatCard = ({ title, value, sub, trend, Icon, testid }) => (
   </div>
 );
 
-const PROVIDER_NAMES = { hubspot: 'HubSpot', salesforce: 'Salesforce', pipedrive: 'Pipedrive' };
+const PROVIDER_NAMES = { hubspot: 'HubSpot', salesforce: 'Salesforce', pipedrive: 'Pipedrive', zoho: 'Zoho CRM' };
 
 const KINDS = [
   { key: 'note', label: 'Add note', icon: StickyNote, needsTarget: true },

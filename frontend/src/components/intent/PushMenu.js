@@ -6,7 +6,7 @@ import {
 import { toast } from 'sonner';
 import { api, DEST_LABEL } from './shared';
 
-const DESTS = ['hubspot', 'salesforce', 'pipedrive', 'slack'];
+const DESTS = ['hubspot', 'salesforce', 'pipedrive', 'zoho', 'slack'];
 
 export const PushMenu = ({ leadId, kind, destinations = {}, disabled, label = 'Push to…', onDone, testid }) => {
   const [busy, setBusy] = useState('');

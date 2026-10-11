@@ -1,9 +1,8 @@
 """Salesforce REST write-back client (API v59.0) for the Action Workspace.
 
-Uses the access token + instance_url the user already stored on connect. All
-functions return a structured dict ({"ok": bool, ...}) instead of raising, so
-the route layer can surface clean errors. Salesforce access tokens are short
-lived (~2h) so a 401 is reported as a "reconnect Salesforce" message.
+creds = {"token", "instance_url"} from utils.crm_auth (client-credentials tokens are
+minted fresh). All functions return a structured dict ({"ok": bool, ...}) instead
+of raising, so the route layer can surface clean errors.
 
 Mapping to the workspace action kinds:
   note  -> ContentNote + ContentDocumentLink (linked to Opportunity/Contact)
@@ -35,7 +34,7 @@ def _headers(token: str) -> dict:
 def _err(status: int, msg: str = "") -> dict:
     if status == 401:
         return {"ok": False, "code": 401,
-                "error": "Salesforce authentication failed or the access token expired. Reconnect Salesforce with a fresh access token."}
+                "error": "Salesforce authentication failed. Check the Connected App's Consumer Key/Secret and Run As user, then reconnect."}
     if status == 403:
         return {"ok": False, "code": 403,
                 "error": "Your Salesforce user lacks permission for this action. Check object/field-level security."}
@@ -58,7 +57,7 @@ async def _query(creds: dict, soql: str):
     token, inst = creds.get("token"), _instance(creds.get("instance_url"))
     if not token or not inst:
         return {"ok": False, "code": 401, "records": [],
-                "error": "Salesforce isn't authenticated. Reconnect Salesforce."}
+                "error": creds.get("error") or "Salesforce isn't authenticated. Reconnect Salesforce."}
     try:
         async with httpx.AsyncClient(timeout=20.0) as client:
             r = await client.get(f"{inst}/services/data/{SF_VERSION}/query",
@@ -76,7 +75,7 @@ async def _create(creds: dict, obj: str, body: dict) -> dict:
     token, inst = creds.get("token"), _instance(creds.get("instance_url"))
     if not token or not inst:
         return {"ok": False, "code": 401,
-                "error": "Salesforce isn't authenticated. Reconnect Salesforce with a valid access token."}
+                "error": creds.get("error") or "Salesforce isn't authenticated. Reconnect Salesforce."}
     try:
         async with httpx.AsyncClient(timeout=30.0) as client:
             r = await client.post(f"{inst}/services/data/{SF_VERSION}/sobjects/{obj}/",
@@ -86,6 +85,47 @@ async def _create(creds: dict, obj: str, body: dict) -> dict:
     if r.status_code in (200, 201):
         return {"ok": True, "id": (r.json() or {}).get("id")}
     return _err(r.status_code, _parse_error(r))
+
+
+async def _patch(creds: dict, obj: str, rid: str, body: dict) -> dict:
+    token, inst = creds.get("token"), _instance(creds.get("instance_url"))
+    if not token or not inst:
+        return {"ok": False, "code": 401, "error": creds.get("error") or "Salesforce isn't authenticated. Reconnect Salesforce."}
+    try:
+        async with httpx.AsyncClient(timeout=30.0) as client:
+            r = await client.patch(f"{inst}/services/data/{SF_VERSION}/sobjects/{obj}/{rid}", headers=_headers(token), json=body)
+    except Exception as e:
+        return {"ok": False, "error": f"Could not reach Salesforce: {e}"}
+    if r.status_code in (200, 204):
+        return {"ok": True, "id": rid}
+    return _err(r.status_code, _parse_error(r))
+
+
+def _sfid(v) -> str:
+    return "".join(ch for ch in str(v or "") if ch.isalnum())[:18]
+
+
+async def get_deal(creds: dict, deal_id: str) -> dict:
+    q = await _query(creds, f"SELECT Id, Name, Amount, StageName FROM Opportunity WHERE Id = '{_sfid(deal_id)}' LIMIT 1")
+    if not q.get("ok"):
+        return {**q, "fields": {}}
+    rec = (q.get("records") or [{}])[0]
+    return {"ok": True, "fields": {"dealname": rec.get("Name") or "", "amount": str(rec.get("Amount") or ""),
+                                   "dealstage": rec.get("StageName") or ""}}
+
+
+async def update_deal(creds: dict, deal_id: str, fields: dict) -> dict:
+    body = {}
+    if fields.get("dealname"):
+        body["Name"] = fields["dealname"]
+    if fields.get("amount") not in (None, ""):
+        try:
+            body["Amount"] = float(fields["amount"])
+        except (ValueError, TypeError):
+            pass
+    if fields.get("dealstage"):
+        body["StageName"] = fields["dealstage"]
+    return await _patch(creds, "Opportunity", _sfid(deal_id), body)
 
 
 # ------------------------------------------------------------------ reads (pickers)
