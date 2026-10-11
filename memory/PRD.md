@@ -13,6 +13,14 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
+### Zoho CRM via Scalekit — replaces direct setup (Oct 2026) — verified iteration_70 (backend 19/19, frontend 100%)
+- Direct Zoho paste-credentials setup REMOVED (PLATFORMS entry, `_connect_zoho`, sync branch in `business.py`; `zoho_integration.py` now only `map_deals`/`STAGE_MAP`/`DEAL_FIELDS`).
+- `scalekit_integration.py`: `CONNECTORS` = quickbooks, stripe, zoho; connection name env `SCALEKIT_CONNECTION_ZOHO=zohocrm`; `_zoho_deals` pages `zohocrm_v8_deals_list` (200/page, 10 pages) → deals (external_id = Zoho id). New `POST /api/integrations/scalekit/{connector}/disconnect`. `RETIRED_DIRECT={"zoho"}`: starting Scalekit Zoho deletes any legacy direct row + its native synced deals. `_execute` now raises readable "Scalekit <status>: <message>".
+- Two-way write-back kept: `zoho_write.py` now calls Scalekit tools (deals_list, contacts_list, module_fields_get, deal_get, deal_update, note_create, record_create for Tasks/Calls, deal_create). `utils/crm_auth.crm_creds` returns `{scalekit_account_id}` for zoho.
+- Frontend `ConnectBusiness.js`: Zoho card in One-Click OAuth (Two-way badge), Disconnect button on Scalekit cards, Zoho setup guide removed.
+- PENDING USER: create the `zohocrm` connection in Scalekit dashboard (AgentKit → Connections → Zoho CRM, scopes `ZohoCRM.modules.ALL,ZohoCRM.settings.fields.READ,ZohoCRM.users.READ`), then click Connect. testpro currently has a DEMO Scalekit Zoho row (fake `ca_100000000000000001`) → graceful errors (MOCKED).
+
+
 ### QuickBooks via Scalekit — LIVE (Oct 2026)
 - Fixed import: QuickBooks query API requires paging; `_quickbooks_invoices` in `routes/scalekit_integration.py` now pages `quickbooks_invoices_list` with `start_position`/`max_results` (1000/page, max 10 pages). testpro synced 34 real sandbox invoices ($12,024.14). The 6 SAMPLE QuickBooks deals were removed (backup: `/app/memory/backup_testpro_sample_quickbooks_deals.json`).
 - Scalekit status (Dev env): Stripe ACTIVE (synced), QuickBooks ACTIVE (synced), Salesforce PENDING_AUTH (needs own Connected App creds). None configured in a Scalekit Production environment yet.
