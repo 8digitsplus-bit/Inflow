@@ -1,0 +1,36 @@
+{
+  "summary": "Iteration 69 — Zoho CRM (manual, two-way) + Salesforce (auto-renewing OAuth client-credentials) rework. Backend: new pytest regression test_zoho_salesforce_iter69.py (24 cases, 24 PASS) covering /business/platforms shape (salesforce key_fields = [instance_url, client_id, client_secret] + no token_expires; zoho key_fields = [client_id, client_secret, api_key, instance_url] + description mentions two-way), /business/connect validation on a freshly-registered throwaway user (missing fields -> 400, login.salesforce.com -> 400 'My Domain', fake SF Consumer Key -> 400 'didn't recognise', fake Zoho creds -> 400 Zoho-friendly), /integrations/scalekit/status connectors == {quickbooks, stripe} (salesforce removed), /integrations/scalekit/salesforce/start -> 4xx unsupported, /workspace/status providers include zoho/salesforce/pipedrive/hubspot, /workspace/targets?provider=zoho -> 200 w/ error string + empty lists (demo), /workspace/actions zoho task draft+execute -> 422 readable + persisted status 'failed' + delete, /workspace/account/{lead_id} default hubspot (REAL token, deals returned, no error), ?provider=zoho connected=true + readable error, link {provider:'zoho', deal_id:'5725767000000123001'} 200 and persisted on GET, fields {provider:'zoho'} no-change -> 400, fields {provider:'zoho', amount:'100'} -> 422 readable, legacy {hubspot_deal_id:x} still works for hubspot, unknown provider -> 400; /outreach/board integrations.zoho == true, /outreach/push-crm {provider:'zoho'} -> 422 readable, {provider:'foo'} -> 400; /intent/status destinations.zoho == true, /intent/profiles/{lead}/push {destination:'zoho'} -> 422 readable, /intent/routing-rules POST with actions.crm='zoho' persisted & deleted, /intent/aes POST with crm_owner_ids.zoho='zoho_owner_12345' persisted & deleted; /business/sync/zoho -> 400 friendly, /business/sync/salesforce -> 400 friendly. Frontend (real email+password login on preview URL): /connect-business shows Scalekit section with ONLY QuickBooks + Stripe cards (scalekit-card-salesforce=0), platform-card-salesforce=1 + connected-badge-salesforce=1, platform-card-zoho=1 + connected-badge-zoho=1 (visible as 'Live' in the Available Platforms list). /workspace workspace-provider-select rendered. /discover profile drawer drawer-push-assignment dropdown lists ['HubSpot','Salesforce','Pipedrive','Zoho CRM','Slacknot connected'] and testid 'push-assignment-zoho' is present. Speed-to-Lead New Rule dialog rule-action-crm present. AE dialog ae-owner-zoho field present. /workspace/account/{lead_id} account-provider-select present. /upsell/outreach push-zoho-btn present.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_zoho_salesforce_iter69.py",
+    "/app/test_reports/pytest/iter69.xml"
+  ],
+  "action_items": [
+    "Regression: /app/backend/tests/test_workspace.py is STALE. (a) It uses GET /api/intent/leads which no longer exists (route is /api/intent/profiles) — causes a_lead_id fixture to 404 and 4 account-room tests to ERROR. (b) It assumes hubspot is a 'demo token' — but testpro's HubSpot is REAL now, so test_targets_demo_token fails (no error string, real deals returned), test_targets_unknown_provider expects salesforce=400 but salesforce is now a supported write provider (200), and test_deal_draft_execute_graceful_fail_delete expects 422 but hubspot executes 200 and creates a REAL hubspot deal in testpro's org. The last one is actually dangerous — running this suite will keep creating real HubSpot deals. Main agent should (i) replace /intent/leads with /intent/profiles in the fixture, (ii) replace hubspot assertions with a demo provider (pipedrive or salesforce w/ demo token) for the 'graceful fail' path, and (iii) explicitly SKIP hubspot execute to avoid real-deal pollution.",
+    "No functional bugs in the Zoho/Salesforce rework itself — all 24 iter69 cases pass."
+  ],
+  "critical_code_review_comments": [
+    "backend/routes/business.py _connect_salesforce correctly maps ValueError from client_credentials_token to a 400 with the readable friendly message ('didn't recognise the Consumer Key' / 'Use your Salesforce My Domain URL'). Good.",
+    "_connect_zoho correctly maps grant-code/refresh-token exchange errors to 400 ('didn't recognise the Client ID / Secret in this data center'). Good.",
+    "scalekit CONNECTORS reduced to ['quickbooks','stripe'] and the GET /integrations/scalekit/salesforce/start route returns 4xx as expected — Salesforce is cleanly off the Scalekit surface.",
+    "/workspace/account/{lead_id} shape matches spec exactly (lead, provider, providers[], linked_deal_id, crm{provider,name,connected,error,deal_fields,deals,contacts}, actions, timeline). _id excluded from lead. Legacy {hubspot_deal_id:x} on /link still works.",
+    "testpro's demo HubSpot was presumed demo in the previous backend test suite but is actually REAL — the existing test_workspace.py creates real HubSpot deals when run. This is a latent risk the main agent should fix in the regression file (not introduced by this iteration)."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_zoho_salesforce_iter69.py"
+  ],
+  "success_rate": {"backend": "100% (24/24 iter69 cases)", "frontend": "100% (all required testids present)"},
+  "test_credentials": "testpro@test.com / password (owner, enterprise). Fresh throwaway user created for connect validation (TEST_iter69_*@test.com) — not cleaned, no CRM connections attached to it.",
+  "seed_data_creation": "Test created and then deleted: 1 routing rule (TEST_iter69_zoho_rule), 1 AE (TEST_iter69 AE), 1 workspace action (TEST_iter69_zoho task). The first lead on /intent/profiles was linked to a Zoho deal (5725767000000123001) via /workspace/account/{lead_id}/link and left linked — then overwritten to 'TEST_legacy_hs_999' by the legacy-body test. Per the agent-to-agent note the main agent asked us NOT to disconnect testpro's demo SF/Zoho connections, so these harmless test links on one lead remain. One fresh user TEST_iter69_<hex>@test.com left in the users collection with no CRM connections.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Iteration-69 regression file is /app/backend/tests/test_zoho_salesforce_iter69.py (24 tests, all pass against the preview URL). Pre-existing /app/backend/tests/test_workspace.py is BROKEN as described in action_items — do NOT run it until main agent fixes the stale /intent/leads endpoint + hubspot-is-demo assumptions, otherwise it will create REAL HubSpot deals in testpro's org. For frontend: the Integrations page lives at /connect-business (NOT /connect); auth page starts in sign-up mode so click [data-testid=auth-toggle-mode] first; Termly cookie banner needs 'Accept' click. Zoho/SF are already connected on testpro — the connect modal is only reachable by disconnecting first, which the review explicitly forbids. The connected cards and shadcn-select-rendered options are the right thing to validate. shadcn Select options sometimes don't expose role=option, so prefer clicking by text or verifying the trigger testid presence instead of enumerating options."
+}

@@ -49,3 +49,7 @@
 - Public hosted quote page example: /rc/rc_HcZRBxI3prOr5NtLARz2iw (Nakatomi Trading). Active Stripe promo on sf_seed_enterprise: RCDF0E1A.
 - testpro's HubSpot token is REAL (pushes create real notes/tasks); Salesforce/Pipedrive are demo tokens (422 by design); Slack not configured.
 - Scalekit (Dev env) for testpro: QuickBooks ACTIVE + live (34 sandbox invoices synced via POST /api/integrations/scalekit/quickbooks/sync), Stripe ACTIVE, Salesforce PENDING_AUTH.
+
+## Direct CRM connections (Oct 2026) — Zoho CRM 2-way + Salesforce client-credentials
+- testpro now has a **Demo Zoho CRM** connection (fake client id/secret/refresh token, data center com) and the **Demo Salesforce** connection was converted to client-credentials (fake Consumer Key/Secret, My Domain demo.my.salesforce.com). Both are DEMO → every Zoho/Salesforce read/write returns a clear 400/422 error by design until the user supplies real credentials.
+- Scalekit now lists only QuickBooks + Stripe.

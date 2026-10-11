@@ -1,5 +1,5 @@
 """
-Scalekit AgentKit connectors (QuickBooks, Salesforce, Intercom) via REST — no SDK.
+Scalekit AgentKit connectors (QuickBooks, Stripe, Zoho CRM) via REST — no SDK.
 Managed OAuth + auto-refresh live in Scalekit; we store only the org->connected_account
 mapping and map imported records into our deal model. Dormant until env vars are set.
 """
@@ -18,6 +18,7 @@ from dependencies import require_owner
 from models import User
 from utils.deal_sync import apply_sync
 from utils.revenue import _DEFAULT_ROLE
+from routes.zoho_integration import DEAL_FIELDS as ZOHO_DEAL_FIELDS, map_deals as map_zoho_deals
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -28,19 +29,27 @@ SK_SECRET = os.environ.get("SCALEKIT_CLIENT_SECRET")
 APP_BASE_URL = os.environ.get("APP_BASE_URL", "").rstrip("/")
 
 # Salesforce is connected directly (client-credentials) instead — see routes/salesforce_integration.py.
-CONNECTORS = {"quickbooks", "stripe"}
+CONNECTORS = {"quickbooks", "stripe", "zoho"}
+LABELS = {"quickbooks": "QuickBooks", "stripe": "Stripe", "zoho": "Zoho CRM"}
+# Platforms whose old direct (paste-credentials) setup was retired in favour of Scalekit.
+RETIRED_DIRECT = {"zoho"}
 # Dashboard connection names can differ from the bare provider key (e.g. "quickbooks-connect").
 # Override per-connector via env if your Scalekit dashboard names them differently.
 _CONN_NAMES = {
     "quickbooks": os.environ.get("SCALEKIT_CONNECTION_QUICKBOOKS", "quickbooks"),
     "salesforce": os.environ.get("SCALEKIT_CONNECTION_SALESFORCE", "salesforce"),
     "stripe": os.environ.get("SCALEKIT_CONNECTION_STRIPE", "stripe"),
+    "zoho": os.environ.get("SCALEKIT_CONNECTION_ZOHO", "zohocrm"),
 }
 _token_cache = {"tok": None, "exp": 0.0}
 
 
 def _conn_name(connector: str) -> str:
     return _CONN_NAMES.get(connector, connector)
+
+
+def _label(connector: str) -> str:
+    return LABELS.get(connector, connector.title())
 
 
 def _configured() -> bool:
@@ -99,7 +108,12 @@ def _account_from(resp: httpx.Response) -> dict:
 async def _execute(account_id: str, tool_name: str, params: dict) -> dict:
     r = await _sk_post("/api/v1/execute_tool",
                        {"connected_account_id": account_id, "tool_name": tool_name, "params": params})
-    r.raise_for_status()
+    if r.status_code >= 400:
+        try:
+            msg = r.json().get("message") or r.text[:200]
+        except Exception:
+            msg = r.text[:200]
+        raise RuntimeError(f"Scalekit {r.status_code}: {msg}")
     return r.json().get("data", r.json())
 
 
@@ -177,25 +191,28 @@ async def _quickbooks_invoices(account_id: str) -> dict:
     return {"QueryResponse": {"Invoice": invoices}}
 
 
+async def _zoho_deals(account_id: str) -> list:
+    """Page through Zoho Deals (200/page, max 10 pages) via the Scalekit tool."""
+    records = []
+    for page in range(1, 11):
+        data = await _execute(account_id, "zohocrm_v8_deals_list", {
+            "fields": ZOHO_DEAL_FIELDS, "per_page": 200, "page": page,
+            "sort_by": "Modified_Time", "sort_order": "desc"})
+        data = data if isinstance(data, dict) else {}
+        records.extend(data.get("data") or [])
+        if not (data.get("info") or {}).get("more_records"):
+            break
+    return records
+
+
 async def _import_and_store(connector: str, account_id: str, user: User) -> int:
     if connector == "quickbooks":
-        data = await _quickbooks_invoices(account_id)
+        deals = _map_records(connector, await _quickbooks_invoices(account_id), user.user_id)
+    elif connector == "zoho":
+        deals = map_zoho_deals(await _zoho_deals(account_id), user.user_id)
     else:
-        tool = {"salesforce": "salesforce_opportunities_list", "stripe": "stripe_list_charges_dahlia"}[connector]
-        data = await _execute(account_id, tool, {})
-    deals = _map_records(connector, data, user.user_id)
-    try:
-        _sample = str(data)[:900]
-        _first = deals[0] if deals else None
-        logger.info(f"[scalekit-sync] connector={connector} tool={tool} "
-                    f"raw_type={type(data).__name__} mapped_deals={len(deals)} "
-                    f"raw_sample={_sample}")
-        if _first:
-            logger.info(f"[scalekit-sync] first_mapped_deal name={_first.get('name')!r} "
-                        f"company={_first.get('company')!r} value={_first.get('value')} "
-                        f"stage={_first.get('stage')} close={_first.get('expected_close_date')}")
-    except Exception:
-        pass
+        deals = _map_records(connector, await _execute(account_id, "stripe_list_charges_dahlia", {}), user.user_id)
+    logger.info(f"[scalekit-sync] connector={connector} mapped_deals={len(deals)}")
     # Reconcile (provider-scoped delete + preserve locally-edited deals).
     res = await apply_sync(user.org_id, connector, deals, "scalekit")
     await db.business_connections.update_one(
@@ -238,7 +255,7 @@ async def _store_and_import(connector: str, org_id: str) -> dict:
             "org_id": org_id, "user_id": (owner or {}).get("user_id"),
             "platform": connector, "provider": "scalekit",
             "scalekit_account_id": account_id, "status": status or "ACTIVE",
-            "account_name": f"{connector.title()} (via Scalekit)",
+            "account_name": f"{_label(connector)} (via Scalekit)",
             "revenue_role": _DEFAULT_ROLE.get(connector, "revenue"),
             "connected_at": datetime.now(timezone.utc).isoformat(), "is_live": True,
         }}, upsert=True)
@@ -271,11 +288,16 @@ async def scalekit_start(connector: str, user: User = Depends(require_owner)):
         raise HTTPException(status_code=404, detail="Unsupported connector")
     # Collision guard: block if this platform is already connected directly (native) — else
     # the two systems share the same `source` and their syncs would clobber each other.
-    clash = await db.business_connections.find_one(
-        {"org_id": user.org_id, "platform": connector, "provider": {"$ne": "scalekit"}})
-    if clash:
+    legacy = {"org_id": user.org_id, "platform": connector, "provider": {"$ne": "scalekit"}}
+    clash = await db.business_connections.find_one(legacy)
+    if clash and connector in RETIRED_DIRECT:
+        # The old direct setup is retired: replace it (and its synced deals) with the Scalekit one.
+        await db.business_connections.delete_many(legacy)
+        await db.deals.delete_many({"org_id": user.org_id, "source": connector, "synced": True,
+                                    "provider": {"$ne": "scalekit"}})
+    elif clash:
         raise HTTPException(status_code=400, detail=(
-            f"{connector.title()} is already connected directly. Disconnect it first to connect it via Scalekit."))
+            f"{_label(connector)} is already connected directly. Disconnect it first to connect it via Scalekit."))
     conn_name = _conn_name(connector)
     state = secrets.token_urlsafe(24)
     await db.scalekit_oauth_states.insert_one({
@@ -288,7 +310,7 @@ async def scalekit_start(connector: str, user: User = Depends(require_owner)):
         raise HTTPException(status_code=400, detail=(
             f"No '{conn_name}' connection exists in your Scalekit environment yet. "
             f"In the Scalekit dashboard, open AgentKit → Connections → Create Connection, "
-            f"add {connector.title()}, then try again."))
+            f"add {_label(connector)} (name it '{conn_name}'), then try again."))
     resp = await _sk_post("/api/v1/connected_accounts/magic_link", {
         "connector": conn_name,
         "identifier": user.org_id,
@@ -328,7 +350,7 @@ async def scalekit_sync(connector: str, user: User = Depends(require_owner)):
         n = await _import_and_store(connector, conn["scalekit_account_id"], user)
     except Exception as e:
         raise HTTPException(status_code=400, detail=f"Sync failed: {str(e)[:200]}")
-    return {"ok": True, "records_synced": n, "message": f"✅ Synced {n} records from {connector.title()} (via Scalekit)."}
+    return {"ok": True, "records_synced": n, "message": f"✅ Synced {n} records from {_label(connector)} (via Scalekit)."}
 
 
 @router.post("/integrations/scalekit/{connector}/finalize")
@@ -341,7 +363,21 @@ async def scalekit_finalize(connector: str, user: User = Depends(require_owner))
     result = await _store_and_import(connector, user.org_id)
     if not result["connected"]:
         raise HTTPException(status_code=400, detail=(
-            f"{connector.title()} isn't authorized yet (status: {result['status']}). "
+            f"{_label(connector)} isn't authorized yet (status: {result['status']}). "
             f"Finish the sign-in in the Scalekit window, then try again."))
     return {"ok": True, "records_synced": result["records"],
-            "message": f"✅ Connected {connector.title()} — synced {result['records']} records (via Scalekit)."}
+            "message": f"✅ Connected {_label(connector)} — synced {result['records']} records (via Scalekit)."}
+
+
+@router.post("/integrations/scalekit/{connector}/disconnect")
+async def scalekit_disconnect(connector: str, user: User = Depends(require_owner)):
+    if connector not in CONNECTORS:
+        raise HTTPException(status_code=404, detail="Unsupported connector")
+    res = await db.business_connections.delete_one(
+        {"org_id": user.org_id, "platform": connector, "provider": "scalekit"})
+    if not res.deleted_count:
+        raise HTTPException(status_code=404, detail=f"{_label(connector)} isn't connected via Scalekit")
+    removed = await db.deals.delete_many(
+        {"org_id": user.org_id, "source": connector, "synced": True, "provider": "scalekit"})
+    return {"ok": True, "records_removed": removed.deleted_count,
+            "message": f"{_label(connector)} disconnected — removed {removed.deleted_count} synced records."}

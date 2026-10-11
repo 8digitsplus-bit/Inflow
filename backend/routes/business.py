@@ -21,7 +21,6 @@ from routes.quickbooks_integration import validate_quickbooks_key, fetch_quickbo
 from routes.paypal_integration import validate_paypal_credentials, fetch_paypal_data
 from routes.amplitude_integration import validate_amplitude_creds, fetch_amplitude_data
 from routes.mixpanel_integration import validate_mixpanel_creds, fetch_mixpanel_data
-from routes.zoho_integration import validate_zoho_credentials, fetch_zoho_data, exchange_token, normalize_dc
 from utils.crm_auth import crm_creds
 from routes.xero_integration import validate_xero_credentials, fetch_xero_data
 from routes.square_integration import validate_square_key, fetch_square_data
@@ -245,25 +244,6 @@ PLATFORMS = {
         ],
         "key_help_url": "https://mixpanel.com/report",
         "key_help_text": "Find your Project ID in Project Settings > Overview. Generate a Service Account (or legacy API Secret) in Project Settings > Service Accounts.",
-    },
-    "zoho": {
-        "default_revenue_role": "pipeline",
-        "platform_id": "zoho",
-        "name": "Zoho CRM",
-        "description": "Two-way sync with Zoho CRM — import deals and push notes, tasks, calls and deals back.",
-        "icon": "Users",
-        "color": "#C82127",
-        "category": "CRM",
-        "data_types": ["deals", "contacts", "pipeline"],
-        "requires_key": True,
-        "key_fields": [
-            {"name": "client_id", "label": "Client ID", "placeholder": "1000.XXXXX", "type": "text"},
-            {"name": "client_secret", "label": "Client Secret", "placeholder": "Zoho app secret", "type": "password"},
-            {"name": "api_key", "label": "Grant Code or Refresh Token", "placeholder": "1000.xxx.xxx", "type": "password"},
-            {"name": "instance_url", "label": "Data Center", "placeholder": "com, eu, in, com.au, jp, ca, sa", "type": "text"},
-        ],
-        "key_help_url": "https://api-console.zoho.com/",
-        "key_help_text": "Create a Self-Client in the Zoho API Console, generate a grant code with scopes ZohoCRM.modules.ALL,ZohoCRM.settings.fields.READ,ZohoCRM.users.READ and paste it here within a few minutes — InFlow exchanges it for a permanent refresh token.",
     },
     "xero": {
         "default_revenue_role": "revenue",
@@ -932,37 +912,6 @@ async def _connect_mixpanel(body: ConnectRequest, user_id: str, now: str):
     return data, connection, validation.get("account_name")
 
 
-async def _connect_zoho(body: ConnectRequest, user_id: str, now: str):
-    if not body.api_key or not body.client_id or not body.client_secret:
-        raise HTTPException(status_code=400, detail="Zoho Refresh Token, Client ID, and Client Secret are required")
-    dc = normalize_dc(body.instance_url)
-    try:
-        tok = await exchange_token(body.api_key, body.client_id, body.client_secret, dc)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    validation = await validate_zoho_credentials(tok["access_token"], tok["api_domain"])
-    if not validation["valid"]:
-        raise HTTPException(status_code=400, detail=validation.get("error", "Invalid Zoho credentials"))
-    try:
-        data = await fetch_zoho_data(tok["access_token"], tok["api_domain"], user_id)
-    except ValueError as e:
-        raise HTTPException(status_code=400, detail=str(e))
-    connection = {
-        "connection_id": f"conn_{uuid.uuid4().hex[:12]}",
-        "user_id": user_id, "platform": "zoho",
-        "connected_at": now, "last_synced": now,
-        "records_synced": data["total_records"], "sync_status": "synced",
-        "account_name": validation.get("account_name", "Zoho CRM"),
-        "api_key_last4": tok["refresh_token"][-4:],
-        "api_key_encrypted": encrypt(tok["refresh_token"]),
-        "client_id": body.client_id.strip(),
-        "client_secret_encrypted": encrypt(body.client_secret.strip()),
-        "instance_url": dc, "api_domain": tok["api_domain"],
-        "stats": data["stats"], "is_live": True,
-    }
-    return data, connection, validation.get("account_name")
-
-
 async def _connect_xero(body: ConnectRequest, user_id: str, now: str):
     if not body.api_key or not body.client_id or not body.client_secret or not body.company_id:
         raise HTTPException(status_code=400, detail="Xero Refresh Token, Client ID, Client Secret, and Tenant ID are required")
@@ -1599,7 +1548,6 @@ CONNECT_HANDLERS = {
     "paypal": _connect_paypal,
     "amplitude": _connect_amplitude,
     "mixpanel": _connect_mixpanel,
-    "zoho": _connect_zoho,
     "xero": _connect_xero,
     "square": _connect_square,
     "paddle": _connect_paddle,
@@ -1870,11 +1818,6 @@ async def sync_platform(platform: str, current_user: User = Depends(require_owne
                 connection.get("instance_url", "us"),
                 current_user.user_id,
             )
-        elif platform == "zoho":
-            creds = await crm_creds(connection)
-            if creds.get("error"):
-                raise ValueError(creds["error"])
-            data = await fetch_zoho_data(creds["token"], creds["instance_url"], current_user.user_id)
         elif platform == "xero":
             client_secret = decrypt(connection.get("client_secret_encrypted", ""))
             data = await fetch_xero_data(

@@ -23,7 +23,9 @@ const WRITE_CAPABLE = ['hubspot', 'salesforce', 'pipedrive', 'zoho'];
 const SCALEKIT_CONNECTORS = [
   { id: 'quickbooks', name: 'QuickBooks', icon: Calculator, color: '#2CA01C', desc: 'Import paid invoices as attributable closed-won revenue.' },
   { id: 'stripe', name: 'Stripe', icon: CreditCard, color: '#635BFF', desc: 'Import successful charges as collected revenue.' },
+  { id: 'zoho', name: 'Zoho CRM', icon: Users, color: '#C82127', desc: 'Two-way sync — import deals and push notes, tasks, calls, deals and offers back from Workspace, Outreach and High-Intent.' },
 ];
+const skName = (id) => SCALEKIT_CONNECTORS.find((c) => c.id === id)?.name || id;
 
 // Step-by-step token setup shown inside the connect modal.
 const SETUP_GUIDES = {
@@ -52,16 +54,6 @@ const SETUP_GUIDES = {
       'Save, then Manage → Edit Policies → under Client Credentials Flow set "Run As" to an integration user who can read/write Opportunities, Contacts and Tasks.',
       'Open Manage Consumer Details and copy the Consumer Key and Consumer Secret.',
       'Paste them above with your My Domain URL (Setup → My Domain, e.g. mycompany.my.salesforce.com) and click Connect. InFlow renews access automatically.',
-    ],
-  },
-  zoho: {
-    title: 'How to get your Zoho CRM credentials',
-    steps: [
-      'Go to api-console.zoho.com (use the same region as your Zoho account) → "Add Client" → "Self Client" → Create.',
-      'Copy the Client ID and Client Secret into the fields above.',
-      'Open the "Generate Code" tab, paste the scopes ZohoCRM.modules.ALL,ZohoCRM.settings.fields.READ,ZohoCRM.users.READ, pick the 10-minute duration and click Create.',
-      'Copy the grant code and paste it as "Grant Code or Refresh Token" right away — InFlow swaps it for a permanent refresh token.',
-      'Set Data Center to your Zoho domain: com (zoho.com), eu, in, com.au, jp, ca or sa — then click Connect.',
     ],
   },
 };
@@ -124,9 +116,8 @@ const ConnectBusiness = () => {
     const ok = params.get('scalekit');
     const err = params.get('scalekit_error');
     if (ok || err) {
-      const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
-      if (ok) toast.success(`${cap(ok)} connected via Scalekit`);
-      if (err) toast.error(`Could not connect ${cap(err)}. Please try again.`);
+      if (ok) toast.success(`${skName(ok)} connected via Scalekit`);
+      if (err) toast.error(`Could not connect ${skName(err)}. Please try again.`);
       window.history.replaceState({}, '', window.location.pathname);
       fetchData();
     }
@@ -253,6 +244,19 @@ const ConnectBusiness = () => {
       if (res.ok) { toast.success(data.message); await fetchData(); }
       else toast.error(data.detail || 'Not authorized yet');
     } catch { toast.error('Could not finish setup'); }
+    finally { setActionLoading(null); }
+  };
+
+  const handleScalekitDisconnect = async (connector) => {
+    setActionLoading(`sk-disconnect-${connector}`);
+    try {
+      const res = await fetch(`${API_URL}/api/integrations/scalekit/${connector}/disconnect`, {
+        method: 'POST', credentials: 'include',
+      });
+      const data = await res.json();
+      if (res.ok) { toast.success(data.message); await fetchData(); }
+      else toast.error(data.detail || 'Failed to disconnect');
+    } catch { toast.error('Disconnect failed'); }
     finally { setActionLoading(null); }
   };
 
@@ -575,6 +579,9 @@ const ConnectBusiness = () => {
                                 )}
                               </div>
                               <span className="text-[11px] text-zinc-500 font-medium">via Scalekit</span>
+                              {WRITE_CAPABLE.includes(c.id) && (
+                                <span className="ml-2 text-[10px] font-semibold text-cyan-300/90" data-testid={`scalekit-twoway-${c.id}`}>· Two-way sync</span>
+                              )}
                             </div>
                           </div>
                           <p className="text-zinc-400 text-xs leading-relaxed mb-4">{c.desc}</p>
@@ -584,12 +591,20 @@ const ConnectBusiness = () => {
                                 <span>{conn.records_synced || 0} records</span>
                                 <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{formatDate(conn.last_synced)}</span>
                               </div>
-                              <Button size="sm" variant="outline"
-                                className="w-full border-zinc-700 text-zinc-300 hover:bg-blue-500/10 hover:text-blue-300 hover:border-blue-500/30 text-xs h-8"
-                                onClick={() => handleScalekitSync(c.id)} disabled={syncing}
-                                data-testid={`scalekit-sync-${c.id}`}>
-                                {syncing ? <Loader2 className="w-3 h-3 animate-spin mr-1.5" /> : <RefreshCw className="w-3 h-3 mr-1.5" />} Re-sync
-                              </Button>
+                              <div className="flex gap-2">
+                                <Button size="sm" variant="outline"
+                                  className="flex-1 border-zinc-700 text-zinc-300 hover:bg-blue-500/10 hover:text-blue-300 hover:border-blue-500/30 text-xs h-8"
+                                  onClick={() => handleScalekitSync(c.id)} disabled={syncing}
+                                  data-testid={`scalekit-sync-${c.id}`}>
+                                  {syncing ? <Loader2 className="w-3 h-3 animate-spin mr-1.5" /> : <RefreshCw className="w-3 h-3 mr-1.5" />} Re-sync
+                                </Button>
+                                <Button size="sm" variant="outline"
+                                  className="border-zinc-700 text-zinc-400 hover:bg-red-500/10 hover:text-red-300 hover:border-red-500/30 text-xs h-8"
+                                  onClick={() => handleScalekitDisconnect(c.id)} disabled={actionLoading === `sk-disconnect-${c.id}`}
+                                  data-testid={`scalekit-disconnect-${c.id}`}>
+                                  {actionLoading === `sk-disconnect-${c.id}` ? <Loader2 className="w-3 h-3 animate-spin" /> : <Unplug className="w-3 h-3" />}
+                                </Button>
+                              </div>
                             </div>
                           ) : (
                             <div className="space-y-2">
