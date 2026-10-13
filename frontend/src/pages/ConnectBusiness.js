@@ -23,9 +23,11 @@ const WRITE_CAPABLE = ['hubspot', 'salesforce', 'pipedrive', 'zoho'];
 const SCALEKIT_CONNECTORS = [
   { id: 'quickbooks', name: 'QuickBooks', icon: Calculator, color: '#2CA01C', desc: 'Import paid invoices as attributable closed-won revenue.' },
   { id: 'stripe', name: 'Stripe', icon: CreditCard, color: '#635BFF', desc: 'Import successful charges as collected revenue.' },
-  { id: 'zoho', name: 'Zoho CRM', icon: Users, color: '#C82127', desc: 'Two-way sync — import deals and push notes, tasks, calls, deals and offers back from Workspace, Outreach and High-Intent.' },
+  { id: 'zoho', name: 'Zoho CRM', icon: Users, color: '#C82127', direct: true, desc: 'Two-way sync — import deals and push notes, tasks, calls, deals and offers back from Workspace, Outreach and High-Intent.' },
 ];
 const skName = (id) => SCALEKIT_CONNECTORS.find((c) => c.id === id)?.name || id;
+const isDirect = (id) => !!SCALEKIT_CONNECTORS.find((c) => c.id === id)?.direct;
+const oauthBase = (id) => (isDirect(id) ? `${API_URL}/api/integrations/${id}` : `${API_URL}/api/integrations/scalekit/${id}`);
 
 // Step-by-step token setup shown inside the connect modal.
 const SETUP_GUIDES = {
@@ -75,6 +77,7 @@ const ConnectBusiness = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showGuide, setShowGuide] = useState(false);
   const [scalekit, setScalekit] = useState(null);
+  const [zoho, setZoho] = useState(null);
 
   const TIER_LEVEL = { trial: 0, expired: -1, cancelled: -1, free: 0, essential_monthly: 1, essential_yearly: 1, pro_monthly: 2, pro_yearly: 2, enterprise_monthly: 3, enterprise_yearly: 3 };
   const userTier = user?.subscription_tier || 'trial';
@@ -84,13 +87,14 @@ const ConnectBusiness = () => {
 
   const fetchData = useCallback(async () => {
     try {
-      const [platRes, sumRes, customRes, detectRes, usageRes, scalekitRes] = await Promise.all([
+      const [platRes, sumRes, customRes, detectRes, usageRes, scalekitRes, zohoRes] = await Promise.all([
         fetch(`${API_URL}/api/business/platforms`, { credentials: 'include' }),
         fetch(`${API_URL}/api/business/summary`, { credentials: 'include' }),
         fetch(`${API_URL}/api/business/custom-sources`, { credentials: 'include' }),
         fetch(`${API_URL}/api/business/detect-platforms`, { credentials: 'include' }),
         fetch(`${API_URL}/api/business/integration-usage`, { credentials: 'include' }),
         fetch(`${API_URL}/api/integrations/scalekit/status`, { credentials: 'include' }),
+        fetch(`${API_URL}/api/integrations/zoho/status`, { credentials: 'include' }),
       ]);
       if (platRes.ok) setPlatforms(await platRes.json());
       if (sumRes.ok) setSummary(await sumRes.json());
@@ -101,6 +105,7 @@ const ConnectBusiness = () => {
       }
       if (usageRes.ok) setUsage(await usageRes.json());
       if (scalekitRes.ok) setScalekit(await scalekitRes.json());
+      if (zohoRes.ok) setZoho(await zohoRes.json());
     } catch (err) {
       console.error('Failed to fetch business data:', err);
     } finally {
@@ -115,9 +120,13 @@ const ConnectBusiness = () => {
     const params = new URLSearchParams(window.location.search);
     const ok = params.get('scalekit');
     const err = params.get('scalekit_error');
-    if (ok || err) {
+    const zohoOk = params.get('zoho');
+    const zohoErr = params.get('zoho_error');
+    if (ok || err || zohoOk || zohoErr) {
       if (ok) toast.success(`${skName(ok)} connected via Scalekit`);
       if (err) toast.error(`Could not connect ${skName(err)}. Please try again.`);
+      if (zohoOk) toast.success(`Zoho CRM connected — imported ${params.get('records') || 0} deals`);
+      if (zohoErr) toast.error(zohoErr);
       window.history.replaceState({}, '', window.location.pathname);
       fetchData();
     }
@@ -210,7 +219,7 @@ const ConnectBusiness = () => {
   const handleScalekitConnect = async (connector) => {
     setActionLoading(`sk-connect-${connector}`);
     try {
-      const res = await fetch(`${API_URL}/api/integrations/scalekit/${connector}/start`, { credentials: 'include' });
+      const res = await fetch(`${oauthBase(connector)}/start`, { credentials: 'include' });
       const data = await res.json();
       if (res.ok && data.url) {
         window.location.href = data.url;
@@ -224,7 +233,7 @@ const ConnectBusiness = () => {
   const handleScalekitSync = async (connector) => {
     setActionLoading(`sk-sync-${connector}`);
     try {
-      const res = await fetch(`${API_URL}/api/integrations/scalekit/${connector}/sync`, {
+      const res = await fetch(`${oauthBase(connector)}/sync`, {
         method: 'POST', credentials: 'include',
       });
       const data = await res.json();
@@ -250,7 +259,7 @@ const ConnectBusiness = () => {
   const handleScalekitDisconnect = async (connector) => {
     setActionLoading(`sk-disconnect-${connector}`);
     try {
-      const res = await fetch(`${API_URL}/api/integrations/scalekit/${connector}/disconnect`, {
+      const res = await fetch(`${oauthBase(connector)}/disconnect`, {
         method: 'POST', credentials: 'include',
       });
       const data = await res.json();
@@ -544,7 +553,7 @@ const ConnectBusiness = () => {
             )}
 
             {/* One-Click OAuth via Scalekit */}
-            {scalekit?.configured && (
+            {(scalekit?.configured || zoho?.configured) && (
               <div className="space-y-4" data-testid="scalekit-section">
                 <div className="flex items-center gap-2">
                   <h2 className="text-sm font-medium text-zinc-500 uppercase tracking-wider">One-Click OAuth</h2>
@@ -554,8 +563,8 @@ const ConnectBusiness = () => {
                   Connect with a single click — no API keys to paste. Tokens refresh automatically, so these connections never expire on you.
                 </p>
                 <div className="grid md:grid-cols-2 gap-4" data-testid="scalekit-grid">
-                  {SCALEKIT_CONNECTORS.map((c) => {
-                    const conn = scalekit.connected?.[c.id];
+                  {SCALEKIT_CONNECTORS.filter((c) => (c.direct ? zoho?.configured : scalekit?.configured)).map((c) => {
+                    const conn = c.direct ? zoho?.connected : scalekit?.connected?.[c.id];
                     const connected = !!conn;
                     const Icon = c.icon;
                     const connecting = actionLoading === `sk-connect-${c.id}`;
@@ -578,7 +587,7 @@ const ConnectBusiness = () => {
                                   </span>
                                 )}
                               </div>
-                              <span className="text-[11px] text-zinc-500 font-medium">via Scalekit</span>
+                              <span className="text-[11px] text-zinc-500 font-medium">{c.direct ? 'Direct sign-in · all Zoho regions' : 'via Scalekit'}</span>
                               {WRITE_CAPABLE.includes(c.id) && (
                                 <span className="ml-2 text-[10px] font-semibold text-cyan-300/90" data-testid={`scalekit-twoway-${c.id}`}>· Two-way sync</span>
                               )}
@@ -611,15 +620,15 @@ const ConnectBusiness = () => {
                               <Button className="w-full bg-blue-600 hover:bg-blue-500 text-white text-xs h-9"
                                 onClick={() => handleScalekitConnect(c.id)} disabled={connecting}
                                 data-testid={`scalekit-connect-${c.id}`}>
-                                {connecting ? <><Loader2 className="w-3.5 h-3.5 animate-spin mr-2" />Redirecting...</> : <><Zap className="w-3.5 h-3.5 mr-2" />Connect (via Scalekit)</>}
+                                {connecting ? <><Loader2 className="w-3.5 h-3.5 animate-spin mr-2" />Redirecting...</> : <><Zap className="w-3.5 h-3.5 mr-2" />{c.direct ? `Connect ${c.name}` : 'Connect (via Scalekit)'}</>}
                               </Button>
-                              <button
+                              {!c.direct && <button
                                 onClick={() => handleScalekitFinalize(c.id)}
                                 disabled={actionLoading === `sk-finalize-${c.id}`}
                                 className="w-full text-[11px] text-zinc-500 hover:text-blue-400 transition-colors disabled:opacity-50"
                                 data-testid={`scalekit-finalize-${c.id}`}>
                                 {actionLoading === `sk-finalize-${c.id}` ? 'Checking…' : 'Already authorized? Finish setup'}
-                              </button>
+                              </button>}
                             </div>
                           )}
                         </CardContent>

@@ -21,6 +21,7 @@ from routes.payments import router as payments_router
 from routes.integrations import router as integrations_router
 from routes.business import router as business_router
 from routes.scalekit_integration import router as scalekit_router
+from routes.zoho_integration import router as zoho_router
 from routes.support import router as support_router
 from routes.agent import router as agent_router
 from routes.custom_integration import router as custom_integration_router
@@ -135,6 +136,7 @@ api_router.include_router(payments_router)
 api_router.include_router(integrations_router)
 api_router.include_router(business_router)
 api_router.include_router(scalekit_router)
+api_router.include_router(zoho_router)
 api_router.include_router(support_router)
 api_router.include_router(agent_router)
 api_router.include_router(custom_integration_router)

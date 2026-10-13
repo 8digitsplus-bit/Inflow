@@ -1,5 +1,5 @@
 """
-Scalekit AgentKit connectors (QuickBooks, Stripe, Zoho CRM) via REST — no SDK.
+Scalekit AgentKit connectors (QuickBooks, Stripe) via REST — no SDK.
 Managed OAuth + auto-refresh live in Scalekit; we store only the org->connected_account
 mapping and map imported records into our deal model. Dormant until env vars are set.
 """
@@ -18,7 +18,6 @@ from dependencies import require_owner
 from models import User
 from utils.deal_sync import apply_sync
 from utils.revenue import _DEFAULT_ROLE
-from routes.zoho_integration import DEAL_FIELDS as ZOHO_DEAL_FIELDS, map_deals as map_zoho_deals
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -28,18 +27,15 @@ SK_ID = os.environ.get("SCALEKIT_CLIENT_ID")
 SK_SECRET = os.environ.get("SCALEKIT_CLIENT_SECRET")
 APP_BASE_URL = os.environ.get("APP_BASE_URL", "").rstrip("/")
 
-# Salesforce is connected directly (client-credentials) instead — see routes/salesforce_integration.py.
-CONNECTORS = {"quickbooks", "stripe", "zoho"}
-LABELS = {"quickbooks": "QuickBooks", "stripe": "Stripe", "zoho": "Zoho CRM"}
-# Platforms whose old direct (paste-credentials) setup was retired in favour of Scalekit.
-RETIRED_DIRECT = {"zoho"}
+# Salesforce (client-credentials) and Zoho CRM (own Multi-DC OAuth) are connected directly instead.
+CONNECTORS = {"quickbooks", "stripe"}
+LABELS = {"quickbooks": "QuickBooks", "stripe": "Stripe"}
 # Dashboard connection names can differ from the bare provider key (e.g. "quickbooks-connect").
 # Override per-connector via env if your Scalekit dashboard names them differently.
 _CONN_NAMES = {
     "quickbooks": os.environ.get("SCALEKIT_CONNECTION_QUICKBOOKS", "quickbooks"),
     "salesforce": os.environ.get("SCALEKIT_CONNECTION_SALESFORCE", "salesforce"),
     "stripe": os.environ.get("SCALEKIT_CONNECTION_STRIPE", "stripe"),
-    "zoho": os.environ.get("SCALEKIT_CONNECTION_ZOHO", "zohocrm"),
 }
 _token_cache = {"tok": None, "exp": 0.0}
 
@@ -191,25 +187,9 @@ async def _quickbooks_invoices(account_id: str) -> dict:
     return {"QueryResponse": {"Invoice": invoices}}
 
 
-async def _zoho_deals(account_id: str) -> list:
-    """Page through Zoho Deals (200/page, max 10 pages) via the Scalekit tool."""
-    records = []
-    for page in range(1, 11):
-        data = await _execute(account_id, "zohocrm_v8_deals_list", {
-            "fields": ZOHO_DEAL_FIELDS, "per_page": 200, "page": page,
-            "sort_by": "Modified_Time", "sort_order": "desc"})
-        data = data if isinstance(data, dict) else {}
-        records.extend(data.get("data") or [])
-        if not (data.get("info") or {}).get("more_records"):
-            break
-    return records
-
-
 async def _import_and_store(connector: str, account_id: str, user: User) -> int:
     if connector == "quickbooks":
         deals = _map_records(connector, await _quickbooks_invoices(account_id), user.user_id)
-    elif connector == "zoho":
-        deals = map_zoho_deals(await _zoho_deals(account_id), user.user_id)
     else:
         deals = _map_records(connector, await _execute(account_id, "stripe_list_charges_dahlia", {}), user.user_id)
     logger.info(f"[scalekit-sync] connector={connector} mapped_deals={len(deals)}")
@@ -288,14 +268,9 @@ async def scalekit_start(connector: str, user: User = Depends(require_owner)):
         raise HTTPException(status_code=404, detail="Unsupported connector")
     # Collision guard: block if this platform is already connected directly (native) — else
     # the two systems share the same `source` and their syncs would clobber each other.
-    legacy = {"org_id": user.org_id, "platform": connector, "provider": {"$ne": "scalekit"}}
-    clash = await db.business_connections.find_one(legacy)
-    if clash and connector in RETIRED_DIRECT:
-        # The old direct setup is retired: replace it (and its synced deals) with the Scalekit one.
-        await db.business_connections.delete_many(legacy)
-        await db.deals.delete_many({"org_id": user.org_id, "source": connector, "synced": True,
-                                    "provider": {"$ne": "scalekit"}})
-    elif clash:
+    clash = await db.business_connections.find_one(
+        {"org_id": user.org_id, "platform": connector, "provider": {"$ne": "scalekit"}})
+    if clash:
         raise HTTPException(status_code=400, detail=(
             f"{_label(connector)} is already connected directly. Disconnect it first to connect it via Scalekit."))
     conn_name = _conn_name(connector)
