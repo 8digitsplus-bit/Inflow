@@ -1,0 +1,35 @@
+{
+  "summary": "Iteration 71: Validated InFlow's own direct Zoho CRM OAuth (Multi-DC). Backend: 22/22 pytest cases pass (test_zoho_direct_oauth_iter71.py) covering status/start/callback error flows (bogus/missing/reused state, non-allowlisted accounts-server, access_denied), auth gating (401 on unauthenticated), /sync and /disconnect 404 when not connected, Scalekit no longer offers Zoho (connectors == quickbooks+stripe; /scalekit/zoho/start -> 404), /business/platforms has no 'zoho' and POST /business/connect/zoho -> 404, workspace/outreach/intent graceful 4xx with no 500, and a FAKE Zoho OAuth connection end-to-end (status connected, sync 400 with friendly 'invalid_code', workspace targets readable error, workspace execute returns 422/failed never 500, disconnect 200 removes row and 404 on second call). Frontend: Login via /auth, /connect-business shows scalekit-section with 3 cards (quickbooks, stripe, zoho). Zoho card has subtitle 'Direct sign-in · all Zoho regions', 'Two-way sync' badge (scalekit-twoway-zoho), button 'Connect Zoho CRM' (scalekit-connect-zoho). scalekit-finalize-zoho correctly ABSENT; for quickbooks/stripe already connected so finalize link also absent (shown only when not connected on non-direct cards). Toast handling verified: /connect-business?zoho_error=Test+message -> error toast present; ?zoho=connected&records=3 -> success toast 'imported 3 deals' present. Clicking scalekit-connect-zoho navigates to accounts.zoho.com with correct client_id, redirect_uri, 8 scopes, access_type=offline, prompt=consent, state. Caveat: real sign-in not attempted (preview redirect URI not yet registered in Zoho console — expected).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_zoho_direct_oauth_iter71.py",
+    "/app/test_reports/pytest/iter71_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "FIXED (critical, by testing agent): In server.py, api_router.include_router(integrations_router) was registered BEFORE zoho_router. The generic '/integrations/{integration_id}/disconnect' handler in routes/integrations.py (which only looks at db.integrations) was shadowing '/integrations/zoho/disconnect' (which must look at db.business_connections). This caused Zoho disconnect to ALWAYS return 404 'Integration not found or not connected' even when a Zoho connection existed, leaving stale rows and encrypted refresh tokens in db.business_connections forever. Reordered to include zoho_router + scalekit_router BEFORE integrations_router. Please keep that ordering invariant (or make the generic integrations route exclude 'zoho'/'scalekit' explicitly).",
+    "zoho_integration.py: refresh token is decrypted/stored unchanged on first callback, but Zoho rotates refresh tokens occasionally — consider updating refresh_token_encrypted on refresh if tok.get('refresh_token') is returned.",
+    "zoho_integration.py callback: on success it stores the connection THEN calls import_deals which can raise and gets swallowed to records=0; good — but logged only at warning. Consider surfacing the import-failure reason to the UI via zoho_error alongside connected=true, or add a 'last_sync_error' field."
+  ],
+  "updated_files": [
+    "/app/backend/server.py (router include order: zoho_router + scalekit_router before integrations_router — fixes disconnect route shadow)",
+    "/app/backend/tests/test_zoho_direct_oauth_iter71.py (new)",
+    "/app/backend/tests/test_scalekit_zoho_iter70.py (DELETED — obsolete)",
+    "/app/backend/tests/test_zoho_salesforce_iter69.py (DELETED — obsolete)"
+  ],
+  "success_rate": {"backend": "100% (22/22)", "frontend": "100%"},
+  "test_credentials": "testpro@test.com / password (owner, enterprise_monthly, org_15337f4cefc9)",
+  "seed_data_creation": "Fake Zoho OAuth connection temporarily inserted (connection_id=conn_fake_zoho_iter71, accounts_server=accounts.zoho.uk, encrypted refresh token='bogus') for sync/execute/disconnect tests. Fully cleaned up afterwards by fixture.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Direct Zoho OAuth is the current approach. Previous iter69 (paste-creds) and iter70 (Scalekit) Zoho tests have been DELETED and replaced by test_zoho_direct_oauth_iter71.py. Testpro has no Zoho connection by default. Required env: ZOHO_CLIENT_ID=1000.2CVW4BT2Q3OJ13JLQOQT4K5YXCJ7VL, ZOHO_CLIENT_SECRET set, APP_BASE_URL=https://revenue-exec.preview.emergentagent.com. Login flow: /auth → click 'Sign in' link (default screen is 'Create account'). Real Zoho sign-in cannot be completed in preview because the redirect URI isn't registered in the user's Zoho API console (would show 'Invalid redirect URI' from Zoho) — this is expected.",
+  "rca of the issue": "Zoho disconnect returning 404 even when connected — root cause: FastAPI include_router ordering. Both '/integrations/{integration_id}/disconnect' (generic in integrations.py) and '/integrations/zoho/disconnect' (specific in zoho_integration.py) match the path. Whichever router is included first wins. integrations_router was included first in server.py, shadowing the Zoho route. Mitigation: reorder include_router so zoho_router and scalekit_router come before integrations_router. Verified test_fake_disconnect_removes_row now passes."
+}
