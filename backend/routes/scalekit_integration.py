@@ -1,5 +1,5 @@
 """
-Scalekit AgentKit connectors (QuickBooks, Stripe) via REST — no SDK.
+Scalekit AgentKit connector (Stripe) via REST — no SDK.
 Managed OAuth + auto-refresh live in Scalekit; we store only the org->connected_account
 mapping and map imported records into our deal model. Dormant until env vars are set.
 """
@@ -27,13 +27,12 @@ SK_ID = os.environ.get("SCALEKIT_CLIENT_ID")
 SK_SECRET = os.environ.get("SCALEKIT_CLIENT_SECRET")
 APP_BASE_URL = os.environ.get("APP_BASE_URL", "").rstrip("/")
 
-# Salesforce (client-credentials) and Zoho CRM (own Multi-DC OAuth) are connected directly instead.
-CONNECTORS = {"quickbooks", "stripe"}
-LABELS = {"quickbooks": "QuickBooks", "stripe": "Stripe"}
+# Salesforce (client-credentials), Zoho CRM and QuickBooks (own OAuth) are connected directly instead.
+CONNECTORS = {"stripe"}
+LABELS = {"stripe": "Stripe"}
 # Dashboard connection names can differ from the bare provider key (e.g. "quickbooks-connect").
 # Override per-connector via env if your Scalekit dashboard names them differently.
 _CONN_NAMES = {
-    "quickbooks": os.environ.get("SCALEKIT_CONNECTION_QUICKBOOKS", "quickbooks"),
     "salesforce": os.environ.get("SCALEKIT_CONNECTION_SALESFORCE", "salesforce"),
     "stripe": os.environ.get("SCALEKIT_CONNECTION_STRIPE", "stripe"),
 }
@@ -145,20 +144,7 @@ def _map_records(connector: str, data, user_id: str):
     for it in items:
         if not isinstance(it, dict):
             continue
-        if connector == "quickbooks":
-            deals.append(_deal(user_id, it.get("DocNumber") or f"Invoice {it.get('Id','')}",
-                               (it.get("CustomerRef") or {}).get("name", "QuickBooks"),
-                               it.get("TotalAmt"), "closed_won", 100, "quickbooks",
-                               it.get("TxnDate"), "QuickBooks invoice", external_id=it.get("Id")))
-        elif connector == "salesforce":
-            stage_raw = str(it.get("StageName", "")).lower()
-            stage = ("closed_won" if "won" in stage_raw else "closed_lost" if "lost" in stage_raw
-                     else "negotiation" if "negot" in stage_raw else "proposal" if "propos" in stage_raw
-                     else "qualified")
-            deals.append(_deal(user_id, it.get("Name"), "Salesforce", it.get("Amount"),
-                               stage, 100 if stage == "closed_won" else 40, "salesforce",
-                               it.get("CloseDate"), "Salesforce opportunity", external_id=it.get("Id")))
-        elif connector == "stripe":
+        if connector == "stripe":
             status = str(it.get("status", "")).lower()
             if status and status != "succeeded":
                 continue  # only successful charges count as collected revenue
@@ -175,23 +161,8 @@ def _map_records(connector: str, data, user_id: str):
     return deals
 
 
-async def _quickbooks_invoices(account_id: str) -> dict:
-    """QuickBooks' query API requires explicit paging (start_position/max_results)."""
-    page, invoices = 1000, []
-    for i in range(10):
-        data = await _execute(account_id, "quickbooks_invoices_list", {"start_position": 1 + i * page, "max_results": page})
-        batch = ((data or {}).get("QueryResponse") or {}).get("Invoice") or []
-        invoices.extend(batch)
-        if len(batch) < page:
-            break
-    return {"QueryResponse": {"Invoice": invoices}}
-
-
 async def _import_and_store(connector: str, account_id: str, user: User) -> int:
-    if connector == "quickbooks":
-        deals = _map_records(connector, await _quickbooks_invoices(account_id), user.user_id)
-    else:
-        deals = _map_records(connector, await _execute(account_id, "stripe_list_charges_dahlia", {}), user.user_id)
+    deals = _map_records(connector, await _execute(account_id, "stripe_list_charges_dahlia", {}), user.user_id)
     logger.info(f"[scalekit-sync] connector={connector} mapped_deals={len(deals)}")
     # Reconcile (provider-scoped delete + preserve locally-edited deals).
     res = await apply_sync(user.org_id, connector, deals, "scalekit")

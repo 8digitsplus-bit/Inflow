@@ -1,0 +1,1 @@
+- Frontend hot-reload sometimes fails with 'PushMenu.js: Cannot read properties of null (reading traverse)' from plugins/visual-edits/babel-metadata-plugin.js (dev-only platform plugin). Code is fine (babel transform OK); fix = sudo supervisorctl restart frontend.

@@ -21,12 +21,13 @@ const WRITE_CAPABLE = ['hubspot', 'salesforce', 'pipedrive', 'zoho'];
 
 // One-click OAuth connectors handled by Scalekit AgentKit (managed OAuth + auto-refresh).
 const SCALEKIT_CONNECTORS = [
-  { id: 'quickbooks', name: 'QuickBooks', icon: Calculator, color: '#2CA01C', desc: 'Import paid invoices as attributable closed-won revenue.' },
+  { id: 'quickbooks', name: 'QuickBooks', icon: Calculator, color: '#2CA01C', direct: true, via: 'Direct sign-in · Intuit', desc: 'Import invoices — paid ones as collected revenue, open ones as pipeline by due date.' },
   { id: 'stripe', name: 'Stripe', icon: CreditCard, color: '#635BFF', desc: 'Import successful charges as collected revenue.' },
-  { id: 'zoho', name: 'Zoho CRM', icon: Users, color: '#C82127', direct: true, desc: 'Two-way sync — import deals and push notes, tasks, calls, deals and offers back from Workspace, Outreach and High-Intent.' },
+  { id: 'zoho', name: 'Zoho CRM', icon: Users, color: '#C82127', direct: true, via: 'Direct sign-in · all Zoho regions', desc: 'Two-way sync — import deals and push notes, tasks, calls, deals and offers back from Workspace, Outreach and High-Intent.' },
 ];
 const skName = (id) => SCALEKIT_CONNECTORS.find((c) => c.id === id)?.name || id;
 const isDirect = (id) => !!SCALEKIT_CONNECTORS.find((c) => c.id === id)?.direct;
+const DIRECT_IDS = SCALEKIT_CONNECTORS.filter((c) => c.direct).map((c) => c.id);
 const oauthBase = (id) => (isDirect(id) ? `${API_URL}/api/integrations/${id}` : `${API_URL}/api/integrations/scalekit/${id}`);
 
 // Step-by-step token setup shown inside the connect modal.
@@ -77,7 +78,7 @@ const ConnectBusiness = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [showGuide, setShowGuide] = useState(false);
   const [scalekit, setScalekit] = useState(null);
-  const [zoho, setZoho] = useState(null);
+  const [direct, setDirect] = useState({});
 
   const TIER_LEVEL = { trial: 0, expired: -1, cancelled: -1, free: 0, essential_monthly: 1, essential_yearly: 1, pro_monthly: 2, pro_yearly: 2, enterprise_monthly: 3, enterprise_yearly: 3 };
   const userTier = user?.subscription_tier || 'trial';
@@ -87,14 +88,14 @@ const ConnectBusiness = () => {
 
   const fetchData = useCallback(async () => {
     try {
-      const [platRes, sumRes, customRes, detectRes, usageRes, scalekitRes, zohoRes] = await Promise.all([
+      const [platRes, sumRes, customRes, detectRes, usageRes, scalekitRes, ...directRes] = await Promise.all([
         fetch(`${API_URL}/api/business/platforms`, { credentials: 'include' }),
         fetch(`${API_URL}/api/business/summary`, { credentials: 'include' }),
         fetch(`${API_URL}/api/business/custom-sources`, { credentials: 'include' }),
         fetch(`${API_URL}/api/business/detect-platforms`, { credentials: 'include' }),
         fetch(`${API_URL}/api/business/integration-usage`, { credentials: 'include' }),
         fetch(`${API_URL}/api/integrations/scalekit/status`, { credentials: 'include' }),
-        fetch(`${API_URL}/api/integrations/zoho/status`, { credentials: 'include' }),
+        ...DIRECT_IDS.map((id) => fetch(`${oauthBase(id)}/status`, { credentials: 'include' })),
       ]);
       if (platRes.ok) setPlatforms(await platRes.json());
       if (sumRes.ok) setSummary(await sumRes.json());
@@ -105,7 +106,11 @@ const ConnectBusiness = () => {
       }
       if (usageRes.ok) setUsage(await usageRes.json());
       if (scalekitRes.ok) setScalekit(await scalekitRes.json());
-      if (zohoRes.ok) setZoho(await zohoRes.json());
+      const directStatus = {};
+      for (let i = 0; i < DIRECT_IDS.length; i += 1) {
+        if (directRes[i].ok) directStatus[DIRECT_IDS[i]] = await directRes[i].json();
+      }
+      setDirect(directStatus);
     } catch (err) {
       console.error('Failed to fetch business data:', err);
     } finally {
@@ -120,13 +125,13 @@ const ConnectBusiness = () => {
     const params = new URLSearchParams(window.location.search);
     const ok = params.get('scalekit');
     const err = params.get('scalekit_error');
-    const zohoOk = params.get('zoho');
-    const zohoErr = params.get('zoho_error');
-    if (ok || err || zohoOk || zohoErr) {
+    const directOk = DIRECT_IDS.find((id) => params.get(id));
+    const directErr = DIRECT_IDS.map((id) => params.get(`${id}_error`)).find(Boolean);
+    if (ok || err || directOk || directErr) {
       if (ok) toast.success(`${skName(ok)} connected via Scalekit`);
       if (err) toast.error(`Could not connect ${skName(err)}. Please try again.`);
-      if (zohoOk) toast.success(`Zoho CRM connected — imported ${params.get('records') || 0} deals`);
-      if (zohoErr) toast.error(zohoErr);
+      if (directOk) toast.success(`${skName(directOk)} connected — imported ${params.get('records') || 0} ${directOk === 'zoho' ? 'deals' : 'invoices'}`);
+      if (directErr) toast.error(directErr);
       window.history.replaceState({}, '', window.location.pathname);
       fetchData();
     }
@@ -553,7 +558,7 @@ const ConnectBusiness = () => {
             )}
 
             {/* One-Click OAuth via Scalekit */}
-            {(scalekit?.configured || zoho?.configured) && (
+            {(scalekit?.configured || Object.values(direct).some((d) => d?.configured)) && (
               <div className="space-y-4" data-testid="scalekit-section">
                 <div className="flex items-center gap-2">
                   <h2 className="text-sm font-medium text-zinc-500 uppercase tracking-wider">One-Click OAuth</h2>
@@ -563,8 +568,8 @@ const ConnectBusiness = () => {
                   Connect with a single click — no API keys to paste. Tokens refresh automatically, so these connections never expire on you.
                 </p>
                 <div className="grid md:grid-cols-2 gap-4" data-testid="scalekit-grid">
-                  {SCALEKIT_CONNECTORS.filter((c) => (c.direct ? zoho?.configured : scalekit?.configured)).map((c) => {
-                    const conn = c.direct ? zoho?.connected : scalekit?.connected?.[c.id];
+                  {SCALEKIT_CONNECTORS.filter((c) => (c.direct ? direct[c.id]?.configured : scalekit?.configured)).map((c) => {
+                    const conn = c.direct ? direct[c.id]?.connected : scalekit?.connected?.[c.id];
                     const connected = !!conn;
                     const Icon = c.icon;
                     const connecting = actionLoading === `sk-connect-${c.id}`;
@@ -587,7 +592,7 @@ const ConnectBusiness = () => {
                                   </span>
                                 )}
                               </div>
-                              <span className="text-[11px] text-zinc-500 font-medium">{c.direct ? 'Direct sign-in · all Zoho regions' : 'via Scalekit'}</span>
+                              <span className="text-[11px] text-zinc-500 font-medium">{c.direct ? `${c.via}${direct[c.id]?.sandbox ? ' · Sandbox' : ''}` : 'via Scalekit'}</span>
                               {WRITE_CAPABLE.includes(c.id) && (
                                 <span className="ml-2 text-[10px] font-semibold text-cyan-300/90" data-testid={`scalekit-twoway-${c.id}`}>· Two-way sync</span>
                               )}

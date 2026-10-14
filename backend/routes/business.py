@@ -17,7 +17,6 @@ from routes.salesforce_integration import validate_salesforce_key, fetch_salesfo
 from routes.dynamics_integration import validate_dynamics_credentials, fetch_dynamics_data
 from routes.sheets_integration import validate_sheets_credentials, fetch_sheets_data
 from routes.intercom_integration import validate_intercom_key, fetch_intercom_data
-from routes.quickbooks_integration import validate_quickbooks_key, fetch_quickbooks_data
 from routes.paypal_integration import validate_paypal_credentials, fetch_paypal_data
 from routes.amplitude_integration import validate_amplitude_creds, fetch_amplitude_data
 from routes.mixpanel_integration import validate_mixpanel_creds, fetch_mixpanel_data
@@ -171,25 +170,6 @@ PLATFORMS = {
         ],
         "key_help_url": "https://developers.intercom.com/docs/build-an-integration/learn-more/authentication",
         "key_help_text": "In Intercom -> Developer Hub -> your app -> Authentication, copy the Access Token.",
-    },
-    "quickbooks": {
-        "default_revenue_role": "revenue",
-        "platform_id": "quickbooks",
-        "name": "QuickBooks",
-        "description": "Pull financial data, invoices, and expense reports for comprehensive revenue analysis.",
-        "icon": "Calculator",
-        "color": "#2CA01C",
-        "category": "Finance",
-        "data_types": ["invoices", "expenses", "revenue", "accounts"],
-        "requires_key": True,
-        "key_fields": [
-            {"name": "company_id", "label": "Company ID (Realm ID)", "placeholder": "1234567890", "type": "text"},
-            {"name": "api_key", "label": "Access Token", "placeholder": "Your QuickBooks access token", "type": "password"},
-            {"name": "sandbox", "label": "Sandbox token (check if from the Intuit OAuth Playground)", "type": "checkbox"},
-        ],
-        "key_help_url": "https://developer.intuit.com/app/developer/playground",
-        "key_help_text": "Use the Intuit Developer OAuth Playground to get an Access Token and Company ID (Realm ID). If the token is from the Playground/sandbox, tick the Sandbox box. Note: access tokens expire after ~1 hour.",
-        "token_expires": True,
     },
     "paypal": {
         "default_revenue_role": "revenue",
@@ -815,30 +795,6 @@ async def _connect_salesforce(body: ConnectRequest, user_id: str, now: str):
         "client_secret_encrypted": encrypt(body.client_secret.strip()),
         "login_domain": body.instance_url.strip(),
         "instance_url": validation["instance_url"],
-        "stats": data["stats"], "is_live": True,
-    }
-    return data, connection, validation.get("account_name")
-
-
-async def _connect_quickbooks(body: ConnectRequest, user_id: str, now: str):
-    if not body.api_key:
-        raise HTTPException(status_code=400, detail="QuickBooks access token is required")
-    if not body.company_id:
-        raise HTTPException(status_code=400, detail="Company ID is required")
-    validation = await validate_quickbooks_key(body.api_key, body.company_id, body.sandbox or False)
-    if not validation["valid"]:
-        raise HTTPException(status_code=400, detail=validation.get("error", "Invalid QuickBooks credentials"))
-    data = await fetch_quickbooks_data(body.api_key, body.company_id, user_id, body.sandbox or False)
-    connection = {
-        "connection_id": f"conn_{uuid.uuid4().hex[:12]}",
-        "user_id": user_id, "platform": "quickbooks",
-        "connected_at": now, "last_synced": now,
-        "records_synced": data["total_records"], "sync_status": "synced",
-        "account_name": validation.get("account_name", "QuickBooks Company"),
-        "api_key_last4": body.api_key[-4:],
-        "api_key_encrypted": encrypt(body.api_key),
-        "company_id": body.company_id,
-        "sandbox": body.sandbox or False,
         "stats": data["stats"], "is_live": True,
     }
     return data, connection, validation.get("account_name")
@@ -1544,7 +1500,6 @@ CONNECT_HANDLERS = {
     "shopify": _connect_shopify,
     "hubspot": _connect_hubspot,
     "salesforce": _connect_salesforce,
-    "quickbooks": _connect_quickbooks,
     "paypal": _connect_paypal,
     "amplitude": _connect_amplitude,
     "mixpanel": _connect_mixpanel,
@@ -1795,8 +1750,6 @@ async def sync_platform(platform: str, current_user: User = Depends(require_owne
             if creds.get("error"):
                 raise ValueError(creds["error"])
             data = await fetch_salesforce_data(creds["token"], creds["instance_url"], current_user.user_id)
-        elif platform == "quickbooks":
-            data = await fetch_quickbooks_data(api_key, connection.get("company_id", ""), current_user.user_id, connection.get("sandbox", False))
         elif platform == "paypal":
             data = await fetch_paypal_data(
                 connection.get("client_id", ""),
