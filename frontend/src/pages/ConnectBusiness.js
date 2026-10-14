@@ -594,7 +594,7 @@ const ConnectBusiness = () => {
                               </div>
                               <span className="text-[11px] text-zinc-500 font-medium">{c.direct ? `${c.via}${direct[c.id]?.sandbox ? ' · Sandbox' : ''}` : 'via Scalekit'}</span>
                               {WRITE_CAPABLE.includes(c.id) && (
-                                <span className="ml-2 text-[10px] font-semibold text-cyan-300/90" data-testid={`scalekit-twoway-${c.id}`}>· Two-way sync</span>
+                                <span className="block mt-0.5 text-[10px] font-semibold text-cyan-300/90" data-testid={`scalekit-twoway-${c.id}`}>Two-way sync</span>
                               )}
                             </div>
                           </div>

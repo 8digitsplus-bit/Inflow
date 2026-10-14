@@ -1,0 +1,36 @@
+{
+  "summary": "Iteration 72 — tested InFlow's own direct Intuit QuickBooks OAuth (replacing Scalekit QBO) + Stripe-only Scalekit + /connect-business UI. 23/23 backend pytest tests PASS (status/start/callback error flows, scalekit no-QBO, business platforms no-QBO, fake-conn status/sync/disconnect, concurrent refresh rotation under single lock). Frontend: scalekit-section shows QuickBooks (direct, sandbox), Stripe (via Scalekit, connected ACTIVE) and Zoho (direct) cards; QBO button labeled 'Connect QuickBooks'; no finalize link; QBO absent from Available Platforms; Stripe paste-key card still present; all three return-param toasts fire (quickbooks=connected&records=4 → 'imported 4 invoices', quickbooks_error → readable msg, zoho=connected&records=2 → 'imported 2 deals'); clicking Connect QuickBooks navigates to accounts.intuit.com SSO redirecting to appcenter.intuit.com/connect/oauth2 with correct client_id, scope, redirect_uri and state. Also updated iter71 Zoho test (connectors=['stripe']) — still passes.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "ConnectBusiness → Zoho card subtitle", "issues": ["'all Zoho regions· Two-way sync' lacks a space before the middle-dot — missing a leading space on the Two-way sync span (line 597 of ConnectBusiness.js). Cosmetic only."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_quickbooks_direct_oauth_iter72.py",
+    "/app/test_reports/pytest/iter72_qbo.xml",
+    "/app/backend/tests/test_zoho_direct_oauth_iter71.py"
+  ],
+  "action_items": [
+    "(optional cosmetic) Add a leading space before the '· Two-way sync' label span on the Scalekit cards so it reads 'all Zoho regions · Two-way sync' instead of 'all Zoho regions· Two-way sync'."
+  ],
+  "critical_code_review_comments": [
+    "quickbooks_integration.py is clean (~260 lines), uses async, encrypts tokens, excludes mongo _id, per-connection asyncio.Lock with persistence of rotated refresh tokens — correct Intuit behavior.",
+    "Callback uses find_one_and_delete on state (one-time use) and short expiry — good replay protection.",
+    "On successful auth, old Scalekit QBO connection + its synced deals are purged (keeps testpro's orphaned Scalekit row from colliding). Good.",
+    "_token raises PermissionError on invalid_grant and sync endpoint flips row status to REAUTH_REQUIRED — verified end-to-end against fake conn."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_quickbooks_direct_oauth_iter72.py (NEW — 23 tests)",
+    "/app/backend/tests/test_zoho_direct_oauth_iter71.py (updated obsolete assertion: scalekit connectors == ['stripe'])"
+  ],
+  "success_rate": {"backend": "100% (23/23)", "frontend": "100%"},
+  "test_credentials": "testpro@test.com / password (owner, enterprise_monthly, org_15337f4cefc9)",
+  "seed_data_creation": "Fixtures auto-seed a FAKE qbo_oauth conn for testpro and clean up after. Rotation test seeds conn_fake_rotation with monkeypatched _token to prove exactly 1 refresh under concurrent access_token() + new refresh token persisted.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "QBO direct OAuth is live. The real happy-path requires an interactive Intuit sandbox login (user-only). The in-process monkeypatch coverage in test_quickbooks_direct_oauth_iter72.py::test_token_rotation_concurrent_refresh proves refresh+rotation+persistence under contention. Scalekit now only offers Stripe (CONNECTORS={'stripe'}); any older iter70 tests asserting Scalekit QBO are obsolete.",
+  "rca of the issue": "N/A — no bugs found."
+}

@@ -13,6 +13,13 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
+### QuickBooks — InFlow's own one-click Intuit OAuth (Oct 2026) — verified iteration_72 (backend 23/23, frontend 100%)
+- Replaces Scalekit QuickBooks AND the old paste-access-token form (removed from business.py PLATFORMS). Scalekit now ONLY serves Stripe (user chose to keep Stripe on Scalekit; CONNECTORS={"stripe"}).
+- `routes/quickbooks_integration.py` (router): `GET /api/integrations/quickbooks/status|start|callback`, `POST /sync|/disconnect`. State in `qbo_oauth_states` (single-use, 10 min). Tokens via Basic auth at oauth.platform.intuit.com; rotating refresh token persisted on EVERY refresh under per-connection asyncio.Lock; access token cached encrypted on the row (`access_expires_at`); invalid_grant → status REAUTH_REQUIRED. Import: `SELECT * FROM Invoice STARTPOSITION n MAXRESULTS 1000` (10 pages, minorversion 75) → paid=closed_won, overdue=negotiation, due=proposal. Connection: platform=quickbooks, provider=`qbo_oauth`, realm_id, sandbox. Callback replaces older quickbooks rows (scalekit/native) + scalekit deals.
+- Env: `QBO_CLIENT_ID`, `QBO_CLIENT_SECRET` (Intuit DEVELOPMENT keys → sandbox companies only), `QBO_SANDBOX=true`. Redirect `{APP_BASE_URL}/api/integrations/quickbooks/callback` (preview registered by user).
+- Go-live: complete Intuit app assessment questionnaire → production keys; set QBO_SANDBOX=false + production keys; add `https://www.inflowft.com/api/integrations/quickbooks/callback` in Intuit Production settings.
+- Frontend: QuickBooks + Zoho are `direct:true` cards (DIRECT_IDS, per-connector status map, `<id>` / `<id>_error` return params).
+
 ### Zoho CRM — InFlow's own one-click OAuth, Multi-DC (Oct 2026) — verified iteration_71 (backend 22/22, frontend 100%)
 - Why: Scalekit's Zoho connector failed for UK-DC accounts (user's org is crm.zoho.uk) — both Scalekit test portal and InFlow stuck at PENDING_AUTH. Scalekit Zoho removed (CONNECTORS = quickbooks, stripe).
 - `routes/zoho_integration.py` (router): `GET /api/integrations/zoho/status|start`, `GET /callback` (state in `zoho_oauth_states`, single-use, 10 min; code exchanged at the callback's `accounts-server` (allowlisted hosts incl. accounts.zoho.uk); refresh token encrypted; API calls to returned `api_domain`), `POST /sync`, `POST /disconnect` (revokes token). Connection row: platform=zoho, provider=`zoho_oauth`, accounts_server, instance_url=api_domain, location. Callback replaces any old zoho rows; imports deals (`/crm/v8/Deals`, 200/page, 10 pages) via apply_sync(provider zoho_oauth).

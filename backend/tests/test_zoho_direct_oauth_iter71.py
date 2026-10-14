@@ -193,7 +193,7 @@ def test_scalekit_status_no_zoho(sess):
     r = sess.get(f"{API}/integrations/scalekit/status", timeout=20)
     assert r.status_code == 200
     conns = sorted(r.json().get("connectors") or [])
-    assert conns == ["quickbooks", "stripe"], conns
+    assert conns == ["stripe"], conns
 
 
 def test_scalekit_zoho_start_404(sess):
