@@ -1,0 +1,24 @@
+{
+  "summary": "Iteration 73 — Removal + regression validation for Microsoft Dynamics 365, Google Sheets, Intercom integrations and standalone /workspace page. 12/12 backend regression tests PASS. Frontend verified via browser automation: sidebar 'Revenue Execution' group shows only High-Intent Buyers + Upsell Engine (no Workspace item), /connect-business no longer renders Dynamics/Sheets/Intercom cards (HubSpot/Salesforce/Pipedrive/Stripe/QuickBooks/Zoho still present), Zoho card description no longer mentions 'Workspace', older /integrations page has no Google Sheets/Intercom/Dynamics, /upsell OutreachWorkspace still loads. Per-account deal room preserved: clicking a High-Intent profile → drawer → 'Manage' button navigates to /workspace/account/lead_83e9cba72ab8 and AccountWorkspace page renders fully. Backend regressions: /api/workspace/status 200, /api/workspace/targets?provider=hubspot 200, /api/workspace/account/{lead} route alive, /api/integrations/zoho|quickbooks|scalekit/status 200. QuickBooks sandbox connection PRESERVED (still connected). POST /api/business/connect/{dynamics|google_sheets|intercom} returns 404 as expected. No new issues introduced.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_removal_iter73.py",
+    "/app/test_reports/pytest/iter73_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "Browser automation note: termly cookie consent script with autoBlock=on prevents React bundle.js from executing until 'Accept' is clicked + page reloaded. Testing scripts must handle this. Not a bug but affects test harness."
+  ],
+  "updated_files": ["/app/backend/tests/test_removal_iter73.py"],
+  "success_rate": {"backend": "100% (12/12)", "frontend": "100% (all checklist items verified)"},
+  "test_credentials": "testpro@test.com / password (owner, enterprise)",
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Removal of microsoft_dynamics, google_sheets, intercom integrations + standalone /workspace page is complete and verified. Per-account deal room at /workspace/account/:leadId is kept and working. Backend /api/workspace/* endpoints kept for the deal room. QuickBooks live sandbox connection for testpro intact (34 invoices). Test file /app/backend/tests/test_removal_iter73.py can be re-run as regression. Browser automation needs: (1) accept Termly cookie banner, (2) reload, (3) then go to /auth?mode=login to see login form."
+}

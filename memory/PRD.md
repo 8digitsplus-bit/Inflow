@@ -13,6 +13,10 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
+### Removals (Oct 2026) — verified iteration_73 (backend 12/12, frontend 100%)
+- Integrations removed: Microsoft Dynamics 365, Google Sheets, Intercom (PLATFORMS entries, connect handlers, sync/test branches in business.py; modules dynamics/sheets/intercom_integration.py deleted; revenue role map + /api/integrations google_sheets entry removed). No connections existed.
+- Revenue Execution → standalone "Workspace" (Action Workspace page /workspace, pages/Workspace.js) removed from sidebar + routes. KEPT: per-account deal room /workspace/account/:leadId (High-Intent "Manage account") and all backend /api/workspace/* endpoints (deal room + CRM push use them).
+
 ### QuickBooks — InFlow's own one-click Intuit OAuth (Oct 2026) — verified iteration_72 (backend 23/23, frontend 100%)
 - Replaces Scalekit QuickBooks AND the old paste-access-token form (removed from business.py PLATFORMS). Scalekit now ONLY serves Stripe (user chose to keep Stripe on Scalekit; CONNECTORS={"stripe"}).
 - `routes/quickbooks_integration.py` (router): `GET /api/integrations/quickbooks/status|start|callback`, `POST /sync|/disconnect`. State in `qbo_oauth_states` (single-use, 10 min). Tokens via Basic auth at oauth.platform.intuit.com; rotating refresh token persisted on EVERY refresh under per-connection asyncio.Lock; access token cached encrypted on the row (`access_expires_at`); invalid_grant → status REAUTH_REQUIRED. Import: `SELECT * FROM Invoice STARTPOSITION n MAXRESULTS 1000` (10 pages, minorversion 75) → paid=closed_won, overdue=negotiation, due=proposal. Connection: platform=quickbooks, provider=`qbo_oauth`, realm_id, sandbox. Callback replaces older quickbooks rows (scalekit/native) + scalekit deals.
