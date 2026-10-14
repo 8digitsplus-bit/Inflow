@@ -137,7 +137,6 @@ def _map_records(connector: str, data, user_id: str):
     deals = []
     items = data if isinstance(data, list) else (data.get("data") or data.get("records") or data.get("QueryResponse") or [])
     if isinstance(items, dict):
-        # QuickBooks {"Invoice":[...]} / Xero {"Invoices":[...]} / Intercom {"data":[...]}
         items = items.get("Invoice") or items.get("Invoices") or items.get("records") or items.get("data") or []
     if not isinstance(items, list):
         items = []

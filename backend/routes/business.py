@@ -14,9 +14,6 @@ from routes.stripe_integration import validate_stripe_key, fetch_stripe_data
 from routes.shopify_integration import validate_shopify_key, fetch_shopify_data
 from routes.hubspot_integration import validate_hubspot_key, fetch_hubspot_data
 from routes.salesforce_integration import validate_salesforce_key, fetch_salesforce_data, client_credentials_token
-from routes.dynamics_integration import validate_dynamics_credentials, fetch_dynamics_data
-from routes.sheets_integration import validate_sheets_credentials, fetch_sheets_data
-from routes.intercom_integration import validate_intercom_key, fetch_intercom_data
 from routes.paypal_integration import validate_paypal_credentials, fetch_paypal_data
 from routes.amplitude_integration import validate_amplitude_creds, fetch_amplitude_data
 from routes.mixpanel_integration import validate_mixpanel_creds, fetch_mixpanel_data
@@ -117,59 +114,6 @@ PLATFORMS = {
         ],
         "key_help_url": "https://help.salesforce.com/s/articleView?id=xcloud.connected_app_client_credentials_setup.htm",
         "key_help_text": "Create a Connected App (or External Client App) with Client Credentials Flow enabled and a Run As user. InFlow renews access automatically — no expiring tokens.",
-    },
-    "dynamics": {
-        "default_revenue_role": "pipeline",
-        "platform_id": "dynamics",
-        "name": "Microsoft Dynamics 365",
-        "description": "Sync opportunities, accounts, and pipeline from Dynamics 365 Sales for unified revenue insight.",
-        "icon": "Cloud",
-        "color": "#002050",
-        "category": "CRM",
-        "data_types": ["opportunities", "accounts", "contacts", "pipeline"],
-        "requires_key": True,
-        "key_fields": [
-            {"name": "instance_url", "label": "Environment URL", "placeholder": "https://yourorg.crm.dynamics.com", "type": "text"},
-            {"name": "company_id", "label": "Directory (Tenant) ID", "placeholder": "00000000-0000-0000-0000-000000000000", "type": "text"},
-            {"name": "client_id", "label": "Application (Client) ID", "placeholder": "00000000-0000-0000-0000-000000000000", "type": "text"},
-            {"name": "client_secret", "label": "Client Secret Value", "placeholder": "Your Entra app client secret", "type": "password"},
-        ],
-        "key_help_url": "https://learn.microsoft.com/en-us/power-apps/developer/data-platform/walkthrough-register-app-azure-active-directory",
-        "key_help_text": "Register an app in Microsoft Entra (App registrations), add a client secret, then add it as an Application User in Power Platform with Read access to Opportunities/Accounts/Contacts. Provide the Environment URL, Tenant ID, Client ID and Client Secret.",
-    },
-    "google_sheets": {
-        "default_revenue_role": "pipeline",
-        "platform_id": "google_sheets",
-        "name": "Google Sheets",
-        "description": "Import pipeline or revenue data straight from a Google Sheet — great for teams tracking deals in spreadsheets.",
-        "icon": "BarChart3",
-        "color": "#0F9D58",
-        "category": "Productivity",
-        "data_types": ["deals", "revenue", "custom"],
-        "requires_key": True,
-        "key_fields": [
-            {"name": "api_key", "label": "Google API Key", "placeholder": "AIza...", "type": "password"},
-            {"name": "instance_url", "label": "Spreadsheet ID", "placeholder": "from the sheet URL: /d/<ID>/edit", "type": "text"},
-            {"name": "company_id", "label": "Range / Tab", "placeholder": "Sheet1!A1:Z1000", "type": "text"},
-        ],
-        "key_help_url": "https://console.cloud.google.com/apis/library/sheets.googleapis.com",
-        "key_help_text": "In Google Cloud Console: enable the Google Sheets API, then create an API key (APIs & Services -> Credentials). Share your sheet as 'Anyone with the link -> Viewer'. Provide the API key, the Spreadsheet ID (from its URL), and the tab/range (e.g. Sheet1!A1:Z1000). Row 1 should be headers like Name, Company, Value, Stage.",
-    },
-    "intercom": {
-        "default_revenue_role": "signal",
-        "platform_id": "intercom",
-        "name": "Intercom",
-        "description": "Pull customers and accounts from Intercom to power real churn, retention, and customer-success signals.",
-        "icon": "Users",
-        "color": "#1F8DED",
-        "category": "Support",
-        "data_types": ["companies", "contacts", "conversations", "signals"],
-        "requires_key": True,
-        "key_fields": [
-            {"name": "api_key", "label": "Access Token", "placeholder": "Your Intercom access token", "type": "password"},
-        ],
-        "key_help_url": "https://developers.intercom.com/docs/build-an-integration/learn-more/authentication",
-        "key_help_text": "In Intercom -> Developer Hub -> your app -> Authentication, copy the Access Token.",
     },
     "paypal": {
         "default_revenue_role": "revenue",
@@ -1429,72 +1373,6 @@ async def _connect_brex(body: ConnectRequest, user_id: str, now: str):
     return data, connection, validation.get("account_name")
 
 
-async def _connect_dynamics(body: ConnectRequest, user_id: str, now: str):
-    if not (body.instance_url and body.company_id and body.client_id and body.client_secret):
-        raise HTTPException(status_code=400, detail="Environment URL, Tenant ID, Client ID and Client Secret are all required")
-    validation = await validate_dynamics_credentials(body.company_id, body.client_id, body.client_secret, body.instance_url)
-    if not validation["valid"]:
-        raise HTTPException(status_code=400, detail=validation.get("error", "Invalid Dynamics 365 credentials"))
-    data = await fetch_dynamics_data(body.company_id, body.client_id, body.client_secret, body.instance_url, user_id)
-    connection = {
-        "connection_id": f"conn_{uuid.uuid4().hex[:12]}",
-        "user_id": user_id, "platform": "dynamics",
-        "connected_at": now, "last_synced": now,
-        "records_synced": data["total_records"], "sync_status": "synced",
-        "account_name": validation.get("account_name", "Dynamics 365"),
-        "api_key_last4": body.client_secret[-4:],
-        "api_key_encrypted": encrypt(body.client_secret),
-        "client_id": body.client_id,
-        "instance_url": body.instance_url,
-        "company_id": body.company_id,
-        "stats": data["stats"], "is_live": True,
-    }
-    return data, connection, validation.get("account_name")
-
-
-async def _connect_google_sheets(body: ConnectRequest, user_id: str, now: str):
-    if not (body.api_key and body.instance_url):
-        raise HTTPException(status_code=400, detail="Google API key and Spreadsheet ID are required")
-    range_ = body.company_id or "A1:Z1000"
-    validation = await validate_sheets_credentials(body.api_key, body.instance_url, range_)
-    if not validation["valid"]:
-        raise HTTPException(status_code=400, detail=validation.get("error", "Invalid Google Sheets credentials"))
-    data = await fetch_sheets_data(body.api_key, body.instance_url, range_, user_id)
-    connection = {
-        "connection_id": f"conn_{uuid.uuid4().hex[:12]}",
-        "user_id": user_id, "platform": "google_sheets",
-        "connected_at": now, "last_synced": now,
-        "records_synced": data["total_records"], "sync_status": "synced",
-        "account_name": validation.get("account_name", "Google Sheet"),
-        "api_key_last4": body.api_key[-4:],
-        "api_key_encrypted": encrypt(body.api_key),
-        "instance_url": body.instance_url,
-        "company_id": range_,
-        "stats": data["stats"], "is_live": True,
-    }
-    return data, connection, validation.get("account_name")
-
-
-async def _connect_intercom(body: ConnectRequest, user_id: str, now: str):
-    if not body.api_key:
-        raise HTTPException(status_code=400, detail="Intercom access token is required")
-    validation = await validate_intercom_key(body.api_key)
-    if not validation["valid"]:
-        raise HTTPException(status_code=400, detail=validation.get("error", "Invalid Intercom credentials"))
-    data = await fetch_intercom_data(body.api_key, user_id)
-    connection = {
-        "connection_id": f"conn_{uuid.uuid4().hex[:12]}",
-        "user_id": user_id, "platform": "intercom",
-        "connected_at": now, "last_synced": now,
-        "records_synced": data["total_records"], "sync_status": "synced",
-        "account_name": validation.get("account_name", "Intercom"),
-        "api_key_last4": body.api_key[-4:],
-        "api_key_encrypted": encrypt(body.api_key),
-        "stats": data["stats"], "is_live": True,
-    }
-    return data, connection, validation.get("account_name")
-
-
 CONNECT_HANDLERS = {
     "stripe": _connect_stripe,
     "shopify": _connect_shopify,
@@ -1529,9 +1407,6 @@ CONNECT_HANDLERS = {
     "chargebee": _connect_chargebee,
     "ramp": _connect_ramp,
     "brex": _connect_brex,
-    "dynamics": _connect_dynamics,
-    "google_sheets": _connect_google_sheets,
-    "intercom": _connect_intercom,
 }
 
 
@@ -1869,12 +1744,6 @@ async def sync_platform(platform: str, current_user: User = Depends(require_owne
             data = await fetch_ramp_data(connection.get("client_id", ""), api_key, current_user.user_id)
         elif platform == "brex":
             data = await fetch_brex_data(api_key, current_user.user_id)
-        elif platform == "dynamics":
-            data = await fetch_dynamics_data(connection.get("company_id", ""), connection.get("client_id", ""), api_key, connection.get("instance_url", ""), current_user.user_id)
-        elif platform == "google_sheets":
-            data = await fetch_sheets_data(api_key, connection.get("instance_url", ""), connection.get("company_id") or "A1:Z1000", current_user.user_id)
-        elif platform == "intercom":
-            data = await fetch_intercom_data(api_key, current_user.user_id)
         else:
             raise HTTPException(status_code=400, detail="Sync not supported for this platform")
     except Exception as e:
@@ -1924,18 +1793,6 @@ async def test_platform_connection(platform: str, current_user: User = Depends(r
         result = await validate_hubspot_key(decrypt(api_key_enc))
         if not result.get("valid"):
             raise HTTPException(status_code=400, detail=f"{name} token is no longer valid ({result.get('error', 'auth failed')}) — please reconnect.")
-    elif platform == "intercom":
-        result = await validate_intercom_key(decrypt(api_key_enc))
-        if not result.get("valid"):
-            raise HTTPException(status_code=400, detail=f"{name} token is no longer valid ({result.get('error', 'auth failed')}) — please reconnect.")
-    elif platform == "google_sheets":
-        result = await validate_sheets_credentials(decrypt(api_key_enc), connection.get("instance_url", ""), connection.get("company_id") or "A1:Z1000")
-        if not result.get("valid"):
-            raise HTTPException(status_code=400, detail=f"{name} is unreachable ({result.get('error', 'check failed')}) — verify the sheet is shared and the key is valid.")
-    elif platform == "dynamics":
-        result = await validate_dynamics_credentials(connection.get("company_id", ""), connection.get("client_id", ""), decrypt(api_key_enc), connection.get("instance_url", ""))
-        if not result.get("valid"):
-            raise HTTPException(status_code=400, detail=f"{name} credentials rejected ({result.get('error', 'auth failed')}) — please reconnect.")
 
     return {
         "ok": True,

@@ -18,11 +18,11 @@ _DEFAULT_ROLE = {
     "volusion": "revenue", "amazon_seller": "revenue",
     # pipeline (CRM forecast)
     "salesforce": "pipeline", "hubspot": "pipeline", "pipedrive": "pipeline", "zoho": "pipeline",
-    "insightly": "pipeline", "freshsales": "pipeline", "monday": "pipeline", "dynamics": "pipeline",
+    "insightly": "pipeline", "freshsales": "pipeline", "monday": "pipeline",
     "oracle_cx": "pipeline",
     # signal (product/analytics — never money)
     "mixpanel": "signal", "amplitude": "signal", "posthog": "signal", "ga4": "signal",
-    "adobe_analytics": "signal", "tableau": "signal", "logrocket": "signal", "intercom": "signal",
+    "adobe_analytics": "signal", "tableau": "signal", "logrocket": "signal",
 }
 
 

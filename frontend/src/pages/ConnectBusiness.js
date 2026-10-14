@@ -23,7 +23,7 @@ const WRITE_CAPABLE = ['hubspot', 'salesforce', 'pipedrive', 'zoho'];
 const SCALEKIT_CONNECTORS = [
   { id: 'quickbooks', name: 'QuickBooks', icon: Calculator, color: '#2CA01C', direct: true, via: 'Direct sign-in · Intuit', desc: 'Import invoices — paid ones as collected revenue, open ones as pipeline by due date.' },
   { id: 'stripe', name: 'Stripe', icon: CreditCard, color: '#635BFF', desc: 'Import successful charges as collected revenue.' },
-  { id: 'zoho', name: 'Zoho CRM', icon: Users, color: '#C82127', direct: true, via: 'Direct sign-in · all Zoho regions', desc: 'Two-way sync — import deals and push notes, tasks, calls, deals and offers back from Workspace, Outreach and High-Intent.' },
+  { id: 'zoho', name: 'Zoho CRM', icon: Users, color: '#C82127', direct: true, via: 'Direct sign-in · all Zoho regions', desc: 'Two-way sync — import deals and push notes, tasks, calls, deals and offers back from Outreach and High-Intent.' },
 ];
 const skName = (id) => SCALEKIT_CONNECTORS.find((c) => c.id === id)?.name || id;
 const isDirect = (id) => !!SCALEKIT_CONNECTORS.find((c) => c.id === id)?.direct;

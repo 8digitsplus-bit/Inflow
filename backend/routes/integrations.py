@@ -33,14 +33,6 @@ AVAILABLE_INTEGRATIONS = [
         "color": "#00A1E0",
     },
     {
-        "integration_id": "google_sheets",
-        "name": "Google Sheets",
-        "description": "Export reports and analytics data to Google Sheets automatically",
-        "category": "Productivity",
-        "icon": "Table",
-        "color": "#0F9D58",
-    },
-    {
         "integration_id": "zapier",
         "name": "Zapier",
         "description": "Connect InFlow to 5,000+ apps through Zapier automations",
