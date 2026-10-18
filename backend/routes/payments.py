@@ -27,13 +27,13 @@ SUBSCRIPTION_PLANS = {
     "pro_monthly": {
         "price": 179.0, "name": "Pro", "period": "monthly",
         "interval": "month",
-        "features": ["15 live integrations", "CSV import", "AI insights", "CRO analysis", "Revenue forecasting", "Priority support"]
+        "features": ["15 live integrations", "CSV import", "AI insights", "CRO analysis", "Revenue forecasting"]
     },
     "pro_yearly": {
         "price": 1695.0, "name": "Pro", "period": "yearly",
         "interval": "year",
         "first_year_price": 1356.0,
-        "features": ["15 live integrations", "CSV import", "AI insights", "CRO analysis", "Revenue forecasting", "Priority support"]
+        "features": ["15 live integrations", "CSV import", "AI insights", "CRO analysis", "Revenue forecasting"]
     },
     "enterprise_monthly": {
         "price": 327.0, "name": "Enterprise", "period": "monthly",

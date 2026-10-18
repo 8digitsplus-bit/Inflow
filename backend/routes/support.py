@@ -1,11 +1,12 @@
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
 from typing import Optional
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import os
 import uuid
 import json
 import logging
+import jwt
 
 from database import db
 from models import User
@@ -37,7 +38,7 @@ SYSTEM_PROMPT = """You are the AI support assistant for InFlow, a B2B SaaS platf
 STRICT RULES:
 1. ONLY answer questions about InFlow, its features, pricing, billing, and account management.
 2. If asked about anything unrelated to InFlow, say: "I can only help with InFlow-related questions. Is there anything about your account or our features I can help with?"
-3. NEVER guess or make up information. If you don't know something, say: "I'm not sure about that. Let me create a support ticket so our team can help you."
+3. NEVER guess or make up information. If you don't know something, say: "I'm not sure about that — tap **Talk to a human** at the top of this chat and the InFlow team will help you."
 4. NEVER invent features that don't exist. Only reference the features listed below.
 5. Be concise, professional, and helpful. Keep responses under 150 words unless a detailed explanation is needed.
 
@@ -50,11 +51,11 @@ INFLOW FEATURES (only reference these):
 - CRO (Conversion Rate Optimization): Funnel analysis, A/B test tracking, bottleneck detection
 - Pricing Optimizer: AI-powered pricing analysis with competitor comparison and optimal price recommendations
 - Live Integration: Integrate Stripe, Shopify, HubSpot, Salesforce, QuickBooks to sync data
-- Smart Assist: AI chat (this) + ticket system
+- Smart Assist: AI chat (this) + "Talk to a human" button (live chat with the InFlow team)
 
 PRICING (exact values, do not modify — flat subscription per workspace):
 - Essential: $75/month or $747/year — Sales Pipeline, Core analytics, Email support, Churn alerts
-- Pro: $179/month or $1,695/year — Everything in Essential + Sales Performance, Priority support, Advanced analytics, Revenue forecasting, Churn prediction, CRO tools
+- Pro: $179/month or $1,695/year — Everything in Essential + Sales Performance, Advanced analytics, Revenue forecasting, Churn prediction, CRO tools
 - Enterprise: $327/month or $2,499/year — Everything in Pro + Sales Revenue, Revenue Intelligence, Competitor Intelligence, Custom integrations, API access
 - New customers get 20% off their FIRST YEAR on any annual plan (first-year prices: Essential $597, Pro $1,356, Enterprise $1,999; renews at the standard yearly price after year one). Monthly plans have no first-year discount.
 - Pricing is a flat subscription — one price per workspace, billed monthly or yearly.
@@ -106,6 +107,23 @@ def parse_actions(text: str):
     clean_text = re.sub(r'\[ACTION:[^\]]+\]', '', text).strip()
     
     return clean_text, actions
+
+
+@router.get("/support/featurebase-token")
+async def featurebase_token(user: User = Depends(get_current_user)):
+    """Server-signed identity for the Featurebase Messenger + Feedback widget (HS256)."""
+    secret = os.environ.get("FEATUREBASE_JWT_SECRET")
+    if not secret:
+        raise HTTPException(status_code=503, detail="Featurebase isn't configured")
+    org = await db.organizations.find_one({"org_id": user.org_id}, {"_id": 0, "name": 1}) if user.org_id else None
+    now = datetime.now(timezone.utc)
+    payload = {
+        "userId": user.user_id, "email": user.email, "name": user.name,
+        "plan": user.subscription_tier,
+        "companies": [{"companyId": user.org_id, "name": (org or {}).get("name") or user.name}] if user.org_id else [],
+        "iat": now, "exp": now + timedelta(hours=24),
+    }
+    return {"token": jwt.encode(payload, secret, algorithm="HS256")}
 
 
 @router.post("/support/chat")

@@ -19,7 +19,7 @@ const PLANS = {
   pro: {
     key: 'pro', name: 'Pro', tagline: 'For growing businesses',
     monthly: 179, yearly: 1695, yearlyFirst: 1356,
-    features: ['Everything in Essential', '15 live integrations', 'CSV import', 'AI insights', 'CRO analysis', 'Revenue Intelligence', 'Priority support'],
+    features: ['Everything in Essential', '15 live integrations', 'CSV import', 'AI insights', 'CRO analysis', 'Revenue Intelligence'],
   },
   enterprise: {
     key: 'enterprise', name: 'Enterprise', tagline: 'For scaling organizations',

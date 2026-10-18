@@ -10,7 +10,6 @@ const ALL_FEATURES = [
   'CRO & churn analysis',
   'Competitor Intelligence',
   'Smart Assist AI',
-  'Priority support',
 ];
 
 // Under the value-based plan every paying customer maps to the top tier internally,
