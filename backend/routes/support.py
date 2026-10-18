@@ -120,7 +120,7 @@ async def featurebase_token(user: User = Depends(get_current_user)):
     payload = {
         "userId": user.user_id, "email": user.email, "name": user.name,
         "plan": user.subscription_tier,
-        "companies": [{"companyId": user.org_id, "name": (org or {}).get("name") or user.name}] if user.org_id else [],
+        "companies": [{"id": user.org_id, "name": (org or {}).get("name") or user.name}] if user.org_id else [],
         "iat": now, "exp": now + timedelta(hours=24),
     }
     return {"token": jwt.encode(payload, secret, algorithm="HS256")}
@@ -152,7 +152,6 @@ USER CONTEXT (use this for personalized, accurate responses):
 - Name: {user.name}
 - Email: {user.email}
 - Current Plan: {user.subscription_tier}
-- Support Level: {priority}
 - Active Deals: {deals_count}
 - Connected Platforms: {', '.join(connections) if connections else 'None connected yet'}
 - Previous Tickets: {tickets_count}

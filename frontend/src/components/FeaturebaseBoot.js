@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { whenReady } from 'featurebase-js';
 import { FeaturebaseProvider, useFeedbackWidget } from 'featurebase-js/react';
 import { useAuth } from '../contexts/AuthContext';
-import { setMessengerReady } from '../lib/featurebase';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 const APP_ID = process.env.REACT_APP_FEATUREBASE_APP_ID;
@@ -12,10 +10,6 @@ const isPublic = (path) => PUBLIC_PATHS.includes(path) || path.startsWith('/quot
 
 const Widgets = ({ plan }) => {
   useFeedbackWidget({ theme: 'dark', placement: 'right', metadata: { plan: plan || 'unknown' } });
-  useEffect(() => {
-    whenReady(() => setMessengerReady(true));
-    return () => setMessengerReady(false);
-  }, []);
   return null;
 };
 

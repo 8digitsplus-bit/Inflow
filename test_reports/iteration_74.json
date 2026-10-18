@@ -1,0 +1,57 @@
+{
+  "summary": "Tested the Featurebase support integration end-to-end (backend + UI). Found 3 blockers, one fixed by me: (1) the Featurebase server rejected our JWT ('Invalid featurebaseJwt') because companies[] used `companyId`; Featurebase requires `id`. Fixed in routes/support.py and verified live. (2) Termly's resource-blocker (autoBlock=on) blocks https://do.featurebase.app/js/sdk.js as 'unclassified' until the user clicks Accept on the cookie banner, so Decline or no choice means no Featurebase at all. (3) The 'Talk to a human' button ALWAYS falls back to the toast + mailto, even when the messenger has fully booted. Cause: featurebase-js/react inlines its own copy of the SDK core, so `whenReady` imported from 'featurebase-js' never fires and messengerReady stays false. Calling window.Featurebase('show') directly opens the messenger panel ('Hi, Test Pro User'), so identity and the messenger work. Also: the frontend had not picked up REACT_APP_FEATUREBASE_APP_ID (.env edited after the dev server started), so I restarted it. Working: token endpoint, 401 when logged out, no script on the public landing page while logged out, default launcher hidden, Feedback tab shows on the right edge, Support page cleanup, Smart Assist chat, pricing cleanup, logout teardown. Problem: the AI still advertises 'Priority Support'.",
+  "backend_issues": {
+    "critical": [
+      {"endpoint": "GET /api/support/featurebase-token", "issue": "FIXED BY TESTER: payload companies[{companyId,...}] made Featurebase return 401 'Invalid featurebaseJwt' (messenger/widget/config + feedback/widget/config) and 400 on user/identify. Featurebase requires companies[].id. Changed to {'id': org_id, 'name': ...}. Probe: minimal / plan / exp24h / companies-with-id -> 200; companies-with-companyId -> 401.", "priority": "CRITICAL"}
+    ],
+    "minor": [
+      {"endpoint": "POST /api/support/chat & /api/support/agent", "issue": "AI replies still list 'Priority support' (chat: 'Smart Assist — AI chat + priority support with our team'; agent: '**Priority Support** - Fastest response times...'). Causes: support.py user_context still injects 'Support Level: priority' (get_priority_level), contact.py:112 still says 'Pro: priority email support', and the agent mode has no explicit feature list, so it hallucinates (Unlimited Deals, Custom Workflows...)."},
+      {"endpoint": "routes/agent.py escalate_to_ticket tool", "issue": "The agent prompt still auto-escalates to 'support tickets' and tells the user 'you've escalated'. The tickets UI is gone, so these tickets land in db.support_tickets where nobody sees them. It should tell the user to use Talk to a human (or the escalation card should drive that)."},
+      {"endpoint": "JWT 'plan' claim", "issue": "A top-level `plan` claim is accepted but is not a standard Featurebase field. Consider customFields: {plan} so it shows in Featurebase."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "lib/featurebase.js talkToHuman / FeaturebaseBoot Widgets", "issue": "messengerReady never becomes true: whenReady() from 'featurebase-js' (dist/index.js) is a different module instance from the core inlined in 'featurebase-js/react' (dist/react.js has its own isReady/flushReady). Clicking talk-to-human-btn always shows the toast 'Live chat isn't available right now — email us at hello@inflowft.com' and opens mailto, even with the messenger booted. Fix idea: drop the readiness gate and use show()/showNewMessage() (they call window.Featurebase directly and queue safely), or boot via boot()+whenReady() from the same 'featurebase-js' entry instead of FeaturebaseProvider, or use useFeaturebase() from the react entry. Keep the mailto fallback only when window.Featurebase is missing or the SDK script is blocked.", "selector": "[data-testid='talk-to-human-btn'], [data-testid='escalation-talk-human-btn']", "priority": "HIGH"}
+    ],
+    "integration_issues": [
+      {"flow": "Featurebase SDK load", "issue": "Termly auto-blocker (app.termly.io resource-blocker ?autoBlock=on) rewrites <script id='featurebase-sdk'> to type='text/plain' data-categories='unclassified' data-autoblocked='1'. The SDK only loads after the user clicks Accept on the cookie banner; Decline or ignoring it means no messenger and no feedback tab. Fix: in the Termly dashboard add a domain rule classifying do.featurebase.app / *.featurebase.app as Essential (support chat is a functional service), or otherwise whitelist it. Verified: after Accept, sdk.js, identify, messenger + feedback config all load.", "affected_selectors": ["script#featurebase-sdk"]},
+      {"flow": "Env pickup", "issue": "REACT_APP_FEATUREBASE_APP_ID was not in the served bundle (.env modified after the dev server started), so FeaturebaseBoot returned early. Tester restarted the frontend. Remember to restart after .env edits.", "affected_selectors": []}
+    ],
+    "design_issues": [
+      {"screen": "App pages (/dashboard, /support, /choose-plan)", "issues": ["Featurebase 'Feedback' side tab DOES appear on the right edge (purple, ~43x121 at x=1880) once the SDK loads, so the feedback widget config resolves. It overlaps page content on the right edge slightly; acceptable."]}
+    ]
+  },
+  "passed_checks": [
+    "GET /api/support/featurebase-token: 200 {token}, HS256 verifiable with FEATUREBASE_JWT_SECRET; userId/email/name/plan(=enterprise_monthly)/companies[0] (org_15337f4cefc9 + name)/iat/exp (24h). Unauthenticated -> 401",
+    "Featurebase live servers accept the fixed token (feedback/widget/config 200)",
+    "GET /api/subscription/plans has no 'Priority support'",
+    "Landing '/' logged out: no Featurebase script or iframe; landing pricing (monthly + yearly) and /choose-plan Pro card have no 'Priority support'",
+    "After login (+ cookie Accept): sdk.js loaded, messenger frames created, default launcher frame wrappers 0x0 (no visible bubble)",
+    "Support page: subtitle 'AI answers instantly — talk to a human anytime', talk-to-human-btn present; escalate-btn / view-chat-btn / view-tickets-btn / 'Create Ticket' gone",
+    "Smart Assist chat: 'What features are in my plan?' -> AI reply rendered",
+    "window.Featurebase('show') opens the messenger panel with the identified user ('Hi, Test Pro User')",
+    "Logout -> redirected to '/', 0 Featurebase iframes/nodes left"
+  ],
+  "test_report_links": ["/app/backend/tests/test_featurebase_iter74.py", "/app/backend/tests/fb_jwt_probe.py", "/app/test_reports/pytest/pytest_iter74.xml"],
+  "action_items": [
+    "HIGH: Fix talkToHuman readiness. whenReady from 'featurebase-js' never fires because FeaturebaseProvider ('featurebase-js/react') uses a separate inlined core. Call show()/showNewMessage() directly (or use useFeaturebase()), and fall back to mailto only if the SDK script is blocked or missing.",
+    "HIGH: Termly auto-blocker blocks the Featurebase SDK until cookie consent. Add a Termly domain rule classifying *.featurebase.app as Essential (or equivalent).",
+    "MEDIUM: Remove 'priority' support wording from the AI context: support.py user_context 'Support Level: {priority}' / get_priority_level, contact.py:112 'Pro: priority email support'. Give the agent prompt (routes/agent.py) the same exact feature list so it stops inventing 'Priority Support'.",
+    "MEDIUM: routes/agent.py escalate_to_ticket still creates invisible tickets. Redirect escalation to 'Talk to a human' (escalation-talk-human-btn) and update the prompt text.",
+    "LOW: Move `plan` into JWT customFields for Featurebase visibility."
+  ],
+  "critical_code_review_comments": [
+    "featurebase-js 1.0.3 ships dist/index.js and dist/react.js as independent bundles; never mix state-dependent helpers (whenReady) across the two entries.",
+    "Ticket endpoints (/api/support/tickets*) and get_priority_level remain in support.py. Dead code now that the UI is gone; consider removing or reusing.",
+    "Support conversations still store priority='priority' on every conversation."
+  ],
+  "updated_files": ["/app/backend/routes/support.py (companies[].companyId -> companies[].id)", "/app/backend/tests/test_featurebase_iter74.py", "/app/backend/tests/fb_jwt_probe.py"],
+  "success_rate": {"backend": "83% (5/6; failing: AI reply mentions Priority support)", "frontend": "~75% (talk-to-human messenger open fails; SDK gated by cookie consent)"},
+  "test_credentials": "testpro@test.com / password (from /app/memory/test_credentials.md)",
+  "seed_data_creation": "None. Created a few Smart Assist conversations for testpro via chat. No messages sent to Featurebase.",
+  "retest_needed": true,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Login: /auth -> use-another-account-btn if present -> auth-toggle-mode if the name input shows -> fill email/password -> auth-submit-btn. Click the Termly cookie banner 'Accept' button, otherwise the Featurebase SDK is auto-blocked. Messenger frames live under #featurebase-iframe-wrapper / .featurebase-messenger-frame-wrapper (405x708 visible when open). Feedback tab: .fb-feedback-widget-feedback-button. Probe Featurebase JWT acceptance with POST https://inflow.featurebase.app/api/v1/feedback/widget/config {locale, jwtToken} (do.featurebase.app messenger/widget/config returns 500 to direct curl). Do not send real messages to Featurebase.",
+  "rca of the issue": "1) JWT 401: Featurebase validates the companies[] schema; the unknown key companyId (id missing) invalidates the token. Reproduced with probe variants; fixed by using `id`. 2) Talk-to-human fallback: lib/featurebase.js gates on messengerReady, which is set by whenReady() from dist/index.js. Booting happens inside FeaturebaseProvider from dist/react.js, which has its own isReady/readyCallbacks, so the index.js callbacks never flush. 3) SDK not loading: Termly autoBlock marks the dynamically inserted sdk.js as unclassified and blocks it until consent."
+}

@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="0" failures="1" skipped="0" tests="6" time="8.197" timestamp="2026-10-18T11:01:19.564926+00:00" hostname="agent-env-4620634a-941a-4ddf-8597-4a890fa0e2b3"><testcase classname="tests.test_featurebase_iter74" name="test_featurebase_token_unauth" time="0.232" /><testcase classname="tests.test_featurebase_iter74" name="test_featurebase_token_payload" time="0.483" /><testcase classname="tests.test_featurebase_iter74" name="test_featurebase_token_wrong_secret_rejected" time="0.064" /><testcase classname="tests.test_featurebase_iter74" name="test_featurebase_accepts_server_jwt" time="0.364" /><testcase classname="tests.test_featurebase_iter74" name="test_plans_no_priority_support" time="0.139" /><testcase classname="tests.test_featurebase_iter74" name="test_smart_assist_chat" time="6.841"><failure message="AssertionError: assert 'priority support' not in 'hi test pro...ow offers! #x1F680'&#10;  &#10;  'priority support' is contained here:&#10;    hi test pro user! #x1F44B&#10;    &#10;    you're on the **enterprise plan** ($327/month), which includes our most comprehensive feature set:&#10;    &#10;    **everything in pro, plus:**...&#10;  &#10;  ...Full output truncated (19 lines hidden), use '-vv' to show">E   AssertionError: assert 'priority support' not in 'hi test pro...ow offers! #x1F680'
+      
+      'priority support' is contained here:
+        hi test pro user! #x1F44B
+        
+        you're on the **enterprise plan** ($327/month), which includes our most comprehensive feature set:
+        
+        **everything in pro, plus:**...
+      
+      ...Full output truncated (19 lines hidden), use '-vv' to show</failure></testcase></testsuite></testsuites>

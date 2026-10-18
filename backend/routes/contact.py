@@ -107,10 +107,9 @@ SECURITY & TRUST
 - Optional 2FA on every plan.
 - Data is never used to train AI models.
 
-SUPPORT LEVELS
-- Essential: email support (business hours, ~24h reply)
-- Pro: priority email support (~4h business-hours reply)
-- Enterprise: dedicated account contact + same-day responses
+SUPPORT
+- Every plan: in-app AI help (Smart Assist) plus live chat with the InFlow team via "Talk to a human", and email at hello@inflowft.com.
+- Do NOT promise priority support or response-time guarantees.
 
 CANCELLATION / REFUNDS / POLICY
 - Self-serve cancel any time via Settings → Manage Billing. No lock-in contracts.
