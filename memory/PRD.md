@@ -13,6 +13,14 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
+### Featurebase support + Priority Support removed (Oct 2026) — verified iteration_74/75
+- User decision: NO Priority Support for closed beta (1-person team). "Priority support" removed from payments.py plan features, ChoosePlan, PricingSection, TierGate, and from AI prompts (support.py rule 6: same support on every plan; contact.py SUPPORT section; agent.py never mention it). Smart Assist "Priority" badge removed.
+- Support model: Smart Assist (InFlow AI) first + "Talk to a human" → Featurebase Messenger (default launcher hidden). Old ticket UI (Create Ticket / Tickets tab / modal) removed from Support.js; backend ticket endpoints + agent escalate_to_ticket kept (internal record) — escalation card now has "Talk to a human" (pre-filled message).
+- Backend `GET /api/support/featurebase-token` (auth) → HS256 JWT {userId, email, name, plan, companies:[{id: org_id, name}], iat, exp 24h} signed with `FEATUREBASE_JWT_SECRET`. NOTE Featurebase requires companies[].id (companyId → 401 Invalid featurebaseJwt).
+- Frontend: `components/FeaturebaseBoot.js` (in App.js) mounts FeaturebaseProvider (appId `REACT_APP_FEATUREBASE_APP_ID`, hideDefaultLauncher, dark) + useFeedbackWidget(placement 'right') only for logged-in users once they hit a non-public route; keyed by user_id; unmounts on logout. `lib/featurebase.js talkToHuman()` → show()/showNewMessage() if window.Featurebase is the real dispatcher (no `.q`) or a featurebase iframe exists, else toast + mailto:hello@inflowft.com.
+- Gotcha: Termly autoBlock blocks https://do.featurebase.app/js/sdk.js until cookie Accept → user must classify featurebase.app as Essential in Termly. Featurebase org slug "inflow"; user still to add custom attribute "plan" + enable Feedback module/boards.
+- Prod: Railway `FEATUREBASE_JWT_SECRET`; Vercel `REACT_APP_FEATUREBASE_APP_ID` + redeploy.
+
 ### Removals (Oct 2026) — verified iteration_73 (backend 12/12, frontend 100%)
 - Integrations removed: Microsoft Dynamics 365, Google Sheets, Intercom (PLATFORMS entries, connect handlers, sync/test branches in business.py; modules dynamics/sheets/intercom_integration.py deleted; revenue role map + /api/integrations google_sheets entry removed). No connections existed.
 - Revenue Execution → standalone "Workspace" (Action Workspace page /workspace, pages/Workspace.js) removed from sidebar + routes. KEPT: per-account deal room /workspace/account/:leadId (High-Intent "Manage account") and all backend /api/workspace/* endpoints (deal room + CRM push use them).

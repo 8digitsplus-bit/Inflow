@@ -67,7 +67,7 @@ AGENT_TOOLS = {
         "params": "none"
     },
     "escalate_to_ticket": {
-        "description": "Auto-escalate the current issue to a support ticket when you cannot fully resolve it. Include a detailed summary of what was investigated and what remains unresolved. Use this when: the issue requires human intervention, you've exhausted your tools, the user is frustrated, or the problem is outside your capabilities.",
+        "description": "Record the current issue for the InFlow team when you cannot fully resolve it (the user then sends it via Talk to a human). Include a detailed summary of what was investigated and what remains unresolved. Use this when: the issue requires human intervention, you've exhausted your tools, the user is frustrated, or the problem is outside your capabilities.",
         "params": "subject (required), summary (required), severity (optional: low/medium/high, default medium)"
     },
 }
@@ -108,9 +108,9 @@ MEMORY:
 - Don't save trivial or temporary information.
 
 AUTO-ESCALATION:
-- If you CANNOT resolve the user's issue after investigation (e.g., a bug, data corruption, billing dispute, platform error), use `escalate_to_ticket` to create a support ticket automatically.
+- If you CANNOT resolve the user's issue after investigation (e.g., a bug, data corruption, billing dispute, platform error), use `escalate_to_ticket` to record the issue internally.
 - Include ALL context: what you investigated, what you found, and what remains unresolved.
-- Tell the user this needs a person from the InFlow team and that they can tap **Talk to a human** (shown under your reply) to send it to them. Never promise response times.
+- Tell the user this needs a person from the InFlow team and that they should tap **Talk to a human** (shown under your reply) to send it to them. Do NOT say a ticket was created, that it's high-priority, or that the team will reach out on their own. Never promise response times.
 - Never mention or promise "priority support". If asked about plan features or pricing, say you can check their data but plan details are on the Pricing page / Settings → Billing — don't invent features.
 - Escalate when: the issue requires human/engineering intervention, you've hit the limits of your tools, the user explicitly asks for human help, or you detect the same issue recurring.
 

@@ -1,0 +1,49 @@
+{
+  "summary": "Retest of the Featurebase integration (iteration 74 follow-up). PASS: (1) the JWT payload uses companies[0].id and Featurebase accepts it (200, messenger shows 'Hi, Test Pro User'). (2) After accepting cookies, talk-to-human-btn on /support opens the Featurebase Messenger panel (405x708) with no toast. (2b) With cookies declined (sdk.js type=text/plain, window.Featurebase.q present), clicking it shows the toast \"Live chat isn't available right now — email us at hello@inflowft.com\" and requests mailto:hello@inflowft.com. (4) An escalation card renders; escalation-talk-human-btn opens the Messenger pre-filled with 'Smart Assist escalated an issue (ticket_...)' (not sent). Regressions pass: Feedback tab appears, logout removes all Featurebase nodes (7 -> 0), and '/' while logged out has no SDK/nodes. FAIL: (3) POST /api/support/chat still advertises priority support. 4 of 4 runs of 'What support do I get on my plan?' mention it ('Priority email support (typically under 4 hours)', 'Dedicated account manager', and once literally 'you get **priority support**'). POST /api/support/agent is clean (0 of 4).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/support/chat", "issue": "The AI still says Enterprise/Pro get 'Priority email support', faster response times ('under 4 hours'), and a 'Dedicated account manager'; 1 of 4 runs said literally 'priority support'. Reproduced 4/4 with 'What support do I get on my plan?'. RCA: support.py SYSTEM_PROMPT has no SUPPORT section and no 'never mention priority support / response times / account manager' rule (only agent.py and contact.py got that). The plan lists say only Essential has 'Email support', so the LLM extrapolates tiered support for the higher plans. The 'Pro plan features' question passed (no priority mention)."},
+      {"endpoint": "POST /api/support/chat response + db.support_conversations", "issue": "The response still returns \"priority\": \"priority\" for paid tiers, and get_priority_level still tags conversations and tickets. It is not shown to users, but it is leftover dead logic."},
+      {"endpoint": "POST /api/support/agent (escalate_to_ticket)", "issue": "On escalation the agent says '✅ Escalated to InFlow Support Team — I've created a high-priority support ticket… A member of the InFlow team will investigate both issues and reach out to you directly.' Nobody monitors db.support_tickets, so this promise is false. The reply does mention tapping 'Talk to a human'. The prompt/tool text should say the user must send the issue via Talk to a human, and should drop the 'high-priority ticket' / 'will reach out' wording."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "Featurebase SDK gating", "issue": "Still gated by Termly autoBlock until Accept (expected; the user will whitelist it in Termly). The fallback works correctly when blocked.", "affected_selectors": ["script#featurebase-sdk"]}
+    ],
+    "design_issues": [
+      {"screen": "/support", "issues": ["The Smart Assist chat reply said 'Tap the button at the top of this chat', which is correct (talk-to-human-btn is in the chat header). The agent reply says 'below this message', which matches the escalation card. OK.", "The Termly 'We've updated our Cookie Policy' notice bar sits over the top of the page title area (third-party, minor)."]}
+    ]
+  },
+  "passed_checks": [
+    "JWT companies[0].id == org_15337f4cefc9, no companyId; Featurebase feedback/widget/config returns 200",
+    "talk-to-human-btn (cookies accepted) -> Messenger panel opens, no toast, no mailto",
+    "talk-to-human-btn (cookies declined) -> toast text exact + mailto:hello@inflowft.com",
+    "escalation-card + escalation-talk-human-btn -> Messenger opens pre-filled (message NOT sent)",
+    "Feedback side tab (.fb-feedback-widget-feedback-button) present after SDK load",
+    "Logout via user-menu-sign-out -> logout-confirm-btn -> '/', Featurebase nodes 7 -> 0",
+    "'/' logged out: window.Featurebase undefined, no sdk script, 0 nodes",
+    "POST /api/support/agent 'what support do I get' -> no 'priority' (4/4)",
+    "POST /api/support/chat 'What features are in the Pro plan?' -> no 'priority support'"
+  ],
+  "test_report_links": ["/app/backend/tests/test_featurebase_iter75.py", "/app/test_reports/pytest/pytest_iter75.xml"],
+  "action_items": [
+    "MEDIUM: In routes/support.py SYSTEM_PROMPT, add an explicit SUPPORT section, e.g. 'Support on every plan: Smart Assist AI + Talk to a human (live chat) + email hello@inflowft.com. NEVER mention priority support, response-time guarantees, SLAs, or dedicated account managers.' Then make the test assert 'priority' not in reply.lower() (test_featurebase_iter75.py only checks the exact phrase 'priority support', so it passed while 'Priority email support' leaked).",
+    "LOW: Change the agent escalation reply/tool wording so it doesn't claim a 'high-priority support ticket' or that the team 'will reach out directly'. Tell the user to press Talk to a human to send it.",
+    "LOW: Remove get_priority_level / the 'priority' field from chat responses and conversations."
+  ],
+  "critical_code_review_comments": [
+    "lib/featurebase.js: the messengerLoaded() check works in practice. The iframe fallback selector iframe[src*=featurebase] matched 0 even when loaded (the SDK frames have no featurebase src), so the !q check is what makes it work.",
+    "test_featurebase_iter75.py's priority assertion is too narrow (exact phrase). Broaden it to 'priority'."
+  ],
+  "updated_files": ["/app/backend/tests/test_featurebase_iter75.py"],
+  "success_rate": {"backend": "80% (support/chat priority wording still failing in spirit; pytest 5/5 because of a narrow assertion)", "frontend": "100% of requested flows"},
+  "test_credentials": "testpro@test.com / password",
+  "seed_data_creation": "Several Smart Assist conversations for testpro plus one agent escalation ticket (ticket_0373f5962082) in db.support_tickets. No messages sent to Featurebase (the pre-filled message was not submitted).",
+  "retest_needed": true,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Login: /auth -> click Accept on the Termly banner -> fill email/password -> auth-submit-btn. Logout: user-menu-trigger -> user-menu-sign-out -> logout-confirm-btn. Messenger open = .featurebase-messenger-frame-wrapper 405x708. Declined state: script#featurebase-sdk type=text/plain, window.Featurebase.q truthy. Remaining check: re-run /api/support/chat 'What support do I get on my plan?' 3+ times and assert no 'priority' / 'account manager' / 'response time'.",
+  "rca of the issue": "Priority wording in /support/chat: support.py SYSTEM_PROMPT lacks any support-level guidance or prohibition, unlike agent.py:114 and contact.py:112. The Essential plan line lists 'Email support', so the LLM infers 'priority email support' and an account manager for higher tiers. Fix: add an explicit SUPPORT section with a prohibition to SYSTEM_PROMPT."
+}
