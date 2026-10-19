@@ -29,6 +29,7 @@ const ConversionOptimization = lazy(() => import('./pages/ConversionOptimization
 const Settings = lazy(() => import('./pages/Settings'));
 const Integrations = lazy(() => import('./pages/Integrations'));
 const ConnectBusiness = lazy(() => import('./pages/ConnectBusiness'));
+const SyncPage = lazy(() => import('./pages/Sync'));
 const Onboarding = lazy(() => import('./pages/Onboarding'));
 const ChoosePlan = lazy(() => import('./pages/ChoosePlan'));
 const Checkout = lazy(() => import('./pages/Checkout'));
@@ -218,6 +219,14 @@ const AppRouter = () => {
             <ConnectBusiness />
           </ProtectedRoute>
         } 
+      />
+      <Route
+        path="/sync"
+        element={
+          <ProtectedRoute>
+            <SyncPage />
+          </ProtectedRoute>
+        }
       />
       <Route 
         path="/revenue-leaks" 

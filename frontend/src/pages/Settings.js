@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import DashboardLayout from '../components/DashboardLayout';
+import { SyncSettingsCard } from '../components/sync/SyncSettingsCard';
 import { motion } from 'framer-motion';
 import {
   Check,
@@ -274,6 +275,8 @@ const Settings = () => {
                 </div>
               </div>
             </div>
+
+            <SyncSettingsCard className={innerCard} />
 
             {/* Renewal */}
             <div className={innerCard} data-testid="renewal-card">

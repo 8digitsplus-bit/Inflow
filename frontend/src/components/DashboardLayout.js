@@ -19,6 +19,7 @@ import {
   Tag,
   LineChart,
   Radar,
+  RefreshCw,
   Swords,
   Rocket,
   Telescope,
@@ -72,6 +73,7 @@ const navGroups = [
     label: 'Tools',
     items: [
       { name: 'Integration', href: '/connect-business', icon: Plug, minTier: 0 },
+      { name: 'Sync', href: '/sync', icon: RefreshCw, minTier: 0 },
       { name: 'Revenue Leaks', href: '/revenue-leaks', icon: Radar, minTier: 3 },
       { name: 'Smart Assist', href: '/support', icon: Headphones, minTier: 0 },
     ]

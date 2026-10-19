@@ -23,6 +23,7 @@ from routes.business import router as business_router
 from routes.scalekit_integration import router as scalekit_router
 from routes.zoho_integration import router as zoho_router
 from routes.quickbooks_integration import router as quickbooks_router
+from routes.sync_schedule import router as sync_router, process_sync_schedules_once
 from routes.support import router as support_router
 from routes.agent import router as agent_router
 from routes.custom_integration import router as custom_integration_router
@@ -136,6 +137,7 @@ api_router.include_router(ai_router)
 api_router.include_router(payments_router)
 api_router.include_router(zoho_router)
 api_router.include_router(quickbooks_router)
+api_router.include_router(sync_router)
 api_router.include_router(scalekit_router)
 api_router.include_router(integrations_router)
 api_router.include_router(business_router)
@@ -236,6 +238,22 @@ async def startup_migrations():
             await asyncio.sleep(3)
 
     app.state.outbound_task = asyncio.create_task(_outbound_worker())
+
+    # Background worker: plan-based scheduled syncs (weekly / daily / every 15 min).
+    async def _sync_scheduler():
+        while True:
+            try:
+                await process_sync_schedules_once()
+            except Exception as e:
+                logging.error("Sync scheduler error: %s", e)
+            await asyncio.sleep(60)
+
+    app.state.sync_task = asyncio.create_task(_sync_scheduler())
+    try:
+        await db.sync_schedules.create_index("org_id", unique=True)
+        await db.sync_runs.create_index([("org_id", 1), ("started_at", -1)])
+    except Exception as e:
+        logging.error("Failed to ensure sync indexes: %s", e)
     try:
         await db.intent_events.create_index([("org_id", 1), ("account_key", 1), ("ts", 1)])
         await db.intent_events.create_index([("org_id", 1), ("received_at", -1)])
