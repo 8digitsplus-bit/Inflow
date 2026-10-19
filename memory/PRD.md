@@ -656,4 +656,5 @@ All AI responses: no emojis, clean plain-text formatting, rendered via shared AI
 ## Jun 2026 — Featurebase feedback widget check
 - Blank Feedback panel on preview (no text box) reproduced: the Featurebase Feedback module has no boards yet, so the widget shell renders with no form. This is a Featurebase dashboard setting, not a code bug.
 - Termly Auto-Blocker holds back do.featurebase.app/js/sdk.js until cookies are accepted (iframe tagged data-categories="unclassified"). Suggested to the user: a Termly Domain Rule to mark Featurebase as Essential.
-- Fixed the JWT companies payload key `id` -> `companyId` (routes/support.py), per the Featurebase docs. `plan` is already sent in the JWT (raw subscription_tier, e.g. enterprise_monthly).
+- JWT companies key MUST stay `id`. Changing it to `companyId` (one help article says so) made Featurebase reject the whole JWT ("Invalid featurebaseJwt"), which broke Messenger and Feedback. Reverted and verified: identify 200, company attached. The JWT spec article (5257986) confirms `id`. `plan` is sent in the JWT (raw subscription_tier).
+- Feedback panel still blank: /api/v1/feedback/widget/config returns `postCategories: []` (feedbackModuleEnabled true, access granted). Featurebase isn't exposing any category to the widget; it's a dashboard setting, waiting on the user.
