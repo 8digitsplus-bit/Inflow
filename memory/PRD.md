@@ -652,3 +652,8 @@ All AI responses: no emojis, clean plain-text formatting, rendered via shared AI
 - "Sync now" button REMOVED on every plan; POST /api/sync/run-now endpoint removed.
 - GET /api/sync/settings now returns schedule.interval_hours, intervals [1,2,4,8], dynamic mode_label ("Every 4 hours"). Next-sync time is shown in the schedule's timezone with a tz suffix. Timezone list always includes UTC + current value (Chromium omits UTC/Asia/Kolkata).
 - Files: backend/routes/sync_schedule.py, frontend/src/pages/Sync.js, components/sync/{SyncScheduleCard,syncUtils,SyncActivity,SyncSettingsCard}.js. Tests: backend/tests/test_sync_schedule.py (29/29), iteration_78.json.
+
+## Jun 2026 — Featurebase feedback widget check
+- Blank Feedback panel on preview (no text box) reproduced: the Featurebase Feedback module has no boards yet, so the widget shell renders with no form. This is a Featurebase dashboard setting, not a code bug.
+- Termly Auto-Blocker holds back do.featurebase.app/js/sdk.js until cookies are accepted (iframe tagged data-categories="unclassified"). Suggested to the user: a Termly Domain Rule to mark Featurebase as Essential.
+- Fixed the JWT companies payload key `id` -> `companyId` (routes/support.py), per the Featurebase docs. `plan` is already sent in the JWT (raw subscription_tier, e.g. enterprise_monthly).
