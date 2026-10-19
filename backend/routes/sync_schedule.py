@@ -102,7 +102,8 @@ async def _schedule(org_id: str) -> dict:
         doc.update(missing)
         nxt = compute_next(mode, doc, _now())
         upd = {**missing, "mode": mode, "next_run_at": nxt.isoformat() if nxt else None}
-        await db.sync_schedules.update_one({"org_id": org_id}, {"$set": upd})
+        op = {"$set": upd, **({"$unset": {"weekday": ""}} if "weekday" in doc else {})}
+        await db.sync_schedules.update_one({"org_id": org_id}, op)
         doc.update(upd)
     return doc
 

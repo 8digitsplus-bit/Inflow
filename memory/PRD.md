@@ -644,3 +644,11 @@ All AI responses: no emojis, clean plain-text formatting, rendered via shared AI
 
 ## Jun 2026 — $ prefix on currency inputs (UI polish) — DONE
 - New reusable components/MoneyInput.js ($-prefixed field). Applied to all money inputs: RevenueForecast target, Pipeline deal value, AccountWorkspace amount x2, Workspace deal/offer amount, UpsellEngine price, CompetitorIntel price, RevenueLeaks price-per-seat, ConversionOptimization value/conversion. Non-money fields (%, counts, OTP) intentionally left as plain inputs. Removed now-redundant "($)" from those labels. Frontend compiles clean.
+
+## Jun 2026 — Sync scheduler rework (tier frequencies) — DONE
+- Essential: DAILY at a user-picked time + timezone (was weekly; weekday field removed and $unset from old docs).
+- Pro + Trial: every 1/2/4/8 hours (dropdown, default 4) on a CLOCK-ALIGNED grid in the org's timezone (e.g. 4h -> 00:00, 04:00, 08:00…). compute_next steps 15-min in UTC so :30/:45 offsets + DST are handled.
+- Enterprise: unchanged real-time every 15 min. Expired: off.
+- "Sync now" button REMOVED on every plan; POST /api/sync/run-now endpoint removed.
+- GET /api/sync/settings now returns schedule.interval_hours, intervals [1,2,4,8], dynamic mode_label ("Every 4 hours"). Next-sync time is shown in the schedule's timezone with a tz suffix. Timezone list always includes UTC + current value (Chromium omits UTC/Asia/Kolkata).
+- Files: backend/routes/sync_schedule.py, frontend/src/pages/Sync.js, components/sync/{SyncScheduleCard,syncUtils,SyncActivity,SyncSettingsCard}.js. Tests: backend/tests/test_sync_schedule.py (29/29), iteration_78.json.

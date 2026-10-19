@@ -12,13 +12,19 @@ export const browserTimezone = () => {
   try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; } catch { return 'UTC'; }
 };
 
-export const timezones = () => {
-  try { return Intl.supportedValuesOf('timeZone'); } catch { return ['UTC']; }
+// Browsers omit 'UTC' and some canonical names (e.g. Asia/Kolkata), so always include the current value.
+export const timezones = (current) => {
+  let list = [];
+  try { list = Intl.supportedValuesOf('timeZone'); } catch { /* old browser */ }
+  return Array.from(new Set(['UTC', current, ...list].filter(Boolean)));
 };
 
-export const formatWhen = (iso) => {
+export const formatWhen = (iso, timeZone) => {
   if (!iso) return '—';
-  return new Date(iso).toLocaleString(undefined, { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  const opts = { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' };
+  try {
+    return new Date(iso).toLocaleString(undefined, timeZone ? { ...opts, timeZone, timeZoneName: 'short' } : opts);
+  } catch { return new Date(iso).toLocaleString(undefined, opts); }
 };
 
 export const relative = (iso) => {

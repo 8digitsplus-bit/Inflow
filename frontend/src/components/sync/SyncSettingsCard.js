@@ -22,7 +22,7 @@ export const SyncSettingsCard = ({ className }) => {
       <div className="flex items-center justify-between gap-3">
         <div className="min-w-0">
           <p className="text-sm text-zinc-200" data-testid="settings-sync-mode">{data ? data.mode_label : '…'}</p>
-          <p className="text-xs text-zinc-500 mt-0.5">{s?.enabled && s?.next_run_at ? `Next: ${formatWhen(s.next_run_at)}` : 'Automatic sync is off'}</p>
+          <p className="text-xs text-zinc-500 mt-0.5">{s?.enabled && s?.next_run_at ? `Next: ${formatWhen(s.next_run_at, s.mode === 'realtime' ? undefined : s.timezone)}` : 'Automatic sync is off'}</p>
         </div>
         <Button size="sm" variant="outline" onClick={() => navigate('/sync')}
           className="border-white/10 text-zinc-200 hover:bg-[#0052ff]/10 hover:text-white" data-testid="settings-manage-sync-btn">

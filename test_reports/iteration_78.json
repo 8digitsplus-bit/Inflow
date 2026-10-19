@@ -1,0 +1,35 @@
+{
+  "summary": "Retested the reworked Sync scheduler: daily for Essential, a clock-aligned 1/2/4/8h grid for Pro and Trial, real-time for Enterprise, off when the plan has expired, and run-now removed. Backend: 29/29 pytest cases passed (new file test_sync_schedule.py; the outdated iter76/77 files were deleted). Frontend: Pro, Trial, Essential, Enterprise, Off and the Settings card all work. There is one real frontend bug: the timezone dropdown is blank when the saved timezone is 'UTC' (the default) or 'Asia/Kolkata', because Chromium's Intl.supportedValuesOf('timeZone') leaves out 'UTC' and returns 'Asia/Calcutta' instead of 'Asia/Kolkata'.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "sync_schedules doc", "issue": "Old docs still store a 'weekday' field. It is not returned by _public, so it is harmless, but it could be $unset during backfill."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "SyncScheduleCard timezone select", "issue": "The dropdown trigger renders empty when schedule.timezone is not in Intl.supportedValuesOf('timeZone'). Chromium returns 418 zones with no 'UTC' and uses 'Asia/Calcutta', not 'Asia/Kolkata'. The schedule default is 'UTC', so every new Pro/Essential org whose browser timezone is UTC sees a blank Timezone field. A schedule saved as Asia/Kolkata (through the API, or by the browser-timezone prefill on browsers that report Kolkata) is also blank, while the grid preview still says '(Asia/Kolkata)'. Fix: in syncUtils.timezones(), always include 'UTC' and the current value, e.g. Array.from(new Set(['UTC', current, ...Intl.supportedValuesOf('timeZone')])).", "selector": "[data-testid='sync-timezone-select']", "priority": "MEDIUM"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "/sync schedule card", "issues": ["'Next sync' (sync-next-run) is shown in the browser's timezone with no label, while the grid preview uses the schedule's timezone. Example: schedule Europe/London, grid '00:00, 04:00…', but Next sync shows '7:00 PM' (a UTC browser). This is confusing; add a timezone suffix or format in the schedule timezone.", "Off mode leaves an empty mt-5 grid gap above the divider (minor)."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_sync_schedule.py", "/app/test_reports/pytest/pytest_sync_iter78.xml"],
+  "action_items": [
+    "syncUtils.timezones(): add 'UTC' and the schedule's current timezone to the list so the Select never renders blank (accept Asia/Kolkata vs Asia/Calcutta aliases)",
+    "Optional: show the timezone next to the 'Next sync' time, or format it in the schedule's timezone",
+    "Optional: $unset the legacy 'weekday' field in _schedule backfill"
+  ],
+  "critical_code_review_comments": [
+    "The hourly compute_next uses 15-min UTC steps with local minute==0 and hour%n==0. Verified for Europe/London, Asia/Kolkata and America/New_York with all intervals.",
+    "Daily compute_next does local.replace(hour, minute) without fold handling. On a DST spring-forward day a nonexistent local time (e.g. 01:30 Europe/London) resolves to a shifted time. This is an edge case.",
+    "Re-enabling realtime sets next_run_at to now+15min rather than now. That is acceptable."
+  ],
+  "updated_files": ["/app/backend/tests/test_sync_schedule.py (new)", "deleted /app/backend/tests/test_sync_schedule_iter76.py and test_sync_schedule_iter77.py (obsolete: weekday/run-now)"],
+  "success_rate": {"backend": "100% (29/29)", "frontend": "~95% (all flows pass; timezone select renders blank for UTC/Kolkata)"},
+  "seed_data_creation": "None. Tier was flipped temporarily; the org is restored to enterprise_monthly with schedule enabled=true, 07:00, Europe/London, interval_hours=4.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Use /app/backend/tests/test_sync_schedule.py (it needs REACT_APP_BACKEND_URL, MONGO_URL and DB_NAME exported). The scheduler-fire test takes about 60s. To log in from the browser, use page.request.post('/api/auth/login') (it shares the cookie). In the timezone Select, force-clicking an option by role picked the wrong item (Africa/Algiers) because the list is long and scrolls. Type to search or scroll the option into view instead."
+}

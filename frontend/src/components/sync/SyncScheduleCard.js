@@ -39,7 +39,7 @@ const ScheduleFields = ({ mode, form, setForm, disabled, intervals }) => (
     <Field label="Timezone">
       <Select value={form.timezone} disabled={disabled} onValueChange={(v) => setForm({ ...form, timezone: v })}>
         <SelectTrigger className="bg-black/40 border-white/10 text-white" data-testid="sync-timezone-select"><SelectValue /></SelectTrigger>
-        <SelectContent className="max-h-72">{timezones().map((z) => <SelectItem key={z} value={z}>{z}</SelectItem>)}</SelectContent>
+        <SelectContent className="max-h-72">{timezones(form.timezone).map((z) => <SelectItem key={z} value={z}>{z}</SelectItem>)}</SelectContent>
       </Select>
     </Field>
     {mode === 'hourly' && (
@@ -95,18 +95,20 @@ export const SyncScheduleCard = ({ data, onSaved }) => {
           className="data-[state=checked]:bg-[#0052ff]" data-testid="sync-enabled-toggle" />
       </div>
 
-      <div className="mt-5 grid gap-4 sm:grid-cols-3">
-        {scheduled && <ScheduleFields mode={mode} form={form} setForm={setForm} disabled={locked || !form.enabled} intervals={data.intervals || [1, 2, 4, 8]} />}
-        {mode === 'realtime' && (
-          <p className="sm:col-span-3 text-sm text-zinc-300" data-testid="sync-realtime-note">
-            Your data syncs automatically every {data.realtime_minutes} minutes, around the clock.
-          </p>
-        )}
-      </div>
+      {mode !== 'off' && (
+        <div className="mt-5 grid gap-4 sm:grid-cols-3">
+          {scheduled && <ScheduleFields mode={mode} form={form} setForm={setForm} disabled={locked || !form.enabled} intervals={data.intervals || [1, 2, 4, 8]} />}
+          {mode === 'realtime' && (
+            <p className="sm:col-span-3 text-sm text-zinc-300" data-testid="sync-realtime-note">
+              Your data syncs automatically every {data.realtime_minutes} minutes, around the clock.
+            </p>
+          )}
+        </div>
+      )}
 
       <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-white/5 pt-4">
         <p className="text-xs text-zinc-400" data-testid="sync-next-run">
-          {s.enabled && s.next_run_at ? <>Next sync <span className="text-zinc-200">{formatWhen(s.next_run_at)}</span> ({relative(s.next_run_at)})</> : 'Automatic sync is off'}
+          {s.enabled && s.next_run_at ? <>Next sync <span className="text-zinc-200">{formatWhen(s.next_run_at, scheduled ? s.timezone : undefined)}</span> ({relative(s.next_run_at)})</> : 'Automatic sync is off'}
         </p>
         {data.can_edit && scheduled && (
           <Button size="sm" onClick={() => save()} disabled={!dirty || saving} className="bg-[#0052ff] hover:bg-[#1a63ff] text-white" data-testid="sync-save-btn">
