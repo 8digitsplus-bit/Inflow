@@ -1,14 +1,15 @@
 """Scheduled data sync — plan-based automatic refresh of every connected integration.
 
-Essential: weekly on a chosen day + time. Pro (and trial): daily at a chosen time.
-Enterprise: "real-time" = every 15 minutes (true webhooks come later). Expired/cancelled: off.
+Essential: daily at a chosen time. Pro (and trial): every 1/2/4/8 hours on a clock-aligned grid
+in the org's timezone. Enterprise: "real-time" = every 15 minutes. Expired/cancelled: off.
 Runs inside the server (see server.py worker); due schedules are claimed atomically so a
-sync never runs twice even with several server replicas. Manual "Sync now" stays on every plan.
+sync never runs twice even with several server replicas.
 """
 import asyncio
 import logging
 import uuid
 from datetime import datetime, timezone, timedelta
+from typing import Literal
 from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from fastapi import APIRouter, Depends, HTTPException
@@ -23,8 +24,8 @@ logger = logging.getLogger(__name__)
 
 REALTIME_MINUTES = 15
 LOCK_MINUTES = 30
-DEFAULTS = {"enabled": True, "weekday": 0, "time": "07:00", "timezone": "UTC"}
-MODE_LABEL = {"weekly": "Weekly", "daily": "Daily", "realtime": "Real-time (every 15 min)", "off": "Off"}
+INTERVALS = (1, 2, 4, 8)
+DEFAULTS = {"enabled": True, "time": "07:00", "timezone": "UTC", "interval_hours": 4}
 _last_ensure = {"at": None}
 
 
@@ -37,10 +38,25 @@ def mode_for_tier(tier: str) -> str:
     if t.startswith("enterprise"):
         return "realtime"
     if t.startswith("pro") or t == "trial":
-        return "daily"
+        return "hourly"
     if t.startswith("essential"):
-        return "weekly"
+        return "daily"
     return "off"
+
+
+def mode_label(sched: dict) -> str:
+    mode = sched["mode"]
+    if mode == "hourly":
+        n = int(sched.get("interval_hours") or DEFAULTS["interval_hours"])
+        return "Every hour" if n == 1 else f"Every {n} hours"
+    return {"daily": "Daily", "realtime": f"Real-time (every {REALTIME_MINUTES} min)", "off": "Off"}[mode]
+
+
+def _tz(sched: dict) -> ZoneInfo:
+    try:
+        return ZoneInfo(sched.get("timezone") or "UTC")
+    except (ZoneInfoNotFoundError, ValueError):
+        return ZoneInfo("UTC")
 
 
 def compute_next(mode: str, sched: dict, after: datetime):
@@ -48,20 +64,21 @@ def compute_next(mode: str, sched: dict, after: datetime):
         return None
     if mode == "realtime":
         return after + timedelta(minutes=REALTIME_MINUTES)
-    try:
-        tz = ZoneInfo(sched.get("timezone") or "UTC")
-    except ZoneInfoNotFoundError:
-        tz = ZoneInfo("UTC")
-    h, m = (int(x) for x in (sched.get("time") or "07:00").split(":"))
+    tz = _tz(sched)
+    if mode == "hourly":
+        # Next local HH:00 where HH is a multiple of the interval; 15-min UTC steps cover :30/:45 offsets and DST.
+        every = int(sched.get("interval_hours") or DEFAULTS["interval_hours"])
+        cand = after.replace(minute=after.minute // 15 * 15, second=0, microsecond=0)
+        while True:
+            cand += timedelta(minutes=15)
+            local = cand.astimezone(tz)
+            if local.minute == 0 and local.hour % every == 0:
+                return cand
+    h, m = (int(x) for x in (sched.get("time") or DEFAULTS["time"]).split(":"))
     local = after.astimezone(tz)
     cand = local.replace(hour=h, minute=m, second=0, microsecond=0)
-    if mode == "daily":
-        if cand <= local:
-            cand += timedelta(days=1)
-    else:
-        cand += timedelta(days=(int(sched.get("weekday", 0)) - local.weekday()) % 7)
-        if cand <= local:
-            cand += timedelta(days=7)
+    if cand <= local:
+        cand += timedelta(days=1)
     return cand.astimezone(timezone.utc)
 
 
@@ -80,9 +97,11 @@ async def _schedule(org_id: str) -> dict:
         doc["next_run_at"] = nxt.isoformat() if nxt else None
         await db.sync_schedules.update_one({"org_id": org_id}, {"$setOnInsert": doc}, upsert=True)
         return await db.sync_schedules.find_one({"org_id": org_id}, {"_id": 0})
-    if doc.get("mode") != mode:
+    missing = {k: v for k, v in DEFAULTS.items() if k not in doc}
+    if doc.get("mode") != mode or missing:
+        doc.update(missing)
         nxt = compute_next(mode, doc, _now())
-        upd = {"mode": mode, "next_run_at": nxt.isoformat() if nxt else None}
+        upd = {**missing, "mode": mode, "next_run_at": nxt.isoformat() if nxt else None}
         await db.sync_schedules.update_one({"org_id": org_id}, {"$set": upd})
         doc.update(upd)
     return doc
@@ -149,7 +168,7 @@ async def run_org_sync(org_id: str, trigger: str, run_id: str) -> dict:
     return {"status": status, "results": results}
 
 
-async def _execute(org_id: str, trigger: str, run_id: str, reschedule: bool):
+async def _execute(org_id: str, trigger: str, run_id: str):
     try:
         out = await run_org_sync(org_id, trigger, run_id)
         status = out["status"]
@@ -160,9 +179,8 @@ async def _execute(org_id: str, trigger: str, run_id: str, reschedule: bool):
                                                                     "results": [{"label": "Sync", "ok": False, "error": str(e)[:200]}]}})
     upd = {"locked_until": None, "last_run_at": _now().isoformat(), "last_status": status, "last_run_id": run_id}
     sched = await _schedule(org_id)
-    if reschedule or sched["mode"] == "realtime":
-        nxt = compute_next(sched["mode"], sched, _now())
-        upd["next_run_at"] = nxt.isoformat() if nxt else None
+    nxt = compute_next(sched["mode"], sched, _now())
+    upd["next_run_at"] = nxt.isoformat() if nxt else None
     await db.sync_schedules.update_one({"org_id": org_id}, {"$set": upd})
 
 
@@ -205,19 +223,19 @@ async def process_sync_schedules_once():
             continue
         if await _claim(d["org_id"], {"next_run_at": d["next_run_at"]}):
             run_id = await _start_run(d["org_id"], "schedule")
-            asyncio.create_task(_execute(d["org_id"], "schedule", run_id, reschedule=True))
+            asyncio.create_task(_execute(d["org_id"], "schedule", run_id))
 
 
 # ------------------------------------------------------------------ API
 class ScheduleUpdate(BaseModel):
     enabled: bool | None = None
-    weekday: int | None = Field(default=None, ge=0, le=6)
+    interval_hours: Literal[1, 2, 4, 8] | None = None
     time: str | None = Field(default=None, pattern=r"^([01]\d|2[0-3]):[0-5]\d$")
     timezone: str | None = None
 
 
 def _public(doc: dict) -> dict:
-    return {k: doc.get(k) for k in ("enabled", "weekday", "time", "timezone", "mode", "next_run_at",
+    return {k: doc.get(k) for k in ("enabled", "time", "timezone", "interval_hours", "mode", "next_run_at",
                                     "last_run_at", "last_status", "last_run_id")}
 
 
@@ -243,9 +261,9 @@ async def sync_settings(user: User = Depends(get_current_user)):
             connections.append({"platform": c.get("platform"), "label": t[0], "last_synced": c.get("last_synced"),
                                 "records_synced": c.get("records_synced", 0), "status": c.get("status") or c.get("sync_status")})
     runs = await db.sync_runs.find({"org_id": user.org_id}, {"_id": 0}).sort("started_at", -1).to_list(10)
-    return {"schedule": _public(sched), "mode_label": MODE_LABEL[sched["mode"]],
+    return {"schedule": _public(sched), "mode_label": mode_label(sched),
             "tier": (org or {}).get("subscription_tier", "trial"), "can_edit": user.role == "owner",
-            "realtime_minutes": REALTIME_MINUTES, "connections": connections, "runs": runs}
+            "realtime_minutes": REALTIME_MINUTES, "intervals": list(INTERVALS), "connections": connections, "runs": runs}
 
 
 @router.put("/sync/settings")
@@ -266,12 +284,3 @@ async def update_sync_settings(body: ScheduleUpdate, user: User = Depends(requir
     await db.sync_schedules.update_one({"org_id": user.org_id}, {"$set": upd})
     return {"ok": True, "schedule": _public({**merged, **upd})}
 
-
-@router.post("/sync/run-now")
-async def sync_run_now(user: User = Depends(require_owner)):
-    await _schedule(user.org_id)
-    if not await _claim(user.org_id, {}):
-        raise HTTPException(status_code=409, detail="A sync is already running.")
-    run_id = await _start_run(user.org_id, "manual")
-    asyncio.create_task(_execute(user.org_id, "manual", run_id, reschedule=False))
-    return {"ok": True, "run_id": run_id}

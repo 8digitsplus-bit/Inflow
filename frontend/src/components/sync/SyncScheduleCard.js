@@ -7,9 +7,10 @@ import { Switch } from '../ui/switch';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../ui/select';
-import { API_URL, WEEKDAYS, browserTimezone, timezones, formatWhen, relative, PLAN_HINT } from './syncUtils';
+import { API_URL, browserTimezone, timezones, formatWhen, relative, PLAN_HINT, intervalLabel, gridPreview } from './syncUtils';
 
 const card = 'rounded-2xl border border-white/10 bg-black/30 p-6 backdrop-blur';
+const FIELDS = ['enabled', 'time', 'timezone', 'interval_hours'];
 
 const Field = ({ label, children }) => (
   <div className="space-y-1.5">
@@ -18,15 +19,44 @@ const Field = ({ label, children }) => (
   </div>
 );
 
+const ScheduleFields = ({ mode, form, setForm, disabled, intervals }) => (
+  <>
+    {mode === 'hourly' && (
+      <Field label="Sync every">
+        <Select value={String(form.interval_hours)} disabled={disabled} onValueChange={(v) => setForm({ ...form, interval_hours: Number(v) })}>
+          <SelectTrigger className="bg-black/40 border-white/10 text-white" data-testid="sync-interval-select"><SelectValue /></SelectTrigger>
+          <SelectContent>{intervals.map((n) => <SelectItem key={n} value={String(n)} data-testid={`sync-interval-${n}`}>{intervalLabel(n)}</SelectItem>)}</SelectContent>
+        </Select>
+      </Field>
+    )}
+    {mode === 'daily' && (
+      <Field label="Time">
+        <Input type="time" value={form.time} disabled={disabled}
+          onChange={(e) => e.target.value && setForm({ ...form, time: e.target.value })}
+          className="bg-black/40 border-white/10 text-white [color-scheme:dark]" data-testid="sync-time-input" />
+      </Field>
+    )}
+    <Field label="Timezone">
+      <Select value={form.timezone} disabled={disabled} onValueChange={(v) => setForm({ ...form, timezone: v })}>
+        <SelectTrigger className="bg-black/40 border-white/10 text-white" data-testid="sync-timezone-select"><SelectValue /></SelectTrigger>
+        <SelectContent className="max-h-72">{timezones().map((z) => <SelectItem key={z} value={z}>{z}</SelectItem>)}</SelectContent>
+      </Select>
+    </Field>
+    {mode === 'hourly' && (
+      <p className="sm:col-span-3 text-xs text-zinc-400" data-testid="sync-grid-preview">{gridPreview(form.interval_hours)} ({form.timezone})</p>
+    )}
+  </>
+);
+
 export const SyncScheduleCard = ({ data, onSaved }) => {
   const s = data.schedule;
   const mode = s.mode;
-  const [form, setForm] = useState({ enabled: s.enabled, weekday: s.weekday, time: s.time, timezone: s.timezone });
+  const [form, setForm] = useState({ enabled: s.enabled, time: s.time, timezone: s.timezone, interval_hours: s.interval_hours });
   const [saving, setSaving] = useState(false);
   const [tzPrefilled, setTzPrefilled] = useState(false);
-  const dirty = ['enabled', 'weekday', 'time', 'timezone'].some((k) => form[k] !== s[k]);
+  const dirty = FIELDS.some((k) => form[k] !== s[k]);
   const locked = !data.can_edit || mode === 'off';
-  const scheduled = mode === 'weekly' || mode === 'daily';
+  const scheduled = mode === 'daily' || mode === 'hourly';
 
   useEffect(() => {
     // First visit: suggest the browser's timezone if the schedule is still on the UTC default.
@@ -66,29 +96,7 @@ export const SyncScheduleCard = ({ data, onSaved }) => {
       </div>
 
       <div className="mt-5 grid gap-4 sm:grid-cols-3">
-        {mode === 'weekly' && (
-          <Field label="Day">
-            <Select value={String(form.weekday)} disabled={locked || !form.enabled} onValueChange={(v) => setForm({ ...form, weekday: Number(v) })}>
-              <SelectTrigger className="bg-black/40 border-white/10 text-white" data-testid="sync-weekday-select"><SelectValue /></SelectTrigger>
-              <SelectContent>{WEEKDAYS.map((d, i) => <SelectItem key={d} value={String(i)} data-testid={`sync-weekday-${i}`}>{d}</SelectItem>)}</SelectContent>
-            </Select>
-          </Field>
-        )}
-        {(mode === 'weekly' || mode === 'daily') && (
-          <Field label="Time">
-            <Input type="time" value={form.time} disabled={locked || !form.enabled}
-              onChange={(e) => e.target.value && setForm({ ...form, time: e.target.value })}
-              className="bg-black/40 border-white/10 text-white [color-scheme:dark]" data-testid="sync-time-input" />
-          </Field>
-        )}
-        {scheduled && (
-          <Field label="Timezone">
-            <Select value={form.timezone} disabled={locked || !form.enabled} onValueChange={(v) => setForm({ ...form, timezone: v })}>
-              <SelectTrigger className="bg-black/40 border-white/10 text-white" data-testid="sync-timezone-select"><SelectValue /></SelectTrigger>
-              <SelectContent className="max-h-72">{timezones().map((z) => <SelectItem key={z} value={z}>{z}</SelectItem>)}</SelectContent>
-            </Select>
-          </Field>
-        )}
+        {scheduled && <ScheduleFields mode={mode} form={form} setForm={setForm} disabled={locked || !form.enabled} intervals={data.intervals || [1, 2, 4, 8]} />}
         {mode === 'realtime' && (
           <p className="sm:col-span-3 text-sm text-zinc-300" data-testid="sync-realtime-note">
             Your data syncs automatically every {data.realtime_minutes} minutes, around the clock.

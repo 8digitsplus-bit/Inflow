@@ -239,7 +239,7 @@ async def startup_migrations():
 
     app.state.outbound_task = asyncio.create_task(_outbound_worker())
 
-    # Background worker: plan-based scheduled syncs (weekly / daily / every 15 min).
+    # Background worker: plan-based scheduled syncs (daily / every 1-8 h / every 15 min).
     async def _sync_scheduler():
         while True:
             try:

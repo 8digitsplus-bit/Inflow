@@ -1,6 +1,12 @@
 export const API_URL = process.env.REACT_APP_BACKEND_URL;
 
-export const WEEKDAYS = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+export const intervalLabel = (n) => (n === 1 ? 'Every hour' : `Every ${n} hours`);
+
+export const gridPreview = (n) => {
+  if (n === 1) return 'Runs at the top of every hour';
+  const times = Array.from({ length: 24 / n }, (_, i) => `${String(i * n).padStart(2, '0')}:00`);
+  return `Runs at ${times.slice(0, 4).join(', ')}${times.length > 4 ? ' …' : ''}`;
+};
 
 export const browserTimezone = () => {
   try { return Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'; } catch { return 'UTC'; }
@@ -38,7 +44,7 @@ export const STATUS_LABEL = {
 };
 
 export const PLAN_HINT = {
-  weekly: 'Upgrade to Pro for a daily sync at a time you choose, or Enterprise for real-time syncing.',
-  daily: 'Upgrade to Enterprise for real-time syncing every 15 minutes.',
-  off: 'Automatic sync needs an active plan. You can still sync manually.',
+  daily: 'Upgrade to Pro to sync as often as every hour, or Enterprise for real-time syncing.',
+  hourly: 'Upgrade to Enterprise for real-time syncing every 15 minutes.',
+  off: 'Automatic sync needs an active plan.',
 };

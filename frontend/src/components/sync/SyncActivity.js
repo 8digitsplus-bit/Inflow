@@ -36,7 +36,7 @@ export const SyncConnections = ({ connections }) => (
 export const SyncHistory = ({ runs }) => (
   <div className={card} data-testid="sync-history-card">
     <h2 className="text-sm font-semibold text-white flex items-center gap-2"><History className="w-4 h-4 text-[#7aa6ff]" /> Recent syncs</h2>
-    <p className="mt-0.5 mb-4 text-xs text-zinc-500">The last 10 automatic and manual syncs.</p>
+    <p className="mt-0.5 mb-4 text-xs text-zinc-500">The last 10 syncs.</p>
     {runs.length === 0 ? <p className="text-sm text-zinc-400" data-testid="sync-no-runs">No syncs yet.</p> : (
       <ul className="space-y-2">
         {runs.map((r) => {
@@ -45,7 +45,7 @@ export const SyncHistory = ({ runs }) => (
             <li key={r.run_id} className="rounded-xl border border-white/5 bg-white/[0.02] px-3 py-2.5" data-testid={`sync-run-${r.run_id}`}>
               <div className="flex items-center justify-between gap-3">
                 <span className="text-xs text-zinc-300">
-                  {formatWhen(r.started_at)} · <span className="text-zinc-500">{r.trigger === 'manual' ? 'Sync now' : 'Scheduled'}</span>
+                  {formatWhen(r.started_at)} · <span className="text-zinc-500">{r.trigger === 'manual' ? 'Manual' : 'Scheduled'}</span>
                 </span>
                 <StatusPill status={r.status} testId={`sync-run-status-${r.run_id}`} />
               </div>
