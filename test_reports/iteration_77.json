@@ -1,0 +1,23 @@
+{
+  "summary": "Retested the iteration_76 minor fixes. All pass. Backend (new pytest file, 2/2): (a) With the org set to expired and a past next_run_at, the scheduler created no run in 72s; the schedule went to mode 'off' with next_run_at null. (b) Lock heartbeat: during a 4-connection manual run, locked_until was refreshed 4 times (a new value per connection) and was null after the run. (c) In realtime mode, run-now pushed next_run_at about 15 min ahead. Frontend: (1) Connected integrations shows 'just now' right after Sync now, with no 'in 0 min'. (2) Off mode (expired) shows the toggle unchecked and disabled, no save button, and 'Automatic sync is off'. (3) Realtime has no sync-save-btn. Turning the toggle off saves at once (toast 'Sync schedule saved', line shows 'Automatic sync is off', toggle unchecked); turning it back on restores 'Next sync … (in 15 min)'. (4) Weekly mode with saved tz UTC and a spoofed browser tz America/New_York: sync-tz-prefill-note shows and Save is enabled; after saving, the note goes away and Save is disabled again. (5) See plans goes to /choose-plan (seen in daily mode). (6) With GET /api/sync/settings aborted via route, sync-load-error and sync-retry-btn show; Retry recovers after unroute. The testpro org was restored to enterprise_monthly with schedule enabled=true, Mon 07:00 Europe/London.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "/sync (Off mode)", "issues": ["The plan hint in Off mode ('Automatic sync needs an active plan…') has no 'See plans' link, because the code renders it only when mode !== 'off'. Off is the mode where an upgrade link matters most. Optional."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_sync_schedule_iter77.py", "/app/test_reports/pytest/pytest_sync_iter77.xml"],
+  "action_items": ["(optional) Show the 'See plans' link in Off mode too"],
+  "critical_code_review_comments": [
+    "process_sync_schedules_once now re-checks the plan with _schedule() before _claim, and the next_run_at equality check stops stale slots. Correct.",
+    "Realtime manual runs reschedule in _execute (reschedule or mode == 'realtime'). Correct."
+  ],
+  "updated_files": ["/app/backend/tests/test_sync_schedule_iter77.py"],
+  "success_rate": {"backend": "100% (2/2 new; main agent reports iter76 16/16)", "frontend": "100% (6/6 requested checks)"},
+  "seed_data_creation": "Added a few manual sync_runs to testpro's org. The org tier and schedule were restored.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "test_sync_schedule_iter77.py takes about 77s (real scheduler wait). It flips the org_15337f4cefc9 tier through Mongo and restores enterprise_monthly in teardown. You can simulate the browser tz by overriding Intl.DateTimeFormat.prototype.resolvedOptions through add_init_script."
+}

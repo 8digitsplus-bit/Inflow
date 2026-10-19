@@ -112,7 +112,7 @@ export const SyncScheduleCard = ({ data, onSaved }) => {
       {!data.can_edit && <p className="mt-2 text-xs text-zinc-500">Only the workspace owner can change the schedule.</p>}
       {PLAN_HINT[mode] && (
         <p className="mt-3 text-xs text-zinc-500" data-testid="sync-plan-hint">
-          {PLAN_HINT[mode]} {mode !== 'off' && <Link to="/choose-plan" className="text-[#7aa6ff] hover:underline" data-testid="sync-see-plans-link">See plans</Link>}
+          {PLAN_HINT[mode]} <Link to="/choose-plan" className="text-[#7aa6ff] hover:underline" data-testid="sync-see-plans-link">See plans</Link>
         </p>
       )}
     </div>

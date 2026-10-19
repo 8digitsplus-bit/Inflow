@@ -13,6 +13,13 @@ Build "InFlow", a top-tier, full-stack SaaS application for pricing optimization
 
 ## What's Been Implemented
 
+### Plan-based scheduled sync — Sync page (Oct 2026) — verified iteration_76/77
+- Modes by org tier (`organizations.subscription_tier`): essential → weekly (user day + time + timezone), pro + trial → daily (user time + timezone), enterprise → "real-time" = every 15 min (true webhooks = later phase per user), expired/cancelled/free → off. Manual "Sync now" kept on every plan.
+- `routes/sync_schedule.py`: `sync_schedules` (org_id unique; enabled, weekday 0=Mon, time HH:MM, timezone IANA, mode, next_run_at, locked_until, last_*), `sync_runs` (run_id, trigger schedule|manual, status ok|partial|failed|nothing|running|interrupted, per-integration results). `_target()` maps each connection to the EXISTING sync fn (sync_platform / sync_custom_source / scalekit_sync / zoho_sync / qbo_sync) called with the org owner User. Atomic claim on next_run_at + lock (30 min, heartbeat per connection); due loop re-checks plan (off → skip). Realtime manual runs push next_run +15m. Stale 'running' healed to 'interrupted'.
+- API: `GET /api/sync/settings`, `PUT /api/sync/settings` (owner; validates time/weekday/timezone; off-mode 403), `POST /api/sync/run-now` (owner; 409 if running).
+- Scheduler: in-server loop `_sync_scheduler` (server.py, every 60s) — chosen because prod backend is on Railway (Emergent crons don't run there). `_ensure_schedules` every 10 min creates schedules for orgs with connections + syncs mode with plan.
+- Frontend: sidebar "Sync" (/sync, `pages/Sync.js` + `components/sync/*`), Settings "Data sync" card → /sync. Realtime toggle saves instantly; weekly/daily use Save; timezone pre-filled from browser with note.
+
 ### Featurebase support + Priority Support removed (Oct 2026) — verified iteration_74/75
 - User decision: NO Priority Support for closed beta (1-person team). "Priority support" removed from payments.py plan features, ChoosePlan, PricingSection, TierGate, and from AI prompts (support.py rule 6: same support on every plan; contact.py SUPPORT section; agent.py never mention it). Smart Assist "Priority" badge removed.
 - Support model: Smart Assist (InFlow AI) first + "Talk to a human" → Featurebase Messenger (default launcher hidden). Old ticket UI (Create Ticket / Tickets tab / modal) removed from Support.js; backend ticket endpoints + agent escalate_to_ticket kept (internal record) — escalation card now has "Talk to a human" (pre-filled message).
