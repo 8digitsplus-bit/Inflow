@@ -10,11 +10,16 @@ import { API_URL, formatWhen } from '../components/sync/syncUtils';
 
 export default function Sync() {
   const [data, setData] = useState(null);
+  const [error, setError] = useState(false);
   const [starting, setStarting] = useState(false);
 
   const load = useCallback(async () => {
-    const res = await fetch(`${API_URL}/api/sync/settings`, { credentials: 'include' });
-    if (res.ok) setData(await res.json());
+    try {
+      const res = await fetch(`${API_URL}/api/sync/settings`, { credentials: 'include' });
+      if (!res.ok) throw new Error();
+      setData(await res.json());
+      setError(false);
+    } catch { setError(true); }
   }, []);
 
   useEffect(() => { load(); }, [load]);
@@ -59,7 +64,12 @@ export default function Sync() {
           )}
         </div>
 
-        {!data ? (
+        {!data && error ? (
+          <div className="flex flex-col items-center gap-3 py-20 text-sm text-zinc-400" data-testid="sync-load-error">
+            Couldn't load your sync settings.
+            <Button size="sm" variant="outline" onClick={load} className="border-white/10 text-zinc-200" data-testid="sync-retry-btn">Try again</Button>
+          </div>
+        ) : !data ? (
           <div className="flex justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-[#7aa6ff]" /></div>
         ) : (
           <div className="grid gap-6 lg:grid-cols-[3fr_2fr]">

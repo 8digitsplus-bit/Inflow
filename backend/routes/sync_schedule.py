@@ -126,6 +126,9 @@ async def run_org_sync(org_id: str, trigger: str, run_id: str) -> dict:
         if not target:
             continue
         label, fn = target
+        # Heartbeat: keep the lock alive while a long run is still working through connections.
+        await db.sync_schedules.update_one({"org_id": org_id}, {"$set": {
+            "locked_until": (_now() + timedelta(minutes=LOCK_MINUTES)).isoformat()}})
         try:
             res = await fn(owner)
             results.append({"platform": conn.get("platform"), "label": label, "ok": True,
@@ -156,8 +159,8 @@ async def _execute(org_id: str, trigger: str, run_id: str, reschedule: bool):
         await db.sync_runs.update_one({"run_id": run_id}, {"$set": {"status": "failed", "finished_at": _now().isoformat(),
                                                                     "results": [{"label": "Sync", "ok": False, "error": str(e)[:200]}]}})
     upd = {"locked_until": None, "last_run_at": _now().isoformat(), "last_status": status, "last_run_id": run_id}
-    if reschedule:
-        sched = await _schedule(org_id)
+    sched = await _schedule(org_id)
+    if reschedule or sched["mode"] == "realtime":
         nxt = compute_next(sched["mode"], sched, _now())
         upd["next_run_at"] = nxt.isoformat() if nxt else None
     await db.sync_schedules.update_one({"org_id": org_id}, {"$set": upd})
@@ -197,6 +200,9 @@ async def process_sync_schedules_once():
         {"enabled": True, "next_run_at": {"$ne": None, "$lte": now_iso}}, {"_id": 0, "org_id": 1, "next_run_at": 1}
     ).to_list(100)
     for d in due:
+        sched = await _schedule(d["org_id"])  # re-checks the plan (e.g. downgraded to expired -> off)
+        if sched["mode"] == "off" or sched.get("next_run_at") != d["next_run_at"]:
+            continue
         if await _claim(d["org_id"], {"next_run_at": d["next_run_at"]}):
             run_id = await _start_run(d["org_id"], "schedule")
             asyncio.create_task(_execute(d["org_id"], "schedule", run_id, reschedule=True))

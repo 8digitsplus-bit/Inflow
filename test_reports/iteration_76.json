@@ -1,0 +1,41 @@
+{
+  "summary": "Tested plan-based scheduled sync end to end. Backend: 16/16 pytest pass, covering GET defaults on first call, tier->mode mapping for enterprise/pro/trial/essential/expired/cancelled/free, off-mode PUT 403 (timezone-only still allowed), member read-only (PUT/run-now 403, can_edit false), validation (25:00/weekday 7/-1 -> 422, Mars/Base -> 400), next_run math (daily 18:00 Europe/London, weekly Wed 09:30 America/New_York, disable -> null), run-now -> 200 then a second call -> 409 while running, and the manual run on testpro synced HubSpot 2 / Stripe 13 / Stripe (Scalekit) 10 / QuickBooks 34 records, all ok. Scheduler: a past next_run_at was picked up and run exactly once (trigger schedule, all ok) and rescheduled about 15 min ahead. Frontend: Sync nav item comes right after Integration. On /sync, realtime mode shows the badge, realtime note, next run, Sync now (shows 'Syncing…' and is disabled while running, page polls until done), history, connections and last sync. Weekly mode (testpro's tier switched temporarily) shows weekday/time/tz/toggle/save/plan hint; saving Wed 09:30 London gives 08:30 UTC (BST), which is correct; disabling shows 'Automatic sync is off'. Daily mode hides weekday, and 18:00 London gives 17:00 UTC. Off mode: toggle disabled, no save button, Sync now still there. Settings Data sync card shows mode + next sync, and Manage sync goes to /sync. Regression: on /connect-business, sync-stripe and scalekit-sync-quickbooks both return 200 with a toast. testpro's tier was put back to enterprise_monthly and the schedule back to 07:00/Mon/Europe/London.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "process_sync_schedules_once", "issue": "The due query filters only on enabled + next_run_at, not mode. When an org downgrades to expired/cancelled, its old next_run_at can still fire one automatic run before _ensure_schedules (every 10 min) or a GET recomputes it. Add mode != 'off' to the query, or call _schedule(org_id) before _claim."},
+      {"endpoint": "_claim / LOCK_MINUTES", "issue": "The lock is a fixed 30 min. If a run takes longer, a second run can start. Low risk today (runs take about 6s)."},
+      {"endpoint": "POST /api/sync/run-now", "issue": "A manual run doesn't push next_run_at back. On realtime, a scheduled run can start seconds after a manual one. Optional."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [
+      {"component": "syncUtils.relative", "issue": "Integrations synced moments ago show 'in 0 min' on the Connected integrations card. Math.round of a small negative gives -0, and -0 >= 0 is true. Return 'just now' when abs < 1 and use mins > 0 for future times.", "selector": "[data-testid=sync-connections-card]", "priority": "LOW"},
+      {"component": "SyncScheduleCard (off mode)", "issue": "In Off mode (expired plan) the enabled toggle is drawn checked/ON, while the text below says 'Automatic sync is off'. That's confusing. Show it unchecked when mode is off.", "selector": "[data-testid=sync-enabled-toggle]", "priority": "LOW"},
+      {"component": "SyncScheduleCard timezone default", "issue": "When the saved timezone is UTC and the browser isn't, the form is dirty on first load. Save schedule is enabled before the user changes anything, and the 'Next sync' line still shows the UTC time until they save. This also happens in realtime mode, where no timezone field is shown, so Save is enabled for no visible reason. Consider showing Save in realtime only for the toggle, or showing that the timezone was pre-filled. Not reproducible here because the test browser is UTC.", "selector": "[data-testid=sync-save-btn]", "priority": "LOW"}
+    ],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "/sync", "issues": ["The plan hint's 'See plans' link goes to /settings, not a pricing/upgrade page.", "In realtime mode a disabled 'Save schedule' button is always shown, even though the only control is the toggle.", "Sync.js load() has no error state. If GET /api/sync/settings fails, the spinner shows forever."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_sync_schedule_iter76.py", "/app/test_reports/pytest/pytest_sync_iter76.xml"],
+  "action_items": [
+    "(minor) Exclude mode 'off' orgs from scheduler due query / recompute mode before claim",
+    "(minor) Fix relative() to return 'just now' for the -0/0-minute case",
+    "(minor) Show the enabled toggle as unchecked in Off mode",
+    "(minor) Rethink the auto browser-timezone pre-fill marking the form dirty, especially in realtime mode",
+    "(minor) Add an error state to the Sync page load; point 'See plans' at the pricing/upgrade page"
+  ],
+  "critical_code_review_comments": [
+    "sync_schedule.py: compute_next uses zoneinfo wall-clock arithmetic, so DST is handled. Non-existent local times (DST spring-forward gap) aren't specially handled. Acceptable.",
+    "The atomic claim via find_one_and_update with a next_run_at equality filter correctly prevents double runs for the same slot. Verified: exactly one scheduled run.",
+    "Sync now is owner-only (API require_owner + UI can_edit), so members on any plan have no manual sync button. Check this matches the 'manual buttons stay on every plan' intent."
+  ],
+  "updated_files": ["/app/backend/tests/test_sync_schedule_iter76.py"],
+  "success_rate": {"backend": "100% (16/16)", "frontend": "100% of requested flows (only minor UX issues)"},
+  "seed_data_creation": "Tests create TEST_org_*/TEST_user_* orgs, users, sessions and schedules in Mongo and delete them in fixture teardown (verified 0 left). Added several sync_runs to testpro's org (manual + schedule).",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run pytest /app/backend/tests/test_sync_schedule_iter76.py (~65s; includes a real scheduler wait). To test UI modes, temporarily set organizations.subscription_tier for org_15337f4cefc9 and restore enterprise_monthly afterwards (restored this iteration; schedule = 07:00 Mon Europe/London). Integration page is /connect-business (testids sync-stripe, sync-hubspot, scalekit-sync-quickbooks, scalekit-sync-stripe)."
+}

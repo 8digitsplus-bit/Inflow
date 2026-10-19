@@ -23,20 +23,25 @@ export const SyncScheduleCard = ({ data, onSaved }) => {
   const mode = s.mode;
   const [form, setForm] = useState({ enabled: s.enabled, weekday: s.weekday, time: s.time, timezone: s.timezone });
   const [saving, setSaving] = useState(false);
+  const [tzPrefilled, setTzPrefilled] = useState(false);
   const dirty = ['enabled', 'weekday', 'time', 'timezone'].some((k) => form[k] !== s[k]);
   const locked = !data.can_edit || mode === 'off';
+  const scheduled = mode === 'weekly' || mode === 'daily';
 
   useEffect(() => {
-    // First visit: default the timezone to the browser's own if still on the UTC default.
-    if (s.timezone === 'UTC' && browserTimezone() !== 'UTC') setForm((f) => ({ ...f, timezone: browserTimezone() }));
-  }, [s.timezone]);
+    // First visit: suggest the browser's timezone if the schedule is still on the UTC default.
+    if (scheduled && data.can_edit && s.timezone === 'UTC' && browserTimezone() !== 'UTC') {
+      setForm((f) => ({ ...f, timezone: browserTimezone() }));
+      setTzPrefilled(true);
+    }
+  }, [scheduled, data.can_edit, s.timezone]);
 
-  const save = async () => {
+  const save = async (patch) => {
     setSaving(true);
     try {
       const res = await fetch(`${API_URL}/api/sync/settings`, {
         method: 'PUT', credentials: 'include', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
+        body: JSON.stringify(patch || form),
       });
       const d = await res.json();
       if (!res.ok) throw new Error(d.detail || 'Could not save');
@@ -55,7 +60,8 @@ export const SyncScheduleCard = ({ data, onSaved }) => {
           </h2>
           <p className="mt-0.5 text-xs text-zinc-500">InFlow refreshes every connected integration on this schedule.</p>
         </div>
-        <Switch checked={!!form.enabled} disabled={locked} onCheckedChange={(v) => setForm({ ...form, enabled: v })}
+        <Switch checked={mode !== 'off' && !!form.enabled} disabled={locked || saving}
+          onCheckedChange={(v) => (mode === 'realtime' ? save({ enabled: v }) : setForm({ ...form, enabled: v }))}
           className="data-[state=checked]:bg-[#0052ff]" data-testid="sync-enabled-toggle" />
       </div>
 
@@ -75,7 +81,7 @@ export const SyncScheduleCard = ({ data, onSaved }) => {
               className="bg-black/40 border-white/10 text-white [color-scheme:dark]" data-testid="sync-time-input" />
           </Field>
         )}
-        {mode !== 'realtime' && mode !== 'off' && (
+        {scheduled && (
           <Field label="Timezone">
             <Select value={form.timezone} disabled={locked || !form.enabled} onValueChange={(v) => setForm({ ...form, timezone: v })}>
               <SelectTrigger className="bg-black/40 border-white/10 text-white" data-testid="sync-timezone-select"><SelectValue /></SelectTrigger>
@@ -94,16 +100,19 @@ export const SyncScheduleCard = ({ data, onSaved }) => {
         <p className="text-xs text-zinc-400" data-testid="sync-next-run">
           {s.enabled && s.next_run_at ? <>Next sync <span className="text-zinc-200">{formatWhen(s.next_run_at)}</span> ({relative(s.next_run_at)})</> : 'Automatic sync is off'}
         </p>
-        {data.can_edit && mode !== 'off' && (
-          <Button size="sm" onClick={save} disabled={!dirty || saving} className="bg-[#0052ff] hover:bg-[#1a63ff] text-white" data-testid="sync-save-btn">
+        {data.can_edit && scheduled && (
+          <Button size="sm" onClick={() => save()} disabled={!dirty || saving} className="bg-[#0052ff] hover:bg-[#1a63ff] text-white" data-testid="sync-save-btn">
             {saving && <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />} Save schedule
           </Button>
         )}
       </div>
+      {tzPrefilled && dirty && (
+        <p className="mt-2 text-xs text-amber-300/80" data-testid="sync-tz-prefill-note">We've set the timezone to yours ({form.timezone}). Save to apply it.</p>
+      )}
       {!data.can_edit && <p className="mt-2 text-xs text-zinc-500">Only the workspace owner can change the schedule.</p>}
       {PLAN_HINT[mode] && (
         <p className="mt-3 text-xs text-zinc-500" data-testid="sync-plan-hint">
-          {PLAN_HINT[mode]} {mode !== 'off' && <Link to="/settings" className="text-[#7aa6ff] hover:underline">See plans</Link>}
+          {PLAN_HINT[mode]} {mode !== 'off' && <Link to="/choose-plan" className="text-[#7aa6ff] hover:underline" data-testid="sync-see-plans-link">See plans</Link>}
         </p>
       )}
     </div>

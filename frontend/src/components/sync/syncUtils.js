@@ -19,8 +19,9 @@ export const relative = (iso) => {
   if (!iso) return '';
   const mins = Math.round((new Date(iso).getTime() - Date.now()) / 60000);
   const abs = Math.abs(mins);
+  if (abs < 1) return 'just now';
   const txt = abs < 60 ? `${abs} min` : abs < 1440 ? `${Math.round(abs / 60)} h` : `${Math.round(abs / 1440)} d`;
-  return mins >= 0 ? `in ${txt}` : `${txt} ago`;
+  return mins > 0 ? `in ${txt}` : `${txt} ago`;
 };
 
 export const STATUS_STYLE = {
