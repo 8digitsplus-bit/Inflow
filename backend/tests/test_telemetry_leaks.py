@@ -50,7 +50,7 @@ class TestStatus:
         assert d.get("is_enterprise") is True
         assert d.get("is_owner") is True
         assert "usage_sources_connected" in d
-        assert "stripe_live" in d
+        assert "stripe_live" not in d
 
     def test_status_unauthenticated_denied(self):
         r = requests.get(f"{BASE_URL}/api/telemetry/status", timeout=15)
@@ -214,10 +214,12 @@ class TestRecoveryLoop:
         assert d["status"] == "recovered"
         assert d["actions"]["crm_deal_id"].startswith("deal_")
         inv = d["actions"]["invoice"]
-        assert inv["mode"] in ("live_draft", "simulated")
-        if inv["mode"] == "live_draft":
-            assert inv["invoice_id"].startswith("in_")
-            assert abs(inv["amount"] - 5560.0) < 0.5
+        # Invoices are now created manually by the user in their own Stripe
+        assert inv["mode"] == "manual"
+        assert "invoice_id" not in inv and "customer_id" not in inv
+        assert abs(inv["amount"] - 5560.0) < 0.5
+        assert inv["currency"] == "usd"
+        assert inv["quantity"] == 40
         email = d["actions"]["email"]
         assert email["to"] == "8digitsplus@gmail.com"
         # sent may be False in dev env — accept either but presence check

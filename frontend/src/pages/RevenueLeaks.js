@@ -150,7 +150,7 @@ export default function RevenueLeaks() {
         method: 'POST', body: JSON.stringify(emailEdit),
       });
       setApproveResult(r.actions);
-      toast.success('Recovery executed — invoice drafted, CRM opportunity created');
+      toast.success('Recovery executed — CRM opportunity created. Create the invoice in your Stripe.');
       setLeaks(await req('/leaks'));
     } catch (e) { toast.error(e.message); }
     setBusy('');

@@ -34,8 +34,9 @@ export const UpdatePrompt = () => {
 
   if (!show || dismissed) return null;
   return (
-    <div className="fixed inset-x-0 bottom-6 z-[9999] flex justify-center px-4 pointer-events-none" data-testid="update-prompt">
-      <div className="pointer-events-auto flex items-center gap-3 rounded-full border border-white/10 bg-zinc-950/80 py-2 pl-5 pr-2 text-sm text-zinc-200 shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-bottom-4 duration-300">
+    // Top-center (below the landing nav) so it never sits under the bottom cookie banner.
+    <div className="fixed inset-x-0 top-20 z-[2147483647] flex justify-center px-4 pointer-events-none" data-testid="update-prompt">
+      <div className="pointer-events-auto flex items-center gap-3 rounded-full border border-white/10 bg-zinc-950/80 py-2 pl-5 pr-2 text-sm text-zinc-200 shadow-2xl backdrop-blur-xl animate-in fade-in slide-in-from-top-4 duration-300">
         <span>InFlow has been updated</span>
         <button type="button" onClick={() => window.location.reload()}
           className="flex items-center gap-1.5 rounded-full bg-[#0052ff] px-3.5 py-1.5 text-xs font-medium text-white transition-colors hover:bg-[#1a63ff]"

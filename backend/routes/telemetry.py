@@ -451,17 +451,22 @@ async def approve_recovery(leak_id: str, email: EmailEdit = EmailEdit(), user: U
         "description": draft["invoice"]["description"],
     }
 
-    # 2) CRM expansion opportunity → pipeline
+    # 2) CRM expansion opportunity → pipeline (on failure, release the claim so the leak can be retried)
     deal_id = f"deal_{uuid.uuid4().hex[:12]}"
-    await db.deals.insert_one({
-        "deal_id": deal_id, "user_id": user.user_id, "org_id": user.org_id,
-        "name": draft["crm_deal"]["name"], "company": leak["customer_name"],
-        "value": draft["crm_deal"]["value"], "stage": EXPANSION_STAGE, "probability": 60,
-        "source": "expansion", "synced": False,
-        "notes": f"Auto-created from telemetry leak {leak_id}: {over} seats over contract.",
-        "expected_close_date": None,
-        "created_at": now, "updated_at": now,
-    })
+    try:
+        await db.deals.insert_one({
+            "deal_id": deal_id, "user_id": user.user_id, "org_id": user.org_id,
+            "name": draft["crm_deal"]["name"], "company": leak["customer_name"],
+            "value": draft["crm_deal"]["value"], "stage": EXPANSION_STAGE, "probability": 60,
+            "source": "expansion", "synced": False,
+            "notes": f"Auto-created from telemetry leak {leak_id}: {over} seats over contract.",
+            "expected_close_date": None,
+            "created_at": now, "updated_at": now,
+        })
+    except Exception:
+        await db.leaks.update_one({"leak_id": leak_id, **org_filter(user)}, {"$set": {"status": "open"}, "$unset": {"claimed_at": ""}})
+        logger.exception("CRM deal creation failed for leak %s", leak_id)
+        raise HTTPException(status_code=500, detail="Couldn't create the CRM opportunity. Please try again.")
     actions["crm_deal_id"] = deal_id
 
     # 3) AM email via Resend
