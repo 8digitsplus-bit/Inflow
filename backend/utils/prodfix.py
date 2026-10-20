@@ -59,8 +59,10 @@ class _ProdfixSender(logging.Handler):
             "logger": record.name,
         }
         body = json.dumps({"events": [{"category": "bug", "payload": payload, "timestamp": int(now * 1000), "priority": "high"}]}).encode()
+        # A custom User-Agent is required: Cloudflare in front of ProdFix blocks Python's default (error 1010).
         req = urllib.request.Request(EVENTS_URL, data=body, method="POST",
-                                     headers={"Content-Type": "application/json", "X-ProdFix-Key": self.key})
+                                     headers={"Content-Type": "application/json", "X-ProdFix-Key": self.key,
+                                              "User-Agent": "InFlow-Backend/1.0"})
         try:
             urllib.request.urlopen(req, timeout=5).close()
         except Exception:
