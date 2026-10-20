@@ -847,10 +847,11 @@ async def get_subscription_plans():
 
 @router.post("/subscription/cancel")
 async def cancel_subscription(current_user: User = Depends(require_owner)):
-    """Cancel the current subscription."""
+    """Cancel the subscription at the end of the current billing period (per Terms of Service).
+    Access is kept until then; the customer.subscription.deleted webhook flips the tier."""
     user_doc = await db.users.find_one(
         {"user_id": current_user.user_id},
-        {"_id": 0, "subscription_tier": 1, "stripe_subscription_id": 1, "stripe_livemode": 1}
+        {"_id": 0, "subscription_tier": 1, "stripe_subscription_id": 1, "stripe_livemode": 1, "org_id": 1}
     )
 
     if not user_doc:
@@ -863,24 +864,37 @@ async def cancel_subscription(current_user: User = Depends(require_owner)):
     api_key = os.environ.get("STRIPE_API_KEY")
     sub_id = user_doc.get("stripe_subscription_id") if _same_mode(user_doc) else None
 
-    # Cancel on Stripe if real subscription exists
     if sub_id and api_key and is_real_stripe_key(api_key):
         try:
             stripe_sdk.api_key = api_key
-            stripe_sdk.Subscription.cancel(sub_id)
+            sub = stripe_sdk.Subscription.modify(sub_id, cancel_at_period_end=True)
         except Exception as e:
-            logger.error(f"Stripe cancel error: {e}")
+            logger.error(f"Stripe cancel-at-period-end error: {e}")
+            raise HTTPException(status_code=502, detail="Could not cancel your subscription right now. Please try again.")
+        if sub.get("status") not in ("canceled", "incomplete_expired"):
+            cpe = _period_end(sub)
+            cancel_at = datetime.fromtimestamp(cpe, tz=timezone.utc).isoformat() if cpe else None
+            await db.users.update_one(
+                {"user_id": current_user.user_id},
+                {"$set": {"cancel_requested_at": datetime.now(timezone.utc).isoformat()}},
+            )
+            return {
+                "status": "scheduled",
+                "cancel_at": cancel_at,
+                "message": "Your subscription will end at the close of the current billing period. You keep full access until then.",
+            }
 
+    # No live Stripe subscription (no-card trial / manual plan): nothing left to bill, end now.
     now = datetime.now(timezone.utc).isoformat()
-    await db.users.update_one(
-        {"user_id": current_user.user_id},
-        {"$set": {
-            "subscription_tier": "cancelled",
-            "previous_tier": tier,
-            "cancelled_at": now,
-            "subscription_status": "cancelled",
-        }}
-    )
+    cancel_set = {
+        "subscription_tier": "cancelled",
+        "previous_tier": tier,
+        "cancelled_at": now,
+        "subscription_status": "cancelled",
+    }
+    await db.users.update_one({"user_id": current_user.user_id}, {"$set": cancel_set})
+    if user_doc.get("org_id"):
+        await db.organizations.update_one({"org_id": user_doc["org_id"]}, {"$set": cancel_set})
 
     return {
         "status": "cancelled",

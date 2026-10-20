@@ -36,6 +36,8 @@ const PLAN_PRICING = {
   enterprise_yearly: { price: 1999, period: 'year' },
 };
 
+const fmtDate = (iso) => new Date(iso).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' });
+
 const Settings = () => {
   const { user, refreshUser } = useAuth();
   const [searchParams] = useSearchParams();
@@ -52,12 +54,12 @@ const Settings = () => {
   const [togglingAutoRenew, setTogglingAutoRenew] = useState(false);
   const [loadingPortal, setLoadingPortal] = useState(false);
 
-  useEffect(() => {
-    fetch(`${API_URL}/api/org/me`, { credentials: 'include' })
-      .then(r => r.ok ? r.json() : null)
-      .then(setOrg)
-      .catch(() => {});
-  }, []);
+  const fetchOrg = () => fetch(`${API_URL}/api/org/me`, { credentials: 'include' })
+    .then(r => r.ok ? r.json() : null)
+    .then(setOrg)
+    .catch(() => {});
+
+  useEffect(() => { fetchOrg(); }, []);
 
   const fetchSubDetails = async () => {
     try {
@@ -133,9 +135,15 @@ const Settings = () => {
     try {
       const response = await fetch(`${API_URL}/api/subscription/cancel`, { method: 'POST', credentials: 'include' });
       if (response.ok) {
-        toast.success('Subscription cancelled successfully');
+        const data = await response.json();
         setShowCancelConfirm(false);
-        await refreshUser();
+        if (data.status === 'scheduled') {
+          toast.success(data.cancel_at ? `Your plan will end on ${fmtDate(data.cancel_at)}. You keep full access until then.` : data.message);
+          await fetchSubDetails();
+        } else {
+          toast.success('Subscription cancelled successfully');
+          await Promise.all([refreshUser(), fetchOrg()]);
+        }
       } else {
         toast.error((await response.json()).detail || 'Failed to cancel');
       }
@@ -179,7 +187,9 @@ const Settings = () => {
   const tier = org?.subscription_tier || user?.subscription_tier;
   const isPaid = tier && !['trial', 'expired', 'cancelled', 'free', null, undefined].includes(tier);
   const isOwner = org?.role === 'owner';
-  const canCancel = tier && !['expired', 'cancelled'].includes(tier) && isOwner;
+  const cancelScheduled = !!(subDetails?.has_subscription && subDetails?.cancel_at_period_end);
+  const canCancel = tier && !['expired', 'cancelled'].includes(tier) && isOwner && !cancelScheduled;
+  const periodEndLabel = subDetails?.current_period_end ? fmtDate(subDetails.current_period_end) : 'the end of your billing period';
   const canChangePlan = isOwner;
   const pricing = PLAN_PRICING[tier];
 
@@ -299,8 +309,8 @@ const Settings = () => {
                   {subDetails?.current_period_end && (
                     <p className="mt-3 text-xs text-zinc-500">
                       {subDetails.auto_renew
-                        ? <>Renews on <span className="text-zinc-300">{new Date(subDetails.current_period_end).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}</span>.</>
-                        : <>Ends on <span className="text-zinc-300">{new Date(subDetails.current_period_end).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}</span>. You keep access until then.</>}
+                        ? <>Renews on <span className="text-zinc-300">{fmtDate(subDetails.current_period_end)}</span>.</>
+                        : <>Ends on <span className="text-zinc-300">{fmtDate(subDetails.current_period_end)}</span>. You keep access until then.</>}
                     </p>
                   )}
                 </>
@@ -346,7 +356,25 @@ const Settings = () => {
                 </div>
               )}
 
+              {cancelScheduled && (
+                <div className="mt-5 flex items-start gap-2 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-xs text-amber-200" data-testid="cancel-scheduled-notice">
+                  <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                  <span>Cancels on <span className="font-medium text-amber-100" data-testid="cancel-scheduled-date">{periodEndLabel}</span>. You keep full access until then and won't be charged again.</span>
+                </div>
+              )}
+
               <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+                {cancelScheduled && isOwner && (
+                  <Button
+                    variant="outline"
+                    className={`flex-1 ${pillOutline} px-6 py-3 text-sm`}
+                    onClick={() => handleToggleAutoRenew(true)}
+                    disabled={togglingAutoRenew}
+                    data-testid="resume-subscription-btn"
+                  >
+                    {togglingAutoRenew ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <RefreshCw className="w-4 h-4 mr-2" />} Keep my subscription
+                  </Button>
+                )}
                 {canCancel && (
                   <Button
                     variant="outline"
@@ -401,9 +429,11 @@ const Settings = () => {
               {tier === 'trial' ? 'Cancel your free trial?' : 'Cancel your subscription?'}
             </AlertDialogTitle>
             <AlertDialogDescription className="text-zinc-400">
-              {tier === 'trial'
-                ? 'You will lose access to your trial immediately. You can resubscribe at any time.'
-                : 'Your access will be revoked immediately. You can resubscribe to any plan at any time.'}
+              {subDetails?.has_subscription
+                ? `Your plan will stay fully active until ${periodEndLabel}. After that it won't renew and you won't be charged again. You can undo this any time before then.`
+                : tier === 'trial'
+                  ? 'You will lose access to your trial immediately. You can resubscribe at any time.'
+                  : 'Your access will end immediately. You can resubscribe to any plan at any time.'}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
