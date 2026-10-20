@@ -14,18 +14,33 @@ const ErrorFallback = () => (
   </div>
 );
 
+// After a deploy, open tabs can't load page chunks from the previous build — reload once to pick up the new one.
+const isChunkError = (e) => /ChunkLoadError|Loading (CSS )?chunk|dynamically imported module/i.test(`${e?.name} ${e?.message}`);
+const reloadOnceForChunkError = () => {
+  const last = Number(sessionStorage.getItem("inflow_chunk_reload") || 0);
+  if (Date.now() - last < 30000) return false;
+  sessionStorage.setItem("inflow_chunk_reload", String(Date.now()));
+  window.location.reload();
+  return true;
+};
+
 class AppErrorBoundary extends React.Component {
-  state = { error: null };
+  state = { error: null, reloading: false };
 
   static getDerivedStateFromError(error) {
     return { error };
   }
 
   componentDidCatch(error, info) {
+    if (isChunkError(error) && reloadOnceForChunkError()) {
+      this.setState({ reloading: true });
+      return;
+    }
     captureProdfixError(error, { componentStack: info.componentStack, source: "react_error_boundary" });
   }
 
   render() {
+    if (this.state.reloading) return <div style={{ minHeight: "100vh", background: "#050507" }} />;
     return this.state.error ? <ErrorFallback /> : this.props.children;
   }
 }

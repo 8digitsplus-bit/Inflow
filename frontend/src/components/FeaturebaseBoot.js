@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
-import { FeaturebaseProvider, useFeedbackWidget } from 'featurebase-js/react';
+import { FeaturebaseProvider, useChangelogWidget, useFeedbackWidget } from 'featurebase-js/react';
 import { useAuth } from '../contexts/AuthContext';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
@@ -8,8 +8,10 @@ const APP_ID = process.env.REACT_APP_FEATUREBASE_APP_ID;
 const PUBLIC_PATHS = ['/', '/auth', '/privacy', '/cookies', '/terms', '/contact'];
 const isPublic = (path) => PUBLIC_PATHS.includes(path) || path.startsWith('/quote');
 
-const Widgets = ({ plan }) => {
+const Widgets = ({ plan, firstName }) => {
   useFeedbackWidget({ theme: 'dark', placement: 'right', metadata: { plan: plan || 'unknown' } });
+  // "What's new": pops up once per user for each update published in Featurebase Changelog.
+  useChangelogWidget({ theme: 'dark', popup: { enabled: true, usersName: firstName, autoOpenForNewUpdates: true } });
   return null;
 };
 
@@ -40,7 +42,7 @@ export const FeaturebaseBoot = () => {
   if (!active || !token || !userId) return null;
   return (
     <FeaturebaseProvider key={userId} appId={APP_ID} featurebaseJwt={token} hideDefaultLauncher theme="dark">
-      <Widgets plan={user?.subscription_tier} />
+      <Widgets plan={user?.subscription_tier} firstName={user?.name?.split(' ')[0]} />
     </FeaturebaseProvider>
   );
 };

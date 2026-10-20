@@ -56,6 +56,20 @@ def is_real_stripe_key(key: str) -> bool:
     return key and (key.startswith("sk_live_") or key.startswith("sk_test_")) and key != "sk_test_emergent"
 
 
+def stripe_mode() -> str:
+    return "live" if (os.environ.get("STRIPE_API_KEY") or "").startswith("sk_live_") else "test"
+
+
+def _mode_filter(mode: str) -> dict:
+    # Cached Stripe objects saved before mode tracking were all created in test mode.
+    return {"mode": "live"} if mode == "live" else {"mode": {"$ne": "live"}}
+
+
+def _same_mode(doc: dict | None) -> bool:
+    """True if the Stripe customer/subscription IDs on this doc belong to the current key's mode."""
+    return bool((doc or {}).get("stripe_livemode", False)) == (stripe_mode() == "live")
+
+
 async def get_or_create_stripe_price(plan_key: str, plan: dict) -> str:
     """Get or create a Stripe Price for subscription billing.
 
@@ -66,15 +80,18 @@ async def get_or_create_stripe_price(plan_key: str, plan: dict) -> str:
     """
     amount_cents = int(round(plan["price"] * 100))
     interval = plan.get("interval", "month")
+    mode = stripe_mode()
+    mem_key = f"{mode}:{plan_key}"
+    db_filter = {"plan_key": plan_key, **_mode_filter(mode)}
 
-    mem = _stripe_price_cache.get(plan_key)
+    mem = _stripe_price_cache.get(mem_key)
     if isinstance(mem, dict) and mem.get("amount_cents") == amount_cents and mem.get("interval") == interval:
         return mem["price_id"]
 
-    # DB cache — reuse only if the stored amount + interval still match
-    cached = await db.stripe_prices.find_one({"plan_key": plan_key}, {"_id": 0})
+    # DB cache — reuse only if it's from the same Stripe mode and amount + interval still match
+    cached = await db.stripe_prices.find_one(db_filter, {"_id": 0})
     if cached and int(round((cached.get("amount") or 0) * 100)) == amount_cents and cached.get("interval") == interval:
-        _stripe_price_cache[plan_key] = {"price_id": cached["price_id"], "amount_cents": amount_cents, "interval": interval}
+        _stripe_price_cache[mem_key] = {"price_id": cached["price_id"], "amount_cents": amount_cents, "interval": interval}
         return cached["price_id"]
 
     # First time, or the price changed — create a fresh Stripe Product + Price.
@@ -90,9 +107,10 @@ async def get_or_create_stripe_price(plan_key: str, plan: dict) -> str:
     )
 
     await db.stripe_prices.update_one(
-        {"plan_key": plan_key},
+        db_filter,
         {"$set": {
             "plan_key": plan_key,
+            "mode": mode,
             "price_id": price.id,
             "product_id": product.id,
             "amount": plan["price"],
@@ -101,7 +119,7 @@ async def get_or_create_stripe_price(plan_key: str, plan: dict) -> str:
         }},
         upsert=True,
     )
-    _stripe_price_cache[plan_key] = {"price_id": price.id, "amount_cents": amount_cents, "interval": interval}
+    _stripe_price_cache[mem_key] = {"price_id": price.id, "amount_cents": amount_cents, "interval": interval}
     return price.id
 
 
@@ -112,7 +130,8 @@ async def get_or_create_amount_coupon(plan_key: str, amount_off_cents: int) -> s
     a clean round number regardless of the base price.
     """
     name = f"first_year_{plan_key}_{amount_off_cents}"
-    cached = await db.stripe_coupons.find_one({"name": name}, {"_id": 0})
+    mode = stripe_mode()
+    cached = await db.stripe_coupons.find_one({"name": name, **_mode_filter(mode)}, {"_id": 0})
     if cached:
         return cached["coupon_id"]
 
@@ -125,6 +144,7 @@ async def get_or_create_amount_coupon(plan_key: str, amount_off_cents: int) -> s
 
     await db.stripe_coupons.insert_one({
         "name": name,
+        "mode": mode,
         "coupon_id": coupon.id,
         "created_at": datetime.now(timezone.utc).isoformat()
     })
@@ -346,6 +366,7 @@ async def get_session_status(session_id: str, user: User = Depends(get_current_u
         plan = transaction.get("plan", "pro_monthly")
         subscription_id = session.subscription
         customer_id = session.customer
+        livemode = bool(session.livemode)
         now = datetime.now(timezone.utc).isoformat()
 
         await db.payment_transactions.update_one(
@@ -354,6 +375,7 @@ async def get_session_status(session_id: str, user: User = Depends(get_current_u
                 "payment_status": "paid",
                 "stripe_subscription_id": subscription_id,
                 "stripe_customer_id": customer_id,
+                "stripe_livemode": livemode,
                 "updated_at": now,
             }}
         )
@@ -364,6 +386,7 @@ async def get_session_status(session_id: str, user: User = Depends(get_current_u
                 "subscription_status": "active",
                 "stripe_subscription_id": subscription_id,
                 "stripe_customer_id": customer_id,
+                "stripe_livemode": livemode,
                 "updated_at": now,
             }}
         )
@@ -375,6 +398,7 @@ async def get_session_status(session_id: str, user: User = Depends(get_current_u
                     "subscription_status": "active",
                     "stripe_subscription_id": subscription_id,
                     "stripe_customer_id": customer_id,
+                    "stripe_livemode": livemode,
                     "updated_at": now,
                 }}
             )
@@ -389,17 +413,17 @@ async def get_session_status(session_id: str, user: User = Depends(get_current_u
 
 async def _resolve_stripe_customer_id(user: User) -> str | None:
     """Look up the user's Stripe customer ID from cache or via their last paid txn."""
-    user_doc = await db.users.find_one({"user_id": user.user_id}, {"_id": 0, "stripe_customer_id": 1})
+    user_doc = await db.users.find_one({"user_id": user.user_id}, {"_id": 0, "stripe_customer_id": 1, "stripe_livemode": 1})
     cached = (user_doc or {}).get("stripe_customer_id")
-    if cached:
+    if cached and _same_mode(user_doc):
         return cached
     # Fall back: pull it from the latest paid payment_transaction for this user
     txn = await db.payment_transactions.find_one(
         {"user_id": user.user_id, "payment_status": "paid"},
         sort=[("updated_at", -1)],
-        projection={"_id": 0, "stripe_customer_id": 1, "session_id": 1},
+        projection={"_id": 0, "stripe_customer_id": 1, "session_id": 1, "stripe_livemode": 1},
     )
-    if not txn:
+    if not txn or not _same_mode(txn):
         return None
     if txn.get("stripe_customer_id"):
         return txn["stripe_customer_id"]
@@ -486,6 +510,7 @@ async def get_payment_status(session_id: str, request: Request, user: User = Dep
             amount = (session.amount_total or 0) / 100
             currency = session.currency or "usd"
             subscription_id = session.subscription
+            livemode = bool(session.livemode)
         else:
             from emergentintegrations.payments.stripe.checkout import StripeCheckout
             host_url = str(request.base_url).rstrip("/")
@@ -496,6 +521,7 @@ async def get_payment_status(session_id: str, request: Request, user: User = Dep
             amount = st.amount_total / 100
             currency = st.currency
             subscription_id = None
+            livemode = False
 
         if payment_status == "paid" and transaction.get("payment_status") != "paid":
             plan = transaction.get("plan", "pro_monthly")
@@ -505,6 +531,7 @@ async def get_payment_status(session_id: str, request: Request, user: User = Dep
             }
             if subscription_id:
                 update_fields["stripe_subscription_id"] = subscription_id
+                update_fields["stripe_livemode"] = livemode
 
             await db.payment_transactions.update_one(
                 {"session_id": session_id}, {"$set": update_fields}
@@ -517,6 +544,7 @@ async def get_payment_status(session_id: str, request: Request, user: User = Dep
             }
             if subscription_id:
                 user_update["stripe_subscription_id"] = subscription_id
+                user_update["stripe_livemode"] = livemode
 
             await db.users.update_one(
                 {"user_id": user.user_id}, {"$set": user_update}
@@ -531,6 +559,7 @@ async def get_payment_status(session_id: str, request: Request, user: User = Dep
                 }
                 if subscription_id:
                     org_update["stripe_subscription_id"] = subscription_id
+                    org_update["stripe_livemode"] = livemode
                 await db.organizations.update_one(
                     {"org_id": user.org_id}, {"$set": org_update}
                 )
@@ -609,10 +638,12 @@ async def stripe_webhook(request: Request):
                 session_id = data_obj.get("id")
                 metadata = data_obj.get("metadata", {}) or {}
                 subscription_id = data_obj.get("subscription")
+                livemode = bool(data_obj.get("livemode"))
 
                 update_fields = {"payment_status": "paid", "updated_at": now_iso}
                 if subscription_id:
                     update_fields["stripe_subscription_id"] = subscription_id
+                    update_fields["stripe_livemode"] = livemode
 
                 await db.payment_transactions.update_one(
                     {"session_id": session_id}, {"$set": update_fields}
@@ -629,6 +660,7 @@ async def stripe_webhook(request: Request):
                     }
                     if subscription_id:
                         user_update["stripe_subscription_id"] = subscription_id
+                        user_update["stripe_livemode"] = livemode
 
                     await db.users.update_one(
                         {"user_id": metadata["user_id"]}, {"$set": user_update}
@@ -645,6 +677,7 @@ async def stripe_webhook(request: Request):
                         }
                         if subscription_id:
                             org_update["stripe_subscription_id"] = subscription_id
+                            org_update["stripe_livemode"] = livemode
                         await db.organizations.update_one(
                             {"org_id": u_doc["org_id"]}, {"$set": org_update}
                         )
@@ -806,7 +839,7 @@ async def cancel_subscription(current_user: User = Depends(require_owner)):
     """Cancel the current subscription."""
     user_doc = await db.users.find_one(
         {"user_id": current_user.user_id},
-        {"_id": 0, "subscription_tier": 1, "stripe_subscription_id": 1}
+        {"_id": 0, "subscription_tier": 1, "stripe_subscription_id": 1, "stripe_livemode": 1}
     )
 
     if not user_doc:
@@ -817,7 +850,7 @@ async def cancel_subscription(current_user: User = Depends(require_owner)):
         raise HTTPException(status_code=400, detail="No active subscription to cancel")
 
     api_key = os.environ.get("STRIPE_API_KEY")
-    sub_id = user_doc.get("stripe_subscription_id")
+    sub_id = user_doc.get("stripe_subscription_id") if _same_mode(user_doc) else None
 
     # Cancel on Stripe if real subscription exists
     if sub_id and api_key and is_real_stripe_key(api_key):
@@ -851,12 +884,12 @@ async def get_subscription_details(current_user: User = Depends(get_current_user
     """Return live Stripe subscription details: auto-renew, period end, status."""
     user_doc = await db.users.find_one(
         {"user_id": current_user.user_id},
-        {"_id": 0, "stripe_subscription_id": 1, "subscription_tier": 1, "trial_end": 1}
+        {"_id": 0, "stripe_subscription_id": 1, "subscription_tier": 1, "trial_end": 1, "stripe_livemode": 1}
     )
     if not user_doc:
         raise HTTPException(status_code=404, detail="User not found")
 
-    sub_id = user_doc.get("stripe_subscription_id")
+    sub_id = user_doc.get("stripe_subscription_id") if _same_mode(user_doc) else None
     api_key = os.environ.get("STRIPE_API_KEY")
 
     # Default response for users without an active Stripe subscription (trial-only / cancelled / free)
@@ -901,9 +934,9 @@ async def set_auto_renew(request: Request, current_user: User = Depends(require_
 
     user_doc = await db.users.find_one(
         {"user_id": current_user.user_id},
-        {"_id": 0, "stripe_subscription_id": 1}
+        {"_id": 0, "stripe_subscription_id": 1, "stripe_livemode": 1}
     )
-    sub_id = user_doc.get("stripe_subscription_id") if user_doc else None
+    sub_id = user_doc.get("stripe_subscription_id") if user_doc and _same_mode(user_doc) else None
     api_key = os.environ.get("STRIPE_API_KEY")
 
     if not sub_id or not api_key or not is_real_stripe_key(api_key):

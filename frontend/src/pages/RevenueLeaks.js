@@ -386,7 +386,7 @@ export default function RevenueLeaks() {
             <div className="py-4 space-y-3" data-testid="approve-result">
               <div className="flex items-center gap-2 text-emerald-400"><Check className="w-5 h-5" /> <span className="font-medium">Recovery executed</span></div>
               <div className="rounded-lg bg-white/[0.03] border border-white/10 p-3 text-sm text-zinc-300 space-y-2">
-                <div className="flex items-center gap-2"><FileText className="w-4 h-4 text-slate-400" /> Invoice: <span className="text-zinc-400">{approveResult.invoice?.mode === 'live_draft' ? `Live draft ${approveResult.invoice.invoice_id}` : approveResult.invoice?.mode === 'simulated' ? `Simulated draft (${money(approveResult.invoice.amount, approveResult.invoice.currency)})` : `Error: ${approveResult.invoice?.error}`}</span></div>
+                <div className="flex items-center gap-2 flex-wrap" data-testid="approve-result-invoice"><FileText className="w-4 h-4 text-slate-400" /> Invoice: <span className="text-zinc-400">Create this invoice in your Stripe ({money(approveResult.invoice?.amount, approveResult.invoice?.currency)})</span> <a href="https://dashboard.stripe.com/invoices/create" target="_blank" rel="noopener noreferrer" className="text-[#7aa6ff] hover:underline" data-testid="approve-result-open-stripe">Open Stripe</a></div>
                 <div className="flex items-center gap-2"><GitBranch className="w-4 h-4 text-slate-400" /> CRM: <span className="text-zinc-400">Expansion opportunity created in pipeline</span></div>
                 <div className="flex items-center gap-2"><Mail className="w-4 h-4 text-slate-400" /> AM email: <span className="text-zinc-400">{approveResult.email?.sent ? `Sent to ${approveResult.email.to}` : `Not sent (${approveResult.email?.reason || 'no recipient'})`}</span></div>
               </div>
@@ -404,7 +404,7 @@ export default function RevenueLeaks() {
                   <span className="text-zinc-400">{draft.invoice.quantity} × {money(draft.invoice.unit_amount, draft.invoice.currency)}</span>
                   <span className="text-white font-bold">{money(draft.invoice.amount, draft.invoice.currency)}</span>
                 </div>
-                {!status?.stripe_live && <div className="text-[11px] text-amber-400/80 mt-2">Sandbox mode — a real Stripe key will create a live draft invoice.</div>}
+                <div className="text-[11px] text-zinc-500 mt-2" data-testid="draft-invoice-manual-note">After you approve, create this invoice in your own Stripe — InFlow doesn't create invoices for you.</div>
               </div>
               {/* CRM */}
               <div className="rounded-lg bg-white/[0.03] border border-white/10 p-4" data-testid="draft-crm">

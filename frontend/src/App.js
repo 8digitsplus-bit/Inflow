@@ -7,6 +7,7 @@ import AuthPage from './pages/AuthPage';
 import AuthCallback from './pages/AuthCallback';
 import TrialNotification from './components/TrialNotification';
 import { FeaturebaseBoot } from './components/FeaturebaseBoot';
+import { UpdatePrompt } from './components/UpdatePrompt';
 import ProtectedRoute from './components/ProtectedRoute';
 import TierGate from './components/TierGate';
 import './App.css';
@@ -268,6 +269,7 @@ function App() {
         <AppRouter />
         <TrialNotification />
         <FeaturebaseBoot />
+        <UpdatePrompt />
       </AuthProvider>
     </BrowserRouter>
   );

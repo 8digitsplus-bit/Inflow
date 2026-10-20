@@ -3,21 +3,19 @@
 Cross-references product usage (Mixpanel / Amplitude) against billing contracts
 (Stripe). When a customer's actual usage exceeds their contracted entitlement,
 a "leak" is flagged. The Account Manager reviews a drafted recovery package
-(unbilled-usage Stripe draft invoice + AM email + CRM expansion opportunity)
+(unbilled-usage invoice for the user to create in their own Stripe + AM email + CRM expansion opportunity)
 and approves it with one click — nothing executes autonomously.
 
 Enterprise-tier, owner-only.
 """
 import os
 import uuid
-import asyncio
 import logging
 from datetime import datetime, timezone
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Depends
 from pydantic import BaseModel
-import stripe as stripe_sdk
 
 from database import db
 from models import User
@@ -70,10 +68,6 @@ class EmailEdit(BaseModel):
 
 
 # ---------------------------------------------------------------- helpers
-def _is_real_stripe_key(key: str) -> bool:
-    return bool(key) and (key.startswith("sk_live_") or key.startswith("sk_test_")) and key != "sk_test_emergent"
-
-
 async def require_enterprise(user: User = Depends(require_owner)) -> User:
     org = await db.organizations.find_one({"org_id": user.org_id}, {"_id": 0})
     tier = (org or {}).get("subscription_tier") or user.subscription_tier or "trial"
@@ -102,7 +96,6 @@ async def telemetry_status(user: User = Depends(get_current_user)):
         "is_enterprise": "enterprise" in (tier or ""),
         "is_owner": user.role == "owner",
         "usage_sources_connected": [c["platform"] for c in connections],
-        "stripe_live": _is_real_stripe_key(os.environ.get("STRIPE_API_KEY")),
     }
 
 
@@ -420,7 +413,7 @@ async def draft_recovery(leak_id: str, user: User = Depends(require_enterprise))
 
 @router.post("/telemetry/leaks/{leak_id}/approve")
 async def approve_recovery(leak_id: str, email: EmailEdit = EmailEdit(), user: User = Depends(require_enterprise)):
-    """Execute the recovery package: Stripe draft invoice + CRM deal + AM email."""
+    """Execute the recovery package: invoice details (created by the user in their own Stripe) + CRM deal + AM email."""
     leak = await db.leaks.find_one({"leak_id": leak_id, **org_filter(user)}, {"_id": 0})
     if not leak:
         raise HTTPException(status_code=404, detail="Leak not found")
@@ -448,56 +441,15 @@ async def approve_recovery(leak_id: str, email: EmailEdit = EmailEdit(), user: U
     cur = leak.get("currency", "usd")
     actions = {}
 
-    # 1) Stripe draft invoice (real if a live/test key; auto-creates a customer if needed)
-    stripe_key = os.environ.get("STRIPE_API_KEY")
-    cust_id = leak.get("stripe_customer_id", "")
-    desc = draft["invoice"]["description"]
-    if _is_real_stripe_key(stripe_key):
-        try:
-            def _create():
-                stripe_sdk.api_key = stripe_key
-                cid = cust_id
-                if not cid:
-                    cust = stripe_sdk.Customer.create(
-                        name=leak["customer_name"],
-                        metadata={"inflow_leak_id": leak_id, "inflow_account_key": leak.get("account_key", "")},
-                    )
-                    cid = cust.id
-                inv = stripe_sdk.Invoice.create(
-                    customer=cid, auto_advance=False, currency=cur,
-                    description=desc,
-                    metadata={"inflow_leak_id": leak_id, "type": "unbilled_usage"},
-                )
-                stripe_sdk.InvoiceItem.create(
-                    customer=cid, invoice=inv.id, quantity=over,
-                    unit_amount_decimal=str(int(round(unit * 100))), currency=cur, description=desc,
-                )
-                return stripe_sdk.Invoice.retrieve(inv.id), cid
-            inv, used_cid = await asyncio.to_thread(_create)
-            base = "https://dashboard.stripe.com" + ("/test" if stripe_key.startswith("sk_test_") else "")
-            actions["invoice"] = {
-                "mode": "live_draft", "invoice_id": inv.get("id"),
-                "customer_id": used_cid,
-                "amount": round((inv.get("amount_due") or 0) / 100, 2),
-                "currency": inv.get("currency", cur),
-                "url": f"{base}/invoices/{inv.get('id')}",
-                "status": inv.get("status", "draft"),
-            }
-            if used_cid and used_cid != cust_id:
-                await db.contracts.update_one(
-                    {"contract_id": leak["contract_id"]}, {"$set": {"stripe_customer_id": used_cid}}
-                )
-        except Exception as e:
-            logger.error("Stripe draft invoice failed for %s: %s", leak_id, e)
-            actions["invoice"] = {"mode": "error", "error": str(e)[:200]}
-    else:
-        actions["invoice"] = {
-            "mode": "simulated",
-            "invoice_id": f"draft_sim_{uuid.uuid4().hex[:10]}",
-            "amount": round(over * unit, 2),
-            "currency": cur,
-            "note": "Sandbox mode — connect a real Stripe key to create a live draft invoice.",
-        }
+    # 1) Invoice is created by the user in THEIR OWN Stripe — never in InFlow's platform account.
+    actions["invoice"] = {
+        "mode": "manual",
+        "amount": round(over * unit, 2),
+        "currency": cur,
+        "quantity": over,
+        "unit_amount": unit,
+        "description": draft["invoice"]["description"],
+    }
 
     # 2) CRM expansion opportunity → pipeline
     deal_id = f"deal_{uuid.uuid4().hex[:12]}"
