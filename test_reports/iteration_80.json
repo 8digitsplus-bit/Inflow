@@ -1,0 +1,35 @@
+{
+  "summary": "Tested self-service account deletion end to end. Backend: 12/12 pytest pass (/app/backend/tests/test_account_deletion.py). It covers deletion info, the DELETE confirm check (400), wrong password (401), wrong or missing code for Google-only users (401), owner-with-members blocked (409, plus blocked_by_members flag), send-code creating an otp, delete -> session revoked -> worker purge -> login 401, testpro login and /auth/me without password_hash, and /auth/session 400/401. Frontend (Playwright on the HTTPS preview): every requested flow passes. Password user: privacy-card, dialog with 4 consequences, submit disabled until both fields are filled ('delete' in lowercase also accepted), 'Incorrect password' toast, 'Keep my account' closes the dialog and clears the fields, correct password + DELETE redirects to /auth?mode=login&deleted=..., the notice shows 'November 19, 2026' (30 days out), and /dashboard then redirects to / (session revoked). Mongo: pending, purge_at +30d, user and org tier cancelled. Restore: re-login shows the toast 'Welcome back! Your account deletion was cancelled.' once only (not again after reload); in Mongo deletion_status and purge_at are removed and deletion_restored_at is set; plan stays cancelled. Blocked owner: delete-account-blocked-note shown, no button. Google-only user: no password field, 'Email me a code' button turns into 'Resend', code input strips non-digits to 6, submit stays disabled until a code is sent, toast 'Invalid or expired code', right code redirects with the notice, sessions and otp removed. Worker: purge removed the user, org and deals and created an account_deletions record. Regression: testpro dashboard and settings (Security, Data sync, Delete account, Current plan, Billing, Renewal) render with no page errors.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "All slowapi-limited endpoints incl. POST /api/account/delete, /api/account/delete/code, /api/auth/login", "issue": "utils/rate_limit._ip_key trusts the FIRST X-Forwarded-For value, which the client controls. Verified: 6 calls with XFF 9.9.9.9 gave 429, and the next call with XFF 9.9.9.10 gave 400 (limit bypassed). This weakens the 5/hour limit on deletion re-auth, so the 6-digit code can be brute-forced by rotating XFF. Pre-existing and app-wide, but relevant here."},
+      {"endpoint": "POST /api/account/delete (code path)", "issue": "Deletion codes share db.otp_codes with 2FA login codes and have no purpose field, so a login 2FA code is also accepted for account deletion and vice versa. Wrong attempts don't use up or invalidate the code (no attempt counter)."},
+      {"endpoint": "POST /api/auth/session", "issue": "For an existing user in 'purging' state, name/picture are updated before on_sign_in raises 401. Harmless but out of order; call on_sign_in before the update."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [
+      {"flow": "Google-only delete: send code", "issue": "The toast always says 'Code sent to e2e***@...' even when the backend returns email_sent=false (Resend failed). Show a warning when email_sent is false.", "affected_selectors": ["[data-testid='delete-account-send-code-btn']"]}
+    ],
+    "design_issues": []
+  },
+  "test_report_links": ["/app/backend/tests/test_account_deletion.py", "/app/backend/tests/seed_e2edel.py", "/app/test_reports/pytest/pytest_account_deletion.xml"],
+  "action_items": [
+    "Optional hardening: make _ip_key use the right-most trusted XFF hop (or the ingress-specific header) instead of the client-supplied first value",
+    "Optional: tag otp_codes with a purpose ('login_2fa' / 'account_delete') and check it in _verify_reauth; add an attempt counter",
+    "Optional: DeleteAccountCard sendCode should handle email_sent=false with a warning toast"
+  ],
+  "critical_code_review_comments": [
+    "routes/account.py _purge deletes from every collection matching user_id/org_id. Correct, but it scans all collections; fine for now.",
+    "Frontend accepts lowercase 'delete' as confirmation (backend uppercases too). Consistent, but the label says type DELETE.",
+    "Transient dev-only build error: the visual-edits babel-metadata-plugin crashed on src/components/intent/PushMenu.js ('Cannot read properties of null (reading traverse)'), and the webpack overlay blocked all clicks. Fixed by `supervisorctl restart frontend`; no code change needed. If it recurs, that dev plugin is the cause."
+  ],
+  "updated_files": ["/app/backend/tests/test_account_deletion.py", "/app/backend/tests/seed_e2edel.py"],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "seed_data_creation": "Seeded e2edel01/02/03 users, orgs, session and deals via tests/seed_e2edel.py. All of them were cleaned up afterwards (users, orgs, sessions, otp_codes, deals, sync_schedules), along with the 3 account_deletions records this test created. The 2 earlier account_deletions records (del_b95c462416d6, del_ef2d9c98c75f) are from the main agent and were left in place. testpro was untouched.",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "Run `python3 /app/backend/tests/seed_e2edel.py seed` before `pytest tests/test_account_deletion.py`. TestZPurge destroys e2edel01, so re-seed before re-running and run `seed_e2edel.py cleanup` afterwards. Tests send random X-Forwarded-For values to avoid the 5/hour limit. Google-only UI flow: set the cookie session_token=session_e2edel02_test on the preview domain. The Playwright sandbox has no pymongo, so a background mongosh loop overwrote the new otp code to a known value."
+}

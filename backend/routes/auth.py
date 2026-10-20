@@ -127,8 +127,11 @@ async def create_session(request: Request, response: Response):
     user_id = f"user_{uuid.uuid4().hex[:12]}"
     existing_user = await db.users.find_one({"email": auth_data["email"]}, {"_id": 0})
 
+    restored = False
     if existing_user:
         user_id = existing_user["user_id"]
+        # Check deletion state first (raises for accounts being purged; restores pending ones).
+        restored = (await on_sign_in(existing_user)).get("account_restored", False)
         await db.users.update_one(
             {"user_id": user_id},
             {"$set": {
@@ -162,10 +165,7 @@ async def create_session(request: Request, response: Response):
             "created_at": now_iso
         })
 
-    restored = False
-    if existing_user:
-        restored = (await on_sign_in(existing_user)).get("account_restored", False)
-    else:
+    if not existing_user:
         await db.users.update_one({"user_id": user_id}, {"$set": {"last_seen_at": datetime.now(timezone.utc).isoformat()}})
 
     # Mint our OWN cryptographically-random session key. Never reuse the upstream

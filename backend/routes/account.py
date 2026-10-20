@@ -3,6 +3,7 @@ import asyncio
 import hashlib
 import logging
 import os
+import secrets
 import uuid
 from datetime import datetime, timezone, timedelta
 from typing import Optional
@@ -14,15 +15,17 @@ from pydantic import BaseModel
 from database import db
 from dependencies import get_current_user
 from models import User
-from routes.auth import _send_2fa_code
 from routes.payments import _same_mode, stripe_sdk
 from utils.account_lifecycle import GRACE_DAYS, INACTIVE_DAYS, WARNING_DAYS, fmt_date, send_account_email
-from utils.rate_limit import limiter
+from utils.email import send_email, build_notice_email_html
+from utils.rate_limit import limiter, check_email_rate_limit, record_email_failure, reset_email_attempts
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
 
 INACTIVE_TIERS = {"expired", "cancelled", "free"}
+CODE_TTL_MINUTES = 10
+CODE_MAX_ATTEMPTS = 5
 
 
 class DeleteAccountRequest(BaseModel):
@@ -52,16 +55,33 @@ async def _has_active_plan(user_doc: dict) -> bool:
     return True
 
 
+def _hash_code(code: str) -> str:
+    return hashlib.sha256(code.encode()).hexdigest()
+
+
 async def _verify_reauth(user_doc: dict, body: DeleteAccountRequest):
+    # Per-account throttle (independent of client IP) on top of the IP limiter.
+    throttle_key = f"account-delete:{user_doc['user_id']}"
+    check_email_rate_limit(throttle_key)
     if user_doc.get("password_hash"):
         if not body.password or not bcrypt.checkpw(body.password.encode("utf-8"), user_doc["password_hash"].encode("utf-8")):
+            record_email_failure(throttle_key)
             raise HTTPException(status_code=401, detail="Incorrect password")
+        reset_email_attempts(throttle_key)
         return
-    code = (body.code or "").strip()
-    otp = await db.otp_codes.find_one({"user_id": user_doc["user_id"], "code": code}, {"_id": 0}) if code else None
-    if not otp or datetime.now(timezone.utc) > datetime.fromisoformat(otp["expires_at"].replace("Z", "+00:00")):
+    # Deletion codes live in their own collection so sign-in 2FA codes can't be used here (and vice versa).
+    doc = await db.account_delete_codes.find_one({"user_id": user_doc["user_id"]}, {"_id": 0})
+    expired = not doc or datetime.now(timezone.utc) > datetime.fromisoformat(doc["expires_at"])
+    if expired or doc["code_hash"] != _hash_code((body.code or "").strip()):
+        record_email_failure(throttle_key)
+        if doc and not expired:
+            res = await db.account_delete_codes.find_one_and_update(
+                {"user_id": user_doc["user_id"]}, {"$inc": {"attempts": 1}}, return_document=True)
+            if res and res.get("attempts", 0) >= CODE_MAX_ATTEMPTS:
+                await db.account_delete_codes.delete_many({"user_id": user_doc["user_id"]})
         raise HTTPException(status_code=401, detail="Invalid or expired code")
-    await db.otp_codes.delete_many({"user_id": user_doc["user_id"]})
+    await db.account_delete_codes.delete_many({"user_id": user_doc["user_id"]})
+    reset_email_attempts(throttle_key)
 
 
 async def _cancel_stripe_subscription(user_doc: dict):
@@ -96,8 +116,21 @@ async def deletion_info(user: User = Depends(get_current_user)):
 @limiter.limit("3/10 minutes")
 async def send_deletion_code(request: Request, user: User = Depends(get_current_user)):
     user_doc = await db.users.find_one({"user_id": user.user_id}, {"_id": 0})
-    _, sent = await _send_2fa_code(user_doc)
-    return {"email_sent": sent, "email_hint": _email_hint(user_doc["email"])}
+    code = f"{secrets.randbelow(10**6):06d}"
+    await db.account_delete_codes.delete_many({"user_id": user.user_id})
+    await db.account_delete_codes.insert_one({
+        "user_id": user.user_id, "code_hash": _hash_code(code), "attempts": 0,
+        "expires_at": (datetime.now(timezone.utc) + timedelta(minutes=CODE_TTL_MINUTES)).isoformat(),
+    })
+    result = await send_email(
+        to=user_doc["email"], subject=f"{code} is your code to confirm account deletion",
+        html=build_notice_email_html("Confirm your account deletion", [
+            f"Your code is {code}. It expires in {CODE_TTL_MINUTES} minutes.",
+            "If you didn't ask to delete your InFlow account, ignore this email and consider securing your account.",
+        ]),
+        text=f"Your InFlow account deletion code is {code}. It expires in {CODE_TTL_MINUTES} minutes.",
+    )
+    return {"email_sent": result["sent"], "email_hint": _email_hint(user_doc["email"])}
 
 
 @router.post("/account/delete")

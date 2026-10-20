@@ -33,7 +33,8 @@ const DeleteAccountDialog = ({ open, onOpenChange, info }) => {
     try {
       const d = await call('/account/delete/code', { method: 'POST' });
       setCodeSent(true);
-      toast.success(`Code sent to ${d.email_hint}`);
+      if (d.email_sent) toast.success(`Code sent to ${d.email_hint}`);
+      else toast.warning("We couldn't send the code right now. Please try again in a minute or contact support.");
     } catch (e) { toast.error(e.message); } finally { setBusy(null); }
   };
 
