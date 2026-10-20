@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import DashboardLayout from '../components/DashboardLayout';
 import { SyncSettingsCard } from '../components/sync/SyncSettingsCard';
+import { DeleteAccountCard } from '../components/settings/DeleteAccountCard';
 import { motion } from 'framer-motion';
 import {
   Check,
@@ -277,6 +278,7 @@ const Settings = () => {
             </div>
 
             <SyncSettingsCard className={innerCard} />
+            <DeleteAccountCard className={innerCard} />
 
             {/* Renewal */}
             <div className={innerCard} data-testid="renewal-card">

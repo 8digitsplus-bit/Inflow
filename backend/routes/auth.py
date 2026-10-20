@@ -14,6 +14,7 @@ from database import db
 from models import User, RegisterRequest, LoginRequest, OnboardingData
 from dependencies import get_current_user
 from utils.email import send_email
+from utils.account_lifecycle import on_sign_in
 from utils.rate_limit import (
     limiter,
     check_email_rate_limit,
@@ -161,6 +162,12 @@ async def create_session(request: Request, response: Response):
             "created_at": now_iso
         })
 
+    restored = False
+    if existing_user:
+        restored = (await on_sign_in(existing_user)).get("account_restored", False)
+    else:
+        await db.users.update_one({"user_id": user_id}, {"$set": {"last_seen_at": datetime.now(timezone.utc).isoformat()}})
+
     # Mint our OWN cryptographically-random session key. Never reuse the upstream
     # provider's token as our app session key — this decouples our sessions from the
     # third-party auth host so a leaked/rotated upstream token can't ride our session.
@@ -184,8 +191,10 @@ async def create_session(request: Request, response: Response):
         max_age=7 * 24 * 60 * 60
     )
 
-    user_doc = await db.users.find_one({"user_id": user_id}, {"_id": 0})
+    user_doc = await db.users.find_one({"user_id": user_id}, {"_id": 0, "password_hash": 0})
     user_doc = await apply_trial_status(user_doc)
+    if restored:
+        user_doc["account_restored"] = True
     return user_doc
 
 
@@ -240,7 +249,8 @@ async def register_with_email(request: Request, req: RegisterRequest, response: 
             "role": "owner",
             "trial_start": datetime.now(timezone.utc).isoformat(),
             "trial_end": (datetime.now(timezone.utc) + timedelta(days=14)).isoformat(),
-            "created_at": now_iso
+            "created_at": now_iso,
+            "last_seen_at": now_iso,
         })
     except DuplicateKeyError:
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -461,6 +471,7 @@ async def get_2fa_status(current_user: User = Depends(get_current_user)):
 
 async def _create_session_and_respond(user_doc: dict, response: Response):
     """Create session and return user data"""
+    user_doc = await on_sign_in(user_doc)
     session_token = f"session_{uuid.uuid4().hex}"
     expires_at = datetime.now(timezone.utc) + timedelta(days=7)
 

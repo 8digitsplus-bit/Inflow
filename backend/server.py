@@ -39,6 +39,7 @@ from routes.intent_routing import router as intent_routing_router
 from routes.storefront import router as storefront_router, public_router as storefront_public_router
 from routes.intent_engine import process_intent_routing_once
 from routes.workspace import router as workspace_router
+from routes.account import router as account_router, process_account_lifecycle_once
 from migrations.orgs import migrate_users_to_orgs
 from utils.prodfix import init_prodfix
 
@@ -154,6 +155,7 @@ api_router.include_router(intent_routing_router)
 api_router.include_router(storefront_router)
 api_router.include_router(storefront_public_router)
 api_router.include_router(workspace_router)
+api_router.include_router(account_router)
 
 
 # Basic routes
@@ -245,6 +247,17 @@ async def startup_migrations():
             await asyncio.sleep(60)
 
     app.state.sync_task = asyncio.create_task(_sync_scheduler())
+
+    # Background worker: account deletions (30-day grace) + 12-month inactivity clean-up, hourly.
+    async def _account_lifecycle():
+        while True:
+            try:
+                await process_account_lifecycle_once()
+            except Exception as e:
+                logging.error("Account lifecycle worker error: %s", e)
+            await asyncio.sleep(3600)
+
+    app.state.account_task = asyncio.create_task(_account_lifecycle())
     try:
         await db.sync_schedules.create_index("org_id", unique=True)
         await db.sync_runs.create_index([("org_id", 1), ("started_at", -1)])

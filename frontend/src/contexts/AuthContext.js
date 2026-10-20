@@ -80,6 +80,14 @@ export const AuthProvider = ({ children }) => {
     checkAuth();
   }, [checkAuth]);
 
+  const markSignedIn = (data) => {
+    setUser(data);
+    localStorage.setItem('inflow_authed', '1');
+    localStorage.setItem('inflow_last_account', JSON.stringify({ name: data.name, email: data.email }));
+    // Signing in during the deletion grace period restores the account; DashboardLayout shows a notice.
+    if (data.account_restored) sessionStorage.setItem('inflow_account_restored', '1');
+  };
+
   const loginWithGoogle = () => {
     const redirectUrl = window.location.origin + '/dashboard';
     window.location.href = `https://auth.emergentagent.com/?redirect=${encodeURIComponent(redirectUrl)}`;
@@ -109,9 +117,7 @@ export const AuthProvider = ({ children }) => {
       return data;
     }
 
-    setUser(data);
-    localStorage.setItem('inflow_authed', '1');
-    localStorage.setItem('inflow_last_account', JSON.stringify({ name: data.name, email: data.email }));
+    markSignedIn(data);
     return data;
   };
 
@@ -134,9 +140,7 @@ export const AuthProvider = ({ children }) => {
       throw new Error(data.detail || friendlyAuthError(response.status, 'Verification failed'));
     }
 
-    setUser(data);
-    localStorage.setItem('inflow_authed', '1');
-    localStorage.setItem('inflow_last_account', JSON.stringify({ name: data.name, email: data.email }));
+    markSignedIn(data);
     return data;
   };
 
@@ -194,9 +198,7 @@ export const AuthProvider = ({ children }) => {
       }
 
       const userData = await response.json();
-      setUser(userData);
-      localStorage.setItem('inflow_authed', '1');
-      localStorage.setItem('inflow_last_account', JSON.stringify({ name: userData.name, email: userData.email }));
+      markSignedIn(userData);
       return userData;
     } catch (err) {
       setError(err.message);

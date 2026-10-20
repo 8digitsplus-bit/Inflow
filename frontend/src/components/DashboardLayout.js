@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from './ui/alert-dialog';
 import { Toaster } from './ui/sonner';
+import { toast } from 'sonner';
 import TrialBanner from './TrialBanner';
 import LegalBanner from './LegalBanner';
 import UserMenu from './UserMenu';
@@ -93,6 +94,15 @@ const DashboardLayout = ({ children }) => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+
+  useEffect(() => {
+    if (!sessionStorage.getItem('inflow_account_restored')) return;
+    sessionStorage.removeItem('inflow_account_restored');
+    toast.success('Welcome back! Your account deletion was cancelled.', {
+      description: 'Your subscription was cancelled when you asked to delete your account. Choose a plan in Settings to keep using InFlow.',
+      duration: 12000,
+    });
+  }, []);
 
   const tier = user?.subscription_tier || 'trial';
   const userLevel = TIER_LEVEL[tier] ?? 0;

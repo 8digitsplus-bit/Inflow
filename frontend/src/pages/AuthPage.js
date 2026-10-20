@@ -65,6 +65,7 @@ const AuthPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const isLoginMode = searchParams.get('mode') === 'login';
+  const deletedOn = searchParams.get('deleted');
   const { loginWithGoogle, loginWithEmail, registerWithEmail, verify2FA, isAuthenticated, user, loading: authLoading } = useAuth();
   const [mode, setMode] = useState(isLoginMode || localStorage.getItem('inflow_last_account') ? 'login' : 'register');
   const [loading, setLoading] = useState(null);
@@ -309,6 +310,11 @@ const AuthPage = () => {
           />
         ) : (
           <>
+            {deletedOn && (
+              <div className="mb-5 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-3 text-sm text-amber-200" data-testid="auth-account-deleted-notice">
+                Your account is scheduled for deletion on {new Date(deletedOn).toLocaleDateString(undefined, { day: 'numeric', month: 'long', year: 'numeric' })}. Changed your mind? Sign in before then to restore it.
+              </div>
+            )}
             <h2 className="text-2xl font-semibold text-white mb-1 text-center">
               {mode === 'register' ? 'Create your account' : 'Welcome back'}
             </h2>
