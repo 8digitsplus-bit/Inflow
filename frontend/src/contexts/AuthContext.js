@@ -1,4 +1,5 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { identifyProdfixUser, resetProdfixUser } from '../lib/prodfix';
 
 const API_URL = process.env.REACT_APP_BACKEND_URL;
 
@@ -66,6 +67,10 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
     }
   }, []);
+
+  useEffect(() => {
+    if (user) identifyProdfixUser(user);
+  }, [user]);
 
   useEffect(() => {
     if (window.location.hash?.includes('session_id=')) {
@@ -167,6 +172,7 @@ export const AuthProvider = ({ children }) => {
         credentials: 'include',
       });
       localStorage.removeItem('inflow_authed');
+      resetProdfixUser();
       setUser(null);
       window.location.href = '/';
     } catch (err) {

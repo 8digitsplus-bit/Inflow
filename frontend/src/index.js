@@ -2,10 +2,9 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import "@/index.css";
 import App from "@/App";
-import * as Sentry from "@sentry/react";
-import { initSentry } from "@/lib/sentry";
+import { initProdfix, captureProdfixError } from "@/lib/prodfix";
 
-initSentry();
+initProdfix();
 
 const ErrorFallback = () => (
   <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", background: "#050507", color: "#e4e4e7", fontFamily: "system-ui, sans-serif", padding: "24px", textAlign: "center" }}>
@@ -15,11 +14,27 @@ const ErrorFallback = () => (
   </div>
 );
 
+class AppErrorBoundary extends React.Component {
+  state = { error: null };
+
+  static getDerivedStateFromError(error) {
+    return { error };
+  }
+
+  componentDidCatch(error, info) {
+    captureProdfixError(error, { componentStack: info.componentStack, source: "react_error_boundary" });
+  }
+
+  render() {
+    return this.state.error ? <ErrorFallback /> : this.props.children;
+  }
+}
+
 const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
   <React.StrictMode>
-    <Sentry.ErrorBoundary fallback={<ErrorFallback />}>
+    <AppErrorBoundary>
       <App />
-    </Sentry.ErrorBoundary>
+    </AppErrorBoundary>
   </React.StrictMode>,
 );

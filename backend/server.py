@@ -5,7 +5,6 @@ import logging
 import re
 
 import os
-import sentry_sdk
 
 from slowapi.errors import RateLimitExceeded
 from slowapi.middleware import SlowAPIMiddleware
@@ -41,7 +40,7 @@ from routes.storefront import router as storefront_router, public_router as stor
 from routes.intent_engine import process_intent_routing_once
 from routes.workspace import router as workspace_router
 from migrations.orgs import migrate_users_to_orgs
-from utils.sentry_config import init_sentry
+from utils.prodfix import init_prodfix
 
 # Configure logging
 logging.basicConfig(
@@ -50,8 +49,8 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Initialize Sentry (no-op if SENTRY_DSN unset) — before app creation for auto-instrumentation
-init_sentry()
+# ProdFix error reporting (no-op if PRODFIX_KEY unset)
+init_prodfix()
 
 # Create the main app
 app = FastAPI()
@@ -111,13 +110,10 @@ async def _unhandled_exception_handler(request: Request, exc: Exception):
 
     Starlette emits unhandled-exception 500s above the CORS middleware, so the
     browser would otherwise block the response and the client would misreport it
-    as a network/"couldn't reach server" error. We attach CORS headers manually
-    and report the exception to Sentry."""
-    logger.error(f"Unhandled exception on {request.method} {request.url.path}: {exc!r}")
-    try:
-        sentry_sdk.capture_exception(exc)
-    except Exception:
-        pass
+    as a network/"couldn't reach server" error. We attach CORS headers manually;
+    the ERROR log (with traceback) is forwarded to ProdFix."""
+    route = f"{request.method} {request.url.path}"
+    logger.error(f"Unhandled exception on {route}: {exc!r}", exc_info=exc, extra={"route": route})
     return JSONResponse(
         status_code=500,
         content={"detail": "Something went wrong on our end. Please try again in a moment."},
