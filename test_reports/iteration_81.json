@@ -1,0 +1,32 @@
+{
+  "summary": "Tested cancel-at-period-end (Stripe calls mocked) and the 12-month inactivity auto-purge job. Backend: 15/15 pytest pass. The endpoint coroutines were called directly against the real Mongo DB using throwaway user_TEST_/org_TEST_ docs, which were cleaned up. (1) With a Stripe sub, the endpoint calls Subscription.modify(sub_id, cancel_at_period_end=True) exactly once and never calls Subscription.cancel. It returns status 'scheduled' with cancel_at set to the item period end in ISO format. The user and org tier are unchanged. (2) A Stripe exception returns 502 with no local change. (3) A Stripe status of 'canceled' falls through to an immediate cancel on the user AND the org. (4) A trial user, or a paid user with no sub id, or a sub id with the sentinel key, is cancelled immediately: subscription_tier, previous_tier, subscription_status and cancelled_at are set on both users and organizations. Expired and cancelled tiers return 400. A member gets 403, checked directly and over HTTP through the public URL with a session cookie. (5) The customer.subscription.deleted webhook branch was reviewed and is unchanged: it flips the user and org tier to cancelled. (6) Running server.startup_migrations registers app.state.account_task and the task stays running; there are 0 users without last_seen_at. Functional checks: a user last seen 340 days ago on an expired tier is warned, with inactive_purge_at about 30 days ahead. Setting the purge date in the past then purges the user and writes an account_deletions record with reason 'inactive'. An active paid user last seen 400 days ago is not warned. An owner with other members is not warned. on_sign_in refreshes last_seen_at and clears the warning fields. Regression: test_account_deletion.py 14/14 pass (seeded, then cleaned). Frontend (Playwright, testpro, details/cancel/auto-renew mocked with page.route): all three states pass. (i) The dialog says the plan stays active until December 15, 2026 and won't renew. Confirming sends POST /cancel, the toast says the plan will end on December 15, 2026, and the UI moves to the scheduled state. (ii) cancel-scheduled-notice shows 'Cancels on December 15, 2026'. cancel-subscription-btn is hidden and resume-subscription-btn is visible. The Renewal card says 'Ends on December 15, 2026'. Keep my subscription sends POST /auto-renew with {\"enabled\":true}, shows an 'Auto-renew turned on' toast and restores the cancel button. (iii) Unmocked (has_subscription:false), the dialog says 'Your access will end immediately'. The cancel was not confirmed. testpro is still on enterprise_monthly.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "POST /api/subscription/cancel", "issue": "If Stripe returns no period end, cancel_at is null. The UI then falls back to data.message, which is OK. The scheduled path also sets no local flag such as cancel_at_period_end on the user doc, so the scheduled state relies entirely on a live Stripe retrieve in /subscription/details. If that retrieve fails, the UI shows the cancel button again and the default response hides the scheduled state."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Settings", "issues": ["fmtDate uses the browser's local timezone. A period end at 00:00 UTC shows as the previous day for users in the Americas (for example 2026-12-15T00:00Z shows December 14), so the date may not match the Stripe or ToS date. Consider timeZone:'UTC' or keep it local deliberately. The test used 12:00Z to avoid this.", "The toast stack after resume still shows the earlier 'Your plan will end on...' toast next to 'Auto-renew turned on'. This is cosmetic."]}
+    ]
+  },
+  "test_report_links": ["/app/backend/tests/test_cancel_at_period_end.py", "/app/test_reports/pytest/iteration_81.xml"],
+  "action_items": [
+    "Optional: format period-end dates in UTC (or confirm local time is intended) so 'Cancels on' matches the Stripe date",
+    "Optional: store cancel_at_period_end/cancel_at on the user doc when scheduling, so the UI can still show the scheduled state if the Stripe retrieve fails"
+  ],
+  "critical_code_review_comments": [
+    "cancel_subscription is correct. It uses modify(cancel_at_period_end=True) and has no Subscription.cancel call. On a Stripe error it returns 502 and does not cancel in the DB. On an already-canceled sub it falls through to a local cancel. The org is now updated in the immediate path.",
+    "Mode mismatch (stripe_livemode differs from the key mode) makes the sub id be ignored, so a paid user with a test-mode sub id under a live key is cancelled immediately and locally. This is intended per _same_mode but worth knowing.",
+    "The lifecycle job runs hourly over the whole users collection. Startup wiring was verified."
+  ],
+  "updated_files": ["/app/backend/tests/test_cancel_at_period_end.py"],
+  "success_rate": {"backend": "100% (15/15 + 14/14 regression)", "frontend": "100%"},
+  "seed_data_creation": "Throwaway user_TEST_*/org_TEST_* docs, all deleted. e2edel seed created and cleaned for regression.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "test_cancel_at_period_end.py calls coroutines directly, using a module event loop set with asyncio.set_event_loop before importing database, because Motor is bound to that loop. It monkeypatches routes.payments.is_real_stripe_key and stripe_sdk.Subscription.modify/cancel. The account_task check runs server.startup_migrations() in that loop and then cancels the worker tasks. Never confirm a cancel on testpro without mocks."
+}

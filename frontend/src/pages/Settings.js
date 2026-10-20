@@ -138,7 +138,7 @@ const Settings = () => {
         const data = await response.json();
         setShowCancelConfirm(false);
         if (data.status === 'scheduled') {
-          toast.success(data.cancel_at ? `Your plan will end on ${fmtDate(data.cancel_at)}. You keep full access until then.` : data.message);
+          toast.success(data.cancel_at ? `Your plan will end on ${fmtDate(data.cancel_at)}. You keep full access until then.` : data.message, { id: 'sub-renewal' });
           await fetchSubDetails();
         } else {
           toast.success('Subscription cancelled successfully');
@@ -175,7 +175,7 @@ const Settings = () => {
         body: JSON.stringify({ enabled }),
       });
       if (res.ok) {
-        toast.success(enabled ? 'Auto-renew turned on' : "Auto-renew turned off — your plan will end at the period end");
+        toast.success(enabled ? 'Auto-renew turned on' : "Auto-renew turned off — your plan will end at the period end", { id: 'sub-renewal' });
         await fetchSubDetails();
       } else {
         toast.error((await res.json().catch(() => ({}))).detail || 'Failed to update auto-renew');
