@@ -70,6 +70,17 @@ def _same_mode(doc: dict | None) -> bool:
     return bool((doc or {}).get("stripe_livemode", False)) == (stripe_mode() == "live")
 
 
+def _period_end(sub) -> int | None:
+    # Since Stripe API 2025-03-31 ("basil") the billing period lives on the subscription items.
+    items = (sub.get("items") or {}).get("data") or []
+    return sub.get("current_period_end") or (items[0].get("current_period_end") if items else None)
+
+
+def _invoice_subscription_id(inv) -> str | None:
+    # Since Stripe API 2025-03-31 invoices reference their subscription under parent.subscription_details.
+    return inv.get("subscription") or ((inv.get("parent") or {}).get("subscription_details") or {}).get("subscription")
+
+
 async def get_or_create_stripe_price(plan_key: str, plan: dict) -> str:
     """Get or create a Stripe Price for subscription billing.
 
@@ -735,7 +746,7 @@ async def stripe_webhook(request: Request):
 
             elif event_type == "invoice.paid":
                 # Successful renewal — clear past_due flag if it was set, reaffirm active.
-                sub_id = data_obj.get("subscription")
+                sub_id = _invoice_subscription_id(data_obj)
                 if sub_id:
                     user_doc = await db.users.find_one(
                         {"stripe_subscription_id": sub_id},
@@ -753,7 +764,7 @@ async def stripe_webhook(request: Request):
                             )
 
             elif event_type == "invoice.payment_failed":
-                sub_id = data_obj.get("subscription")
+                sub_id = _invoice_subscription_id(data_obj)
                 if sub_id:
                     user_doc = await db.users.find_one(
                         {"stripe_subscription_id": sub_id},
@@ -908,7 +919,7 @@ async def get_subscription_details(current_user: User = Depends(get_current_user
     try:
         stripe_sdk.api_key = api_key
         sub = stripe_sdk.Subscription.retrieve(sub_id)
-        cpe = sub.get("current_period_end")
+        cpe = _period_end(sub)
         return {
             "has_subscription": True,
             "auto_renew": not sub.get("cancel_at_period_end", False),
@@ -948,7 +959,7 @@ async def set_auto_renew(request: Request, current_user: User = Depends(require_
             sub_id,
             cancel_at_period_end=(not enabled),
         )
-        cpe = sub.get("current_period_end")
+        cpe = _period_end(sub)
         return {
             "auto_renew": enabled,
             "cancel_at_period_end": bool(sub.get("cancel_at_period_end", False)),
