@@ -665,3 +665,9 @@ All AI responses: no emojis, clean plain-text formatting, rendered via shared AI
 - Legal copy (user, in Termly): Terms republished with the free-trial wording, hosting (Ireland/Netherlands/US), prohibited-activities fixes, Permitted Business Use (§28) and Business Status/sole trader (§29). Privacy Policy now uses the trade name InFlow and lists the transfer countries. App's bundled legal_content/*.html refreshed.
 - DPA being written in an external generator: controller = customer, processor = Amaan Bashar t/a InFlow; sub-processors specified directly (same list, 30-day notice).
 - Found: live www.inflowft.com still serves an OLD build (Useberry script present). Production must be redeployed via Save to GitHub → Railway/Vercel.
+
+## Oct 2026: /dpa page published (iteration_83 frontend 100%)
+- Public /dpa page built from the user's LEXR DPA, with approved fixes: UK GDPR, DPA 2018 and ICO added; processor named "Amaan Bashar, trading as InFlow" with full address; contact support@inflowft.com; storage in Ireland, the Netherlands and the US; deletion within 30 days; Base Agreement = Terms; the DPA is public, not confidential; assignment to a successor allowed; Section C lists only InFlow's actual security measures (no MFA or backup claims yet).
+- Files: pages/Dpa.js; components/legal/{LegalShell,DpaKeyTerms,DpaClauses1to4,DpaClauses5to8,DpaSecurityMeasures}.js. Subprocessors page refactored onto LegalShell and links to the DPA.
+- Linked from the footer (Legal → DPA), the Settings Privacy & legal card and /subprocessors. Accepted automatically through the Terms; signed copy on request.
+- TODO (user): add https://www.inflowft.com/dpa to Terms §27 in Termly. Turn on MFA (Railway, Vercel, Atlas, GitHub, Stripe) and Atlas backups, then add both to DPA Section C.

@@ -9,7 +9,7 @@
 
 ## P1
 - Upsell Engine rework, Feature 3 (WAIT for user requirements)
-- Publish the finished DPA (user is drafting it in an external generator), e.g. at /dpa, and link it in Terms §27, the footer and the Settings Privacy & legal card
+- DPA published at /dpa (done). User to add the link in Terms §27. Add MFA and backups to DPA Section C once enabled
 
 ## P2
 - "Disable AI features" toggle in Settings → Privacy

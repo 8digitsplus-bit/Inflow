@@ -1,0 +1,27 @@
+{
+  "summary": "Frontend-only testing of the new public /dpa page plus regression checks of the footer, /subprocessors and Settings Privacy & legal links. All requested checks passed (100%). /dpa: the heading, last-updated date, acceptance note, Terms link and mailto link are correct. The 3 section anchors scroll to #key-terms, #general-terms and #security-measures, and the URL hash updates. Section A has 13 rows. The Processor row includes 'Amaan Bashar, trading as InFlow' and IG6 3SZ. Storage lists Ireland, the Netherlands and the United States. The Sub-processors link goes to /subprocessors, the Supervisory authority row names the ICO, and the CRM bullet is one complete item. The 'he Processor' typo is gone. Clauses 1-8 are present: 2.1 covers UK GDPR and DPA 2018, 4.3 says 'Within 30 days', 4.7 mentions the IDTA Addendum, and clause 8 says the DPA is not confidential and allows assignment to a successor. The page does not contain the gmail address, 'turnstile' or 'Shredding'. Section C has 5 organisational items (1.1-1.5) and 8 technical items (2.1-2.8) with the expected labels. At 390px: no horizontal overflow (scrollWidth 390) and Section A rows stack (label above value, same x). Footer: the Legal column order is ...Sub-processors, DPA, and the DPA link goes to /dpa. /subprocessors: 9 rows, all earlier testids present, subprocessors-dpa-link goes to /dpa, and the Back button works. Settings (testpro): privacy-legal-card has 5 links, all target=_blank, and the DPA link opens /dpa in a new tab.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Settings > Privacy & legal", "issues": ["The 5th link 'Data Processing Agreement' sits alone in the 2-column grid and its label wraps onto 2 lines, so this tile is taller than the others. Cosmetic only: shorten the label to 'DPA' or make the last item span both columns."]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Optional: check consistency. The DPA Section A storage row lists Ireland, the Netherlands and the US only, but the /subprocessors table lists Featurebase (Cordnet OÜ) with location 'European Union'. Consider naming it (e.g. Estonia/EU) or wording the storage row as '...and the EU'.",
+    "Optional: the /subprocessors intro says transfers 'outside the UK and EEA' are protected 'such as standard contractual clauses', while the DPA says UK, EU/EEA and Switzerland and lists DPF/IDTA. Consider aligning the wording.",
+    "Optional cosmetic: fix the layout of the Settings Privacy & legal DPA tile (see design_issues)."
+  ],
+  "critical_code_review_comments": [
+    "The code is clean: LegalShell, LegalLink and Clause components are shared, files are small (<80 lines) and every key element has a data-testid.",
+    "Content consistency between the DPA storage locations and the Sub-processors table (EU entry), as noted in action_items."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (skipped)", "frontend": "100%"},
+  "seed_data_creation": "none",
+  "retest_needed": false,
+  "should_main_agent_self_test": true,
+  "context_for_next_testing_agent": "In this browser tool, page.goto with wait_until='networkidle' times out on this app; use domcontentloaded. Direct-child CSS selectors ('>') and element.children returned 0/odd results in the automation env (the DOM appears wrapped). Count with descendant selectors instead (e.g. '[data-testid^=\"dpa-key-\"]' gives 14 = container + 13 rows; TOMs are counted via span.tabular-nums). To log in on /auth: if auth-name-input is visible, click auth-toggle-mode first, then fill auth-email-input and auth-password-input and click auth-submit-btn. Dismiss the Termly banner with Decline."
+}

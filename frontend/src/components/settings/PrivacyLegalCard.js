@@ -5,7 +5,7 @@ const LINKS = [
   { title: 'Terms of Service', href: '/terms', id: 'terms' },
   { title: 'Cookie Policy', href: '/cookies', id: 'cookies' },
   { title: 'Sub-processors', href: '/subprocessors', id: 'subprocessors' },
-  { title: 'Data Processing Agreement', href: '/dpa', id: 'dpa' },
+  { title: 'Data Processing Agreement', href: '/dpa', id: 'dpa', wide: true },
 ];
 
 export const PrivacyLegalCard = ({ className }) => (
@@ -14,7 +14,7 @@ export const PrivacyLegalCard = ({ className }) => (
     <p className="mb-4 mt-0.5 text-xs text-zinc-500">How we handle your data and who helps us process it.</p>
     <ul className="grid grid-cols-2 gap-2">
       {LINKS.map((l) => (
-        <li key={l.id}>
+        <li key={l.id} className={l.wide ? 'col-span-2' : undefined}>
           <a
             href={l.href}
             target="_blank"
