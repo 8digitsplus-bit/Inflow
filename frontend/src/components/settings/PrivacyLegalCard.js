@@ -5,6 +5,7 @@ const LINKS = [
   { title: 'Terms of Service', href: '/terms', id: 'terms' },
   { title: 'Cookie Policy', href: '/cookies', id: 'cookies' },
   { title: 'Sub-processors', href: '/subprocessors', id: 'subprocessors' },
+  { title: 'Data Processing Agreement', href: '/dpa', id: 'dpa' },
 ];
 
 export const PrivacyLegalCard = ({ className }) => (

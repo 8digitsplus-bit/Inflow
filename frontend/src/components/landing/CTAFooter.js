@@ -57,6 +57,7 @@ const footerLinks = [
       { title: 'Terms of Service', href: '/terms' },
       { title: 'Cookies', href: '/cookies' },
       { title: 'Sub-processors', href: '/subprocessors' },
+      { title: 'DPA', href: '/dpa' },
       { title: 'Consent Preferences', href: '#', onClick: openConsentPreferences },
     ],
   },

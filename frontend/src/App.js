@@ -43,6 +43,7 @@ const PrivacyPolicy = lazy(() => import('./pages/PrivacyPolicy'));
 const CookiePolicy = lazy(() => import('./pages/CookiePolicy'));
 const Terms = lazy(() => import('./pages/Terms'));
 const Subprocessors = lazy(() => import('./pages/Subprocessors'));
+const Dpa = lazy(() => import('./pages/Dpa'));
 const Contact = lazy(() => import('./pages/Contact'));
 const RedCarpetQuote = lazy(() => import('./pages/RedCarpetQuote'));
 
@@ -65,6 +66,7 @@ const AppRouter = () => {
       <Route path="/cookies" element={<CookiePolicy />} />
       <Route path="/terms" element={<Terms />} />
       <Route path="/subprocessors" element={<Subprocessors />} />
+      <Route path="/dpa" element={<Dpa />} />
       <Route path="/contact" element={<Contact />} />
       <Route path="/rc/:token" element={<RedCarpetQuote />} />
       <Route path="/onboarding" element={
