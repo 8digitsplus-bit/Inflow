@@ -35,7 +35,7 @@ export const DpaClauses1to4 = () => (
         <Lettered items={[
           'Processing by the Processor shall only take place for the duration specified in Section A.',
           'Before its account is closed, the Controller may ask the Processor for a copy of the personal data processed on its behalf.',
-          'Within 30 days of the termination of the Base Agreement, the closure of the Controller’s account, or termination pursuant to Clause 7, the Processor shall delete all personal data processed on behalf of the Controller, including existing copies, unless applicable law requires storage of the personal data. Any copies held in backups are deleted as part of the normal backup cycle. On request, the Processor shall confirm the deletion to the Controller in text form.',
+          'Within 30 days of the termination of the Base Agreement, the closure of the Controller’s account, or termination pursuant to Clause 7, the Processor shall delete all personal data processed on behalf of the Controller, including existing copies, unless applicable law requires storage of the personal data. Any copies held in backups are deleted automatically as part of the normal backup cycle (currently within 8 days). On request, the Processor shall confirm the deletion to the Controller in text form.',
         ]} />
       </SubClause>
       <SubClause n="4.4" title="Security of processing">

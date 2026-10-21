@@ -14,6 +14,8 @@ const TECHNICAL = [
   ['Abuse protection', 'Rate limits apply to sign-in, sign-up, verification and other sensitive actions to protect against brute-force attacks.'],
   ['Logging and monitoring', 'Application errors and performance are monitored in real time, and hosting providers maintain infrastructure and access logs.'],
   ['Physical security', 'InFlow does not operate its own servers or data centres. Customer Personal Data is hosted in the data centres of its Sub-processors, which are responsible for physical security, and is not kept on paper.'],
+  ['Backups', 'The database is backed up automatically every day through MongoDB Atlas’s managed backup service. The last 8 daily backups are kept, and older backups are deleted automatically.'],
+  ['Administrator access', 'Two-factor authentication or passkeys are enabled on the administrator accounts for InFlow’s database, website hosting, source code and payment providers.'],
   ['Secure development', 'Code changes are version-controlled and tested before being deployed.'],
 ];
 

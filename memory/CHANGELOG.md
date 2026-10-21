@@ -671,3 +671,4 @@ All AI responses: no emojis, clean plain-text formatting, rendered via shared AI
 - Files: pages/Dpa.js; components/legal/{LegalShell,DpaKeyTerms,DpaClauses1to4,DpaClauses5to8,DpaSecurityMeasures}.js. Subprocessors page refactored onto LegalShell and links to the DPA.
 - Linked from the footer (Legal → DPA), the Settings Privacy & legal card and /subprocessors. Accepted automatically through the Terms; signed copy on request.
 - TODO (user): add https://www.inflowft.com/dpa to Terms §27 in Termly. Turn on MFA (Railway, Vercel, Atlas, GitHub, Stripe) and Atlas backups, then add both to DPA Section C.
+- Oct 21, 2026: DPA Section C now includes 2.8 Backups (Atlas Flex: daily snapshots, last 8 kept) and 2.9 Administrator access (MFA/passkeys on database, website hosting, source code and payment providers; Railway still pending). Clause 4.3 now says backup copies are deleted "currently within 8 days". When Railway MFA is on, broaden 2.9 to cover all infrastructure.

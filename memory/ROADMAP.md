@@ -5,11 +5,11 @@
 - Make ProdFix wait for cookie consent (__pf_did/__pf_session localStorage is written before consent; PECR)
 - Cookie Policy: add session_token, inflow_authed/inflow_last_account, __pf_did/__pf_session manually; rescan Termly after redeploy (csrf_token 'Django' / s7 'Adobe' likely Useberry)
 - Closed beta launch checks: live sign-up end to end, Resend delivery to real inboxes
-- User: enable MongoDB Atlas Flex backups
+- DONE: Atlas Flex backups enabled (Oct 21, 2026)
 
 ## P1
 - Upsell Engine rework, Feature 3 (WAIT for user requirements)
-- DPA published at /dpa (done). User to add the link in Terms §27. Add MFA and backups to DPA Section C once enabled
+- DPA published at /dpa (done). User to add the link in Terms §27. Railway MFA pending (broaden DPA 2.9 once it is on)
 
 ## P2
 - "Disable AI features" toggle in Settings → Privacy
