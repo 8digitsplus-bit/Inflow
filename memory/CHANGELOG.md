@@ -658,3 +658,10 @@ All AI responses: no emojis, clean plain-text formatting, rendered via shared AI
 - Verified the 12-month inactivity purge worker (server.py, app.state.account_task, hourly): warning at 11 months, purge at 12, skips paid/owners with members.
 - Termly Free-Trial answer: "Other" with custom wording (no card needed; suspended after 14 days if no plan; mid-trial upgrades charged at original trial end).
 - Tests: backend/tests/test_cancel_at_period_end.py
+
+## Oct 2026 — /subprocessors page + Settings "Privacy & legal" card — DONE (iteration_82 frontend 100%)
+- Public /subprocessors page (pages/Subprocessors.js) lists 9 sub-processors with purpose and location: MongoDB Atlas (Ireland), Railway (Netherlands), Vercel, Anthropic, Emergent, Resend (US), Featurebase/Cordnet OÜ (EU), ProdFix and Scalekit (US, since neither publishes a location). Includes the 30-day change notice and a contact link.
+- Linked from the landing footer (Legal → Sub-processors) and the new Settings PrivacyLegalCard (Privacy, Terms, Cookies, Sub-processors).
+- Legal copy (user, in Termly): Terms republished with the free-trial wording, hosting (Ireland/Netherlands/US), prohibited-activities fixes, Permitted Business Use (§28) and Business Status/sole trader (§29). Privacy Policy now uses the trade name InFlow and lists the transfer countries. App's bundled legal_content/*.html refreshed.
+- DPA being written in an external generator: controller = customer, processor = Amaan Bashar t/a InFlow; sub-processors specified directly (same list, 30-day notice).
+- Found: live www.inflowft.com still serves an OLD build (Useberry script present). Production must be redeployed via Save to GitHub → Railway/Vercel.

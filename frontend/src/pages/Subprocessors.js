@@ -42,7 +42,7 @@ export default function Subprocessors() {
         </div>
 
         <div className="mt-10 overflow-x-auto rounded-2xl border border-white/10 bg-white/[0.02] backdrop-blur" data-testid="subprocessors-table">
-          <table className="w-full text-left text-sm">
+          <table className="w-full min-w-[560px] text-left text-sm">
             <thead className="bg-white/[0.04] text-white">
               <tr>
                 <th className="px-4 py-3 font-medium">Sub-processor</th>

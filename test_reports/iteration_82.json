@@ -1,0 +1,27 @@
+{
+  "summary": "Frontend-only test of the public /subprocessors page, the landing footer link and the Settings 'Privacy & legal' card. All requested checks pass. Public page (no login): page, heading, 'Last updated October 21, 2026', and the table with exactly 9 rows in the expected order and locations (MongoDB Atlas/Ireland, Railway/Netherlands, Vercel/US, Anthropic/US, Emergent/US, Resend/US, Cordnet OÜ (Featurebase)/EU, ProdFix/US, Scalekit/US). Terms and Privacy intro links go to /terms and /privacy. Contact link is mailto:support@inflowft.com. Back button returns to the previous page (/). Mobile 390px: page scrollWidth is 390 (no page overflow); the table wrapper has overflow-x:auto and scrolls (scrollWidth 377 > clientWidth 356). Footer: footer-link-sub-processors sits under Legal right after Cookies and goes to /subprocessors. Settings (testpro): privacy-legal-card is in the left column between the Data sync card and the Delete account card. Its 4 links have the correct hrefs, target=_blank and rel=noopener noreferrer, and the Sub-processors link opens /subprocessors in a new tab. Security, renewal and delete-account cards still render. No horizontal overflow at 1920 or 390. No page errors.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "/subprocessors mobile (390px)", "issues": ["The table only overflows by about 20px, so the 3 columns are squeezed into narrow word-wrapped cells (e.g. 'Sub-processor' header and 'MongoDB, Inc. (MongoDB Atlas)' wrap over 3-4 lines) and 'European Union' gets clipped at the edge. Consider adding min-w-[560px] to the <table> for a cleaner horizontal scroll, or a stacked card layout on mobile. Cosmetic only."]}
+    ]
+  },
+  "test_report_links": [],
+  "action_items": [
+    "Optional: add a min-width to the sub-processors table (or use a stacked layout on mobile) so cells don't word-wrap heavily at 390px.",
+    "Optional: the DeleteAccountCard root element uses data-testid='privacy-card' (it is the next sibling of privacy-legal-card). Rename it to 'delete-account-card' to avoid confusion with the new privacy-legal-card."
+  ],
+  "critical_code_review_comments": [
+    "Subprocessors.js: static and simple. Row testids come from a slugified full legal name (e.g. subprocessor-row-mongodb-inc-mongodb-atlas), so they change if the name text is edited. Acceptable.",
+    "Intro and settings links use plain <a href> instead of react-router <Link>, which causes a full reload in the same tab (intro). Fine for legal pages."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (skipped as requested)", "frontend": "100%"},
+  "test_credentials": "testpro@test.com / password (from /app/memory/test_credentials.md)",
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Sub-processors page and its links were verified in iteration_82. Termly banner: dismiss with Decline. Settings left column order: security-card, settings-sync-card, privacy-legal-card, (DeleteAccountCard with testid privacy-card), renewal-card."
+}
