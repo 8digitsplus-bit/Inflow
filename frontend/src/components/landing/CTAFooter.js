@@ -56,6 +56,7 @@ const footerLinks = [
       { title: 'Privacy Policy', href: '/privacy' },
       { title: 'Terms of Service', href: '/terms' },
       { title: 'Cookies', href: '/cookies' },
+      { title: 'Sub-processors', href: '/subprocessors' },
       { title: 'Consent Preferences', href: '#', onClick: openConsentPreferences },
     ],
   },

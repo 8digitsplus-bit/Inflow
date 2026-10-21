@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import DashboardLayout from '../components/DashboardLayout';
 import { SyncSettingsCard } from '../components/sync/SyncSettingsCard';
 import { DeleteAccountCard } from '../components/settings/DeleteAccountCard';
+import { PrivacyLegalCard } from '../components/settings/PrivacyLegalCard';
 import { motion } from 'framer-motion';
 import {
   Check,
@@ -288,6 +289,7 @@ const Settings = () => {
             </div>
 
             <SyncSettingsCard className={innerCard} />
+            <PrivacyLegalCard className={innerCard} />
             <DeleteAccountCard className={innerCard} />
 
             {/* Renewal */}
